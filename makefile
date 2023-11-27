@@ -13,7 +13,7 @@ endif
 
 GOFLAGS+=-ldflags="$(ldflags)"
 
-gen-api: ./api/swagger.yml
+gen-api: ./api/swagger.yml ./api/tmpls/chi
 	$(GOGENERATE) ./api
 
 install-go-swagger:

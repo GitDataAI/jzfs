@@ -13,14 +13,14 @@ type APIController struct {
 	fx.In
 }
 
-func (A APIController) GetVersion(w http.ResponseWriter, r *http.Request) {
+func (A APIController) GetVersion(w *api.JiaozifsResponse, r *http.Request) {
 	swagger, err := api.GetSwagger()
 	if err != nil {
-		writeError(w, err)
+		w.RespError(err)
 		return
 	}
 
-	writeJson(w, api.VersionResult{
+	w.RespJSON(api.VersionResult{
 		ApiVersion: swagger.Info.Version,
 		Version:    version.UserVersion(),
 	})
