@@ -1,4 +1,7 @@
 SHELL=/usr/bin/env bash
+GOCMD=$(or $(shell which go), $(error "Missing dependency - no go in PATH"))
+
+GOGENERATE=$(GOCMD) generate
 
 all: build
 .PHONY: all
@@ -10,6 +13,9 @@ endif
 
 GOFLAGS+=-ldflags="$(ldflags)"
 
+gen-api:
+	$(GOGENERATE) ./api
+
 install-go-swagger:
 	go install github.com/go-swagger/go-swagger/cmd/swagger@latest
 
@@ -17,5 +23,5 @@ SWAGGER_ARG=
 swagger-srv:
 	 swagger serve $(SWAGGER_ARG) -F swagger  ./api/swagger.yml
 
-build
+build:
 	go build $(GOFLAGS) -o jiaozifs

@@ -19,45 +19,17 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-  parameters:
-    PaginationPrefix:
-      in: query
-      name: prefix
-      description: return items prefixed with this value
-      schema:
-        type: string
-
-  responses:
-    NotFoundOrNoACL:
-      description: Group not found, or group found but has no ACL
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/Pagination"
 
   schemas:
-    Pagination:
+    VersionResult:
       type: object
-      required:
-        - has_more
-        - max_per_page
-        - results
-        - next_offset
       properties:
-        has_more:
-          type: boolean
-          description: Next page is available
-        next_offset:
+        version:
           type: string
-          description: Token used to retrieve the next page
-        results:
-          type: integer
-          minimum: 0
-          description: Number of values found in the results
-        max_per_page:
-          type: integer
-          minimum: 0
-          description: Maximal number of entries per page
+          description: program version
+        runtime_version:
+          type: string
+          description: runtime version
     Error:
       type: object
       required:
@@ -67,35 +39,17 @@ components:
           description: short message explaining the error
           type: string
 paths:
-  /setup_comm_prefs:
-    post:
+  /config:
+    get:
       tags:
-        - internal
-      operationId: setupCommPrefs
-      summary: setup communications preferences
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Error"
+        - common
+      operationId: getVersion
+      summary: return program and runtime version
       responses:
         200:
-          description: communication preferences saved successfully
-        409:
-          description: setup was already completed
+          description: program version
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
-        412:
-          description: wrong setup state for this operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        420:
-          description: too many requests
-        default:
-          $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/VersionResult"
+
