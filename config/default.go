@@ -6,6 +6,6 @@ var defaultCfg = Config{
 		Level: "INFO",
 	},
 	API: APIConfig{
-		Listen: "0.0.0.0:34913",
+		Listen: "http://127.0.0.1:34913",
 	},
 }

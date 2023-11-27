@@ -11,23 +11,18 @@ info:
 servers:
   - url: "/api/v1"
     description: lakeFS server endpoint
-security:
-  - jwt_token: []
 components:
-  securitySchemes:
-    jwt_token:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-
   schemas:
     VersionResult:
       type: object
+      required:
+        - version
+        - api_version
       properties:
         version:
           type: string
           description: program version
-        runtime_version:
+        api_version:
           type: string
           description: runtime version
     Error:
@@ -39,7 +34,7 @@ components:
           description: short message explaining the error
           type: string
 paths:
-  /config:
+  /version:
     get:
       tags:
         - common

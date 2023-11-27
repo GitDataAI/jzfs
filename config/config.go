@@ -23,7 +23,7 @@ type LogConfig struct {
 }
 
 type APIConfig struct {
-	Listen string `mapstructure:"level"`
+	Listen string `mapstructure:"listen"`
 }
 
 func InitConfig() error {

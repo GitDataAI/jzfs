@@ -4,6 +4,10 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"fmt"
+	"github.com/jiaozifs/jiaozifs/api"
+	"github.com/jiaozifs/jiaozifs/config"
+	"github.com/jiaozifs/jiaozifs/version"
 	"github.com/spf13/cobra"
 )
 
@@ -13,6 +17,35 @@ var versionCmd = &cobra.Command{
 	Short: "version of jiaozifs",
 	Long:  `jiaozifs version`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		cfg, err := config.LoadConfig(cfgFile)
+		if err != nil {
+			return err
+		}
+		client, err := api.NewClient(cfg.API.Listen)
+		if err != nil {
+			return err
+		}
+
+		swagger, err := api.GetSwagger()
+		if err != nil {
+			return err
+		}
+
+		versionResp, err := client.GetVersion(cmd.Context())
+		if err != nil {
+			return err
+		}
+		okResp, err := api.ParseGetVersionResponse(versionResp)
+		if err != nil {
+			return err
+		}
+		if okResp.JSON200 == nil {
+			return fmt.Errorf("request version fail %d %s", okResp.HTTPResponse.StatusCode, okResp.HTTPResponse.Body)
+		}
+		fmt.Println("Version ", version.UserVersion())
+		fmt.Println("API Version ", swagger.Info.Version)
+		fmt.Println("Runtime Version ", okResp.JSON200.Version)
+		fmt.Println("Runtime API Version ", okResp.JSON200.ApiVersion)
 		return nil
 	},
 }

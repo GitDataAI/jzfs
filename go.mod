@@ -7,10 +7,12 @@ require (
 	github.com/getkin/kin-openapi v0.118.0
 	github.com/go-chi/chi/v5 v5.0.10
 	github.com/ipfs/go-log/v2 v2.5.1
+	github.com/mitchellh/mapstructure v1.5.0
 	github.com/oapi-codegen/nethttp-middleware v1.0.1
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.17.0
 	go.uber.org/fx v1.20.1
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
@@ -25,7 +27,6 @@ require (
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
-	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/pelletier/go-toml/v2 v2.1.0 // indirect
 	github.com/perimeterx/marshmallow v1.1.4 // indirect

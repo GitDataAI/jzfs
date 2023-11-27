@@ -20,17 +20,13 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-const (
-	Jwt_tokenScopes = "jwt_token.Scopes"
-)
-
 // VersionResult defines model for VersionResult.
 type VersionResult struct {
-	// RuntimeVersion runtime version
-	RuntimeVersion *string `json:"runtime_version,omitempty"`
+	// ApiVersion runtime version
+	ApiVersion string `json:"api_version"`
 
 	// Version program version
-	Version *string `json:"version,omitempty"`
+	Version string `json:"version"`
 }
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
@@ -131,7 +127,7 @@ func NewGetVersionRequest(server string) (*http.Request, error) {
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/config")
+	operationPath := fmt.Sprintf("/version")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -256,7 +252,7 @@ func ParseGetVersionResponse(rsp *http.Response) (*GetVersionResponse, error) {
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// return program and runtime version
-	// (GET /config)
+	// (GET /version)
 	GetVersion(w http.ResponseWriter, r *http.Request)
 }
 
@@ -265,7 +261,7 @@ type ServerInterface interface {
 type Unimplemented struct{}
 
 // return program and runtime version
-// (GET /config)
+// (GET /version)
 func (_ Unimplemented) GetVersion(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
@@ -282,8 +278,6 @@ type MiddlewareFunc func(http.Handler) http.Handler
 // GetVersion operation middleware
 func (siw *ServerInterfaceWrapper) GetVersion(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetVersion(w, r)
@@ -410,7 +404,7 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/config", wrapper.GetVersion)
+		r.Get(options.BaseURL+"/version", wrapper.GetVersion)
 	})
 
 	return r
@@ -419,14 +413,13 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/3xSTWvbQBD9K2Lao6pV3JtuoSStSymhNunBmLBZj6V1tB/MjmJM0H8vs/JHQ5OetJp5",
-	"b77eewETXAwePSdoXiCZDp3Oz3ukZIP/hWnoWQKRQkRiizlNg2fr8OF5gklog8mQjZx/T4DiBCiBDxGh",
-	"gcRkfQtjCe9yI4WWtHufO54j4XGHhnMkoRnI8mEhS0xT7vb8wOEJc49H1IR0G8hphga+/15COW0shabs",
-	"pVXHHGGUutZvw78z9voJbxfFt+Xyrri+m0MJvTXoEwrU61zzOmrTYTGraihhoP5YNjVK7ff7Sud0FahV",
-	"R25SP+Zfbn4ubj7Nqrrq2PVyJ7bc46Xl1O18PLiq6qoWXIjodbTQwOccKiFq7vIhlAl+a1t5tpjlFDG1",
-	"7DLfQANfke/PxyZMMcg0gpvVtXxM8Iw+M3WMvTWZq3Zp0m8yjrw+Em6hgQ/q4ix1tJV67al83P8Ln2Ud",
-	"nNN0EEshD+SLE0j7TfGGy3SboFmJsV3wsB7/tgY0q1emWK3HtWRJ+Dn5psgToEC/icF6PoupdLTq+QrG",
-	"9fgnAAD//4U8UzdKAwAA",
+	"H4sIAAAAAAAC/3yST2/UMBDFv0o0cAxxutx8q1CBlRCqaNVLVSHjTBOX+A/jSVdVle+OxtnNLoLl5H+/",
+	"57HnvVew0acYMHAG/QrZDuhNmd4hZRfDN8zTyLKRKCYkdliOTXLfnxdElh1mSy5xWQJNgZ3H6gDUwC8J",
+	"QUNmcqGHuYaz2kSxJ+PPa+caCH9NjrADfQ9H7vRJD6ss/nhCyzCLzoXH+HfF0fzEjzfV59vb6+ryegs1",
+	"jM5iyChoMF5uuUzGDlhtmhZqmGgEDQNzylqp3W7XmHLcROrVXpvVl+2Hq683V+82TdsM7Ef5NTse8Vhy",
+	"qba2Ai6atmmFiwmDSQ40vC9bNSTDQ2m8Oulcj8UZ8cXIZ7YdaPiEfLf2hDCnKM8RbtO2MtgYGAMvLqbR",
+	"2aJVT3m5dMmAzN4SPoKGN+oYErVPiPozHqW7//dRiDx5b+hFEoI8UagOkAld9Y/QmD6LxTZ6L56WKhlJ",
+	"CND3Z3xcgApDl6ILvPqlTHLq+QLmh/l3AAAA//+mze959wIAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

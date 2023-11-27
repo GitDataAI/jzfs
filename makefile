@@ -13,7 +13,7 @@ endif
 
 GOFLAGS+=-ldflags="$(ldflags)"
 
-gen-api:
+gen-api: ./api/swagger.yml
 	$(GOGENERATE) ./api
 
 install-go-swagger:
@@ -23,5 +23,5 @@ SWAGGER_ARG=
 swagger-srv:
 	 swagger serve $(SWAGGER_ARG) -F swagger  ./api/swagger.yml
 
-build:
+build:gen-api
 	go build $(GOFLAGS) -o jiaozifs

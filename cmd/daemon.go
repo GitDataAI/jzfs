@@ -18,6 +18,7 @@ import (
 	"go.uber.org/fx"
 	"net"
 	"net/http"
+	"net/url"
 )
 
 var log = logging.Logger("main")
@@ -83,7 +84,13 @@ func setupAPI(lc fx.Lifecycle, apiConfig *config.APIConfig, controller api_impl.
 	r.Use(middleware.OapiRequestValidator(swagger))
 
 	api.HandlerFromMux(controller, r)
-	listener, err := net.Listen("tcp", apiConfig.Listen)
+
+	url, err := url.Parse(apiConfig.Listen)
+	if err != nil {
+		return err
+	}
+
+	listener, err := net.Listen("tcp", url.Host)
 	if err != nil {
 		return err
 	}
