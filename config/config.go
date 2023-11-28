@@ -13,9 +13,10 @@ import (
 var log = logging.Logger("log")
 
 type Config struct {
-	Path string    `mapstructure:"config"`
-	Log  LogConfig `mapstructure:"log"`
-	API  APIConfig `mapstructure:"api"`
+	Path     string         `mapstructure:"config"`
+	Log      LogConfig      `mapstructure:"log"`
+	API      APIConfig      `mapstructure:"api"`
+	Database DatabaseConfig `mapstructure:"database"`
 }
 
 type LogConfig struct {
@@ -26,13 +27,16 @@ type APIConfig struct {
 	Listen string `mapstructure:"listen"`
 }
 
+type DatabaseConfig struct {
+	Connection string `mapstructure:"connection"`
+}
+
 func InitConfig() error {
 	// Find home directory.
 	home, err := os.UserHomeDir()
 	cobra.CheckErr(err)
 	jiaoziHome := path.Join(home, ".jiaozifs")
 	defaultPath := path.Join(jiaoziHome, "config.toml")
-
 	// Search config in home directory with name ".jiaozifs" (without extension).
 	viper.AddConfigPath(path.Join(home, ".jiaozifs"))
 	viper.SetConfigType("toml")

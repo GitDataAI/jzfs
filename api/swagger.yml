@@ -1,8 +1,8 @@
 openapi: "3.0.0"
 
 info:
-  description: lakeFS HTTP API
-  title: lakeFS API
+  description: jiaozifs HTTP API
+  title: jiaozifs API
   license:
     name: "Apache 2.0"
     url: https://www.apache.org/licenses/LICENSE-2.0.html
@@ -10,8 +10,32 @@ info:
 
 servers:
   - url: "/api/v1"
-    description: lakeFS server endpoint
+    description: jiaozifs server endpoint
+
+security:
+  - jwt_token: ["aaaa"]
+  - basic_auth: ["aaaaa"]
 components:
+  securitySchemes:
+    basic_auth:
+      type: http
+      scheme: basic
+    jwt_token:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    cookie_auth:
+      type: apiKey
+      in: cookie
+      name: internal_auth_session
+    oidc_auth:
+      type: apiKey
+      in: cookie
+      name: oidc_auth_session
+    saml_auth:
+      type: apiKey
+      in: cookie
+      name: saml_auth_session
   schemas:
     VersionResult:
       type: object
@@ -40,6 +64,8 @@ paths:
         - common
       operationId: getVersion
       summary: return program and runtime version
+      security:
+        - jwt_token: []
       responses:
         200:
           description: program version

@@ -5,20 +5,16 @@ package cmd
 
 import (
 	"context"
-	"errors"
-	"github.com/go-chi/chi/v5"
 	logging "github.com/ipfs/go-log/v2"
-	"github.com/jiaozifs/jiaozifs/api"
 	"github.com/jiaozifs/jiaozifs/api/api_impl"
 	"github.com/jiaozifs/jiaozifs/config"
 	"github.com/jiaozifs/jiaozifs/fx_opt"
+	"github.com/jiaozifs/jiaozifs/models"
+	"github.com/jiaozifs/jiaozifs/models/migrations"
 	"github.com/jiaozifs/jiaozifs/utils"
-	middleware "github.com/oapi-codegen/nethttp-middleware"
 	"github.com/spf13/cobra"
-	"go.uber.org/fx"
-	"net"
-	"net/http"
-	"net/url"
+	"github.com/spf13/viper"
+	"github.com/uptrace/bun"
 )
 
 var log = logging.Logger("main")
@@ -46,9 +42,13 @@ var daemonCmd = &cobra.Command{
 			//config
 			fx_opt.Override(new(*config.Config), cfg),
 			fx_opt.Override(new(*config.APIConfig), &cfg.API),
-			//business
+			fx_opt.Override(new(*config.DatabaseConfig), &cfg.Database),
+			//database
+			fx_opt.Override(new(*bun.DB), models.SetupDatabase),
+			fx_opt.Override(fx_opt.NextInvoke(), migrations.MigrateDatabase),
+			fx_opt.Override(new(*models.IUserRepo), models.NewUserRepo),
 			//api
-			fx_opt.Override(fx_opt.NextInvoke(), setupAPI),
+			fx_opt.Override(fx_opt.NextInvoke(), api_impl.SetupAPI),
 		)
 		if err != nil {
 			return err
@@ -65,47 +65,9 @@ var daemonCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(daemonCmd)
-}
+	daemonCmd.Flags().String("db", "", "pg connection string eg. postgres://user:pass@localhost:5432/jiaozifs?sslmode=disable")
+	daemonCmd.Flags().String("log-level", "INFO", "set log level eg. DEBUG INFO ERROR")
 
-func setupAPI(lc fx.Lifecycle, apiConfig *config.APIConfig, controller api_impl.APIController) error {
-	swagger, err := api.GetSwagger()
-	if err != nil {
-		return err
-	}
-
-	// Clear out the servers array in the swagger spec, that skips validating
-	// that server names match. We don't know how this thing will be run.
-	swagger.Servers = nil
-	// This is how you set up a basic chi router
-	r := chi.NewRouter()
-
-	// Use our validation middleware to check all requests against the
-	// OpenAPI schema.
-	r.Use(middleware.OapiRequestValidator(swagger))
-
-	api.HandlerFromMux(controller, r)
-
-	url, err := url.Parse(apiConfig.Listen)
-	if err != nil {
-		return err
-	}
-
-	listener, err := net.Listen("tcp", url.Host)
-	if err != nil {
-		return err
-	}
-	log.Infof("Start listen api %s", listener.Addr())
-	go func() {
-		err := http.Serve(listener, r)
-		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Errorf("listen address fail %s", err)
-		}
-	}()
-
-	lc.Append(fx.Hook{
-		OnStop: func(ctx context.Context) error {
-			return listener.Close()
-		},
-	})
-	return nil
+	viper.BindPFlag("database.connection", daemonCmd.Flags().Lookup("db"))
+	viper.BindPFlag("log.level", daemonCmd.Flags().Lookup("log-level"))
 }

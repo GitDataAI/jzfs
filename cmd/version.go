@@ -6,6 +6,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/jiaozifs/jiaozifs/api"
+	"github.com/jiaozifs/jiaozifs/api/api_impl"
 	"github.com/jiaozifs/jiaozifs/config"
 	"github.com/jiaozifs/jiaozifs/version"
 	"github.com/spf13/cobra"
@@ -17,16 +18,19 @@ var versionCmd = &cobra.Command{
 	Short: "version of jiaozifs",
 	Long:  `jiaozifs version`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		swagger, err := api.GetSwagger()
+		if err != nil {
+			return err
+		}
+		fmt.Println("Version ", version.UserVersion())
+		fmt.Println("API Version ", swagger.Info.Version)
+
+		//get runtime version
 		cfg, err := config.LoadConfig(cfgFile)
 		if err != nil {
 			return err
 		}
-		client, err := api.NewClient(cfg.API.Listen)
-		if err != nil {
-			return err
-		}
-
-		swagger, err := api.GetSwagger()
+		client, err := api.NewClient(cfg.API.Listen + api_impl.APIV1Prefix)
 		if err != nil {
 			return err
 		}
@@ -42,8 +46,6 @@ var versionCmd = &cobra.Command{
 		if okResp.JSON200 == nil {
 			return fmt.Errorf("request version fail %d %s", okResp.HTTPResponse.StatusCode, okResp.HTTPResponse.Body)
 		}
-		fmt.Println("Version ", version.UserVersion())
-		fmt.Println("API Version ", swagger.Info.Version)
 		fmt.Println("Runtime Version ", okResp.JSON200.Version)
 		fmt.Println("Runtime API Version ", okResp.JSON200.ApiVersion)
 		return nil
@@ -52,14 +54,4 @@ var versionCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(versionCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// versionCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// versionCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
