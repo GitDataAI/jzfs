@@ -2,9 +2,11 @@ package models
 
 import (
 	"context"
+
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
-	"time"
 )
 
 var _user = (*User)(nil)
@@ -40,7 +42,7 @@ func NewUserRepo(db *bun.DB) IUserRepo {
 
 func (userRepo *UserRepo) GetUser(ctx context.Context, id uuid.UUID) (*User, error) {
 	user := &User{}
-	return user, userRepo.DB.NewSelect().Model(_user).Where("id = 1").Scan(ctx, &user)
+	return user, userRepo.DB.NewSelect().Model(_user).Where("id = :id", id).Scan(ctx, &user)
 }
 
 func (userRepo *UserRepo) Insert(ctx context.Context, user *User) (*User, error) {

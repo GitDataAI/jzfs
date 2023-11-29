@@ -22,5 +22,5 @@ func (response *JiaozifsResponse) RespJSON(v interface{}) {
 
 func (response *JiaozifsResponse) RespError(err error) {
 	response.WriteHeader(http.StatusOK)
-	response.Write([]byte(err.Error()))
+	_, _ = response.Write([]byte(err.Error()))
 }

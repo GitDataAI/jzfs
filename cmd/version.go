@@ -1,12 +1,10 @@
-/*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
 	"fmt"
+
 	"github.com/jiaozifs/jiaozifs/api"
-	"github.com/jiaozifs/jiaozifs/api/api_impl"
+	apiimpl "github.com/jiaozifs/jiaozifs/api/api_impl"
 	"github.com/jiaozifs/jiaozifs/config"
 	"github.com/jiaozifs/jiaozifs/version"
 	"github.com/spf13/cobra"
@@ -30,7 +28,7 @@ var versionCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		client, err := api.NewClient(cfg.API.Listen + api_impl.APIV1Prefix)
+		client, err := api.NewClient(cfg.API.Listen + apiimpl.APIV1Prefix)
 		if err != nil {
 			return err
 		}

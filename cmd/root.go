@@ -1,12 +1,10 @@
-/*
-Copyright © 2023 githun.com/jiaozifs/jiaozifs
-*/
 package cmd
 
 import (
+	"os"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"os"
 )
 
 var cfgFile string
@@ -29,5 +27,5 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.jiaozifs/config.yaml)")
-	viper.BindPFlag("config", rootCmd.Flags().Lookup("config"))
+	_ = viper.BindPFlag("config", rootCmd.Flags().Lookup("config"))
 }

@@ -1,0 +1,29 @@
+linters:
+  disable-all: true
+  enable:
+    - gofmt
+    - govet
+    - misspell
+    - goconst
+    - revive
+    - errcheck
+    - unconvert
+    - staticcheck
+    - unused
+    - stylecheck
+    - gosimple
+    - goimports
+issues:
+  exclude:
+    - "should have( a package)? comment"
+
+  exclude-rules:
+  exclude-use-default: false
+
+linters-settings:
+  goconst:
+    min-occurrences: 6
+
+run:
+  skip-dirs:
+  skip-files:

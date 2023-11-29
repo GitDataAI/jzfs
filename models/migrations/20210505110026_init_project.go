@@ -2,6 +2,7 @@ package migrations
 
 import (
 	"context"
+
 	"github.com/jiaozifs/jiaozifs/models"
 	"github.com/uptrace/bun"
 )
