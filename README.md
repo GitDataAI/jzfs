@@ -11,8 +11,8 @@ make build
 
 init and running
 ```bash
-./jiaozi init  --db postgres://li:li123@localhost:5432/jiaozifs?sslmode=disable
+./jzfs init  --db postgres://li:li123@localhost:5432/jiaozifs?sslmode=disable
 
-./jiaozi daemon
+./jzfs daemon
 ```
 

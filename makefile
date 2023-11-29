@@ -24,4 +24,4 @@ swagger-srv:
 	 swagger serve $(SWAGGER_ARG) -F swagger  ./api/swagger.yml
 
 build:gen-api
-	go build $(GOFLAGS) -o jiaozifs
+	go build $(GOFLAGS) -o jzfs
