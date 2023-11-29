@@ -15,4 +15,3 @@ init and running
 
 ./jzfs daemon
 ```
-

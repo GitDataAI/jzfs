@@ -1,0 +1,6 @@
+skip:
+  dir:
+    - .idea
+    - .vscode
+  file:
+    - jzfs
