@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"database/sql"
+
 	"github.com/jiaozifs/jiaozifs/config"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"

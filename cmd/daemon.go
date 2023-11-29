@@ -1,12 +1,10 @@
-/*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
 	"context"
+
 	logging "github.com/ipfs/go-log/v2"
-	"github.com/jiaozifs/jiaozifs/api/api_impl"
+	apiImpl "github.com/jiaozifs/jiaozifs/api/api_impl"
 	"github.com/jiaozifs/jiaozifs/config"
 	"github.com/jiaozifs/jiaozifs/fx_opt"
 	"github.com/jiaozifs/jiaozifs/models"
@@ -48,7 +46,7 @@ var daemonCmd = &cobra.Command{
 			fx_opt.Override(fx_opt.NextInvoke(), migrations.MigrateDatabase),
 			fx_opt.Override(new(*models.IUserRepo), models.NewUserRepo),
 			//api
-			fx_opt.Override(fx_opt.NextInvoke(), api_impl.SetupAPI),
+			fx_opt.Override(fx_opt.NextInvoke(), apiImpl.SetupAPI),
 		)
 		if err != nil {
 			return err
@@ -59,7 +57,6 @@ var daemonCmd = &cobra.Command{
 		<-shutdown
 		log.Info("graceful shutdown")
 		return stop(cmd.Context())
-		return nil
 	},
 }
 
@@ -68,6 +65,6 @@ func init() {
 	daemonCmd.Flags().String("db", "", "pg connection string eg. postgres://user:pass@localhost:5432/jiaozifs?sslmode=disable")
 	daemonCmd.Flags().String("log-level", "INFO", "set log level eg. DEBUG INFO ERROR")
 
-	viper.BindPFlag("database.connection", daemonCmd.Flags().Lookup("db"))
-	viper.BindPFlag("log.level", daemonCmd.Flags().Lookup("log-level"))
+	_ = viper.BindPFlag("database.connection", daemonCmd.Flags().Lookup("db"))
+	_ = viper.BindPFlag("log.level", daemonCmd.Flags().Lookup("log-level"))
 }

@@ -1,6 +1,3 @@
-/*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
@@ -14,9 +11,9 @@ var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "init jiaozifs ",
 	Long:  `create default config file for jiaoozifs`,
-	PreRun: func(cmd *cobra.Command, args []string) {
-		//provent duplicate bind flag with daemon
-		viper.BindPFlag("database.connection", cmd.Flags().Lookup("db"))
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		//protect duplicate bind flag with daemon
+		return viper.BindPFlag("database.connection", cmd.Flags().Lookup("db"))
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return config.InitConfig()

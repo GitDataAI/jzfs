@@ -2,15 +2,14 @@ package config
 
 import (
 	"fmt"
-	logging "github.com/ipfs/go-log/v2"
+
+	"os"
+	"path"
+
 	ms "github.com/mitchellh/mapstructure"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"os"
-	"path"
 )
-
-var log = logging.Logger("log")
 
 type Config struct {
 	Path     string         `mapstructure:"config"`
