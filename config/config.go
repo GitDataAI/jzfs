@@ -28,6 +28,7 @@ type APIConfig struct {
 
 type DatabaseConfig struct {
 	Connection string `mapstructure:"connection"`
+	Debug      bool   `mapstructure:"debug"`
 }
 
 func InitConfig() error {
