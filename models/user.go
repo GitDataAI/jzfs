@@ -2,7 +2,6 @@ package models
 
 import (
 	"context"
-
 	"time"
 
 	"github.com/google/uuid"
@@ -28,6 +27,7 @@ type User struct {
 type IUserRepo interface {
 	GetUser(ctx context.Context, id uuid.UUID) (*User, error)
 	Insert(ctx context.Context, user *User) (*User, error)
+	AuthenticateUser(ctx context.Context, name, encryptedPassword string) (uuid.UUID, error)
 }
 
 var _ IUserRepo = (*UserRepo)(nil)
@@ -51,4 +51,13 @@ func (userRepo *UserRepo) Insert(ctx context.Context, user *User) (*User, error)
 		return nil, err
 	}
 	return user, nil
+}
+
+func (userRepo *UserRepo) AuthenticateUser(ctx context.Context, name, encryptedPassword string) (uuid.UUID, error) {
+	user := &User{}
+	return user.ID, userRepo.DB.NewSelect().
+		Model(_user).
+		Where("name = ?", name).
+		Where("encrypted_password", encryptedPassword).
+		Scan(ctx, &user)
 }

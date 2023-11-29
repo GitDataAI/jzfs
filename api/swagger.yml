@@ -36,6 +36,21 @@ components:
       type: apiKey
       in: cookie
       name: saml_auth_session
+
+  responses:
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    ServerError:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
   schemas:
     VersionResult:
       type: object
@@ -57,6 +72,31 @@ components:
         message:
           description: short message explaining the error
           type: string
+
+    LoginInformation:
+      type: object
+      required:
+        - access_key_id
+        - secret_access_key
+      properties:
+        access_key_id:
+          type: string
+        secret_access_key:
+          type: string
+
+    AuthenticationToken:
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          description: a JWT token that could be used to authenticate requests
+          type: string
+        token_expiration:
+          type: integer
+          format: int64
+          description: Unix Epoch in seconds
+
 paths:
   /version:
     get:
@@ -73,4 +113,49 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/VersionResult"
+
+  /auth/login:
+    post:
+      tags:
+        - auth
+      operationId: login
+      summary: perform a login
+      security: [] # No authentication
+      parameters:
+        - name: access_key_id
+          in: query
+          description: User's ak_id
+          required: true
+          schema:
+            type: string
+        - name: secret_access_key
+          in: query
+          description: User's sk_key
+          required: true
+          schema:
+            type: string
+#      requestBody:
+#        content:
+#          application/json:
+#            schema:
+#              $ref: "#/components/schemas/LoginInformation"
+      responses:
+        200:
+          description: successful login
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: "access_token=abcde12356; Path=/; HttpOnly"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationToken"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        420:
+          description: too many requests
+        default:
+          $ref: "#/components/responses/ServerError"
+
 

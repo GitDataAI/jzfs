@@ -18,11 +18,27 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
+	"github.com/oapi-codegen/runtime"
 )
 
 const (
 	Jwt_tokenScopes = "jwt_token.Scopes"
 )
+
+// AuthenticationToken defines model for AuthenticationToken.
+type AuthenticationToken struct {
+	// Token a JWT token that could be used to authenticate requests
+	Token string `json:"token"`
+
+	// TokenExpiration Unix Epoch in seconds
+	TokenExpiration *int64 `json:"token_expiration,omitempty"`
+}
+
+// Error defines model for Error.
+type Error struct {
+	// Message short message explaining the error
+	Message string `json:"message"`
+}
 
 // VersionResult defines model for VersionResult.
 type VersionResult struct {
@@ -31,6 +47,21 @@ type VersionResult struct {
 
 	// Version program version
 	Version string `json:"version"`
+}
+
+// ServerError defines model for ServerError.
+type ServerError = Error
+
+// Unauthorized defines model for Unauthorized.
+type Unauthorized = Error
+
+// LoginParams defines parameters for Login.
+type LoginParams struct {
+	// AccessKeyId User's ak_id
+	AccessKeyId string `form:"access_key_id" json:"access_key_id"`
+
+	// SecretAccessKey User's sk_key
+	SecretAccessKey string `form:"secret_access_key" json:"secret_access_key"`
 }
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
@@ -106,8 +137,23 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// Login request
+	Login(ctx context.Context, params *LoginParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetVersion request
 	GetVersion(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) Login(ctx context.Context, params *LoginParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewLoginRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) GetVersion(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -120,6 +166,63 @@ func (c *Client) GetVersion(ctx context.Context, reqEditors ...RequestEditorFn) 
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+// NewLoginRequest generates requests for Login
+func NewLoginRequest(server string, params *LoginParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/auth/login")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "access_key_id", runtime.ParamLocationQuery, params.AccessKeyId); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "secret_access_key", runtime.ParamLocationQuery, params.SecretAccessKey); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
 }
 
 // NewGetVersionRequest generates requests for GetVersion
@@ -192,8 +295,35 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// LoginWithResponse request
+	LoginWithResponse(ctx context.Context, params *LoginParams, reqEditors ...RequestEditorFn) (*LoginResponse, error)
+
 	// GetVersionWithResponse request
 	GetVersionWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetVersionResponse, error)
+}
+
+type LoginResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *AuthenticationToken
+	JSON401      *Unauthorized
+	JSONDefault  *ServerError
+}
+
+// Status returns HTTPResponse.Status
+func (r LoginResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r LoginResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 type GetVersionResponse struct {
@@ -218,6 +348,15 @@ func (r GetVersionResponse) StatusCode() int {
 	return 0
 }
 
+// LoginWithResponse request returning *LoginResponse
+func (c *ClientWithResponses) LoginWithResponse(ctx context.Context, params *LoginParams, reqEditors ...RequestEditorFn) (*LoginResponse, error) {
+	rsp, err := c.Login(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseLoginResponse(rsp)
+}
+
 // GetVersionWithResponse request returning *GetVersionResponse
 func (c *ClientWithResponses) GetVersionWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetVersionResponse, error) {
 	rsp, err := c.GetVersion(ctx, reqEditors...)
@@ -225,6 +364,46 @@ func (c *ClientWithResponses) GetVersionWithResponse(ctx context.Context, reqEdi
 		return nil, err
 	}
 	return ParseGetVersionResponse(rsp)
+}
+
+// ParseLoginResponse parses an HTTP response from a LoginWithResponse call
+func ParseLoginResponse(rsp *http.Response) (*LoginResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &LoginResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AuthenticationToken
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest ServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParseGetVersionResponse parses an HTTP response from a GetVersionWithResponse call
@@ -255,6 +434,9 @@ func ParseGetVersionResponse(rsp *http.Response) (*GetVersionResponse, error) {
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// perform a login
+	// (POST /auth/login)
+	Login(w *JiaozifsResponse, r *http.Request, params LoginParams)
 	// return program and runtime version
 	// (GET /version)
 	GetVersion(w *JiaozifsResponse, r *http.Request)
@@ -263,6 +445,12 @@ type ServerInterface interface {
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
 
 type Unimplemented struct{}
+
+// perform a login
+// (POST /auth/login)
+func (_ Unimplemented) Login(w *JiaozifsResponse, r *http.Request, params LoginParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
 
 // return program and runtime version
 // (GET /version)
@@ -278,6 +466,56 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// Login operation middleware
+func (siw *ServerInterfaceWrapper) Login(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params LoginParams
+
+	// ------------- Required query parameter "access_key_id" -------------
+
+	if paramValue := r.URL.Query().Get("access_key_id"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "access_key_id"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "access_key_id", r.URL.Query(), &params.AccessKeyId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "access_key_id", Err: err})
+		return
+	}
+
+	// ------------- Required query parameter "secret_access_key" -------------
+
+	if paramValue := r.URL.Query().Get("secret_access_key"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "secret_access_key"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "secret_access_key", r.URL.Query(), &params.SecretAccessKey)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "secret_access_key", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.Login(&JiaozifsResponse{w}, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
 
 // GetVersion operation middleware
 func (siw *ServerInterfaceWrapper) GetVersion(w http.ResponseWriter, r *http.Request) {
@@ -410,6 +648,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/auth/login", wrapper.Login)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/version", wrapper.GetVersion)
 	})
 
@@ -419,15 +660,22 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"hrv+l4LT6cOF3M62/wYAAP//PBPwllUKAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

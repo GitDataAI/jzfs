@@ -3,7 +3,6 @@ package apiimpl
 import (
 	"context"
 	"errors"
-
 	"net"
 	"net/http"
 
@@ -23,11 +22,13 @@ var log = logging.Logger("rpc")
 
 const APIV1Prefix = "/api/v1"
 
-func SetupAPI(lc fx.Lifecycle, apiConfig *config.APIConfig, controller APIController) error {
+func SetupAPI(lc fx.Lifecycle, apiConfig *config.APIConfig, authCfg *config.AuthConfig, controller APIController) error {
 	swagger, err := api.GetSwagger()
 	if err != nil {
 		return err
 	}
+
+	//sessionStore := sessions.NewCookieStore([]byte(authCfg.SecretKey))
 
 	// Clear out the servers array in the swagger spec, that skips validating
 	// that server names match. We don't know how this thing will be run.
