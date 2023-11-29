@@ -34,13 +34,13 @@ jobs:
 
       - name: Test
         run: |
-          go test -coverpkg=./... -coverprofile=coverage.txt -covermode=atomic -timeout=30m -parallel=4  -v ./...
+          go test -coverpkg=./... -coverprofile=coverage.out -covermode=atomic -timeout=30m -parallel=4  -v ./...
 
       - name: Upload
         uses: codecov/codecov-action@v3
         with:
           token:
-          files: ./coverage.txt
+          files: ./coverage.out
           name: jzfs
           fail_ci_if_error: true
           verbose: true

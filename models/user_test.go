@@ -23,8 +23,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
-
-	_ "github.com/jiaozifs/jiaozifs/models/migrations"
 )
 
 var dbTimeCmpOpt = cmp.Comparer(func(x, y time.Time) bool {
@@ -41,7 +39,8 @@ func setup(ctx context.Context, t *testing.T) (*embeddedpostgres.EmbeddedPostgre
 	db, err := models.SetupDatabase(ctx, fxtest.NewLifecycle(t), &config.DatabaseConfig{Debug: true, Connection: fmt.Sprintf(testConnTmpl, port)})
 	require.NoError(t, err)
 
-	migrations.MigrateDatabase(ctx, db)
+	err = migrations.MigrateDatabase(ctx, db)
+	require.NoError(t, err)
 	return postgres, db
 }
 func TestNewUserRepo(t *testing.T) {

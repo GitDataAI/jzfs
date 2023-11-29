@@ -3,8 +3,10 @@ package models_test
 import (
 	"context"
 	"fmt"
-	"github.com/jiaozifs/jiaozifs/models"
+
 	"testing"
+
+	"github.com/jiaozifs/jiaozifs/models"
 
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 

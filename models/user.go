@@ -9,8 +9,6 @@ import (
 	"github.com/uptrace/bun"
 )
 
-var _user = (*User)(nil)
-
 type User struct {
 	bun.BaseModel     `bun:"table:users,alias:u"`
 	ID                uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
