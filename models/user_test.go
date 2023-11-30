@@ -69,9 +69,9 @@ func TestNewUserRepo(t *testing.T) {
 
 	require.True(t, cmp.Equal(userModel.UpdatedAt, user.UpdatedAt, dbTimeCmpOpt))
 
-	name, err := repo.GetUserByName(ctx, newUser.Name)
+	u, err := repo.GetUserByName(ctx, newUser.Name)
 	require.NoError(t, err)
-	require.True(t, cmp.Equal(userModel.Name, name))
+	require.True(t, cmp.Equal(userModel.ID, u.ID))
 
 	ep, err := repo.GetUserEPByName(ctx, newUser.Name)
 	require.NoError(t, err)
