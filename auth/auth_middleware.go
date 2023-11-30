@@ -9,7 +9,7 @@ import (
 
 var ErrAuthenticatingRequest = errors.New("error authenticating request")
 
-// userByAuth Return the user object by accessKey and secretKey
+// UserByAuth the user object by accessKey and secretKey
 func UserByAuth(ctx context.Context, authService models.IUserRepo, accessKey, secretKey string) (user *models.User, err error) {
 	// Check accessKey and secretKey
 	// Get user encryptedPassword by name
