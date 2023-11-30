@@ -4,17 +4,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/jiaozifs/jiaozifs/api"
-	"github.com/jiaozifs/jiaozifs/config"
 	"testing"
 )
 
 func TestLogin(t *testing.T) {
 	ctx := context.Background()
-	cfg, err := config.LoadConfig(cfgFile)
-	if err != nil {
-		t.Errorf("load config err: %s", err)
-	}
-	client, err := api.NewClient(cfg.API.Listen)
+	client, err := GetDefaultClient()
 	if err != nil {
 		t.Errorf("api new client err: %s", err)
 	}
