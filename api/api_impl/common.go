@@ -4,12 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-openapi/swag"
-	"github.com/gorilla/sessions"
 	"github.com/jiaozifs/jiaozifs/auth"
 	"github.com/jiaozifs/jiaozifs/config"
 	"github.com/jiaozifs/jiaozifs/models"
 	"github.com/jiaozifs/jiaozifs/utils"
-	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"time"
 
@@ -33,16 +31,18 @@ type APIController struct {
 	UserRepo *models.IUserRepo
 	Config   *config.Config
 
-	sessionStore sessions.Store
+	//sessionStore sessions.Store
 }
 
 // Login User login
 func (A APIController) Login(w *api.JiaozifsResponse, r *http.Request, params api.LoginParams) {
 	ctx := r.Context()
 	// Encrypt password
-	encryptPassword, _ := bcrypt.GenerateFromPassword([]byte(params.SecretAccessKey), passwordCost)
+	//encryptPassword, _ := bcrypt.GenerateFromPassword([]byte(params.SecretAccessKey), passwordCost)
+	//log.Infof("ep: %s", encryptPassword)
+
 	// Get user by SA, EP
-	user, err := auth.UserByAuth(ctx, *A.UserRepo, params.AccessKeyId, string(encryptPassword))
+	user, err := auth.UserByAuth(ctx, *A.UserRepo, params.AccessKeyId, params.SecretAccessKey)
 	if err != nil {
 		writeResponse(w, r, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized))
 		return

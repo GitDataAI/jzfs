@@ -28,6 +28,8 @@ type IUserRepo interface {
 	GetUser(ctx context.Context, id uuid.UUID) (*User, error)
 	Insert(ctx context.Context, user *User) (*User, error)
 	AuthenticateUser(ctx context.Context, name, encryptedPassword string) (uuid.UUID, error)
+	GetUserByName(ctx context.Context, name string) (*User, error)
+	GetUserEPByName(ctx context.Context, name string) (string, error)
 }
 
 var _ IUserRepo = (*UserRepo)(nil)
@@ -58,6 +60,18 @@ func (userRepo *UserRepo) AuthenticateUser(ctx context.Context, name, encryptedP
 	return user.ID, userRepo.DB.NewSelect().
 		Model(_user).
 		Where("name = ?", name).
-		Where("encrypted_password", encryptedPassword).
+		Where("encrypted_password = ?", encryptedPassword).
 		Scan(ctx, &user)
+}
+
+func (userRepo *UserRepo) GetUserEPByName(ctx context.Context, name string) (string, error) {
+	var ep string
+	return ep, userRepo.DB.NewSelect().
+		Model(_user).Column("encrypted_password").Where("name = ?", name).Scan(ctx, &ep)
+}
+
+func (userRepo *UserRepo) GetUserByName(ctx context.Context, name string) (*User, error) {
+	user := &User{}
+	return user, userRepo.DB.NewSelect().
+		Model(user).Where("name = ?", name).Scan(ctx)
 }
