@@ -15,6 +15,7 @@ type Config struct {
 	Log      LogConfig      `mapstructure:"log"`
 	API      APIConfig      `mapstructure:"api"`
 	Database DatabaseConfig `mapstructure:"database"`
+	Auth     AuthConfig     `mapstructure:"auth"`
 
 	Blockstore BlockStoreConfig `mapstructure:"blockstore"`
 }
@@ -30,6 +31,10 @@ type APIConfig struct {
 type DatabaseConfig struct {
 	Connection string `mapstructure:"connection"`
 	Debug      bool   `mapstructure:"debug"`
+}
+
+type AuthConfig struct {
+	SecretKey []byte `mapstructure:"secretKey"`
 }
 
 func InitConfig() error {

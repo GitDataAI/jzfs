@@ -46,6 +46,7 @@ var daemonCmd = &cobra.Command{
 			fx_opt.Override(new(*config.Config), cfg),
 			fx_opt.Override(new(*config.APIConfig), &cfg.API),
 			fx_opt.Override(new(*config.DatabaseConfig), &cfg.Database),
+			fx_opt.Override(new(*config.AuthConfig), &cfg.Auth),
 			fx_opt.Override(new(params.AdapterConfig), &cfg.Blockstore),
 			//blockstore
 			fx_opt.Override(new(block.Adapter), factory.BuildBlockAdapter),
