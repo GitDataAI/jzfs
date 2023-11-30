@@ -62,7 +62,8 @@ func SetupAPI(lc fx.Lifecycle, apiConfig *config.APIConfig, authCfg *config.Auth
 		}),
 	)
 
-	api.HandlerFromMuxWithBaseURL(controller, r, APIV1Prefix)
+	//api.HandlerFromMuxWithBaseURL(controller, r, APIV1Prefix)
+	api.HandlerFromMux(controller, r)
 
 	url, err := url.Parse(apiConfig.Listen)
 	if err != nil {
