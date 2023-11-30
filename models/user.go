@@ -25,7 +25,6 @@ type User struct {
 type IUserRepo interface {
 	GetUser(ctx context.Context, id uuid.UUID) (*User, error)
 	Insert(ctx context.Context, user *User) (*User, error)
-	AuthenticateUser(ctx context.Context, name, encryptedPassword string) (uuid.UUID, error)
 	GetUserByName(ctx context.Context, name string) (*User, error)
 	GetUserEPByName(ctx context.Context, name string) (string, error)
 }
@@ -51,15 +50,6 @@ func (userRepo *UserRepo) Insert(ctx context.Context, user *User) (*User, error)
 		return nil, err
 	}
 	return user, nil
-}
-
-func (userRepo *UserRepo) AuthenticateUser(ctx context.Context, name, encryptedPassword string) (uuid.UUID, error) {
-	user := &User{}
-	return user.ID, userRepo.DB.NewSelect().
-		Model(user).
-		Where("name = ?", name).
-		Where("encrypted_password = ?", encryptedPassword).
-		Scan(ctx)
 }
 
 func (userRepo *UserRepo) GetUserEPByName(ctx context.Context, name string) (string, error) {
