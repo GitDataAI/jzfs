@@ -1,7 +1,9 @@
 package apiimpl
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/go-openapi/swag"
 	"github.com/jiaozifs/jiaozifs/auth"
@@ -17,10 +19,9 @@ import (
 )
 
 const (
-	expirationDuration      = time.Hour
-	passwordCost            = 12
-	TokenSessionKeyName     = "token"
-	InternalAuthSessionName = "internal_auth_session"
+	expirationDuration = time.Hour
+	// httpStatusClientClosedRequest used as internal status code when request context is cancelled
+	httpStatusClientClosedRequest = 499
 )
 
 var _ api.ServerInterface = (*APIController)(nil)
@@ -99,10 +100,10 @@ func writeError(w http.ResponseWriter, r *http.Request, code int, v interface{})
 
 func writeResponse(w http.ResponseWriter, r *http.Request, code int, response interface{}) {
 	// check first if the client canceled the request
-	//if httputil.IsRequestCanceled(r) {
-	//	w.WriteHeader(httpStatusClientClosedRequest) // Client closed request
-	//	return
-	//}
+	if isRequestCanceled(r) {
+		w.WriteHeader(httpStatusClientClosedRequest) // Client closed request
+		return
+	}
 	// nobody - just status code
 	if response == nil {
 		w.WriteHeader(code)
@@ -116,4 +117,8 @@ func writeResponse(w http.ResponseWriter, r *http.Request, code int, response in
 	if err != nil {
 		log.Errorf("code %d, Failed to write encoded json response", code)
 	}
+}
+
+func isRequestCanceled(r *http.Request) bool {
+	return errors.Is(r.Context().Err(), context.Canceled)
 }
