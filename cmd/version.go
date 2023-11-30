@@ -3,9 +3,9 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/jiaozifs/jiaozifs/api"
-	"github.com/jiaozifs/jiaozifs/config"
 	"github.com/jiaozifs/jiaozifs/version"
+
+	"github.com/jiaozifs/jiaozifs/api"
 	"github.com/spf13/cobra"
 )
 
@@ -22,13 +22,7 @@ var versionCmd = &cobra.Command{
 		fmt.Println("Version ", version.UserVersion())
 		fmt.Println("API Version ", swagger.Info.Version)
 
-		//get runtime version
-		cfg, err := config.LoadConfig(cfgFile)
-		if err != nil {
-			return err
-		}
-		//client, err := api.NewClient(cfg.API.Listen + apiimpl.APIV1Prefix)
-		client, err := api.NewClient(cfg.API.Listen)
+		client, err := GetDefaultClient()
 		if err != nil {
 			return err
 		}
@@ -37,10 +31,12 @@ var versionCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+
 		okResp, err := api.ParseGetVersionResponse(versionResp)
 		if err != nil {
 			return err
 		}
+
 		if okResp.JSON200 == nil {
 			return fmt.Errorf("request version fail %d %s", okResp.HTTPResponse.StatusCode, okResp.HTTPResponse.Body)
 		}

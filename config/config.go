@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-
 	"os"
 	"path"
 
@@ -16,7 +15,8 @@ type Config struct {
 	Log      LogConfig      `mapstructure:"log"`
 	API      APIConfig      `mapstructure:"api"`
 	Database DatabaseConfig `mapstructure:"database"`
-	Auth     AuthConfig     `mapstructure:"auth"`
+
+	Blockstore BlockStoreConfig `mapstructure:"blockstore"`
 }
 
 type LogConfig struct {
@@ -30,10 +30,6 @@ type APIConfig struct {
 type DatabaseConfig struct {
 	Connection string `mapstructure:"connection"`
 	Debug      bool   `mapstructure:"debug"`
-}
-
-type AuthConfig struct {
-	SecretKey []byte `mapstructure:"secretKey"`
 }
 
 func InitConfig() error {
@@ -55,7 +51,7 @@ func InitConfig() error {
 		for k, v := range data {
 			viper.SetDefault(k, v)
 		}
-		err = os.MkdirAll(jiaoziHome, 0777)
+		err = os.MkdirAll(jiaoziHome, 0755)
 		if err != nil {
 			return err
 		}

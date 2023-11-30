@@ -28,11 +28,6 @@ func SetupAPI(lc fx.Lifecycle, apiConfig *config.APIConfig, controller APIContro
 		return err
 	}
 
-	//sessionStore := sessions.NewCookieStore([]byte(authCfg.SecretKey))
-
-	// Clear out the servers array in the swagger spec, that skips validating
-	// that server names match. We don't know how this thing will be run.
-	swagger.Servers = nil
 	// This is how you set up a basic chi router
 	r := chi.NewRouter()
 
@@ -59,12 +54,11 @@ func SetupAPI(lc fx.Lifecycle, apiConfig *config.APIConfig, controller APIContro
 					return nil
 				},
 			},
+			SilenceServersWarning: true,
 		}),
 	)
 
-	//api.HandlerFromMuxWithBaseURL(controller, r, APIV1Prefix)
-	api.HandlerFromMux(controller, r)
-
+	api.HandlerFromMuxWithBaseURL(controller, r, APIV1Prefix)
 	url, err := url.Parse(apiConfig.Listen)
 	if err != nil {
 		return err

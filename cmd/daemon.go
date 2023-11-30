@@ -2,6 +2,12 @@ package cmd
 
 import (
 	"context"
+
+	"github.com/jiaozifs/jiaozifs/block/params"
+
+	"github.com/jiaozifs/jiaozifs/block"
+	"github.com/jiaozifs/jiaozifs/block/factory"
+
 	logging "github.com/ipfs/go-log/v2"
 	apiImpl "github.com/jiaozifs/jiaozifs/api/api_impl"
 	"github.com/jiaozifs/jiaozifs/config"
@@ -40,7 +46,9 @@ var daemonCmd = &cobra.Command{
 			fx_opt.Override(new(*config.Config), cfg),
 			fx_opt.Override(new(*config.APIConfig), &cfg.API),
 			fx_opt.Override(new(*config.DatabaseConfig), &cfg.Database),
-			fx_opt.Override(new(*config.AuthConfig), &cfg.Auth),
+			fx_opt.Override(new(params.AdapterConfig), &cfg.Blockstore),
+			//blockstore
+			fx_opt.Override(new(block.Adapter), factory.BuildBlockAdapter),
 			//database
 			fx_opt.Override(new(*bun.DB), models.SetupDatabase),
 			fx_opt.Override(fx_opt.NextInvoke(), migrations.MigrateDatabase),

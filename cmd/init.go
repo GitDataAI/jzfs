@@ -1,7 +1,10 @@
 package cmd
 
 import (
+	"os"
+
 	"github.com/jiaozifs/jiaozifs/config"
+	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -16,7 +19,16 @@ var initCmd = &cobra.Command{
 		return viper.BindPFlag("database.connection", cmd.Flags().Lookup("db"))
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return config.InitConfig()
+		err := config.InitConfig()
+		if err != nil {
+			return err
+		}
+		//create a blockstore in home path for default usage
+		defaultBsPath, err := homedir.Expand(config.DefaultLocalBSPath)
+		if err != nil {
+			return err
+		}
+		return os.MkdirAll(defaultBsPath, 0755)
 	},
 }
 
