@@ -32,6 +32,11 @@ jobs:
         run: |
           make build
 
+      - uses: docker-practice/actions-setup-docker@master
+        timeout-minutes: 12
+      - run: |
+          docker version
+
       - name: Test
         run: |
           go test -coverpkg=./... -coverprofile=coverage.out -covermode=atomic -timeout=30m -parallel=4  -v ./...

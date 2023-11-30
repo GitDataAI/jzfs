@@ -4,3 +4,6 @@ skip:
     - .vscode
   file:
     - jzfs
+  extension:
+    - .input
+    - .output

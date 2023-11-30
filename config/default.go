@@ -1,5 +1,7 @@
 package config
 
+var DefaultLocalBSPath = "~/.jiaozifs/blockstore"
+
 var defaultCfg = Config{
 	Path: "~/.jiaozifs/config.toml",
 	Log: LogConfig{
@@ -7,5 +9,20 @@ var defaultCfg = Config{
 	},
 	API: APIConfig{
 		Listen: "http://127.0.0.1:34913",
+	},
+	Blockstore: BlockStoreConfig{
+		Type:                   "local",
+		DefaultNamespacePrefix: nil,
+		Local: (*struct {
+			Path                    string   `mapstructure:"path"`
+			ImportEnabled           bool     `mapstructure:"import_enabled"`
+			ImportHidden            bool     `mapstructure:"import_hidden"`
+			AllowedExternalPrefixes []string `mapstructure:"allowed_external_prefixes"`
+		})(&struct {
+			Path                    string
+			ImportEnabled           bool
+			ImportHidden            bool
+			AllowedExternalPrefixes []string
+		}{Path: DefaultLocalBSPath, ImportEnabled: false, ImportHidden: false, AllowedExternalPrefixes: nil}),
 	},
 }
