@@ -3,8 +3,9 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/jiaozifs/jiaozifs/api"
 	"testing"
+
+	"github.com/jiaozifs/jiaozifs/api"
 )
 
 func TestLogin(t *testing.T) {

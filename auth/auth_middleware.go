@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
+
 	"github.com/jiaozifs/jiaozifs/models"
 	"golang.org/x/crypto/bcrypt"
 )
