@@ -31,5 +31,4 @@ func TestLogin(t *testing.T) {
 	}
 	fmt.Println("Token ", okResp.JSON200.Token)
 	fmt.Println("Token Expiration ", okResp.JSON200.TokenExpiration)
-	return
 }
