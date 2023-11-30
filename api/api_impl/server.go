@@ -22,7 +22,7 @@ var log = logging.Logger("rpc")
 
 const APIV1Prefix = "/api/v1"
 
-func SetupAPI(lc fx.Lifecycle, apiConfig *config.APIConfig, authCfg *config.AuthConfig, controller APIController) error {
+func SetupAPI(lc fx.Lifecycle, apiConfig *config.APIConfig, controller APIController) error {
 	swagger, err := api.GetSwagger()
 	if err != nil {
 		return err
