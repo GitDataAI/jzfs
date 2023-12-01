@@ -18,11 +18,54 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
+	"github.com/oapi-codegen/runtime"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 const (
-	Jwt_tokenScopes = "jwt_token.Scopes"
+	Basic_authScopes = "basic_auth.Scopes"
+	Jwt_tokenScopes  = "jwt_token.Scopes"
 )
+
+// Defines values for ObjectStatsPathType.
+const (
+	CommonPrefix ObjectStatsPathType = "common_prefix"
+	Object       ObjectStatsPathType = "object"
+)
+
+// ObjectStats defines model for ObjectStats.
+type ObjectStats struct {
+	Checksum string `json:"checksum"`
+
+	// ContentType Object media type
+	ContentType *string             `json:"content_type,omitempty"`
+	Metadata    *ObjectUserMetadata `json:"metadata,omitempty"`
+
+	// Mtime Unix Epoch in seconds
+	Mtime    int64               `json:"mtime"`
+	Path     string              `json:"path"`
+	PathType ObjectStatsPathType `json:"path_type"`
+
+	// PhysicalAddress The location of the object on the underlying object store.
+	// Formatted as a native URI with the object store type as scheme ("s3://...", "gs://...", etc.)
+	// Or, in the case of presign=true, will be an HTTP URL to be consumed via regular HTTP GET
+	PhysicalAddress string `json:"physical_address"`
+
+	// PhysicalAddressExpiry If present and nonzero, physical_address is a pre-signed URL and
+	// will expire at this Unix Epoch time.  This will be shorter than
+	// the pre-signed URL lifetime if an authentication token is about
+	// to expire.
+	//
+	// This field is *optional*.
+	PhysicalAddressExpiry *int64 `json:"physical_address_expiry,omitempty"`
+	SizeBytes             *int64 `json:"size_bytes,omitempty"`
+}
+
+// ObjectStatsPathType defines model for ObjectStats.PathType.
+type ObjectStatsPathType string
+
+// ObjectUserMetadata defines model for ObjectUserMetadata.
+type ObjectUserMetadata map[string]string
 
 // VersionResult defines model for VersionResult.
 type VersionResult struct {
@@ -32,6 +75,54 @@ type VersionResult struct {
 	// Version program version
 	Version string `json:"version"`
 }
+
+// DeleteObjectParams defines parameters for DeleteObject.
+type DeleteObjectParams struct {
+	// Path relative to the ref
+	Path string `form:"path" json:"path"`
+}
+
+// GetObjectParams defines parameters for GetObject.
+type GetObjectParams struct {
+	Presign *bool `form:"presign,omitempty" json:"presign,omitempty"`
+
+	// Path relative to the ref
+	Path string `form:"path" json:"path"`
+
+	// Range Byte range to retrieve
+	Range *string `json:"Range,omitempty"`
+}
+
+// HeadObjectParams defines parameters for HeadObject.
+type HeadObjectParams struct {
+	// Path relative to the ref
+	Path string `form:"path" json:"path"`
+
+	// Range Byte range to retrieve
+	Range *string `json:"Range,omitempty"`
+}
+
+// UploadObjectMultipartBody defines parameters for UploadObject.
+type UploadObjectMultipartBody struct {
+	// Content Only a single file per upload which must be named "content".
+	Content *openapi_types.File `json:"content,omitempty"`
+}
+
+// UploadObjectParams defines parameters for UploadObject.
+type UploadObjectParams struct {
+	// StorageClass Deprecated, this capability will not be supported in future releases.
+	StorageClass *string `form:"storageClass,omitempty" json:"storageClass,omitempty"`
+
+	// Path relative to the ref
+	Path string `form:"path" json:"path"`
+
+	// IfNoneMatch Currently supports only "*" to allow uploading an object only if one doesn't exist yet.
+	// Deprecated, this capability will not be supported in future releases.
+	IfNoneMatch *string `json:"If-None-Match,omitempty"`
+}
+
+// UploadObjectMultipartRequestBody defines body for UploadObject for multipart/form-data ContentType.
+type UploadObjectMultipartRequestBody UploadObjectMultipartBody
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -106,8 +197,68 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// DeleteObject request
+	DeleteObject(ctx context.Context, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetObject request
+	GetObject(ctx context.Context, repository string, params *GetObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// HeadObject request
+	HeadObject(ctx context.Context, repository string, params *HeadObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UploadObjectWithBody request with any body
+	UploadObjectWithBody(ctx context.Context, repository string, params *UploadObjectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetVersion request
 	GetVersion(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) DeleteObject(ctx context.Context, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteObjectRequest(c.Server, repository, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetObject(ctx context.Context, repository string, params *GetObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetObjectRequest(c.Server, repository, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) HeadObject(ctx context.Context, repository string, params *HeadObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewHeadObjectRequest(c.Server, repository, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UploadObjectWithBody(ctx context.Context, repository string, params *UploadObjectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUploadObjectRequestWithBody(c.Server, repository, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) GetVersion(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -120,6 +271,293 @@ func (c *Client) GetVersion(ctx context.Context, reqEditors ...RequestEditorFn) 
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+// NewDeleteObjectRequest generates requests for DeleteObject
+func NewDeleteObjectRequest(server string, repository string, params *DeleteObjectParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/repositories/%s/objects", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "path", runtime.ParamLocationQuery, params.Path); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetObjectRequest generates requests for GetObject
+func NewGetObjectRequest(server string, repository string, params *GetObjectParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/repositories/%s/objects", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Presign != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "presign", runtime.ParamLocationQuery, *params.Presign); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "path", runtime.ParamLocationQuery, params.Path); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.Range != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "Range", runtime.ParamLocationHeader, *params.Range)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("Range", headerParam0)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewHeadObjectRequest generates requests for HeadObject
+func NewHeadObjectRequest(server string, repository string, params *HeadObjectParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/repositories/%s/objects", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "path", runtime.ParamLocationQuery, params.Path); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("HEAD", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.Range != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "Range", runtime.ParamLocationHeader, *params.Range)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("Range", headerParam0)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewUploadObjectRequestWithBody generates requests for UploadObject with any type of body
+func NewUploadObjectRequestWithBody(server string, repository string, params *UploadObjectParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/repositories/%s/objects", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.StorageClass != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "storageClass", runtime.ParamLocationQuery, *params.StorageClass); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "path", runtime.ParamLocationQuery, params.Path); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.IfNoneMatch != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "If-None-Match", runtime.ParamLocationHeader, *params.IfNoneMatch)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("If-None-Match", headerParam0)
+		}
+
+	}
+
+	return req, nil
 }
 
 // NewGetVersionRequest generates requests for GetVersion
@@ -192,8 +630,105 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// DeleteObjectWithResponse request
+	DeleteObjectWithResponse(ctx context.Context, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*DeleteObjectResponse, error)
+
+	// GetObjectWithResponse request
+	GetObjectWithResponse(ctx context.Context, repository string, params *GetObjectParams, reqEditors ...RequestEditorFn) (*GetObjectResponse, error)
+
+	// HeadObjectWithResponse request
+	HeadObjectWithResponse(ctx context.Context, repository string, params *HeadObjectParams, reqEditors ...RequestEditorFn) (*HeadObjectResponse, error)
+
+	// UploadObjectWithBodyWithResponse request with any body
+	UploadObjectWithBodyWithResponse(ctx context.Context, repository string, params *UploadObjectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadObjectResponse, error)
+
 	// GetVersionWithResponse request
 	GetVersionWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetVersionResponse, error)
+}
+
+type DeleteObjectResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteObjectResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteObjectResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetObjectResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r GetObjectResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetObjectResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type HeadObjectResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r HeadObjectResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r HeadObjectResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UploadObjectResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *ObjectStats
+}
+
+// Status returns HTTPResponse.Status
+func (r UploadObjectResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UploadObjectResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 type GetVersionResponse struct {
@@ -218,6 +753,42 @@ func (r GetVersionResponse) StatusCode() int {
 	return 0
 }
 
+// DeleteObjectWithResponse request returning *DeleteObjectResponse
+func (c *ClientWithResponses) DeleteObjectWithResponse(ctx context.Context, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*DeleteObjectResponse, error) {
+	rsp, err := c.DeleteObject(ctx, repository, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteObjectResponse(rsp)
+}
+
+// GetObjectWithResponse request returning *GetObjectResponse
+func (c *ClientWithResponses) GetObjectWithResponse(ctx context.Context, repository string, params *GetObjectParams, reqEditors ...RequestEditorFn) (*GetObjectResponse, error) {
+	rsp, err := c.GetObject(ctx, repository, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetObjectResponse(rsp)
+}
+
+// HeadObjectWithResponse request returning *HeadObjectResponse
+func (c *ClientWithResponses) HeadObjectWithResponse(ctx context.Context, repository string, params *HeadObjectParams, reqEditors ...RequestEditorFn) (*HeadObjectResponse, error) {
+	rsp, err := c.HeadObject(ctx, repository, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseHeadObjectResponse(rsp)
+}
+
+// UploadObjectWithBodyWithResponse request with arbitrary body returning *UploadObjectResponse
+func (c *ClientWithResponses) UploadObjectWithBodyWithResponse(ctx context.Context, repository string, params *UploadObjectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadObjectResponse, error) {
+	rsp, err := c.UploadObjectWithBody(ctx, repository, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUploadObjectResponse(rsp)
+}
+
 // GetVersionWithResponse request returning *GetVersionResponse
 func (c *ClientWithResponses) GetVersionWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetVersionResponse, error) {
 	rsp, err := c.GetVersion(ctx, reqEditors...)
@@ -225,6 +796,80 @@ func (c *ClientWithResponses) GetVersionWithResponse(ctx context.Context, reqEdi
 		return nil, err
 	}
 	return ParseGetVersionResponse(rsp)
+}
+
+// ParseDeleteObjectResponse parses an HTTP response from a DeleteObjectWithResponse call
+func ParseDeleteObjectResponse(rsp *http.Response) (*DeleteObjectResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteObjectResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseGetObjectResponse parses an HTTP response from a GetObjectWithResponse call
+func ParseGetObjectResponse(rsp *http.Response) (*GetObjectResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetObjectResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseHeadObjectResponse parses an HTTP response from a HeadObjectWithResponse call
+func ParseHeadObjectResponse(rsp *http.Response) (*HeadObjectResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &HeadObjectResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseUploadObjectResponse parses an HTTP response from a UploadObjectWithResponse call
+func ParseUploadObjectResponse(rsp *http.Response) (*UploadObjectResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UploadObjectResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest ObjectStats
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParseGetVersionResponse parses an HTTP response from a GetVersionWithResponse call
@@ -255,6 +900,18 @@ func ParseGetVersionResponse(rsp *http.Response) (*GetVersionResponse, error) {
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// delete object. Missing objects will not return a NotFound error.
+	// (DELETE /repositories/{repository}/objects)
+	DeleteObject(w *JiaozifsResponse, r *http.Request, repository string, params DeleteObjectParams)
+	// get object content
+	// (GET /repositories/{repository}/objects)
+	GetObject(w *JiaozifsResponse, r *http.Request, repository string, params GetObjectParams)
+	// check if object exists
+	// (HEAD /repositories/{repository}/objects)
+	HeadObject(w *JiaozifsResponse, r *http.Request, repository string, params HeadObjectParams)
+
+	// (POST /repositories/{repository}/objects)
+	UploadObject(w *JiaozifsResponse, r *http.Request, repository string, params UploadObjectParams)
 	// return program and runtime version
 	// (GET /version)
 	GetVersion(w *JiaozifsResponse, r *http.Request)
@@ -263,6 +920,29 @@ type ServerInterface interface {
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
 
 type Unimplemented struct{}
+
+// delete object. Missing objects will not return a NotFound error.
+// (DELETE /repositories/{repository}/objects)
+func (_ Unimplemented) DeleteObject(w *JiaozifsResponse, r *http.Request, repository string, params DeleteObjectParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// get object content
+// (GET /repositories/{repository}/objects)
+func (_ Unimplemented) GetObject(w *JiaozifsResponse, r *http.Request, repository string, params GetObjectParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// check if object exists
+// (HEAD /repositories/{repository}/objects)
+func (_ Unimplemented) HeadObject(w *JiaozifsResponse, r *http.Request, repository string, params HeadObjectParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// (POST /repositories/{repository}/objects)
+func (_ Unimplemented) UploadObject(w *JiaozifsResponse, r *http.Request, repository string, params UploadObjectParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
 
 // return program and runtime version
 // (GET /version)
@@ -278,6 +958,277 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// DeleteObject operation middleware
+func (siw *ServerInterfaceWrapper) DeleteObject(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{"aaaa"})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{"aaaaa"})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteObjectParams
+
+	// ------------- Required query parameter "path" -------------
+
+	if paramValue := r.URL.Query().Get("path"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "path"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "path", r.URL.Query(), &params.Path)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "path", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteObject(&JiaozifsResponse{w}, r, repository, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// GetObject operation middleware
+func (siw *ServerInterfaceWrapper) GetObject(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{"aaaa"})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{"aaaaa"})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetObjectParams
+
+	// ------------- Optional query parameter "presign" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "presign", r.URL.Query(), &params.Presign)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "presign", Err: err})
+		return
+	}
+
+	// ------------- Required query parameter "path" -------------
+
+	if paramValue := r.URL.Query().Get("path"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "path"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "path", r.URL.Query(), &params.Path)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "path", Err: err})
+		return
+	}
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Range" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Range")]; found {
+		var Range string
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Range", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Range", valueList[0], &Range, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Range", Err: err})
+			return
+		}
+
+		params.Range = &Range
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetObject(&JiaozifsResponse{w}, r, repository, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// HeadObject operation middleware
+func (siw *ServerInterfaceWrapper) HeadObject(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{"aaaa"})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{"aaaaa"})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params HeadObjectParams
+
+	// ------------- Required query parameter "path" -------------
+
+	if paramValue := r.URL.Query().Get("path"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "path"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "path", r.URL.Query(), &params.Path)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "path", Err: err})
+		return
+	}
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Range" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Range")]; found {
+		var Range string
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Range", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Range", valueList[0], &Range, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Range", Err: err})
+			return
+		}
+
+		params.Range = &Range
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.HeadObject(&JiaozifsResponse{w}, r, repository, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// UploadObject operation middleware
+func (siw *ServerInterfaceWrapper) UploadObject(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{"aaaa"})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{"aaaaa"})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UploadObjectParams
+
+	// ------------- Optional query parameter "storageClass" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "storageClass", r.URL.Query(), &params.StorageClass)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storageClass", Err: err})
+		return
+	}
+
+	// ------------- Required query parameter "path" -------------
+
+	if paramValue := r.URL.Query().Get("path"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "path"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "path", r.URL.Query(), &params.Path)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "path", Err: err})
+		return
+	}
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "If-None-Match" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("If-None-Match")]; found {
+		var IfNoneMatch string
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "If-None-Match", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "If-None-Match", valueList[0], &IfNoneMatch, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "If-None-Match", Err: err})
+			return
+		}
+
+		params.IfNoneMatch = &IfNoneMatch
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UploadObject(&JiaozifsResponse{w}, r, repository, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
 
 // GetVersion operation middleware
 func (siw *ServerInterfaceWrapper) GetVersion(w http.ResponseWriter, r *http.Request) {
@@ -410,6 +1361,18 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/repositories/{repository}/objects", wrapper.DeleteObject)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/repositories/{repository}/objects", wrapper.GetObject)
+	})
+	r.Group(func(r chi.Router) {
+		r.Head(options.BaseURL+"/repositories/{repository}/objects", wrapper.HeadObject)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/repositories/{repository}/objects", wrapper.UploadObject)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/version", wrapper.GetVersion)
 	})
 
@@ -419,15 +1382,37 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"Gus4chqDEeO7Q764Wfw7AAD//58N5ajGGQAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

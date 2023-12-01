@@ -1,4 +1,4 @@
-package apiimpl
+package controller
 
 import (
 	"net/http"
@@ -8,13 +8,11 @@ import (
 	"go.uber.org/fx"
 )
 
-var _ api.ServerInterface = (*APIController)(nil)
-
-type APIController struct {
+type VersionController struct {
 	fx.In
 }
 
-func (A APIController) GetVersion(w *api.JiaozifsResponse, _ *http.Request) {
+func (A VersionController) GetVersion(w *api.JiaozifsResponse, _ *http.Request) {
 	swagger, err := api.GetSwagger()
 	if err != nil {
 		w.RespError(err)
