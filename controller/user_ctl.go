@@ -14,7 +14,7 @@ import (
 type UserController struct {
 	fx.In
 
-	UserRepo models.IUserRepo
+	UserRepo *models.IUserRepo
 	Config   *config.Config
 }
 
@@ -28,7 +28,7 @@ func (A UserController) Login(w *api.JiaozifsResponse, r *http.Request) {
 	}
 
 	// Perform login
-	resp, err := login.Login(A.UserRepo, A.Config)
+	resp, err := login.Login(*A.UserRepo, A.Config)
 	if err != nil {
 		w.RespError(err)
 		return
