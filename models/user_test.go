@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/brianvoe/gofakeit/v6"
+
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/google/uuid"
@@ -43,28 +45,21 @@ func setup(ctx context.Context, t *testing.T) (*embeddedpostgres.EmbeddedPostgre
 	require.NoError(t, err)
 	return postgres, db
 }
+
 func TestNewUserRepo(t *testing.T) {
 	ctx := context.Background()
 	postgres, db := setup(ctx, t)
 	defer postgres.Stop() //nolint
 
 	repo := models.NewUserRepo(db)
-	userModel := &models.User{
-		Name:              "aaa",
-		Email:             "xx@gmail.com",
-		EncryptedPassword: "aaaaa",
-		CurrentSignInAt:   time.Now(),
-		LastSignInAt:      time.Now(),
-		CurrentSignInIP:   "127.0.0.1",
-		LastSignInIP:      "127.0.0.1",
-		CreatedAt:         time.Now(),
-		UpdatedAt:         time.Now(),
-	}
+
+	userModel := &models.User{}
+	require.NoError(t, gofakeit.Struct(userModel))
 	newUser, err := repo.Insert(ctx, userModel)
 	require.NoError(t, err)
 	require.NotEqual(t, uuid.Nil, newUser.ID)
 
-	user, err := repo.GetUser(ctx, newUser.ID)
+	user, err := repo.Get(ctx, newUser.ID)
 	require.NoError(t, err)
 
 	require.True(t, cmp.Equal(userModel.UpdatedAt, user.UpdatedAt, dbTimeCmpOpt))

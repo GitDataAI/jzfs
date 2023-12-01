@@ -10,7 +10,7 @@ import (
 )
 
 type User struct {
-	bun.BaseModel     `bun:"table:users,alias:u"`
+	bun.BaseModel     `bun:"table:users"`
 	ID                uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
 	Name              string    `bun:"name,notnull"`
 	Email             string    `bun:"email,notnull"`
@@ -24,7 +24,7 @@ type User struct {
 }
 
 type IUserRepo interface {
-	GetUser(ctx context.Context, id uuid.UUID) (*User, error)
+	Get(ctx context.Context, id uuid.UUID) (*User, error)
 	Insert(ctx context.Context, user *User) (*User, error)
 }
 
@@ -38,7 +38,7 @@ func NewUserRepo(db *bun.DB) IUserRepo {
 	return &UserRepo{db}
 }
 
-func (userRepo *UserRepo) GetUser(ctx context.Context, id uuid.UUID) (*User, error) {
+func (userRepo *UserRepo) Get(ctx context.Context, id uuid.UUID) (*User, error) {
 	user := &User{}
 	return user, userRepo.DB.NewSelect().Model(user).Where("id = ?", id).Scan(ctx)
 }

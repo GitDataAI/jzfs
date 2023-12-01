@@ -10,14 +10,13 @@ type JiaozifsResponse struct {
 }
 
 func (response *JiaozifsResponse) RespJSON(v interface{}) {
-	data, err := json.Marshal(v)
+	response.Header().Set("Content-Type", "application/json")
+	response.WriteHeader(http.StatusOK)
+	err := json.NewEncoder(response).Encode(v)
 	if err != nil {
 		response.RespError(err)
 		return
 	}
-	response.Header().Set("Content-Type", "application/json")
-	response.WriteHeader(http.StatusOK)
-	_, _ = response.Write(data)
 }
 
 func (response *JiaozifsResponse) RespError(err error) {
