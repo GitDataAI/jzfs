@@ -26,6 +26,8 @@ type User struct {
 type IUserRepo interface {
 	Get(ctx context.Context, id uuid.UUID) (*User, error)
 	Insert(ctx context.Context, user *User) (*User, error)
+
+	GetEPByName(ctx context.Context, name string) (string, error)
 }
 
 var _ IUserRepo = (*UserRepo)(nil)
@@ -49,4 +51,13 @@ func (userRepo *UserRepo) Insert(ctx context.Context, user *User) (*User, error)
 		return nil, err
 	}
 	return user, nil
+}
+
+func (userRepo *UserRepo) GetEPByName(ctx context.Context, name string) (string, error) {
+	var ep string
+	return ep, userRepo.DB.NewSelect().
+		Model((*User)(nil)).Column("encrypted_password").
+		Where("name = ?", name).
+		Scan(ctx, &ep)
+
 }

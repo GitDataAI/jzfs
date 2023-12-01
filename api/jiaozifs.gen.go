@@ -33,6 +33,15 @@ const (
 	Object       ObjectStatsPathType = "object"
 )
 
+// AuthenticationToken defines model for AuthenticationToken.
+type AuthenticationToken struct {
+	// Token a JWT token that could be used to authenticate requests
+	Token string `json:"token"`
+
+	// TokenExpiration Unix Epoch in seconds
+	TokenExpiration *int64 `json:"token_expiration,omitempty"`
+}
+
 // ObjectStats defines model for ObjectStats.
 type ObjectStats struct {
 	Checksum string `json:"checksum"`
@@ -121,8 +130,17 @@ type UploadObjectParams struct {
 	IfNoneMatch *string `json:"If-None-Match,omitempty"`
 }
 
+// LoginJSONBody defines parameters for Login.
+type LoginJSONBody struct {
+	Password string `json:"password"`
+	Username string `json:"username"`
+}
+
 // UploadObjectMultipartRequestBody defines body for UploadObject for multipart/form-data ContentType.
 type UploadObjectMultipartRequestBody UploadObjectMultipartBody
+
+// LoginJSONRequestBody defines body for Login for application/json ContentType.
+type LoginJSONRequestBody LoginJSONBody
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -209,6 +227,11 @@ type ClientInterface interface {
 	// UploadObjectWithBody request with any body
 	UploadObjectWithBody(ctx context.Context, repository string, params *UploadObjectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// LoginWithBody request with any body
+	LoginWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	Login(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetVersion request
 	GetVersion(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
@@ -251,6 +274,30 @@ func (c *Client) HeadObject(ctx context.Context, repository string, params *Head
 
 func (c *Client) UploadObjectWithBody(ctx context.Context, repository string, params *UploadObjectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUploadObjectRequestWithBody(c.Server, repository, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) LoginWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewLoginRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) Login(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewLoginRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -560,6 +607,46 @@ func NewUploadObjectRequestWithBody(server string, repository string, params *Up
 	return req, nil
 }
 
+// NewLoginRequest calls the generic Login builder with application/json body
+func NewLoginRequest(server string, body LoginJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewLoginRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewLoginRequestWithBody generates requests for Login with any type of body
+func NewLoginRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/user/login")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewGetVersionRequest generates requests for GetVersion
 func NewGetVersionRequest(server string) (*http.Request, error) {
 	var err error
@@ -641,6 +728,11 @@ type ClientWithResponsesInterface interface {
 
 	// UploadObjectWithBodyWithResponse request with any body
 	UploadObjectWithBodyWithResponse(ctx context.Context, repository string, params *UploadObjectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadObjectResponse, error)
+
+	// LoginWithBodyWithResponse request with any body
+	LoginWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*LoginResponse, error)
+
+	LoginWithResponse(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*LoginResponse, error)
 
 	// GetVersionWithResponse request
 	GetVersionWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetVersionResponse, error)
@@ -731,6 +823,28 @@ func (r UploadObjectResponse) StatusCode() int {
 	return 0
 }
 
+type LoginResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *AuthenticationToken
+}
+
+// Status returns HTTPResponse.Status
+func (r LoginResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r LoginResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetVersionResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -787,6 +901,23 @@ func (c *ClientWithResponses) UploadObjectWithBodyWithResponse(ctx context.Conte
 		return nil, err
 	}
 	return ParseUploadObjectResponse(rsp)
+}
+
+// LoginWithBodyWithResponse request with arbitrary body returning *LoginResponse
+func (c *ClientWithResponses) LoginWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*LoginResponse, error) {
+	rsp, err := c.LoginWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseLoginResponse(rsp)
+}
+
+func (c *ClientWithResponses) LoginWithResponse(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*LoginResponse, error) {
+	rsp, err := c.Login(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseLoginResponse(rsp)
 }
 
 // GetVersionWithResponse request returning *GetVersionResponse
@@ -872,6 +1003,32 @@ func ParseUploadObjectResponse(rsp *http.Response) (*UploadObjectResponse, error
 	return response, nil
 }
 
+// ParseLoginResponse parses an HTTP response from a LoginWithResponse call
+func ParseLoginResponse(rsp *http.Response) (*LoginResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &LoginResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AuthenticationToken
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseGetVersionResponse parses an HTTP response from a GetVersionWithResponse call
 func ParseGetVersionResponse(rsp *http.Response) (*GetVersionResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -912,6 +1069,9 @@ type ServerInterface interface {
 
 	// (POST /repositories/{repository}/objects)
 	UploadObject(w *JiaozifsResponse, r *http.Request, repository string, params UploadObjectParams)
+	// perform a login
+	// (POST /user/login)
+	Login(w *JiaozifsResponse, r *http.Request)
 	// return program and runtime version
 	// (GET /version)
 	GetVersion(w *JiaozifsResponse, r *http.Request)
@@ -941,6 +1101,12 @@ func (_ Unimplemented) HeadObject(w *JiaozifsResponse, r *http.Request, reposito
 
 // (POST /repositories/{repository}/objects)
 func (_ Unimplemented) UploadObject(w *JiaozifsResponse, r *http.Request, repository string, params UploadObjectParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// perform a login
+// (POST /user/login)
+func (_ Unimplemented) Login(w *JiaozifsResponse, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -1230,6 +1396,21 @@ func (siw *ServerInterfaceWrapper) UploadObject(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
+// Login operation middleware
+func (siw *ServerInterfaceWrapper) Login(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.Login(&JiaozifsResponse{w}, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
 // GetVersion operation middleware
 func (siw *ServerInterfaceWrapper) GetVersion(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -1373,6 +1554,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/repositories/{repository}/objects", wrapper.UploadObject)
 	})
 	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/user/login", wrapper.Login)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/version", wrapper.GetVersion)
 	})
 
@@ -1382,37 +1566,40 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+RYX2/cuBH/KgR7QBNXq13bQR4MHA53OfvOrZMLHDt9OLnGrDRaMaFIHjmyvTH2uxck",
-	"pf0n7cYJmgLXvhhecTgz/HHmN8N55LmujVaoyPGTR+7yCmsI//42/YA5vSOIK8Zqg5YEhl95hflH19T+",
-	"f5ob5CfckRVqxhcJz7UiVHQbFx55gS63wpDQip+0elmNhQAWRJK+ihoJCiDw27+zWPIT/pfxytVx6+c4",
-	"Krt2aF93O/xuEvWA5WslHtip0XnFhGIOc60KxxNealsD8RMuFL18sXJHKMIZWq/RAFWDZ/ULy4Oi8oj8",
-	"7jGttbo1FkvxwBOug5f8ZuCgppo7kYO8haKw6Fzf66sKmdQ5+J9Ml4wqZFEh0yr8alSBVs6FmnULjrTF",
-	"NFNn4WSEBQPHgCkgcYfs+vKc3Quq1lWFHeE6vGiAF9mzjLvjk/E4TdOMJyzjM7f6hZSnzzP1m008ml5V",
-	"Dg69h8aiEzP1PdkGE3YvpGRTZKDYr1dXb9n15QUj7b/kWrmmxoLdCWAWZ40EG2V+Ob3KFH8CXLf4YISd",
-	"91E7j26gIgaqYEqrT2h1wrYVMOGBMRZH3mUsgnugikwFv4N6ZECMKuHYWgT5EEsZu/KfuyO6SltCy6gC",
-	"lSkPyZZiKUr0G5koPR7QUIWKRHu5pD+iCg5NdUOZIt3aTzOVqWCpFCgLL3Kgw0lBHqQBqSfEsBOf8HY6",
-	"p5jBn92wSLjFPxphsQgx3WX8QMy2+bGeDV0SrmK+TYJFwgeS9uSRQ1GIeKS3G1TTi4GevvdondDqEl0j",
-	"qc9VYMTtXRTpx4ltVLiQTmAg5nbuNVbPLNS7925BuJJbd6mPkL8rzBsraP4uJGI4xhScyG99yCyJ2m8K",
-	"n1emKyITOVh/FLgUF97f+I0nXEHdXbVV/h4bqm4dus1TgBH/wLlX9uGebkNwBj8QLNqzLnz+/s8rnqy5",
-	"E1b7/mhR5Pu9WUrs88RBLferWUrsVuMBFqrU/Rv9IEB/EqWLLPTj23OecClyVC7we2viRwN5hewonfCE",
-	"N1a2x/TceH9/n0JYTrWdjdu9bnxx/ur0zbvT0VE6SSuqZYhjQRLXjUZ7y3Djh+kknQTwDCowgp/w4/Ap",
-	"JlqIirFFo50gbQW68ePy13wxjuHUVhSJFI7gEyOwzXnBT/jP4XvMR+6D1Rnt/fWSR5MXfYDaahH1Fcw1",
-	"eY7OlY2U4XpeTA6Hyq6/Dm3FJyyi0HFf6EzbqSgKVFFiwPQbTWe6UVHF0aQvQFqzGtSc+ZxDRy5mUlPX",
-	"4CtEC0Jb8FL2Wji3KpktiStNzCI1VjFgnUWG1mqb+kCCmfOZ3EF7s0j4DKkP7C9IS1QNWKiR0Pqt207/",
-	"NCdkFtQMfVG0SFbgnQ9nfIDahPgIlP39ZHQ4OTrmSYz6CqEIadaG5KXX0OVhoFPj6771sv+KCp49y7Li",
-	"YOT/JD+wH57/7fl3Q4zVptUfDdr5Sn9b0jcstFunWksExReLm14EhVtq28FIxUa21W6sc0IaObII9ar1",
-	"3ChNU6EgeLHt5SIZjsvOVNICFNx4FT+OLlDN1sgTnloFT69gtrmrT/MX4Gj0WheiFJ7r9wl78aPJy/8W",
-	"MgYsCZDsWyLU7Y9RuLH9a8PwW6B+PDnqs8YlFsJ6ZEj3G8FS27UmeRO0i7Yn/7zdJ7Librr1rFQuue9w",
-	"slMwtout2MuhwwZmxIKFq/IMx94BCVcKmEr8amqdIfUDbIgsPX59tvwVofhz0uUOyttxOcIj9yfhpqew",
-	"CAtd1P8jlfxPprQvHSW0b6hN6e6pwBzaO7SxI9oigfBC9C/b7XgfIoKtLBcxyMIjss3RVSvL159RYaiw",
-	"7yp7LzyUcexBOnC5xbKjhe0mJ9p/uq2bhBvtBtq/ayP1PkozFnOglYlNj39eridx7JCDgamQguarLnWK",
-	"zDXGaOuvXihWNtRYfzqJ4NClO87oSFuY4SsJ4d3+GRz3+/mqsRYVyXnniWNayTnL+EHGQz2VUt+zJoDh",
-	"W21Qq8mVnIdQUcgKjU79tY0XNkdKM/UfgSAMRlaF4WBXNTgvR2+0wtFroLzaVRWy7GBnAQgJ9JMu5t+o",
-	"qUt43UgSnoTHXnrUzUzWPN0cz6582Bq+etyB+YePRFYKicygba+I3Vcir1jduICtR6dgWacs4+n6nGmP",
-	"s9vjjDgH2aiSh3uQ+uC2m6rPT4DjmHr3w6Bemw6/GKrR70GKItg/jdT2BI5ng5u+6nHbWLldEgZ61bc2",
-	"zKzDmOwMhMQvfQz3mDjhD6O75SlG+JDLpsDRNMSyz3m/a7w2Adv12n2/nG19wRPwy256c8w39NTZmset",
-	"D9IC8a7NsX6/8am7Kl7to79TAapgA6PBFr443+c3i70WOACAL3abs7v43S94B0I5Hep0l1OhruKqwmgR",
-	"Gus4chqDEeO7Q764Wfw7AAD//58N5ajGGQAA",
+	"H4sIAAAAAAAC/+RZbXPbNhL+KxhcZy7xUZRs5/JBnUwnTZ3GPSfN+CX9EOo8K2IlIgEBFgBtKx799xsA",
+	"pCi+SHFzyc30+iUTE4vF4tndZxere5qqvFASpTV0ek9NmmEO/r/PS5uhtDwFy5W8VB9Rus+FVgVqy9EL",
+	"2fozQ5NqXjhROqVAfvntkvhFYjOwJFWlYGSOpDTIiFUEGu1INP5eorGGRtSuCqRTaqzmcknXUTjhGu8K",
+	"riFo7x52JfkdOSlUmhEuicFUSeZULZTOwdIp5dI+fdLo5tLiEjVdryPqTuYaGZ2+r+4y28ip+QdMrbPh",
+	"V/+/CwsBpDYEaYbpR1PmHo6u9amSFqW9Dgtdy4NekiPjQLzIAAA5WmBgwW3/TuOCTunfxo3XxpXLxkHZ",
+	"lUH9ut7hdlue41fELKIF2Gzwrm5hc1GUDpH3LrxyJa8LjQt+R6Ma1NnARYtsZXgK4hoY02hM3+rLDIlQ",
+	"ISCJWhCbIQkKiZL+r1Iy1GLF5bJeMFZpjBP50t/MIiNgCBAJlt8guTo/JbfcZtuq/A7vDifq4UXyKKHm",
+	"eDoex3Gc0IgkdGmav9Cm8eNE/qojh6ZTlYJBZ2Gh0fClfGZ1iRG55UK4JABJXl1eviVX52cuF+ZIUiVN",
+	"mSMjNxyIxmUpQAeZn08uE0kfAFfIkVUftdNgBkpLQDIilfyEWkWkq4BwB0yhceRMRubNA8kS6e326pGA",
+	"JTbjhmxFkAuxmJBL97m+osmUtqhd9stEOkg6igVfoNtI+MLhAS22qajDGTRXpU2kVdX5cSIT6U9acBTM",
+	"iRwof1MQB7FH6gExbPgnvJ6vbMjgP0oUm4wfiNkqP7azoU7C3czSStrpPQXGeLjS2zbb9sixq+8dasOV",
+	"PEdTCtvnKij49U0Q6ceJLqV3SC0wEHM79xZaLTXku/d2IGzktk3qI+R8hWmpuV1d+ET015iD4em1C5lN",
+	"zXKb/Ofm6MzaInCw+shxI86dveEbjaiEvHa1ls6Ppc2uDZr2LaDg/8KVU/bh1l5vit4cQaN+WYfPL79d",
+	"0mjLHL/at0dxlu63ZiOxzxIDudivZiOxW40DmMuF6nv0Awf1iS9MYKHnb09pRAVPURrP79URzwtIMyRH",
+	"8YRGtNSiuqbjxtvb2xj8cqz0clztNeOz0xcnby5ORkfxJM5sLnwccytw+9Bw3ibc6GE8iScevAIlFJxO",
+	"6bH/FBLNR8VYY6EMt0pzNOP7zV+r9TiEU1VRBFp/BZcYnm1OGZ3Sn/z3kI/UBasplLPXSR5NnvQBqqpF",
+	"0MeIKdMUjVmUQnj3PJkcDpVd5w6l+SdkQei4L/RS6TlnDGWQGDj6jbIvVSmDiqNJX8AqRXKQq6az8plU",
+	"5jm4ClGBUBW8mLzmxjQlsyJxqSzRaEstCZD6RIJaKx27QIKlcZlcQztbR3SJtg/sz2g3qBagIUeL2m3t",
+	"Gv3jyrWCIJfoiqJGqzneuHDGO8gLHx+esp9NRoeTo2MahajPEJhPsyokz52GOg89nRau7msn+++g4NGj",
+	"JGEHI/dP9AP54fE/Hn83xFhVWv1eol41+quS3jqh2jpXSiBIul7PehHkvVS1g4GKC1FVu7FKLdqRsRoh",
+	"b7rwVmmacwneiq6V62g4Luujogogb8aL8HF0hnK5RZ7w0Cp4cgnL9q4+zZ+BsaPXivEFd1y/T9iJH02e",
+	"/q+QKUBbDoJ8S4Tq/SEKW9u/NAy/BerHk6M+a5wj49oh495n3X5tofRWk9wG7azqyT9/7gNZcTfdOlZa",
+	"bLjvcLJTMLSLldjToct6ZkRGvKscw5ELsNwsOMwFfjG1LtH2A2yILB1+fbZ8hcD+nHS5g/J2OIeH5/6f",
+	"gpsewiLEd1F/RSr5v0xpVzoWUL2h2tL1U4EY1DeoQ0fUIQH/QnQv2268DxFBJ8t5CDL/iKxytGll6fYz",
+	"yg8V9rmy98JDEcYeVnku17ioaaHb5ITzH37WLKKFMgPt31Uh1D5KKzSmYJsj2hb/tFmPwtghhQLmXHC7",
+	"arrUORJTFoXSzvVckkVpS+1uJxAMmnjHHY1VGpb4QoB/t38Gx/12vii1RmnFqrbEECXFiiT0IKG+ngqh",
+	"bknpwXCtNshmciVWPlQkEqbQyL9X8UJWaONEfhUI/GCkKQwHu6rB6WL0RkkcvQabZruqQpIc7CwAPoF+",
+	"VGz1jZq6iOalsNyR8NhJj+qZyZal7fFsY0Nn+OpwB+IePgLJggskBerKReQ242lG8tJ4bB06jCS1soTG",
+	"23OmPcZ2xxlhDtKqkod7kPpguk3V5yfAYUy9+2GQb02HnwzV6HcgOPPnnwRqewDHk8FNX/S4LbXoloSB",
+	"XvWt9jNrPyZ7CVzgH30M95g4onejm80tRniXipLhaO5j2eW82zUuDeqxUEsefgwZpLwzv/zQbOj7uB3A",
+	"BRhzqzQbHAA6c0Lq3n9m4raRjBqNswcF6OSrBejQT0oDgdqMUoiooNxqqy7Qjl6ESVfr4IbdwG8PY7pn",
+	"ME8ZHh4d//Pp9+Qt2OzZ+HvyytrCpf/Qo/GLo/2/7yxO687iInQWJ01nUc1A6fT9bLvPKFA7FiKwAaoO",
+	"a+duOvMhuzW03TWgebcZx34z37cn00Ov884IuXPv++3R6/vZuoVDNaeqVYBkZGCaXUETfpJy4Ow7gQIA",
+	"uP6sPW4O392CM8D7aehxthlk1k2iZIXi/i0YpqRjKPj45pCuZ+v/BAAA//9eojO3hB0AAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

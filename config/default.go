@@ -25,4 +25,7 @@ var defaultCfg = Config{
 			AllowedExternalPrefixes []string
 		}{Path: DefaultLocalBSPath, ImportEnabled: false, ImportHidden: false, AllowedExternalPrefixes: nil}),
 	},
+	Auth: AuthConfig{
+		SecretKey: []byte("THIS_MUST_BE_CHANGED_IN_PRODUCTION"),
+	},
 }

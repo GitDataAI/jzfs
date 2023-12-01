@@ -37,6 +37,18 @@ components:
       in: cookie
       name: saml_auth_session
   schemas:
+    AuthenticationToken:
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          description: a JWT token that could be used to authenticate requests
+          type: string
+        token_expiration:
+          type: integer
+          format: int64
+          description: Unix Epoch in seconds
     VersionResult:
       type: object
       required:
@@ -379,3 +391,41 @@ paths:
           description: NotFound
         420:
           description: too many requests
+  /user/login:
+    post:
+      tags:
+        - user
+      operationId: login
+      summary: perform a login
+      security: [] # No authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        200:
+          description: successful login
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: "access_token=abcde12356; Path=/; HttpOnly"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationToken"
+        401:
+          description: Unauthorized ValidationError
+        420:
+          description: too many requests
+        default:
+          description: Internal Server Error
