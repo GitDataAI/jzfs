@@ -9,17 +9,22 @@ type JiaozifsResponse struct {
 	http.ResponseWriter
 }
 
-func (response *JiaozifsResponse) RespJSON(v interface{}) {
+func (response *JiaozifsResponse) JSON(v interface{}) {
 	response.Header().Set("Content-Type", "application/json")
 	response.WriteHeader(http.StatusOK)
 	err := json.NewEncoder(response).Encode(v)
 	if err != nil {
-		response.RespError(err)
+		response.Error(err)
 		return
 	}
 }
 
-func (response *JiaozifsResponse) RespError(err error) {
-	response.WriteHeader(http.StatusOK)
+func (response *JiaozifsResponse) Error(err error) {
+	response.WriteHeader(http.StatusInternalServerError)
 	_, _ = response.Write([]byte(err.Error()))
+}
+
+func (response *JiaozifsResponse) CodeMsg(code int, msg string) {
+	response.WriteHeader(code)
+	_, _ = response.Write([]byte(msg))
 }

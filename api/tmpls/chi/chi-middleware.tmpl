@@ -174,7 +174,7 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
   {{end}}
 
   handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-    siw.Handler.{{.OperationId}}(&JiaozifsResponse{w}, r{{genParamNames .PathParams}}{{if .RequiresParamObject}}, params{{end}})
+    siw.Handler.{{.OperationId}}(r.Context(), &JiaozifsResponse{w}, r{{genParamNames .PathParams}}{{if .RequiresParamObject}}, params{{end}})
   }))
 
   {{if opts.Compatibility.ApplyChiMiddlewareFirstToLast}}

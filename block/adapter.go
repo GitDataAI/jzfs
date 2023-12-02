@@ -75,7 +75,6 @@ type ObjectPointer struct {
 // contents but different option values, the first supplied option
 // value is retained.
 type PutOpts struct {
-	StorageClass *string // S3 storage class
 }
 
 // WalkOpts is a unique identifier of a prefix in the object store.

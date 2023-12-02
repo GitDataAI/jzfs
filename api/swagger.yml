@@ -139,9 +139,9 @@ components:
       properties:
         path:
           type: string
-        path_type:
-          type: string
-          enum: [common_prefix, object]
+        path_mode:
+          type: integer
+          format: uint32
         physical_address:
           type: string
           description: |
@@ -233,10 +233,21 @@ paths:
               schema:
                 $ref: "#/components/schemas/VersionResult"
 
-  /repositories/{repository}/objects:
+  /object/{user}/{repository}:
     parameters:
       - in: path
+        name: user
+        required: true
+        schema:
+          type: string
+      - in: path
         name: repository
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: branch
+        description: branch to the ref
         required: true
         schema:
           type: string

@@ -21,15 +21,21 @@ type Repository struct {
 	UpdatedAt time.Time `bun:"updated_at"`
 }
 
+type GetRepoParams struct {
+	Id       uuid.UUID
+	CreateID uuid.UUID
+	Name     *string
+}
+
 type IRepositoryRepo interface {
 	Insert(ctx context.Context, repo *Repository) (*Repository, error)
-	Get(ctx context.Context, id uuid.UUID) (*Repository, error)
+	Get(ctx context.Context, params *GetRepoParams) (*Repository, error)
 }
 
 var _ IRepositoryRepo = (*RepositoryRepo)(nil)
 
 type RepositoryRepo struct {
-	*bun.DB
+	db *bun.DB
 }
 
 func NewRepositoryRepo(db *bun.DB) IRepositoryRepo {
@@ -37,14 +43,28 @@ func NewRepositoryRepo(db *bun.DB) IRepositoryRepo {
 }
 
 func (r *RepositoryRepo) Insert(ctx context.Context, repo *Repository) (*Repository, error) {
-	_, err := r.DB.NewInsert().Model(repo).Exec(ctx)
+	_, err := r.db.NewInsert().Model(repo).Exec(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return repo, nil
 }
 
-func (r *RepositoryRepo) Get(ctx context.Context, id uuid.UUID) (*Repository, error) {
+func (r *RepositoryRepo) Get(ctx context.Context, params *GetRepoParams) (*Repository, error) {
 	repo := &Repository{}
-	return repo, r.DB.NewSelect().Model(repo).Where("id = ?", id).Scan(ctx)
+	query := r.db.NewSelect().Model(repo)
+
+	if uuid.Nil != params.Id {
+		query = query.Where("id = ?", params.Id)
+	}
+
+	if uuid.Nil != params.CreateID {
+		query = query.Where("create_id = ?", params.CreateID)
+	}
+
+	if params.Name != nil {
+		query = query.Where("name = ?", *params.Name)
+	}
+
+	return repo, query.Scan(ctx, repo)
 }

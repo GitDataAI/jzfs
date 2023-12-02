@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jiaozifs/jiaozifs/utils/hash"
+
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/blob"
@@ -489,7 +491,7 @@ func (a *Adapter) UploadPart(ctx context.Context, obj block.ObjectPointer, _ int
 	if err != nil {
 		return nil, err
 	}
-	hashReader := block.NewHashingReader(reader, block.HashFunctionMD5)
+	hashReader := hash.NewHashingReader(reader, hash.HashFunctionMD5)
 
 	multipartBlockWriter := NewMultipartBlockWriter(hashReader, *container, qualifiedKey.BlobURL)
 	_, err = copyFromReader(ctx, hashReader, multipartBlockWriter, blockblob.UploadStreamOptions{

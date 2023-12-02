@@ -25,6 +25,7 @@ type User struct {
 
 type IUserRepo interface {
 	Get(ctx context.Context, id uuid.UUID) (*User, error)
+	GetByName(ctx context.Context, name string) (*User, error)
 	Insert(ctx context.Context, user *User) (*User, error)
 
 	GetEPByName(ctx context.Context, name string) (string, error)
@@ -35,20 +36,25 @@ type IUserRepo interface {
 var _ IUserRepo = (*UserRepo)(nil)
 
 type UserRepo struct {
-	*bun.DB
+	db *bun.DB
 }
 
 func NewUserRepo(db *bun.DB) IUserRepo {
 	return &UserRepo{db}
 }
 
+func (userRepo *UserRepo) GetByName(ctx context.Context, name string) (*User, error) {
+	user := &User{}
+	return user, userRepo.db.NewSelect().Model(user).Where("name = ?", name).Scan(ctx)
+}
+
 func (userRepo *UserRepo) Get(ctx context.Context, id uuid.UUID) (*User, error) {
 	user := &User{}
-	return user, userRepo.DB.NewSelect().Model(user).Where("id = ?", id).Scan(ctx)
+	return user, userRepo.db.NewSelect().Model(user).Where("id = ?", id).Scan(ctx)
 }
 
 func (userRepo *UserRepo) Insert(ctx context.Context, user *User) (*User, error) {
-	_, err := userRepo.DB.NewInsert().Model(user).Exec(ctx)
+	_, err := userRepo.db.NewInsert().Model(user).Exec(ctx)
 	if err != nil {
 		return nil, err
 	}

@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/jiaozifs/jiaozifs/api"
@@ -12,14 +13,14 @@ type VersionController struct {
 	fx.In
 }
 
-func (A VersionController) GetVersion(w *api.JiaozifsResponse, _ *http.Request) {
+func (A VersionController) GetVersion(_ context.Context, w *api.JiaozifsResponse, _ *http.Request) {
 	swagger, err := api.GetSwagger()
 	if err != nil {
-		w.RespError(err)
+		w.Error(err)
 		return
 	}
 
-	w.RespJSON(api.VersionResult{
+	w.JSON(api.VersionResult{
 		ApiVersion: swagger.Info.Version,
 		Version:    version.UserVersion(),
 	})
