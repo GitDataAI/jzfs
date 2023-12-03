@@ -243,7 +243,7 @@ func (l *Adapter) UploadCopyPart(ctx context.Context, sourceObj, destinationObj 
 	if err != nil {
 		return nil, err
 	}
-	md5Read := hash.NewHashingReader(r, hash.HashFunctionMD5)
+	md5Read := hash.NewHashingReader(r, hash.Md5)
 	fName := uploadID + fmt.Sprintf("-%05d", partNumber)
 	err = l.Put(ctx, block.ObjectPointer{StorageNamespace: destinationObj.StorageNamespace, Identifier: fName}, -1, md5Read, block.PutOpts{})
 	if err != nil {
@@ -263,7 +263,7 @@ func (l *Adapter) UploadCopyPartRange(ctx context.Context, sourceObj, destinatio
 	if err != nil {
 		return nil, err
 	}
-	md5Read := hash.NewHashingReader(r, hash.HashFunctionMD5)
+	md5Read := hash.NewHashingReader(r, hash.Md5)
 	fName := uploadID + fmt.Sprintf("-%05d", partNumber)
 	err = l.Put(ctx, block.ObjectPointer{StorageNamespace: destinationObj.StorageNamespace, Identifier: fName}, -1, md5Read, block.PutOpts{})
 	if err != nil {
@@ -395,7 +395,7 @@ func (l *Adapter) UploadPart(ctx context.Context, obj block.ObjectPointer, _ int
 	if err := isValidUploadID(uploadID); err != nil {
 		return nil, err
 	}
-	md5Read := hash.NewHashingReader(reader, hash.HashFunctionMD5)
+	md5Read := hash.NewHashingReader(reader, hash.Md5)
 	fName := uploadID + fmt.Sprintf("-%05d", partNumber)
 	err := l.Put(ctx, block.ObjectPointer{StorageNamespace: obj.StorageNamespace, Identifier: fName}, -1, md5Read, block.PutOpts{})
 	etag := hex.EncodeToString(md5Read.Md5.Sum(nil))

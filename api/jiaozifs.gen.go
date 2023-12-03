@@ -28,12 +28,6 @@ const (
 	Jwt_tokenScopes  = "jwt_token.Scopes"
 )
 
-// Defines values for ObjectStatsPathType.
-const (
-	CommonPrefix ObjectStatsPathType = "common_prefix"
-	Object       ObjectStatsPathType = "object"
-)
-
 // AuthenticationToken defines model for AuthenticationToken.
 type AuthenticationToken struct {
 	// Token a JWT token that could be used to authenticate requests
@@ -52,27 +46,11 @@ type ObjectStats struct {
 	Metadata    *ObjectUserMetadata `json:"metadata,omitempty"`
 
 	// Mtime Unix Epoch in seconds
-	Mtime    int64               `json:"mtime"`
-	Path     string              `json:"path"`
-	PathType ObjectStatsPathType `json:"path_type"`
-
-	// PhysicalAddress The location of the object on the underlying object store.
-	// Formatted as a native URI with the object store type as scheme ("s3://...", "gs://...", etc.)
-	// Or, in the case of presign=true, will be an HTTP URL to be consumed via regular HTTP GET
-	PhysicalAddress string `json:"physical_address"`
-
-	// PhysicalAddressExpiry If present and nonzero, physical_address is a pre-signed URL and
-	// will expire at this Unix Epoch time.  This will be shorter than
-	// the pre-signed URL lifetime if an authentication token is about
-	// to expire.
-	//
-	// This field is *optional*.
-	PhysicalAddressExpiry *int64 `json:"physical_address_expiry,omitempty"`
-	SizeBytes             *int64 `json:"size_bytes,omitempty"`
+	Mtime     int64   `json:"mtime"`
+	Path      string  `json:"path"`
+	PathMode  *uint32 `json:"path_mode,omitempty"`
+	SizeBytes *int64  `json:"size_bytes,omitempty"`
 }
-
-// ObjectStatsPathType defines model for ObjectStats.PathType.
-type ObjectStatsPathType string
 
 // ObjectUserMetadata defines model for ObjectUserMetadata.
 type ObjectUserMetadata map[string]string
@@ -113,6 +91,9 @@ type LoginJSONBody struct {
 
 // DeleteObjectParams defines parameters for DeleteObject.
 type DeleteObjectParams struct {
+	// Branch branch to the ref
+	Branch string `form:"branch" json:"branch"`
+
 	// Path relative to the ref
 	Path string `form:"path" json:"path"`
 }
@@ -120,6 +101,9 @@ type DeleteObjectParams struct {
 // GetObjectParams defines parameters for GetObject.
 type GetObjectParams struct {
 	Presign *bool `form:"presign,omitempty" json:"presign,omitempty"`
+
+	// Branch branch to the ref
+	Branch string `form:"branch" json:"branch"`
 
 	// Path relative to the ref
 	Path string `form:"path" json:"path"`
@@ -130,6 +114,9 @@ type GetObjectParams struct {
 
 // HeadObjectParams defines parameters for HeadObject.
 type HeadObjectParams struct {
+	// Branch branch to the ref
+	Branch string `form:"branch" json:"branch"`
+
 	// Path relative to the ref
 	Path string `form:"path" json:"path"`
 
@@ -147,6 +134,9 @@ type UploadObjectMultipartBody struct {
 type UploadObjectParams struct {
 	// StorageClass Deprecated, this capability will not be supported in future releases.
 	StorageClass *string `form:"storageClass,omitempty" json:"storageClass,omitempty"`
+
+	// Branch branch to the ref
+	Branch string `form:"branch" json:"branch"`
 
 	// Path relative to the ref
 	Path string `form:"path" json:"path"`
@@ -252,16 +242,16 @@ type ClientInterface interface {
 	GetUserInfo(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteObject request
-	DeleteObject(ctx context.Context, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteObject(ctx context.Context, user string, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetObject request
-	GetObject(ctx context.Context, repository string, params *GetObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetObject(ctx context.Context, user string, repository string, params *GetObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// HeadObject request
-	HeadObject(ctx context.Context, repository string, params *HeadObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	HeadObject(ctx context.Context, user string, repository string, params *HeadObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UploadObjectWithBody request with any body
-	UploadObjectWithBody(ctx context.Context, repository string, params *UploadObjectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UploadObjectWithBody(ctx context.Context, user string, repository string, params *UploadObjectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetVersion request
 	GetVersion(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -327,8 +317,8 @@ func (c *Client) GetUserInfo(ctx context.Context, reqEditors ...RequestEditorFn)
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteObject(ctx context.Context, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteObjectRequest(c.Server, repository, params)
+func (c *Client) DeleteObject(ctx context.Context, user string, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteObjectRequest(c.Server, user, repository, params)
 	if err != nil {
 		return nil, err
 	}
@@ -339,8 +329,8 @@ func (c *Client) DeleteObject(ctx context.Context, repository string, params *De
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetObject(ctx context.Context, repository string, params *GetObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetObjectRequest(c.Server, repository, params)
+func (c *Client) GetObject(ctx context.Context, user string, repository string, params *GetObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetObjectRequest(c.Server, user, repository, params)
 	if err != nil {
 		return nil, err
 	}
@@ -351,8 +341,8 @@ func (c *Client) GetObject(ctx context.Context, repository string, params *GetOb
 	return c.Client.Do(req)
 }
 
-func (c *Client) HeadObject(ctx context.Context, repository string, params *HeadObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewHeadObjectRequest(c.Server, repository, params)
+func (c *Client) HeadObject(ctx context.Context, user string, repository string, params *HeadObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewHeadObjectRequest(c.Server, user, repository, params)
 	if err != nil {
 		return nil, err
 	}
@@ -363,8 +353,8 @@ func (c *Client) HeadObject(ctx context.Context, repository string, params *Head
 	return c.Client.Do(req)
 }
 
-func (c *Client) UploadObjectWithBody(ctx context.Context, repository string, params *UploadObjectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUploadObjectRequestWithBody(c.Server, repository, params, contentType, body)
+func (c *Client) UploadObjectWithBody(ctx context.Context, user string, repository string, params *UploadObjectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUploadObjectRequestWithBody(c.Server, user, repository, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -495,12 +485,19 @@ func NewGetUserInfoRequest(server string) (*http.Request, error) {
 }
 
 // NewDeleteObjectRequest generates requests for DeleteObject
-func NewDeleteObjectRequest(server string, repository string, params *DeleteObjectParams) (*http.Request, error) {
+func NewDeleteObjectRequest(server string, user string, repository string, params *DeleteObjectParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "user", runtime.ParamLocationPath, user)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
 	if err != nil {
 		return nil, err
 	}
@@ -510,7 +507,7 @@ func NewDeleteObjectRequest(server string, repository string, params *DeleteObje
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/repositories/%s/objects", pathParam0)
+	operationPath := fmt.Sprintf("/object/%s/%s", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -522,6 +519,18 @@ func NewDeleteObjectRequest(server string, repository string, params *DeleteObje
 
 	if params != nil {
 		queryValues := queryURL.Query()
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "branch", runtime.ParamLocationQuery, params.Branch); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
 
 		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "path", runtime.ParamLocationQuery, params.Path); err != nil {
 			return nil, err
@@ -547,12 +556,19 @@ func NewDeleteObjectRequest(server string, repository string, params *DeleteObje
 }
 
 // NewGetObjectRequest generates requests for GetObject
-func NewGetObjectRequest(server string, repository string, params *GetObjectParams) (*http.Request, error) {
+func NewGetObjectRequest(server string, user string, repository string, params *GetObjectParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "user", runtime.ParamLocationPath, user)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
 	if err != nil {
 		return nil, err
 	}
@@ -562,7 +578,7 @@ func NewGetObjectRequest(server string, repository string, params *GetObjectPara
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/repositories/%s/objects", pathParam0)
+	operationPath := fmt.Sprintf("/object/%s/%s", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -589,6 +605,18 @@ func NewGetObjectRequest(server string, repository string, params *GetObjectPara
 				}
 			}
 
+		}
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "branch", runtime.ParamLocationQuery, params.Branch); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
 		}
 
 		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "path", runtime.ParamLocationQuery, params.Path); err != nil {
@@ -630,12 +658,19 @@ func NewGetObjectRequest(server string, repository string, params *GetObjectPara
 }
 
 // NewHeadObjectRequest generates requests for HeadObject
-func NewHeadObjectRequest(server string, repository string, params *HeadObjectParams) (*http.Request, error) {
+func NewHeadObjectRequest(server string, user string, repository string, params *HeadObjectParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "user", runtime.ParamLocationPath, user)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
 	if err != nil {
 		return nil, err
 	}
@@ -645,7 +680,7 @@ func NewHeadObjectRequest(server string, repository string, params *HeadObjectPa
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/repositories/%s/objects", pathParam0)
+	operationPath := fmt.Sprintf("/object/%s/%s", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -657,6 +692,18 @@ func NewHeadObjectRequest(server string, repository string, params *HeadObjectPa
 
 	if params != nil {
 		queryValues := queryURL.Query()
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "branch", runtime.ParamLocationQuery, params.Branch); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
 
 		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "path", runtime.ParamLocationQuery, params.Path); err != nil {
 			return nil, err
@@ -697,12 +744,19 @@ func NewHeadObjectRequest(server string, repository string, params *HeadObjectPa
 }
 
 // NewUploadObjectRequestWithBody generates requests for UploadObject with any type of body
-func NewUploadObjectRequestWithBody(server string, repository string, params *UploadObjectParams, contentType string, body io.Reader) (*http.Request, error) {
+func NewUploadObjectRequestWithBody(server string, user string, repository string, params *UploadObjectParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "user", runtime.ParamLocationPath, user)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
 	if err != nil {
 		return nil, err
 	}
@@ -712,7 +766,7 @@ func NewUploadObjectRequestWithBody(server string, repository string, params *Up
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/repositories/%s/objects", pathParam0)
+	operationPath := fmt.Sprintf("/object/%s/%s", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -739,6 +793,18 @@ func NewUploadObjectRequestWithBody(server string, repository string, params *Up
 				}
 			}
 
+		}
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "branch", runtime.ParamLocationQuery, params.Branch); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
 		}
 
 		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "path", runtime.ParamLocationQuery, params.Path); err != nil {
@@ -865,16 +931,16 @@ type ClientWithResponsesInterface interface {
 	GetUserInfoWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetUserInfoResponse, error)
 
 	// DeleteObjectWithResponse request
-	DeleteObjectWithResponse(ctx context.Context, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*DeleteObjectResponse, error)
+	DeleteObjectWithResponse(ctx context.Context, user string, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*DeleteObjectResponse, error)
 
 	// GetObjectWithResponse request
-	GetObjectWithResponse(ctx context.Context, repository string, params *GetObjectParams, reqEditors ...RequestEditorFn) (*GetObjectResponse, error)
+	GetObjectWithResponse(ctx context.Context, user string, repository string, params *GetObjectParams, reqEditors ...RequestEditorFn) (*GetObjectResponse, error)
 
 	// HeadObjectWithResponse request
-	HeadObjectWithResponse(ctx context.Context, repository string, params *HeadObjectParams, reqEditors ...RequestEditorFn) (*HeadObjectResponse, error)
+	HeadObjectWithResponse(ctx context.Context, user string, repository string, params *HeadObjectParams, reqEditors ...RequestEditorFn) (*HeadObjectResponse, error)
 
 	// UploadObjectWithBodyWithResponse request with any body
-	UploadObjectWithBodyWithResponse(ctx context.Context, repository string, params *UploadObjectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadObjectResponse, error)
+	UploadObjectWithBodyWithResponse(ctx context.Context, user string, repository string, params *UploadObjectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadObjectResponse, error)
 
 	// GetVersionWithResponse request
 	GetVersionWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetVersionResponse, error)
@@ -1096,8 +1162,8 @@ func (c *ClientWithResponses) GetUserInfoWithResponse(ctx context.Context, reqEd
 }
 
 // DeleteObjectWithResponse request returning *DeleteObjectResponse
-func (c *ClientWithResponses) DeleteObjectWithResponse(ctx context.Context, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*DeleteObjectResponse, error) {
-	rsp, err := c.DeleteObject(ctx, repository, params, reqEditors...)
+func (c *ClientWithResponses) DeleteObjectWithResponse(ctx context.Context, user string, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*DeleteObjectResponse, error) {
+	rsp, err := c.DeleteObject(ctx, user, repository, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -1105,8 +1171,8 @@ func (c *ClientWithResponses) DeleteObjectWithResponse(ctx context.Context, repo
 }
 
 // GetObjectWithResponse request returning *GetObjectResponse
-func (c *ClientWithResponses) GetObjectWithResponse(ctx context.Context, repository string, params *GetObjectParams, reqEditors ...RequestEditorFn) (*GetObjectResponse, error) {
-	rsp, err := c.GetObject(ctx, repository, params, reqEditors...)
+func (c *ClientWithResponses) GetObjectWithResponse(ctx context.Context, user string, repository string, params *GetObjectParams, reqEditors ...RequestEditorFn) (*GetObjectResponse, error) {
+	rsp, err := c.GetObject(ctx, user, repository, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -1114,8 +1180,8 @@ func (c *ClientWithResponses) GetObjectWithResponse(ctx context.Context, reposit
 }
 
 // HeadObjectWithResponse request returning *HeadObjectResponse
-func (c *ClientWithResponses) HeadObjectWithResponse(ctx context.Context, repository string, params *HeadObjectParams, reqEditors ...RequestEditorFn) (*HeadObjectResponse, error) {
-	rsp, err := c.HeadObject(ctx, repository, params, reqEditors...)
+func (c *ClientWithResponses) HeadObjectWithResponse(ctx context.Context, user string, repository string, params *HeadObjectParams, reqEditors ...RequestEditorFn) (*HeadObjectResponse, error) {
+	rsp, err := c.HeadObject(ctx, user, repository, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -1123,8 +1189,8 @@ func (c *ClientWithResponses) HeadObjectWithResponse(ctx context.Context, reposi
 }
 
 // UploadObjectWithBodyWithResponse request with arbitrary body returning *UploadObjectResponse
-func (c *ClientWithResponses) UploadObjectWithBodyWithResponse(ctx context.Context, repository string, params *UploadObjectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadObjectResponse, error) {
-	rsp, err := c.UploadObjectWithBody(ctx, repository, params, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UploadObjectWithBodyWithResponse(ctx context.Context, user string, repository string, params *UploadObjectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadObjectResponse, error) {
+	rsp, err := c.UploadObjectWithBody(ctx, user, repository, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -1312,28 +1378,28 @@ func ParseGetVersionResponse(rsp *http.Response) (*GetVersionResponse, error) {
 type ServerInterface interface {
 	// perform a login
 	// (POST /auth/login)
-	Login(w *JiaozifsResponse, r *http.Request)
+	Login(ctx context.Context, w *JiaozifsResponse, r *http.Request)
 	// perform user registration
 	// (POST /auth/register)
-	Register(w *JiaozifsResponse, r *http.Request)
+	Register(ctx context.Context, w *JiaozifsResponse, r *http.Request)
 	// get information of the currently logged-in user
 	// (GET /auth/user)
-	GetUserInfo(w *JiaozifsResponse, r *http.Request)
+	GetUserInfo(ctx context.Context, w *JiaozifsResponse, r *http.Request)
 	// delete object. Missing objects will not return a NotFound error.
-	// (DELETE /repositories/{repository}/objects)
-	DeleteObject(w *JiaozifsResponse, r *http.Request, repository string, params DeleteObjectParams)
+	// (DELETE /object/{user}/{repository})
+	DeleteObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params DeleteObjectParams)
 	// get object content
-	// (GET /repositories/{repository}/objects)
-	GetObject(w *JiaozifsResponse, r *http.Request, repository string, params GetObjectParams)
+	// (GET /object/{user}/{repository})
+	GetObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params GetObjectParams)
 	// check if object exists
-	// (HEAD /repositories/{repository}/objects)
-	HeadObject(w *JiaozifsResponse, r *http.Request, repository string, params HeadObjectParams)
+	// (HEAD /object/{user}/{repository})
+	HeadObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params HeadObjectParams)
 
-	// (POST /repositories/{repository}/objects)
-	UploadObject(w *JiaozifsResponse, r *http.Request, repository string, params UploadObjectParams)
+	// (POST /object/{user}/{repository})
+	UploadObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params UploadObjectParams)
 	// return program and runtime version
 	// (GET /version)
-	GetVersion(w *JiaozifsResponse, r *http.Request)
+	GetVersion(ctx context.Context, w *JiaozifsResponse, r *http.Request)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -1342,48 +1408,48 @@ type Unimplemented struct{}
 
 // perform a login
 // (POST /auth/login)
-func (_ Unimplemented) Login(w *JiaozifsResponse, r *http.Request) {
+func (_ Unimplemented) Login(ctx context.Context, w *JiaozifsResponse, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // perform user registration
 // (POST /auth/register)
-func (_ Unimplemented) Register(w *JiaozifsResponse, r *http.Request) {
+func (_ Unimplemented) Register(ctx context.Context, w *JiaozifsResponse, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // get information of the currently logged-in user
 // (GET /auth/user)
-func (_ Unimplemented) GetUserInfo(w *JiaozifsResponse, r *http.Request) {
+func (_ Unimplemented) GetUserInfo(ctx context.Context, w *JiaozifsResponse, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // delete object. Missing objects will not return a NotFound error.
-// (DELETE /repositories/{repository}/objects)
-func (_ Unimplemented) DeleteObject(w *JiaozifsResponse, r *http.Request, repository string, params DeleteObjectParams) {
+// (DELETE /object/{user}/{repository})
+func (_ Unimplemented) DeleteObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params DeleteObjectParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // get object content
-// (GET /repositories/{repository}/objects)
-func (_ Unimplemented) GetObject(w *JiaozifsResponse, r *http.Request, repository string, params GetObjectParams) {
+// (GET /object/{user}/{repository})
+func (_ Unimplemented) GetObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params GetObjectParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // check if object exists
-// (HEAD /repositories/{repository}/objects)
-func (_ Unimplemented) HeadObject(w *JiaozifsResponse, r *http.Request, repository string, params HeadObjectParams) {
+// (HEAD /object/{user}/{repository})
+func (_ Unimplemented) HeadObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params HeadObjectParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// (POST /repositories/{repository}/objects)
-func (_ Unimplemented) UploadObject(w *JiaozifsResponse, r *http.Request, repository string, params UploadObjectParams) {
+// (POST /object/{user}/{repository})
+func (_ Unimplemented) UploadObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params UploadObjectParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // return program and runtime version
 // (GET /version)
-func (_ Unimplemented) GetVersion(w *JiaozifsResponse, r *http.Request) {
+func (_ Unimplemented) GetVersion(ctx context.Context, w *JiaozifsResponse, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -1401,7 +1467,7 @@ func (siw *ServerInterfaceWrapper) Login(w http.ResponseWriter, r *http.Request)
 	ctx := r.Context()
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.Login(&JiaozifsResponse{w}, r)
+		siw.Handler.Login(r.Context(), &JiaozifsResponse{w}, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1416,7 +1482,7 @@ func (siw *ServerInterfaceWrapper) Register(w http.ResponseWriter, r *http.Reque
 	ctx := r.Context()
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.Register(&JiaozifsResponse{w}, r)
+		siw.Handler.Register(r.Context(), &JiaozifsResponse{w}, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1433,7 +1499,7 @@ func (siw *ServerInterfaceWrapper) GetUserInfo(w http.ResponseWriter, r *http.Re
 	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetUserInfo(&JiaozifsResponse{w}, r)
+		siw.Handler.GetUserInfo(r.Context(), &JiaozifsResponse{w}, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1448,6 +1514,15 @@ func (siw *ServerInterfaceWrapper) DeleteObject(w http.ResponseWriter, r *http.R
 	ctx := r.Context()
 
 	var err error
+
+	// ------------- Path parameter "user" -------------
+	var user string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user", chi.URLParam(r, "user"), &user, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
+		return
+	}
 
 	// ------------- Path parameter "repository" -------------
 	var repository string
@@ -1465,6 +1540,21 @@ func (siw *ServerInterfaceWrapper) DeleteObject(w http.ResponseWriter, r *http.R
 	// Parameter object where we will unmarshal all parameters from the context
 	var params DeleteObjectParams
 
+	// ------------- Required query parameter "branch" -------------
+
+	if paramValue := r.URL.Query().Get("branch"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "branch"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "branch", r.URL.Query(), &params.Branch)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "branch", Err: err})
+		return
+	}
+
 	// ------------- Required query parameter "path" -------------
 
 	if paramValue := r.URL.Query().Get("path"); paramValue != "" {
@@ -1481,7 +1571,7 @@ func (siw *ServerInterfaceWrapper) DeleteObject(w http.ResponseWriter, r *http.R
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteObject(&JiaozifsResponse{w}, r, repository, params)
+		siw.Handler.DeleteObject(r.Context(), &JiaozifsResponse{w}, r, user, repository, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1496,6 +1586,15 @@ func (siw *ServerInterfaceWrapper) GetObject(w http.ResponseWriter, r *http.Requ
 	ctx := r.Context()
 
 	var err error
+
+	// ------------- Path parameter "user" -------------
+	var user string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user", chi.URLParam(r, "user"), &user, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
+		return
+	}
 
 	// ------------- Path parameter "repository" -------------
 	var repository string
@@ -1521,6 +1620,21 @@ func (siw *ServerInterfaceWrapper) GetObject(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	// ------------- Required query parameter "branch" -------------
+
+	if paramValue := r.URL.Query().Get("branch"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "branch"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "branch", r.URL.Query(), &params.Branch)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "branch", Err: err})
+		return
+	}
+
 	// ------------- Required query parameter "path" -------------
 
 	if paramValue := r.URL.Query().Get("path"); paramValue != "" {
@@ -1558,7 +1672,7 @@ func (siw *ServerInterfaceWrapper) GetObject(w http.ResponseWriter, r *http.Requ
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetObject(&JiaozifsResponse{w}, r, repository, params)
+		siw.Handler.GetObject(r.Context(), &JiaozifsResponse{w}, r, user, repository, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1573,6 +1687,15 @@ func (siw *ServerInterfaceWrapper) HeadObject(w http.ResponseWriter, r *http.Req
 	ctx := r.Context()
 
 	var err error
+
+	// ------------- Path parameter "user" -------------
+	var user string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user", chi.URLParam(r, "user"), &user, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
+		return
+	}
 
 	// ------------- Path parameter "repository" -------------
 	var repository string
@@ -1590,6 +1713,21 @@ func (siw *ServerInterfaceWrapper) HeadObject(w http.ResponseWriter, r *http.Req
 	// Parameter object where we will unmarshal all parameters from the context
 	var params HeadObjectParams
 
+	// ------------- Required query parameter "branch" -------------
+
+	if paramValue := r.URL.Query().Get("branch"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "branch"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "branch", r.URL.Query(), &params.Branch)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "branch", Err: err})
+		return
+	}
+
 	// ------------- Required query parameter "path" -------------
 
 	if paramValue := r.URL.Query().Get("path"); paramValue != "" {
@@ -1627,7 +1765,7 @@ func (siw *ServerInterfaceWrapper) HeadObject(w http.ResponseWriter, r *http.Req
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.HeadObject(&JiaozifsResponse{w}, r, repository, params)
+		siw.Handler.HeadObject(r.Context(), &JiaozifsResponse{w}, r, user, repository, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1642,6 +1780,15 @@ func (siw *ServerInterfaceWrapper) UploadObject(w http.ResponseWriter, r *http.R
 	ctx := r.Context()
 
 	var err error
+
+	// ------------- Path parameter "user" -------------
+	var user string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user", chi.URLParam(r, "user"), &user, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
+		return
+	}
 
 	// ------------- Path parameter "repository" -------------
 	var repository string
@@ -1664,6 +1811,21 @@ func (siw *ServerInterfaceWrapper) UploadObject(w http.ResponseWriter, r *http.R
 	err = runtime.BindQueryParameter("form", true, false, "storageClass", r.URL.Query(), &params.StorageClass)
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storageClass", Err: err})
+		return
+	}
+
+	// ------------- Required query parameter "branch" -------------
+
+	if paramValue := r.URL.Query().Get("branch"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "branch"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "branch", r.URL.Query(), &params.Branch)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "branch", Err: err})
 		return
 	}
 
@@ -1704,7 +1866,7 @@ func (siw *ServerInterfaceWrapper) UploadObject(w http.ResponseWriter, r *http.R
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UploadObject(&JiaozifsResponse{w}, r, repository, params)
+		siw.Handler.UploadObject(r.Context(), &JiaozifsResponse{w}, r, user, repository, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1721,7 +1883,7 @@ func (siw *ServerInterfaceWrapper) GetVersion(w http.ResponseWriter, r *http.Req
 	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetVersion(&JiaozifsResponse{w}, r)
+		siw.Handler.GetVersion(r.Context(), &JiaozifsResponse{w}, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1854,16 +2016,16 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/auth/user", wrapper.GetUserInfo)
 	})
 	r.Group(func(r chi.Router) {
-		r.Delete(options.BaseURL+"/repositories/{repository}/objects", wrapper.DeleteObject)
+		r.Delete(options.BaseURL+"/object/{user}/{repository}", wrapper.DeleteObject)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/repositories/{repository}/objects", wrapper.GetObject)
+		r.Get(options.BaseURL+"/object/{user}/{repository}", wrapper.GetObject)
 	})
 	r.Group(func(r chi.Router) {
-		r.Head(options.BaseURL+"/repositories/{repository}/objects", wrapper.HeadObject)
+		r.Head(options.BaseURL+"/object/{user}/{repository}", wrapper.HeadObject)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/repositories/{repository}/objects", wrapper.UploadObject)
+		r.Post(options.BaseURL+"/object/{user}/{repository}", wrapper.UploadObject)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/version", wrapper.GetVersion)
@@ -1875,44 +2037,40 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+Rae28buRH/KgP2gCbu6uFHg0KH4JDLORdfncSwndwfkWpQy5HEhEvukbO2lUDfvSC5",
-	"Wq20K8V2kqLX/hNYy+G8OPObGTKfWWqy3GjU5NjgM3PpDDMe/nxW0Aw1yZSTNPrSfETtP+fW5GhJYiCi",
-	"5WeBLrUy96RswDj89vslhEWgGSdITaEEjBEKhwLIAF9xR7D4R4GOHEsYzXNkA+bISj1liyRKuMLbXFoe",
-	"uW8Ke6vlLRznJp2B1OAwNVp4VhNjM05swKSmJ0cr3lITTtGyxSJhXrK0KNjgfWnLqKIz4w+YktfhTfjr",
-	"gnh00roL0hmmH12RBXdsap8aTajpKi5sah75QoZCcggkLQ7IkLjgxP32HyxO2ID9pbc6tV55ZL3I7K1D",
-	"+2q5w+8mmeE39FnCck6zVlv9QmUoau+R9z68MqOvcosTecuSpVNHLYbms7mTKVdXXAiLzjW1vpwhKBMD",
-	"EswEaIYQGYLR4VehBVo1l3q6XHBkLHaH+kWwjFAAd8BBc5LXCG/PT+BG0qzOKuwIx+FJg3sRHg2ZOxz0",
-	"et1ud8gSGLKpW/1CSruPh/qNTbw3PauUO/Qa5hadnOqnZAtM4EYq5ZOAa3h5eXkGb89PfS6MEVKjXZGh",
-	"gGvJweK0UNxGml+PL4ea3cFdMUfmTa+dRDVQE3AtQBv9Ca1JYJMBSO+Y3GLHq4wiqMe1GOqgd2CPwAlo",
-	"Jh3UIsiHWBfg0n9emuhmxhJan/16qL1LNhgrOUG/EeTE+4OvoU0JHV6hsSloqMmU8rtDPdRB0kSiEp5k",
-	"zwRLudrrBk/dIYad/IRX4znFDL4vUFQZ3xKzZX7Us2GZhNuRZS1pB58ZF0JGk87W0bYBjpv8PKcTPTEt",
-	"MGWRE4pntGax4ISdoF1LhKWFtajpQk71iX7wxpOzdR/n10dtezDjUq1Rxi8tpIq7Byi12nVHjYrc87uP",
-	"iMKh1Tzi7cbiRghVlEvDR1sO8xyn0tG2Q72H03Lu3I2xwlNnUp+innoc/8e3NaMmp82id2idNPocXaGo",
-	"aQ7P5dV1JGnCmC10wIslQYviW/fm1kwtz7bv3bBrRVdXqWmRhxJMCytpfhHqRDBjzJ1MrzyiVS2V3xQ+",
-	"r0TPiPLYIpiPEity6fWN31jC4jEEJLLaw0xBsyuHbt0Knst/4twz+3BDV1VPNkZu0b5YhsZvv1+ypKZO",
-	"WG3qY6RId2tTUezSxPFM7WZTUWxn4x0sy8hfP9EPkptPcuJikXx2dsISpmSK2oWwLUU8y3k6Qzjo9lnC",
-	"CqtKM33pvrm56fKw3DV22iv3ut7pyfPj1xfHnYNuvzujTAWYlaSwLjTKq8KN7Xf73X5wXo6a55IN2GH4",
-	"FOtAiIqeN7WnzFTGPtq4kAE+/kPNOxFswE7DcgxGdPSzEaGgl21kzJFclVWy98HFYI8tYDOf6jn/bbJ8",
-	"R3Yv4jaXG+9Hz/Wg37+X8ru627ZpJEhcDwtXpCk6NykUqNKVM+QCbVDoAqnzPEbhmmC85VkeTpiH7TGF",
-	"nvJxKnD/4PDvT36EM06zp70f4SVR/kareQuEeG2O+vttzbY/emPlJxTwjispghHH1prQjRwd9JubyBjI",
-	"uJ6vhqNg7ISXyLnR45UAARdor9FCybuGT2zwfpQwV2QZ900iy9H6ogG8chTxqfPHHZJ25PfGkLVlCdoe",
-	"tcsi9RWBu+vsG3WwNdZaHB81j4pCGRrB4f0Wh//MBZxH7aFTOyb47zgnn4RQN2jHiXlaL3uKLYf1K1LV",
-	"JX7HhK1ktGTpxSpLp0h+TgrWRfI7JNHXu/hzvVK+Hy3WXO518lXH183apFl2tWruM2aKoiN10Lv9ICzm",
-	"xkkyVqLrfa5+zRe9CJjleKuQsHlGv4TvcThoHtJR0+hydI38BKxgUM3v7NGj/mGT6IWxYymER1tP0SL6",
-	"taEXptDiPhmyqLs7Kl1O3114JZ1bze/lRKkNgUUqrAYOS4mA/mi7Nf8vXTtaJFuDv/Jqzi3PkEJteN9A",
-	"gzkhWK6n6Cd0i2QlXoc+t6oVYX582u/s9w8OWRJ7nFhsVj3Oueew7Lpihebk45MN2L8ig0ePhkOx1/H/",
-	"JD/BT4//9viHtv60bKL+KNDOV/zL+4U1CeXWsTEKua+So3uluUkJqePIIs/W070aMsZSc9taApP2uFyK",
-	"WqvGz+PHznIUaRW1YyQ/vuTT9V3NNuaUO+q8MkJOJIrdxJ78oP/kP+WZnFuSXMH39NByf4zC9UbxgWH4",
-	"Pbx+2D9oosY5Cmm9Z8g0b6UmxtZu7NaddlpeEH5Z7h1RcTvcelSaVNi3399KGO+uSrInbcYGZEQB4ag8",
-	"wsEFJ+kmko8VPhhaQ3XdDLA2sPT+a6LlS+TizwmXWyBvy+HI+Pbwp8Cmu6BI6F7+L6HkfzKldzS7y4sh",
-	"cLHZxVWzW4FAuK4GOYHNeG8Dgo0slzHIwo12maOrVpbVrwnCC8euo2wOZyq+wZAJWO5niaS9yYny7y5r",
-	"lGwZVN/myuyCtNxiymklYl3jX6r1JL6BpDznY6kkzVdd6hjBFXlurD96qWFSUGG9dQq5Q9fdYqMjY/kU",
-	"nyseHhG+4Mfdej6vBpVSEwdGqzkM2d6QhXqqlLmBIjjDt9pcr57R1DyEikYQBp3+axkvMEfqDvU3cUF4",
-	"pVkVhr1t1eBk0nltNHZecUpn26rCcLi3tQDc5Sria5q6hGWFIulBuOepO8sHnG0XcjUdNl6Cvd85+MFH",
-	"IUykQsjRlkcENzOZziArXPCt946A4ZLZkHXrj147lL3Dhd3+N5v/62/m2weDrPZU3Xor03Zd9qA7tocN",
-	"t4VVmyWhpVc9s+EBPbzZveBS4X2H4QYSJ+y2c11Z0cHbVBUCO+MQyz7nwx1D7b1j27T7rnrJ+G43PeuP",
-	"Om2jzsbry33uYsqhf8mCawEtD0Gl++J/NmCjxRckJOtvNKXMUEHbmtvq2n9ZZLXIjQy9dHxT6PFc9q73",
-	"2WK0+HcAAAD//87c0PRRIwAA",
+	"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",
+	"73qPL0aLfwUAAP//iqm+sXAhAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

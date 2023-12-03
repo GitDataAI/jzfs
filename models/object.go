@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/jiaozifs/jiaozifs/models/filemode"
 	"github.com/jiaozifs/jiaozifs/utils/hash"
 	"github.com/uptrace/bun"
@@ -36,38 +35,91 @@ type Signature struct {
 type TreeEntry struct {
 	Name string            `bun:"name"`
 	Mode filemode.FileMode `bun:"mode"`
-	ID   uuid.UUID         `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
 	Hash hash.Hash         `bun:"hash"`
 }
 
 type Blob struct {
-	bun.BaseModel   `bun:"table:object"`
-	ID              uuid.UUID  `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
-	Hash            hash.Hash  `bun:"hash,type:bytea"`
-	Type            ObjectType `bun:"type"`
-	PhysicalAddress string     `bun:"physical_address"`
-	RelativePath    bool       `bun:"relative_path"`
-	Size            int64      `bun:"size"`
+	bun.BaseModel `bun:"table:object"`
+	Hash          hash.Hash  `bun:"hash,pk,type:bytea"`
+	Type          ObjectType `bun:"type"`
+	Size          int64      `bun:"size"`
 
 	CreatedAt time.Time `bun:"created_at"`
 	UpdatedAt time.Time `bun:"updated_at"`
+}
+
+func (blob *Blob) Object() *Object {
+	return &Object{
+		Hash:      blob.Hash,
+		Type:      blob.Type,
+		Size:      blob.Size,
+		CreatedAt: blob.CreatedAt,
+		UpdatedAt: blob.UpdatedAt,
+	}
 }
 
 type TreeNode struct {
 	bun.BaseModel `bun:"table:object"`
-	ID            uuid.UUID   `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
-	Hash          hash.Hash   `bun:"hash,type:bytea"`
+	Hash          hash.Hash   `bun:"hash,pk,type:bytea"`
 	Type          ObjectType  `bun:"type"`
-	SubObject     []TreeEntry `bun:"subObj,type:jsonb"`
+	SubObjects    []TreeEntry `bun:"subObjs,type:jsonb"`
 
 	CreatedAt time.Time `bun:"created_at"`
 	UpdatedAt time.Time `bun:"updated_at"`
 }
 
+func NewTreeNode(subObjects ...TreeEntry) (*TreeNode, error) {
+	newTree := &TreeNode{
+		Type:       TreeObject,
+		SubObjects: subObjects,
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
+	}
+	hash, err := newTree.GetHash()
+	if err != nil {
+		return nil, err
+	}
+	newTree.Hash = hash
+	return newTree, nil
+}
+
+func (tn *TreeNode) Object() *Object {
+	return &Object{
+		Hash:       tn.Hash,
+		Type:       tn.Type,
+		SubObjects: tn.SubObjects,
+		CreatedAt:  tn.CreatedAt,
+		UpdatedAt:  tn.UpdatedAt,
+	}
+}
+
+func (tn *TreeNode) GetHash() (hash.Hash, error) {
+	hasher := hash.NewHasher(hash.Md5)
+	err := hasher.WriteInt8(int8(tn.Type))
+	if err != nil {
+		return nil, err
+	}
+	for _, obj := range tn.SubObjects {
+		_, err = hasher.Write(obj.Hash)
+		if err != nil {
+			return nil, err
+		}
+		err = hasher.WriteString(obj.Name)
+		if err != nil {
+			return nil, err
+		}
+		err = hasher.WriteUint32(uint32(obj.Mode))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return hash.Hash(hasher.Md5.Sum(nil)), nil
+}
+
 type Commit struct {
 	bun.BaseModel `bun:"table:object"`
-	ID            uuid.UUID  `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
-	Hash          hash.Hash  `bun:"hash,type:bytea"`
+	Hash          hash.Hash  `bun:"hash,pk,type:bytea"`
 	Type          ObjectType `bun:"type"`
 	//////********commit********////////
 	// Author is the original author of the commit.
@@ -81,7 +133,7 @@ type Commit struct {
 	// Message is the commit/tag message, contains arbitrary text.
 	Message string `bun:"message"`
 	// TreeHash is the hash of the root tree of the commit.
-	TreeId uuid.UUID `bun:"tree_id,type:uuid,notnull"`
+	TreeHash hash.Hash `bun:"tree+hash,type:bytea,notnull"`
 	// ParentHashes are the hashes of the parent commits of the commit.
 	ParentHashes []hash.Hash `bun:"parent_hashes,type:bytea[]"`
 
@@ -89,10 +141,24 @@ type Commit struct {
 	UpdatedAt time.Time `bun:"updated_at"`
 }
 
+func (commit *Commit) Object() *Object {
+	return &Object{
+		Hash:         commit.Hash,
+		Type:         commit.Type,
+		Author:       commit.Author,
+		Committer:    commit.Committer,
+		MergeTag:     commit.MergeTag,
+		Message:      commit.Message,
+		TreeHash:     commit.TreeHash,
+		ParentHashes: commit.ParentHashes,
+		CreatedAt:    commit.CreatedAt,
+		UpdatedAt:    commit.UpdatedAt,
+	}
+}
+
 type Tag struct {
 	bun.BaseModel `bun:"table:object"`
-	ID            uuid.UUID  `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
-	Hash          hash.Hash  `bun:"hash,type:bytea"`
+	Hash          hash.Hash  `bun:"hash,pk,type:bytea"`
 	Type          ObjectType `bun:"type"`
 	//////********commit********////////
 	// Name of the tag.
@@ -110,14 +176,27 @@ type Tag struct {
 	UpdatedAt time.Time `bun:"updated_at"`
 }
 
+func (tag *Tag) Object() *Object {
+	return &Object{
+		Hash:       tag.Hash,
+		Type:       tag.Type,
+		Name:       tag.Name,
+		Tagger:     tag.Tagger,
+		TargetType: tag.TargetType,
+		Target:     tag.Target,
+		Message:    tag.Message,
+		CreatedAt:  tag.CreatedAt,
+		UpdatedAt:  tag.UpdatedAt,
+	}
+}
+
 type Object struct {
 	bun.BaseModel `bun:"table:object"`
-	ID            uuid.UUID  `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
-	Hash          hash.Hash  `bun:"hash,type:bytea"`
+	Hash          hash.Hash  `bun:"hash,pk,type:bytea"`
 	Type          ObjectType `bun:"type"`
 	Size          int64      `bun:"size"`
 	//tree
-	SubObject []TreeEntry `bun:"subObj,type:jsonb"`
+	SubObjects []TreeEntry `bun:"subObjs,type:jsonb"`
 
 	//////********commit********////////
 	// Author is the original author of the commit.
@@ -149,8 +228,57 @@ type Object struct {
 	UpdatedAt time.Time `bun:"updated_at"`
 }
 
+func (obj *Object) Blob() *Blob {
+	return &Blob{
+		Hash:      obj.Hash,
+		Type:      obj.Type,
+		Size:      obj.Size,
+		CreatedAt: obj.CreatedAt,
+		UpdatedAt: obj.UpdatedAt,
+	}
+}
+
+func (obj *Object) TreeNode() *TreeNode {
+	return &TreeNode{
+		Hash:       obj.Hash,
+		Type:       obj.Type,
+		SubObjects: obj.SubObjects,
+		CreatedAt:  obj.CreatedAt,
+		UpdatedAt:  obj.UpdatedAt,
+	}
+}
+
+func (obj *Object) Commit() *Commit {
+	return &Commit{
+		Hash:         obj.Hash,
+		Type:         obj.Type,
+		Author:       obj.Author,
+		Committer:    obj.Committer,
+		MergeTag:     obj.MergeTag,
+		Message:      obj.Message,
+		TreeHash:     obj.TreeHash,
+		ParentHashes: obj.ParentHashes,
+		CreatedAt:    obj.CreatedAt,
+		UpdatedAt:    obj.UpdatedAt,
+	}
+}
+
+func (obj *Object) Tag() *Tag {
+	return &Tag{
+		Hash:       obj.Hash,
+		Type:       obj.Type,
+		Name:       obj.Name,
+		Tagger:     obj.Tagger,
+		TargetType: obj.TargetType,
+		Target:     obj.Target,
+		Message:    obj.Message,
+		CreatedAt:  obj.CreatedAt,
+		UpdatedAt:  obj.UpdatedAt,
+	}
+}
+
 type GetObjParams struct {
-	ID uuid.UUID
+	Hash hash.Hash
 }
 
 type IObjectRepo interface {
@@ -158,10 +286,10 @@ type IObjectRepo interface {
 	Get(ctx context.Context, params *GetObjParams) (*Object, error)
 	Count(ctx context.Context) (int, error)
 	List(ctx context.Context) ([]Object, error)
-	Blob(ctx context.Context, id uuid.UUID) (*Blob, error)
-	TreeNode(ctx context.Context, id uuid.UUID) (*TreeNode, error)
-	Commit(ctx context.Context, id uuid.UUID) (*Commit, error)
-	Tag(ctx context.Context, id uuid.UUID) (*Tag, error)
+	Blob(ctx context.Context, hash hash.Hash) (*Blob, error)
+	TreeNode(ctx context.Context, hash hash.Hash) (*TreeNode, error)
+	Commit(ctx context.Context, hash hash.Hash) (*Commit, error)
+	Tag(ctx context.Context, hash hash.Hash) (*Tag, error)
 }
 
 var _ IObjectRepo = (*ObjectRepo)(nil)
@@ -175,7 +303,7 @@ func NewObjectRepo(db *bun.DB) IObjectRepo {
 }
 
 func (o ObjectRepo) Insert(ctx context.Context, obj *Object) (*Object, error) {
-	_, err := o.db.NewInsert().Model(obj).Exec(ctx)
+	_, err := o.db.NewInsert().Model(obj).Ignore().Exec(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -186,31 +314,31 @@ func (o ObjectRepo) Get(ctx context.Context, params *GetObjParams) (*Object, err
 	repo := &Object{}
 	query := o.db.NewSelect().Model(repo)
 
-	if uuid.Nil != params.ID {
-		query = query.Where("id = ?", params.ID)
+	if params.Hash != nil {
+		query = query.Where("hash = ?", params.Hash)
 	}
 
-	return repo, query.Scan(ctx, repo)
+	return repo, query.Limit(1).Scan(ctx, repo)
 }
 
-func (o ObjectRepo) Blob(ctx context.Context, id uuid.UUID) (*Blob, error) {
+func (o ObjectRepo) Blob(ctx context.Context, hash hash.Hash) (*Blob, error) {
 	blob := &Blob{}
-	return blob, o.db.NewSelect().Model(blob).Where("id = ?", id).Scan(ctx)
+	return blob, o.db.NewSelect().Model(blob).Limit(1).Where("hash = ?", hash).Scan(ctx)
 }
 
-func (o ObjectRepo) TreeNode(ctx context.Context, id uuid.UUID) (*TreeNode, error) {
+func (o ObjectRepo) TreeNode(ctx context.Context, hash hash.Hash) (*TreeNode, error) {
 	tree := &TreeNode{}
-	return tree, o.db.NewSelect().Model(tree).Where("id = ?", id).Scan(ctx)
+	return tree, o.db.NewSelect().Model(tree).Limit(1).Where("hash = ?", hash).Scan(ctx)
 }
 
-func (o ObjectRepo) Commit(ctx context.Context, id uuid.UUID) (*Commit, error) {
+func (o ObjectRepo) Commit(ctx context.Context, hash hash.Hash) (*Commit, error) {
 	commit := &Commit{}
-	return commit, o.db.NewSelect().Model(commit).Where("id = ?", id).Scan(ctx)
+	return commit, o.db.NewSelect().Model(commit).Limit(1).Where("hash = ?", hash).Scan(ctx)
 }
 
-func (o ObjectRepo) Tag(ctx context.Context, id uuid.UUID) (*Tag, error) {
+func (o ObjectRepo) Tag(ctx context.Context, hash hash.Hash) (*Tag, error) {
 	tag := &Tag{}
-	return tag, o.db.NewSelect().Model(tag).Where("id = ?", id).Scan(ctx)
+	return tag, o.db.NewSelect().Model(tag).Limit(1).Where("hash = ?", hash).Scan(ctx)
 }
 
 func (o ObjectRepo) Count(ctx context.Context) (int, error) {
@@ -218,6 +346,6 @@ func (o ObjectRepo) Count(ctx context.Context) (int, error) {
 }
 
 func (o ObjectRepo) List(ctx context.Context) ([]Object, error) {
-	obj := []Object{}
+	var obj []Object
 	return obj, o.db.NewSelect().Model(&obj).Scan(ctx)
 }

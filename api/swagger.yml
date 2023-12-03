@@ -132,7 +132,6 @@ components:
       type: object
       required:
         - checksum
-        - physical_address
         - path
         - path_type
         - mtime
@@ -142,22 +141,6 @@ components:
         path_mode:
           type: integer
           format: uint32
-        physical_address:
-          type: string
-          description: |
-            The location of the object on the underlying object store.
-            Formatted as a native URI with the object store type as scheme ("s3://...", "gs://...", etc.)
-            Or, in the case of presign=true, will be an HTTP URL to be consumed via regular HTTP GET
-        physical_address_expiry:
-          type: integer
-          format: int64
-          description: |
-            If present and nonzero, physical_address is a pre-signed URL and
-            will expire at this Unix Epoch time.  This will be shorter than
-            the pre-signed URL lifetime if an authentication token is about
-            to expire.
-
-            This field is *optional*.
         checksum:
           type: string
         size_bytes:

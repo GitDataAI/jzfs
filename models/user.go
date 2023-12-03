@@ -23,14 +23,19 @@ type User struct {
 	UpdatedAt         time.Time `bun:"updated_at"`
 }
 
-type IUserRepo interface {
-	Get(ctx context.Context, id uuid.UUID) (*User, error)
-	GetByName(ctx context.Context, name string) (*User, error)
-	Insert(ctx context.Context, user *User) (*User, error)
+type GetUserParam struct {
+	ID    uuid.UUID
+	Name  *string
+	Email *string
+}
 
+type CountUserParams = GetUserParam
+
+type IUserRepo interface {
+	Get(ctx context.Context, params *GetUserParam) (*User, error)
+	Count(ctx context.Context, params *CountUserParams) (int, error)
+	Insert(ctx context.Context, user *User) (*User, error)
 	GetEPByName(ctx context.Context, name string) (string, error)
-	GetUserByName(ctx context.Context, name string) (*User, error)
-	GetUserByEmail(ctx context.Context, email string) (*User, error)
 }
 
 var _ IUserRepo = (*UserRepo)(nil)
@@ -43,14 +48,41 @@ func NewUserRepo(db *bun.DB) IUserRepo {
 	return &UserRepo{db}
 }
 
-func (userRepo *UserRepo) GetByName(ctx context.Context, name string) (*User, error) {
+func (userRepo *UserRepo) Get(ctx context.Context, params *GetUserParam) (*User, error) {
 	user := &User{}
-	return user, userRepo.db.NewSelect().Model(user).Where("name = ?", name).Scan(ctx)
+	query := userRepo.db.NewSelect().Model(user)
+
+	if uuid.Nil != params.ID {
+		query = query.Where("id = ?", params.ID)
+	}
+
+	if params.Name != nil {
+		query = query.Where("name = ?", params.Name)
+	}
+
+	if params.Email != nil {
+		query = query.Where("email = ?", *params.Email)
+	}
+
+	return user, query.Limit(1).Scan(ctx)
 }
 
-func (userRepo *UserRepo) Get(ctx context.Context, id uuid.UUID) (*User, error) {
-	user := &User{}
-	return user, userRepo.db.NewSelect().Model(user).Where("id = ?", id).Scan(ctx)
+func (userRepo *UserRepo) Count(ctx context.Context, params *GetUserParam) (int, error) {
+	query := userRepo.db.NewSelect().Model((*User)(nil))
+
+	if uuid.Nil != params.ID {
+		query = query.Where("id = ?", params.ID)
+	}
+
+	if params.Name != nil {
+		query = query.Where("name = ?", params.Name)
+	}
+
+	if params.Email != nil {
+		query = query.Where("email = ?", *params.Email)
+	}
+
+	return query.Count(ctx)
 }
 
 func (userRepo *UserRepo) Insert(ctx context.Context, user *User) (*User, error) {
@@ -63,19 +95,8 @@ func (userRepo *UserRepo) Insert(ctx context.Context, user *User) (*User, error)
 
 func (userRepo *UserRepo) GetEPByName(ctx context.Context, name string) (string, error) {
 	var ep string
-	return ep, userRepo.DB.NewSelect().
+	return ep, userRepo.db.NewSelect().
 		Model((*User)(nil)).Column("encrypted_password").
 		Where("name = ?", name).
 		Scan(ctx, &ep)
-}
-
-func (userRepo *UserRepo) GetUserByName(ctx context.Context, name string) (*User, error) {
-	user := &User{}
-	return user, userRepo.DB.NewSelect().Model(user).Where("name = ?", name).Scan(ctx)
-}
-
-func (userRepo *UserRepo) GetUserByEmail(ctx context.Context, email string) (*User, error) {
-	user := &User{}
-	return user, userRepo.DB.NewSelect().
-		Model(user).Where("email = ?", email).Scan(ctx)
 }

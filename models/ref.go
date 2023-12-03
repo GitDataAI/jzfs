@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/jiaozifs/jiaozifs/utils/hash"
+
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 )
@@ -13,7 +15,7 @@ type Ref struct {
 	ID            uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
 	// RepositoryId which repository this branch belong
 	RepositoryID uuid.UUID `bun:"repository_id,type:uuid,notnull"`
-	CommitHash   uuid.UUID `bun:"commit_hash,type:uuid,notnull"`
+	CommitHash   hash.Hash `bun:"commit_hash,type:bytea,notnull"`
 	// Path name/path of branch
 	Name string `bun:"name,notnull"`
 	// Description

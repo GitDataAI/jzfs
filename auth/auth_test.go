@@ -2,40 +2,19 @@ package auth
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
+	"github.com/jiaozifs/jiaozifs/testhelper"
+
 	"github.com/brianvoe/gofakeit/v6"
-	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 	"github.com/jiaozifs/jiaozifs/config"
 	"github.com/jiaozifs/jiaozifs/models"
-	"github.com/jiaozifs/jiaozifs/models/migrations"
-	"github.com/phayes/freeport"
 	"github.com/stretchr/testify/require"
-	"github.com/uptrace/bun"
-	"go.uber.org/fx/fxtest"
 )
-
-var testConnTmpl = "postgres://postgres:postgres@localhost:%d/jiaozifs?sslmode=disable"
-
-func setup(ctx context.Context, t *testing.T) (*embeddedpostgres.EmbeddedPostgres, *bun.DB) {
-	port, err := freeport.GetFreePort()
-	require.NoError(t, err)
-	postgres := embeddedpostgres.NewDatabase(embeddedpostgres.DefaultConfig().Port(uint32(port)).Database("jiaozifs"))
-	err = postgres.Start()
-	require.NoError(t, err)
-
-	db, err := models.SetupDatabase(ctx, fxtest.NewLifecycle(t), &config.DatabaseConfig{Debug: true, Connection: fmt.Sprintf(testConnTmpl, port)})
-	require.NoError(t, err)
-
-	err = migrations.MigrateDatabase(ctx, db)
-	require.NoError(t, err)
-	return postgres, db
-}
 
 func TestLogin_Success(t *testing.T) {
 	ctx := context.Background()
-	postgres, db := setup(ctx, t)
+	postgres, _, db := testhelper.SetupDatabase(ctx, t)
 	defer postgres.Stop() //nolint
 	// repo
 	mockRepo := models.NewUserRepo(db)

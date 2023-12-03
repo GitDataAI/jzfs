@@ -9,20 +9,19 @@ import (
 )
 
 type Repository struct {
-	bun.BaseModel    `bun:"table:repository"`
-	ID               uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
-	Name             string    `bun:"name,notnull"`
-	StorageNamespace string    `bun:"storage_namespace,notnull"`
-	Description      string    `bun:"description"`
-	HEAD             uuid.UUID `bun:"head,type:uuid,notnull"`
-	CreateID         uuid.UUID `bun:"create_id,type:uuid,notnull"`
+	bun.BaseModel `bun:"table:repository"`
+	ID            uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
+	Name          string    `bun:"name,notnull"`
+	Description   string    `bun:"description"`
+	HEAD          string    `bun:"head,notnull"`
+	CreateID      uuid.UUID `bun:"create_id,type:uuid,notnull"`
 
 	CreatedAt time.Time `bun:"created_at"`
 	UpdatedAt time.Time `bun:"updated_at"`
 }
 
 type GetRepoParams struct {
-	Id       uuid.UUID
+	ID       uuid.UUID
 	CreateID uuid.UUID
 	Name     *string
 }
@@ -54,8 +53,8 @@ func (r *RepositoryRepo) Get(ctx context.Context, params *GetRepoParams) (*Repos
 	repo := &Repository{}
 	query := r.db.NewSelect().Model(repo)
 
-	if uuid.Nil != params.Id {
-		query = query.Where("id = ?", params.Id)
+	if uuid.Nil != params.ID {
+		query = query.Where("id = ?", params.ID)
 	}
 
 	if uuid.Nil != params.CreateID {

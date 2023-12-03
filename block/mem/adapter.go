@@ -78,7 +78,7 @@ func getKey(obj block.ObjectPointer) string {
 	return fmt.Sprintf("%s:%s", obj.StorageNamespace, obj.Identifier)
 }
 
-func (a *Adapter) Put(_ context.Context, obj block.ObjectPointer, _ int64, reader io.Reader, opts block.PutOpts) error {
+func (a *Adapter) Put(_ context.Context, obj block.ObjectPointer, _ int64, reader io.Reader, _ block.PutOpts) error {
 	if err := verifyObjectPointer(obj); err != nil {
 		return err
 	}
@@ -90,7 +90,6 @@ func (a *Adapter) Put(_ context.Context, obj block.ObjectPointer, _ int64, reade
 	}
 	key := getKey(obj)
 	a.data[key] = data
-	a.properties[key] = block.Properties(opts)
 	return nil
 }
 

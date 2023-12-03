@@ -2,12 +2,15 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"time"
+
+	"github.com/jiaozifs/jiaozifs/utils"
 
 	"github.com/jiaozifs/jiaozifs/config"
 
 	"github.com/golang-jwt/jwt"
-	openapi_types "github.com/oapi-codegen/runtime/types"
+	openapitypes "github.com/oapi-codegen/runtime/types"
 
 	"github.com/go-openapi/swag"
 	logging "github.com/ipfs/go-log/v2"
@@ -24,18 +27,17 @@ type Login struct {
 }
 
 func (l *Login) Login(ctx context.Context, repo models.IUserRepo, config *config.Config) (token api.AuthenticationToken, err error) {
-	// Get user encryptedPassword by username
+	// get user encryptedPassword by username
 	ep, err := repo.GetEPByName(ctx, l.Username)
 	if err != nil {
-		log.Errorf("username err: %s", err)
-		return token, err
+		return token, fmt.Errorf("cannt get user %s encrypt password %w", l.Username, err)
 	}
 
 	// Compare ep and password
 	err = bcrypt.CompareHashAndPassword([]byte(ep), []byte(l.Password))
 	if err != nil {
 		log.Errorf("password err: %s", err)
-		return token, err
+		return token, fmt.Errorf("user %s password not match %w", l.Username, err)
 	}
 	// Generate user token
 	loginTime := time.Now()
@@ -44,15 +46,13 @@ func (l *Login) Login(ctx context.Context, repo models.IUserRepo, config *config
 
 	tokenString, err := GenerateJWTLogin(secretKey, l.Username, loginTime, expires)
 	if err != nil {
-		log.Errorf("generate token err: %s", err)
-		return token, err
+		return token, fmt.Errorf("generate token err: %w", err)
 	}
 
-	log.Info("login successful")
+	log.Infof("usert %s login successful", l.Username)
 
 	token.Token = tokenString
 	token.TokenExpiration = swag.Int64(expires.Unix())
-
 	return token, nil
 }
 
@@ -62,20 +62,25 @@ type Register struct {
 	Password string `json:"password"`
 }
 
-func (r *Register) Register(ctx context.Context, repo models.IUserRepo) (err error) {
+func (r *Register) Register(ctx context.Context, repo models.IUserRepo) error {
 	// check username, email
-	_, err1 := repo.GetUserByName(ctx, r.Username)
-	_, err2 := repo.GetUserByEmail(ctx, r.Email)
-	if err1 == nil || err2 == nil {
-		err = ErrInvalidNameEmail
-		log.Error(ErrInvalidNameEmail)
-		return
+	count1, err := repo.Count(ctx, &models.CountUserParams{Name: utils.String(r.Username)})
+	if err != nil {
+		return err
 	}
+	count2, err := repo.Count(ctx, &models.CountUserParams{Name: utils.String(r.Email)})
+	if err != nil {
+		return err
+	}
+
+	if count1+count2 > 0 {
+		return fmt.Errorf("username %s or email %s not found %w ", r.Username, r.Email, ErrInvalidNameEmail)
+	}
+
 	// reserve temporarily
 	password, err := bcrypt.GenerateFromPassword([]byte(r.Password), passwordCost)
 	if err != nil {
-		log.Error(ErrComparePassword)
-		return
+		return fmt.Errorf("invalid password %w", err)
 	}
 
 	// insert db
@@ -88,14 +93,13 @@ func (r *Register) Register(ctx context.Context, repo models.IUserRepo) (err err
 		CurrentSignInIP:   "",
 		LastSignInIP:      "",
 		CreatedAt:         time.Now(),
-		UpdatedAt:         time.Time{},
+		UpdatedAt:         time.Now(),
 	}
 	insertUser, err := repo.Insert(ctx, user)
 	if err != nil {
-		log.Error("create user error")
-		return
+		return fmt.Errorf("inser user %s user error %w", r.Username, err)
 	}
-	// return
+
 	log.Infof("%s registration success", insertUser.Name)
 	return nil
 }
@@ -111,24 +115,21 @@ func (u *UserInfo) UserProfile(ctx context.Context, repo models.IUserRepo, confi
 		return config.Auth.SecretKey, nil
 	})
 	if err != nil {
-		log.Error(ErrParseToken)
-		return userInfo, err
+		return userInfo, fmt.Errorf("cannot parse token %s %w", token.Raw, err)
 	}
-	// Check Token validity
+	// check token validity
 	if !token.Valid {
-		log.Error(ErrInvalidToken)
-		return userInfo, ErrInvalidToken
+		return userInfo, fmt.Errorf("token %s invalid %w", token.Raw, ErrInvalidToken)
 	}
 	// Get username by token
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		log.Error(ErrExtractClaims)
 		return userInfo, ErrExtractClaims
 	}
 	username := claims["sub"].(string)
 
 	// Get user by username
-	user, err := repo.GetUserByName(ctx, username)
+	user, err := repo.Get(ctx, &models.GetUserParam{Name: utils.String(username)})
 	if err != nil {
 		return userInfo, err
 	}
@@ -136,7 +137,7 @@ func (u *UserInfo) UserProfile(ctx context.Context, repo models.IUserRepo, confi
 		CreatedAt:       &user.CreatedAt,
 		CurrentSignInAt: &user.CurrentSignInAt,
 		CurrentSignInIP: &user.CurrentSignInIP,
-		Email:           openapi_types.Email(user.Email),
+		Email:           openapitypes.Email(user.Email),
 		LastSignInAt:    &user.LastSignInAt,
 		LastSignInIP:    &user.LastSignInIP,
 		UpdateAt:        &user.UpdatedAt,
