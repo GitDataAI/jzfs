@@ -37,3 +37,20 @@ func (A UserController) Login(w *api.JiaozifsResponse, r *http.Request) {
 	// resp
 	w.RespJSON(resp)
 }
+
+func (A UserController) Register(w *api.JiaozifsResponse, r *http.Request) {
+	// Decode requestBody
+	var register auth.Register
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&register); err != nil {
+		w.RespError(err)
+	}
+	// Perform register
+	msg, err := register.Register(*A.UserRepo)
+	if err != nil {
+		w.RespError(err)
+		return
+	}
+	// resp
+	w.RespJSON(msg)
+}

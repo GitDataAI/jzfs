@@ -37,6 +37,75 @@ components:
       in: cookie
       name: saml_auth_session
   schemas:
+    UserUpdate:
+      type: object
+      required:
+        - username
+        - email
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+
+    UserInfo:
+      type: object
+      required:
+        - username
+        - email
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        currentSignInAt:
+          type: string
+          format: date-time
+        lastSignInAt:
+          type: string
+          format: date-time
+        currentSignInIP:
+          type: string
+          format: ipv4
+        lastSignInIP:
+          type: string
+          format: ipv4
+        createdAt:
+          type: string
+          format: date-time
+        updateAt:
+          type: string
+          format: date-time
+
+    RegistrationMsg:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+
+    UserRegisterInfo:
+      type: object
+      required:
+        - username
+        - email
+        - password
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          minLength: 8
+        email:
+          type: string
+          format: email
+
     AuthenticationToken:
       type: object
       required:
@@ -49,6 +118,7 @@ components:
           type: integer
           format: int64
           description: Unix Epoch in seconds
+
     VersionResult:
       type: object
       required:
@@ -395,7 +465,7 @@ paths:
   /auth/login:
     post:
       tags:
-        - user
+        - auth
       operationId: login
       summary: perform a login
       security: [] # No authentication
@@ -426,6 +496,32 @@ paths:
                 $ref: "#/components/schemas/AuthenticationToken"
         401:
           description: Unauthorized ValidationError
+        420:
+          description: too many requests
+        default:
+          description: Internal Server Error
+
+  /auth/register:
+    post:
+      tags:
+        - auth
+      operationId: register
+      summary: perform user registration
+      security: [] # No authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserRegisterInfo"
+      responses:
+        201:
+          description: registration success message
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegistrationMsg"
+        400:
+          description: Bad Request - Validation Error
         420:
           description: too many requests
         default:

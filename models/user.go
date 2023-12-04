@@ -28,6 +28,7 @@ type IUserRepo interface {
 	Insert(ctx context.Context, user *User) (*User, error)
 
 	GetEPByName(ctx context.Context, name string) (string, error)
+	CheckUserByNameEmail(ctx context.Context, name, email string) bool
 }
 
 var _ IUserRepo = (*UserRepo)(nil)
@@ -59,5 +60,13 @@ func (userRepo *UserRepo) GetEPByName(ctx context.Context, name string) (string,
 		Model((*User)(nil)).Column("encrypted_password").
 		Where("name = ?", name).
 		Scan(ctx, &ep)
+}
 
+func (userRepo *UserRepo) CheckUserByNameEmail(ctx context.Context, name, email string) bool {
+	err := userRepo.DB.NewSelect().Model((*User)(nil)).Where("name = ? OR email = ?", name, email).
+		Limit(1).Scan(ctx)
+	if err != nil {
+		return false
+	}
+	return true
 }
