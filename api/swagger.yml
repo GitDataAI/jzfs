@@ -392,7 +392,7 @@ paths:
         420:
           description: too many requests
 
-  /user/login:
+  /auth/login:
     post:
       tags:
         - user
