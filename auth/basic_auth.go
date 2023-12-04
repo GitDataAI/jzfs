@@ -3,9 +3,10 @@ package auth
 import (
 	"context"
 	"errors"
+	"time"
+
 	"github.com/golang-jwt/jwt"
 	openapi_types "github.com/oapi-codegen/runtime/types"
-	"time"
 
 	"github.com/go-openapi/swag"
 	logging "github.com/ipfs/go-log/v2"

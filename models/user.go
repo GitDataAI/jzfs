@@ -66,10 +66,7 @@ func (userRepo *UserRepo) GetEPByName(ctx context.Context, name string) (string,
 func (userRepo *UserRepo) CheckUserByNameEmail(ctx context.Context, name, email string) bool {
 	err := userRepo.DB.NewSelect().Model((*User)(nil)).Where("name = ? OR email = ?", name, email).
 		Limit(1).Scan(ctx)
-	if err != nil {
-		return false
-	}
-	return true
+	return err != nil
 }
 
 func (userRepo *UserRepo) GetUserByName(ctx context.Context, name string) (*User, error) {
