@@ -15,12 +15,12 @@ const (
 // It supports backward compatibility for creating a login jwt. The audience is not set for login token. Any audience will make the token
 // invalid for login. No email is passed to support the ability of login for users via user/access keys which don't have an email yet
 func GenerateJWTLogin(secret []byte, userID string, issuedAt, expiresAt time.Time) (string, error) {
-	claims := &jwt.StandardClaims{
-		Id:        uuid.NewString(),
-		Audience:  LoginAudience,
-		Subject:   userID,
-		IssuedAt:  issuedAt.Unix(),
-		ExpiresAt: expiresAt.Unix(),
+	claims := jwt.MapClaims{
+		"id":  uuid.NewString(),
+		"aud": LoginAudience,
+		"sub": userID,
+		"iat": issuedAt.Unix(),
+		"exp": expiresAt.Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(secret)

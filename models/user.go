@@ -28,6 +28,7 @@ type IUserRepo interface {
 	Insert(ctx context.Context, user *User) (*User, error)
 
 	GetEPByName(ctx context.Context, name string) (string, error)
+	GetUserByName(ctx context.Context, name string) (*User, error)
 	CheckUserByNameEmail(ctx context.Context, name, email string) bool
 }
 
@@ -69,4 +70,9 @@ func (userRepo *UserRepo) CheckUserByNameEmail(ctx context.Context, name, email 
 		return false
 	}
 	return true
+}
+
+func (userRepo *UserRepo) GetUserByName(ctx context.Context, name string) (*User, error) {
+	user := &User{}
+	return user, userRepo.DB.NewSelect().Model(user).Where("name = ?", name).Scan(ctx)
 }

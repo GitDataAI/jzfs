@@ -2,6 +2,9 @@ package auth
 
 import (
 	"context"
+	"errors"
+	"github.com/golang-jwt/jwt"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 	"time"
 
 	"github.com/go-openapi/swag"
@@ -22,6 +25,9 @@ type Register struct {
 	Username string `json:"username"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
+}
+type UserInfo struct {
+	Token string `json:"token"`
 }
 
 func (l *Login) Login(userRepo models.IUserRepo, config *config.Config) (token api.AuthenticationToken, err error) {
@@ -56,15 +62,15 @@ func (l *Login) Login(userRepo models.IUserRepo, config *config.Config) (token a
 	return token, nil
 }
 
-func (l *Register) Register(userRepo models.IUserRepo) (msg api.RegistrationMsg, err error) {
+func (r *Register) Register(userRepo models.IUserRepo) (msg api.RegistrationMsg, err error) {
 	ctx := context.Background()
 	// check username, email
-	if userRepo.CheckUserByNameEmail(ctx, l.Username, l.Email) {
+	if userRepo.CheckUserByNameEmail(ctx, r.Username, r.Email) {
 		msg.Message = "The username or email has already been registered"
 		return
 	}
 
-	password, err := bcrypt.GenerateFromPassword([]byte(l.Password), passwordCost)
+	password, err := bcrypt.GenerateFromPassword([]byte(r.Password), passwordCost)
 	if err != nil {
 		msg.Message = "Generate Password err"
 		return
@@ -72,8 +78,8 @@ func (l *Register) Register(userRepo models.IUserRepo) (msg api.RegistrationMsg,
 
 	// insert db
 	user := &models.User{
-		Name:              l.Username,
-		Email:             l.Email,
+		Name:              r.Username,
+		Email:             r.Email,
 		EncryptedPassword: string(password),
 		CurrentSignInAt:   time.Time{},
 		LastSignInAt:      time.Time{},
@@ -90,4 +96,43 @@ func (l *Register) Register(userRepo models.IUserRepo) (msg api.RegistrationMsg,
 	// return
 	msg.Message = insertUser.Name + " register success"
 	return msg, nil
+}
+
+func (u *UserInfo) UserProfile(userRepo models.IUserRepo, config *config.Config) (api.UserInfo, error) {
+	ctx := context.Background()
+	userInfo := api.UserInfo{}
+	// Parse JWT Token
+	token, err := jwt.Parse(u.Token, func(token *jwt.Token) (interface{}, error) {
+		return config.Auth.SecretKey, nil
+	})
+	if err != nil {
+		return userInfo, err
+	}
+	// Check Token validity
+	if !token.Valid {
+		return userInfo, errors.New("token is invalid")
+	}
+	// Get username by token
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return userInfo, errors.New("failed to extract claims from JWT token")
+	}
+	username := claims["sub"].(string)
+
+	// Get user by username
+	user, err := userRepo.GetUserByName(ctx, username)
+	if err != nil {
+		return userInfo, err
+	}
+	userInfo = api.UserInfo{
+		CreatedAt:       &user.CreatedAt,
+		CurrentSignInAt: &user.CurrentSignInAt,
+		CurrentSignInIP: &user.CurrentSignInIP,
+		Email:           openapi_types.Email(user.Email),
+		LastSignInAt:    &user.LastSignInAt,
+		LastSignInIP:    &user.LastSignInIP,
+		UpdateAt:        &user.UpdatedAt,
+		Username:        user.Name,
+	}
+	return userInfo, nil
 }

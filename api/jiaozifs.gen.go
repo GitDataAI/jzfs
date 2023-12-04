@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
@@ -79,6 +80,18 @@ type ObjectUserMetadata map[string]string
 // RegistrationMsg defines model for RegistrationMsg.
 type RegistrationMsg struct {
 	Message string `json:"message"`
+}
+
+// UserInfo defines model for UserInfo.
+type UserInfo struct {
+	CreatedAt       *time.Time          `json:"createdAt,omitempty"`
+	CurrentSignInAt *time.Time          `json:"currentSignInAt,omitempty"`
+	CurrentSignInIP *string             `json:"currentSignInIP,omitempty"`
+	Email           openapi_types.Email `json:"email"`
+	LastSignInAt    *time.Time          `json:"lastSignInAt,omitempty"`
+	LastSignInIP    *string             `json:"lastSignInIP,omitempty"`
+	UpdateAt        *time.Time          `json:"updateAt,omitempty"`
+	Username        string              `json:"username"`
 }
 
 // UserRegisterInfo defines model for UserRegisterInfo.
@@ -240,6 +253,9 @@ type ClientInterface interface {
 
 	Register(ctx context.Context, body RegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetUserInfo request
+	GetUserInfo(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// DeleteObject request
 	DeleteObject(ctx context.Context, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -294,6 +310,18 @@ func (c *Client) RegisterWithBody(ctx context.Context, contentType string, body 
 
 func (c *Client) Register(ctx context.Context, body RegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewRegisterRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetUserInfo(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetUserInfoRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -440,6 +468,33 @@ func NewRegisterRequestWithBody(server string, contentType string, body io.Reade
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetUserInfoRequest generates requests for GetUserInfo
+func NewGetUserInfoRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/auth/user")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -811,6 +866,9 @@ type ClientWithResponsesInterface interface {
 
 	RegisterWithResponse(ctx context.Context, body RegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*RegisterResponse, error)
 
+	// GetUserInfoWithResponse request
+	GetUserInfoWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetUserInfoResponse, error)
+
 	// DeleteObjectWithResponse request
 	DeleteObjectWithResponse(ctx context.Context, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*DeleteObjectResponse, error)
 
@@ -865,6 +923,28 @@ func (r RegisterResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r RegisterResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetUserInfoResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *UserInfo
+}
+
+// Status returns HTTPResponse.Status
+func (r GetUserInfoResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetUserInfoResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1012,6 +1092,15 @@ func (c *ClientWithResponses) RegisterWithResponse(ctx context.Context, body Reg
 	return ParseRegisterResponse(rsp)
 }
 
+// GetUserInfoWithResponse request returning *GetUserInfoResponse
+func (c *ClientWithResponses) GetUserInfoWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetUserInfoResponse, error) {
+	rsp, err := c.GetUserInfo(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetUserInfoResponse(rsp)
+}
+
 // DeleteObjectWithResponse request returning *DeleteObjectResponse
 func (c *ClientWithResponses) DeleteObjectWithResponse(ctx context.Context, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*DeleteObjectResponse, error) {
 	rsp, err := c.DeleteObject(ctx, repository, params, reqEditors...)
@@ -1103,6 +1192,32 @@ func ParseRegisterResponse(rsp *http.Response) (*RegisterResponse, error) {
 			return nil, err
 		}
 		response.JSON201 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetUserInfoResponse parses an HTTP response from a GetUserInfoWithResponse call
+func ParseGetUserInfoResponse(rsp *http.Response) (*GetUserInfoResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetUserInfoResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UserInfo
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
 
 	}
 
@@ -1217,6 +1332,9 @@ type ServerInterface interface {
 	// perform user registration
 	// (POST /auth/register)
 	Register(w *JiaozifsResponse, r *http.Request)
+	// get information of the currently logged-in user
+	// (GET /auth/user)
+	GetUserInfo(w *JiaozifsResponse, r *http.Request)
 	// delete object. Missing objects will not return a NotFound error.
 	// (DELETE /repositories/{repository}/objects)
 	DeleteObject(w *JiaozifsResponse, r *http.Request, repository string, params DeleteObjectParams)
@@ -1247,6 +1365,12 @@ func (_ Unimplemented) Login(w *JiaozifsResponse, r *http.Request) {
 // perform user registration
 // (POST /auth/register)
 func (_ Unimplemented) Register(w *JiaozifsResponse, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// get information of the currently logged-in user
+// (GET /auth/user)
+func (_ Unimplemented) GetUserInfo(w *JiaozifsResponse, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -1309,6 +1433,23 @@ func (siw *ServerInterfaceWrapper) Register(w http.ResponseWriter, r *http.Reque
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.Register(&JiaozifsResponse{w}, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// GetUserInfo operation middleware
+func (siw *ServerInterfaceWrapper) GetUserInfo(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{"aaaa"})
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetUserInfo(&JiaozifsResponse{w}, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1726,6 +1867,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/auth/register", wrapper.Register)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/auth/user", wrapper.GetUserInfo)
+	})
+	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/repositories/{repository}/objects", wrapper.DeleteObject)
 	})
 	r.Group(func(r chi.Router) {
@@ -1747,42 +1891,44 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

@@ -54,3 +54,18 @@ func (A UserController) Register(w *api.JiaozifsResponse, r *http.Request) {
 	// resp
 	w.RespJSON(msg)
 }
+
+func (A UserController) GetUserInfo(w *api.JiaozifsResponse, r *http.Request) {
+	// Get token from Header
+	tokenString := r.Header.Get("Authorization")
+	userInfo := &auth.UserInfo{Token: tokenString}
+
+	// Perform GetUserInfo
+	info, err := userInfo.UserProfile(*A.UserRepo, A.Config)
+	if err != nil {
+		w.RespError(err)
+		return
+	}
+	// resp
+	w.RespJSON(info)
+}

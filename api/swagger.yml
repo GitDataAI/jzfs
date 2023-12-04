@@ -526,3 +526,23 @@ paths:
           description: too many requests
         default:
           description: Internal Server Error
+
+  /auth/user:
+    get:
+      tags:
+        - auth
+      operationId: getUserInfo
+      summary: get information of the currently logged-in user
+      security:
+        - jwt_token: ["aaaa"]
+      responses:
+        200:
+          description: Successful get of user Info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserInfo"
+        401:
+          description: Unauthorized
+        default:
+          description: Internal Server Error
