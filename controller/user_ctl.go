@@ -6,19 +6,17 @@ import (
 
 	"github.com/jiaozifs/jiaozifs/api"
 	"github.com/jiaozifs/jiaozifs/auth"
-	"github.com/jiaozifs/jiaozifs/config"
-	"github.com/jiaozifs/jiaozifs/models"
 	"go.uber.org/fx"
 )
 
 type UserController struct {
 	fx.In
 
-	UserRepo *models.IUserRepo
-	Config   *config.Config
+	Auth auth.Service
 }
 
 func (A UserController) Login(w *api.JiaozifsResponse, r *http.Request) {
+	ctx := r.Context()
 	// Decode requestBody
 	var login auth.Login
 	decoder := json.NewDecoder(r.Body)
@@ -28,7 +26,7 @@ func (A UserController) Login(w *api.JiaozifsResponse, r *http.Request) {
 	}
 
 	// Perform login
-	resp, err := login.Login(*A.UserRepo, A.Config)
+	resp, err := login.Login(ctx, A.Auth)
 	if err != nil {
 		w.RespError(err)
 		return
@@ -39,6 +37,7 @@ func (A UserController) Login(w *api.JiaozifsResponse, r *http.Request) {
 }
 
 func (A UserController) Register(w *api.JiaozifsResponse, r *http.Request) {
+	ctx := r.Context()
 	// Decode requestBody
 	var register auth.Register
 	decoder := json.NewDecoder(r.Body)
@@ -46,7 +45,7 @@ func (A UserController) Register(w *api.JiaozifsResponse, r *http.Request) {
 		w.RespError(err)
 	}
 	// Perform register
-	msg, err := register.Register(*A.UserRepo)
+	msg, err := register.Register(ctx, A.Auth)
 	if err != nil {
 		w.RespError(err)
 		return
@@ -56,12 +55,13 @@ func (A UserController) Register(w *api.JiaozifsResponse, r *http.Request) {
 }
 
 func (A UserController) GetUserInfo(w *api.JiaozifsResponse, r *http.Request) {
+	ctx := r.Context()
 	// Get token from Header
 	tokenString := r.Header.Get("Authorization")
 	userInfo := &auth.UserInfo{Token: tokenString}
 
 	// Perform GetUserInfo
-	info, err := userInfo.UserProfile(*A.UserRepo, A.Config)
+	info, err := userInfo.UserProfile(ctx, A.Auth)
 	if err != nil {
 		w.RespError(err)
 		return

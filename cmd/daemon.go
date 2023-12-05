@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"github.com/jiaozifs/jiaozifs/auth"
 
 	"github.com/jiaozifs/jiaozifs/block/params"
 
@@ -47,6 +48,8 @@ var daemonCmd = &cobra.Command{
 			fx_opt.Override(new(*config.APIConfig), &cfg.API),
 			fx_opt.Override(new(*config.DatabaseConfig), &cfg.Database),
 			fx_opt.Override(new(params.AdapterConfig), &cfg.Blockstore),
+			//auth
+			fx_opt.Override(new(auth.Service), auth.NewAuthService),
 			//blockstore
 			fx_opt.Override(new(block.Adapter), factory.BuildBlockAdapter),
 			//database

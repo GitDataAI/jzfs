@@ -11,7 +11,6 @@ import (
 	"github.com/go-openapi/swag"
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/jiaozifs/jiaozifs/api"
-	"github.com/jiaozifs/jiaozifs/config"
 	"github.com/jiaozifs/jiaozifs/models"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -22,19 +21,10 @@ type Login struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
-type Register struct {
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-type UserInfo struct {
-	Token string `json:"token"`
-}
 
-func (l *Login) Login(userRepo models.IUserRepo, config *config.Config) (token api.AuthenticationToken, err error) {
-	ctx := context.Background()
+func (l *Login) Login(ctx context.Context, authService Service) (token api.AuthenticationToken, err error) {
 	// Get user encryptedPassword by username
-	ep, err := userRepo.GetEPByName(ctx, l.Username)
+	ep, err := authService.GetEPByName(ctx, l.Username)
 	if err != nil {
 		log.Errorf("username err: %s", err)
 		return token, err
@@ -49,7 +39,7 @@ func (l *Login) Login(userRepo models.IUserRepo, config *config.Config) (token a
 	// Generate user token
 	loginTime := time.Now()
 	expires := loginTime.Add(expirationDuration)
-	secretKey := config.Auth.SecretKey
+	secretKey := authService.GetSecretKey()
 
 	tokenString, err := GenerateJWTLogin(secretKey, l.Username, loginTime, expires)
 	if err != nil {
@@ -63,10 +53,15 @@ func (l *Login) Login(userRepo models.IUserRepo, config *config.Config) (token a
 	return token, nil
 }
 
-func (r *Register) Register(userRepo models.IUserRepo) (msg api.RegistrationMsg, err error) {
-	ctx := context.Background()
+type Register struct {
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+func (r *Register) Register(ctx context.Context, authService Service) (msg api.RegistrationMsg, err error) {
 	// check username, email
-	if userRepo.CheckUserByNameEmail(ctx, r.Username, r.Email) {
+	if authService.CheckUserByNameEmail(ctx, r.Username, r.Email) {
 		msg.Message = "The username or email has already been registered"
 		return
 	}
@@ -89,7 +84,7 @@ func (r *Register) Register(userRepo models.IUserRepo) (msg api.RegistrationMsg,
 		CreatedAt:         time.Now(),
 		UpdatedAt:         time.Time{},
 	}
-	insertUser, err := userRepo.Insert(ctx, user)
+	insertUser, err := authService.Insert(ctx, user)
 	if err != nil {
 		msg.Message = "register user err"
 		return
@@ -99,12 +94,15 @@ func (r *Register) Register(userRepo models.IUserRepo) (msg api.RegistrationMsg,
 	return msg, nil
 }
 
-func (u *UserInfo) UserProfile(userRepo models.IUserRepo, config *config.Config) (api.UserInfo, error) {
-	ctx := context.Background()
+type UserInfo struct {
+	Token string `json:"token"`
+}
+
+func (u *UserInfo) UserProfile(ctx context.Context, authService Service) (api.UserInfo, error) {
 	userInfo := api.UserInfo{}
 	// Parse JWT Token
 	token, err := jwt.Parse(u.Token, func(token *jwt.Token) (interface{}, error) {
-		return config.Auth.SecretKey, nil
+		return authService.GetSecretKey(), nil
 	})
 	if err != nil {
 		return userInfo, err
@@ -121,7 +119,7 @@ func (u *UserInfo) UserProfile(userRepo models.IUserRepo, config *config.Config)
 	username := claims["sub"].(string)
 
 	// Get user by username
-	user, err := userRepo.GetUserByName(ctx, username)
+	user, err := authService.GetUserByName(ctx, username)
 	if err != nil {
 		return userInfo, err
 	}
