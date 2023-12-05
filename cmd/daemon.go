@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+
 	"github.com/jiaozifs/jiaozifs/auth"
 
 	"github.com/jiaozifs/jiaozifs/block/params"

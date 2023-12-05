@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+
 	"github.com/jiaozifs/jiaozifs/config"
 	"github.com/jiaozifs/jiaozifs/models"
 )
