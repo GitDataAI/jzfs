@@ -17,30 +17,30 @@ type Service interface {
 	GetSecretKey() []byte
 }
 
-var _ Service = (*AuthService)(nil)
+var _ Service = (*ServiceAuth)(nil)
 
-type AuthService struct {
+type ServiceAuth struct {
 	UserRepo *models.IUserRepo
 	Config   *config.Config
 }
 
-func (a AuthService) GetUserByName(ctx context.Context, name string) (*models.User, error) {
+func (a ServiceAuth) GetUserByName(ctx context.Context, name string) (*models.User, error) {
 	return (*a.UserRepo).GetUserByName(ctx, name)
 }
 
-func (a AuthService) Insert(ctx context.Context, user *models.User) (*models.User, error) {
+func (a ServiceAuth) Insert(ctx context.Context, user *models.User) (*models.User, error) {
 	return (*a.UserRepo).Insert(ctx, user)
 }
 
-func (a AuthService) CheckUserByNameEmail(ctx context.Context, name, email string) bool {
+func (a ServiceAuth) CheckUserByNameEmail(ctx context.Context, name, email string) bool {
 	return (*a.UserRepo).CheckUserByNameEmail(ctx, name, email)
 }
 
-func (a AuthService) GetSecretKey() []byte {
+func (a ServiceAuth) GetSecretKey() []byte {
 	return (*a.Config).Auth.SecretKey
 }
 
-func (a AuthService) GetEPByName(ctx context.Context, name string) (string, error) {
+func (a ServiceAuth) GetEPByName(ctx context.Context, name string) (string, error) {
 	ep, err := (*a.UserRepo).GetEPByName(ctx, name)
 	if err != nil {
 		return "", err
@@ -48,9 +48,9 @@ func (a AuthService) GetEPByName(ctx context.Context, name string) (string, erro
 	return ep, nil
 }
 
-func NewAuthService(userRepo *models.IUserRepo, config *config.Config) *AuthService {
+func NewAuthService(userRepo *models.IUserRepo, config *config.Config) *ServiceAuth {
 	log.Info("initialized Auth service")
-	res := &AuthService{
+	res := &ServiceAuth{
 		UserRepo: userRepo,
 		Config:   config,
 	}
