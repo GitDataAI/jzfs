@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/golang-jwt/jwt"
@@ -47,6 +46,8 @@ func (l *Login) Login(ctx context.Context, authService Service) (token api.Authe
 		return token, err
 	}
 
+	log.Info("login successful")
+
 	token.Token = tokenString
 	token.TokenExpiration = swag.Int64(expires.Unix())
 
@@ -61,14 +62,16 @@ type Register struct {
 
 func (r *Register) Register(ctx context.Context, authService Service) (msg api.RegistrationMsg, err error) {
 	// check username, email
-	if authService.CheckUserByNameEmail(ctx, r.Username, r.Email) {
+	if !authService.CheckUserByNameEmail(ctx, r.Username, r.Email) {
 		msg.Message = "The username or email has already been registered"
+		log.Error(ErrInvalidNameEmail)
 		return
 	}
 
 	password, err := bcrypt.GenerateFromPassword([]byte(r.Password), passwordCost)
 	if err != nil {
-		msg.Message = "Generate Password err"
+		msg.Message = "compare password err"
+		log.Error(ErrComparePassword)
 		return
 	}
 
@@ -87,9 +90,11 @@ func (r *Register) Register(ctx context.Context, authService Service) (msg api.R
 	insertUser, err := authService.Insert(ctx, user)
 	if err != nil {
 		msg.Message = "register user err"
+		log.Error(msg.Message)
 		return
 	}
 	// return
+	log.Info("registration success")
 	msg.Message = insertUser.Name + " register success"
 	return msg, nil
 }
@@ -105,16 +110,19 @@ func (u *UserInfo) UserProfile(ctx context.Context, authService Service) (api.Us
 		return authService.GetSecretKey(), nil
 	})
 	if err != nil {
+		log.Error(ErrParseToken)
 		return userInfo, err
 	}
 	// Check Token validity
 	if !token.Valid {
-		return userInfo, errors.New("token is invalid")
+		log.Error(ErrInvalidToken)
+		return userInfo, ErrInvalidToken
 	}
 	// Get username by token
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return userInfo, errors.New("failed to extract claims from JWT token")
+		log.Error(ErrExtractClaims)
+		return userInfo, ErrExtractClaims
 	}
 	username := claims["sub"].(string)
 
@@ -133,5 +141,6 @@ func (u *UserInfo) UserProfile(ctx context.Context, authService Service) (api.Us
 		UpdateAt:        &user.UpdatedAt,
 		Username:        user.Name,
 	}
+	log.Info("get user profile success")
 	return userInfo, nil
 }
