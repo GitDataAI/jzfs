@@ -3,8 +3,6 @@ package cmd
 import (
 	"context"
 
-	"github.com/jiaozifs/jiaozifs/auth"
-
 	"github.com/jiaozifs/jiaozifs/block/params"
 
 	"github.com/jiaozifs/jiaozifs/block"
@@ -49,17 +47,15 @@ var daemonCmd = &cobra.Command{
 			fx_opt.Override(new(*config.APIConfig), &cfg.API),
 			fx_opt.Override(new(*config.DatabaseConfig), &cfg.Database),
 			fx_opt.Override(new(params.AdapterConfig), &cfg.Blockstore),
-			//auth
-			fx_opt.Override(new(auth.Service), auth.NewAuthService),
 			//blockstore
 			fx_opt.Override(new(block.Adapter), factory.BuildBlockAdapter),
 			//database
 			fx_opt.Override(new(*bun.DB), models.SetupDatabase),
 			fx_opt.Override(fx_opt.NextInvoke(), migrations.MigrateDatabase),
-			fx_opt.Override(new(*models.IUserRepo), models.NewUserRepo),
-			fx_opt.Override(new(*models.IRepositoryRepo), models.NewRepositoryRepo),
-			fx_opt.Override(new(*models.IRefRepo), models.NewRefRepo),
-			fx_opt.Override(new(*models.IObjectRepo), models.NewObjectRepo),
+			fx_opt.Override(new(models.IUserRepo), models.NewUserRepo),
+			fx_opt.Override(new(models.IRepositoryRepo), models.NewRepositoryRepo),
+			fx_opt.Override(new(models.IRefRepo), models.NewRefRepo),
+			fx_opt.Override(new(models.IObjectRepo), models.NewObjectRepo),
 
 			//api
 			fx_opt.Override(fx_opt.NextInvoke(), apiImpl.SetupAPI),

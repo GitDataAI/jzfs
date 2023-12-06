@@ -29,7 +29,7 @@ type IUserRepo interface {
 
 	GetEPByName(ctx context.Context, name string) (string, error)
 	GetUserByName(ctx context.Context, name string) (*User, error)
-	CheckUserByNameEmail(ctx context.Context, name, email string) bool
+	GetUserByEmail(ctx context.Context, email string) (*User, error)
 }
 
 var _ IUserRepo = (*UserRepo)(nil)
@@ -63,13 +63,13 @@ func (userRepo *UserRepo) GetEPByName(ctx context.Context, name string) (string,
 		Scan(ctx, &ep)
 }
 
-func (userRepo *UserRepo) CheckUserByNameEmail(ctx context.Context, name, email string) bool {
-	err := userRepo.DB.NewSelect().Model((*User)(nil)).Where("name = ? OR email = ?", name, email).
-		Limit(1).Scan(ctx)
-	return err == nil
-}
-
 func (userRepo *UserRepo) GetUserByName(ctx context.Context, name string) (*User, error) {
 	user := &User{}
 	return user, userRepo.DB.NewSelect().Model(user).Where("name = ?", name).Scan(ctx)
+}
+
+func (userRepo *UserRepo) GetUserByEmail(ctx context.Context, email string) (*User, error) {
+	user := &User{}
+	return user, userRepo.DB.NewSelect().
+		Model(user).Where("email = ?", email).Scan(ctx)
 }

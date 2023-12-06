@@ -68,10 +68,11 @@ func TestNewUserRepo(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, cmp.Equal(userModel.EncryptedPassword, ep))
 
-	b := repo.CheckUserByNameEmail(ctx, newUser.Name, newUser.Email)
-	require.True(t, !b)
-
-	u, err := repo.GetUserByName(ctx, newUser.Name)
+	userByEmail, err := repo.GetUserByEmail(ctx, newUser.Email)
 	require.NoError(t, err)
-	require.True(t, cmp.Equal(userModel.UpdatedAt, u.UpdatedAt, dbTimeCmpOpt))
+	require.True(t, cmp.Equal(userModel.UpdatedAt, userByEmail.UpdatedAt, dbTimeCmpOpt))
+
+	userByName, err := repo.GetUserByName(ctx, newUser.Name)
+	require.NoError(t, err)
+	require.True(t, cmp.Equal(userModel.UpdatedAt, userByName.UpdatedAt, dbTimeCmpOpt))
 }
