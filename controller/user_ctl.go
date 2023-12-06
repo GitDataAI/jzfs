@@ -2,6 +2,8 @@ package controller
 
 import (
 	"encoding/json"
+	"github.com/jiaozifs/jiaozifs/config"
+	"github.com/jiaozifs/jiaozifs/models"
 	"net/http"
 
 	"github.com/jiaozifs/jiaozifs/api"
@@ -12,7 +14,8 @@ import (
 type UserController struct {
 	fx.In
 
-	Auth auth.Service
+	Repo   models.IUserRepo
+	Config *config.Config
 }
 
 func (A UserController) Login(w *api.JiaozifsResponse, r *http.Request) {
@@ -26,7 +29,7 @@ func (A UserController) Login(w *api.JiaozifsResponse, r *http.Request) {
 	}
 
 	// Perform login
-	resp, err := login.Login(ctx, A.Auth)
+	resp, err := login.Login(ctx, A.Repo, A.Config)
 	if err != nil {
 		w.RespError(err)
 		return
@@ -45,13 +48,13 @@ func (A UserController) Register(w *api.JiaozifsResponse, r *http.Request) {
 		w.RespError(err)
 	}
 	// Perform register
-	msg, err := register.Register(ctx, A.Auth)
+	err := register.Register(ctx, A.Repo)
 	if err != nil {
 		w.RespError(err)
 		return
 	}
 	// resp
-	w.RespJSON(msg)
+	w.RespJSON("registration success")
 }
 
 func (A UserController) GetUserInfo(w *api.JiaozifsResponse, r *http.Request) {
@@ -61,7 +64,7 @@ func (A UserController) GetUserInfo(w *api.JiaozifsResponse, r *http.Request) {
 	userInfo := &auth.UserInfo{Token: tokenString}
 
 	// Perform GetUserInfo
-	info, err := userInfo.UserProfile(ctx, A.Auth)
+	info, err := userInfo.UserProfile(ctx, A.Repo, A.Config)
 	if err != nil {
 		w.RespError(err)
 		return
