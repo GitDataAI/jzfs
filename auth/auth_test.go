@@ -3,6 +3,8 @@ package auth
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/brianvoe/gofakeit/v6"
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 	"github.com/jiaozifs/jiaozifs/config"
@@ -12,7 +14,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
 	"go.uber.org/fx/fxtest"
-	"testing"
 )
 
 var testConnTmpl = "postgres://postgres:postgres@localhost:%d/jiaozifs?sslmode=disable"

@@ -2,8 +2,9 @@ package auth
 
 import (
 	"context"
-	"github.com/jiaozifs/jiaozifs/config"
 	"time"
+
+	"github.com/jiaozifs/jiaozifs/config"
 
 	"github.com/golang-jwt/jwt"
 	openapi_types "github.com/oapi-codegen/runtime/types"

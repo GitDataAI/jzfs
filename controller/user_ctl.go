@@ -2,9 +2,10 @@ package controller
 
 import (
 	"encoding/json"
+	"net/http"
+
 	"github.com/jiaozifs/jiaozifs/config"
 	"github.com/jiaozifs/jiaozifs/models"
-	"net/http"
 
 	"github.com/jiaozifs/jiaozifs/api"
 	"github.com/jiaozifs/jiaozifs/auth"
