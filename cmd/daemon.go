@@ -52,10 +52,10 @@ var daemonCmd = &cobra.Command{
 			//database
 			fx_opt.Override(new(*bun.DB), models.SetupDatabase),
 			fx_opt.Override(fx_opt.NextInvoke(), migrations.MigrateDatabase),
-			fx_opt.Override(new(*models.IUserRepo), models.NewUserRepo),
-			fx_opt.Override(new(*models.IRepositoryRepo), models.NewRepositoryRepo),
-			fx_opt.Override(new(*models.IRefRepo), models.NewRefRepo),
-			fx_opt.Override(new(*models.IObjectRepo), models.NewObjectRepo),
+			fx_opt.Override(new(models.IUserRepo), models.NewUserRepo),
+			fx_opt.Override(new(models.IRepositoryRepo), models.NewRepositoryRepo),
+			fx_opt.Override(new(models.IRefRepo), models.NewRefRepo),
+			fx_opt.Override(new(models.IObjectRepo), models.NewObjectRepo),
 
 			//api
 			fx_opt.Override(fx_opt.NextInvoke(), apiImpl.SetupAPI),

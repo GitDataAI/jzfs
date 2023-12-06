@@ -13,8 +13,8 @@ servers:
     description: jiaozifs server endpoint
 
 security:
-  - jwt_token: ["aaaa"]
-  - basic_auth: ["aaaaa"]
+  - jwt_token: []
+  - basic_auth: []
 components:
   securitySchemes:
     basic_auth:
@@ -37,6 +37,80 @@ components:
       in: cookie
       name: saml_auth_session
   schemas:
+    UserUpdate:
+      type: object
+      required:
+        - username
+        - email
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+
+    UserInfo:
+      type: object
+      required:
+        - username
+        - email
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        currentSignInAt:
+          type: string
+          format: date-time
+        lastSignInAt:
+          type: string
+          format: date-time
+        currentSignInIP:
+          type: string
+          format: ipv4
+        lastSignInIP:
+          type: string
+          format: ipv4
+        createdAt:
+          type: string
+          format: date-time
+        updateAt:
+          type: string
+          format: date-time
+
+    UserRegisterInfo:
+      type: object
+      required:
+        - username
+        - email
+        - password
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          minLength: 8
+        email:
+          type: string
+          format: email
+
+    AuthenticationToken:
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          description: a JWT token that could be used to authenticate requests
+          type: string
+        token_expiration:
+          type: integer
+          format: int64
+          description: Unix Epoch in seconds
+
     VersionResult:
       type: object
       required:
@@ -379,3 +453,84 @@ paths:
           description: NotFound
         420:
           description: too many requests
+
+  /auth/login:
+    post:
+      tags:
+        - auth
+      operationId: login
+      summary: perform a login
+      security: [] # No authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        200:
+          description: successful login
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: "access_token=abcde12356; Path=/; HttpOnly"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationToken"
+        401:
+          description: Unauthorized ValidationError
+        420:
+          description: too many requests
+        default:
+          description: Internal Server Error
+
+  /auth/register:
+    post:
+      tags:
+        - auth
+      operationId: register
+      summary: perform user registration
+      security: [] # No authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserRegisterInfo"
+      responses:
+        201:
+          description: registration success
+        400:
+          description: Bad Request - Validation Error
+        420:
+          description: too many requests
+        default:
+          description: Internal Server Error
+
+  /auth/user:
+    get:
+      tags:
+        - auth
+      operationId: getUserInfo
+      summary: get information of the currently logged-in user
+      security:
+        - jwt_token: []
+      responses:
+        200:
+          description: Successful get of user Info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserInfo"
+        401:
+          description: Unauthorized
+        default:
+          description: Internal Server Error

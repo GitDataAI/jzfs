@@ -26,6 +26,10 @@ type User struct {
 type IUserRepo interface {
 	Get(ctx context.Context, id uuid.UUID) (*User, error)
 	Insert(ctx context.Context, user *User) (*User, error)
+
+	GetEPByName(ctx context.Context, name string) (string, error)
+	GetUserByName(ctx context.Context, name string) (*User, error)
+	GetUserByEmail(ctx context.Context, email string) (*User, error)
 }
 
 var _ IUserRepo = (*UserRepo)(nil)
@@ -49,4 +53,23 @@ func (userRepo *UserRepo) Insert(ctx context.Context, user *User) (*User, error)
 		return nil, err
 	}
 	return user, nil
+}
+
+func (userRepo *UserRepo) GetEPByName(ctx context.Context, name string) (string, error) {
+	var ep string
+	return ep, userRepo.DB.NewSelect().
+		Model((*User)(nil)).Column("encrypted_password").
+		Where("name = ?", name).
+		Scan(ctx, &ep)
+}
+
+func (userRepo *UserRepo) GetUserByName(ctx context.Context, name string) (*User, error) {
+	user := &User{}
+	return user, userRepo.DB.NewSelect().Model(user).Where("name = ?", name).Scan(ctx)
+}
+
+func (userRepo *UserRepo) GetUserByEmail(ctx context.Context, email string) (*User, error) {
+	user := &User{}
+	return user, userRepo.DB.NewSelect().
+		Model(user).Where("email = ?", email).Scan(ctx)
 }

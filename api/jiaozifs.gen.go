@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
@@ -32,6 +33,15 @@ const (
 	CommonPrefix ObjectStatsPathType = "common_prefix"
 	Object       ObjectStatsPathType = "object"
 )
+
+// AuthenticationToken defines model for AuthenticationToken.
+type AuthenticationToken struct {
+	// Token a JWT token that could be used to authenticate requests
+	Token string `json:"token"`
+
+	// TokenExpiration Unix Epoch in seconds
+	TokenExpiration *int64 `json:"token_expiration,omitempty"`
+}
 
 // ObjectStats defines model for ObjectStats.
 type ObjectStats struct {
@@ -67,6 +77,25 @@ type ObjectStatsPathType string
 // ObjectUserMetadata defines model for ObjectUserMetadata.
 type ObjectUserMetadata map[string]string
 
+// UserInfo defines model for UserInfo.
+type UserInfo struct {
+	CreatedAt       *time.Time          `json:"createdAt,omitempty"`
+	CurrentSignInAt *time.Time          `json:"currentSignInAt,omitempty"`
+	CurrentSignInIP *string             `json:"currentSignInIP,omitempty"`
+	Email           openapi_types.Email `json:"email"`
+	LastSignInAt    *time.Time          `json:"lastSignInAt,omitempty"`
+	LastSignInIP    *string             `json:"lastSignInIP,omitempty"`
+	UpdateAt        *time.Time          `json:"updateAt,omitempty"`
+	Username        string              `json:"username"`
+}
+
+// UserRegisterInfo defines model for UserRegisterInfo.
+type UserRegisterInfo struct {
+	Email    openapi_types.Email `json:"email"`
+	Password string              `json:"password"`
+	Username string              `json:"username"`
+}
+
 // VersionResult defines model for VersionResult.
 type VersionResult struct {
 	// ApiVersion runtime version
@@ -74,6 +103,12 @@ type VersionResult struct {
 
 	// Version program version
 	Version string `json:"version"`
+}
+
+// LoginJSONBody defines parameters for Login.
+type LoginJSONBody struct {
+	Password string `json:"password"`
+	Username string `json:"username"`
 }
 
 // DeleteObjectParams defines parameters for DeleteObject.
@@ -120,6 +155,12 @@ type UploadObjectParams struct {
 	// Deprecated, this capability will not be supported in future releases.
 	IfNoneMatch *string `json:"If-None-Match,omitempty"`
 }
+
+// LoginJSONRequestBody defines body for Login for application/json ContentType.
+type LoginJSONRequestBody LoginJSONBody
+
+// RegisterJSONRequestBody defines body for Register for application/json ContentType.
+type RegisterJSONRequestBody = UserRegisterInfo
 
 // UploadObjectMultipartRequestBody defines body for UploadObject for multipart/form-data ContentType.
 type UploadObjectMultipartRequestBody UploadObjectMultipartBody
@@ -197,6 +238,19 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// LoginWithBody request with any body
+	LoginWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	Login(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RegisterWithBody request with any body
+	RegisterWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	Register(ctx context.Context, body RegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetUserInfo request
+	GetUserInfo(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// DeleteObject request
 	DeleteObject(ctx context.Context, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -211,6 +265,66 @@ type ClientInterface interface {
 
 	// GetVersion request
 	GetVersion(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) LoginWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewLoginRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) Login(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewLoginRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) RegisterWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRegisterRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) Register(ctx context.Context, body RegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRegisterRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetUserInfo(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetUserInfoRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) DeleteObject(ctx context.Context, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -271,6 +385,113 @@ func (c *Client) GetVersion(ctx context.Context, reqEditors ...RequestEditorFn) 
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+// NewLoginRequest calls the generic Login builder with application/json body
+func NewLoginRequest(server string, body LoginJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewLoginRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewLoginRequestWithBody generates requests for Login with any type of body
+func NewLoginRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/auth/login")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewRegisterRequest calls the generic Register builder with application/json body
+func NewRegisterRequest(server string, body RegisterJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewRegisterRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewRegisterRequestWithBody generates requests for Register with any type of body
+func NewRegisterRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/auth/register")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetUserInfoRequest generates requests for GetUserInfo
+func NewGetUserInfoRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/auth/user")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
 }
 
 // NewDeleteObjectRequest generates requests for DeleteObject
@@ -630,6 +851,19 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// LoginWithBodyWithResponse request with any body
+	LoginWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*LoginResponse, error)
+
+	LoginWithResponse(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*LoginResponse, error)
+
+	// RegisterWithBodyWithResponse request with any body
+	RegisterWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RegisterResponse, error)
+
+	RegisterWithResponse(ctx context.Context, body RegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*RegisterResponse, error)
+
+	// GetUserInfoWithResponse request
+	GetUserInfoWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetUserInfoResponse, error)
+
 	// DeleteObjectWithResponse request
 	DeleteObjectWithResponse(ctx context.Context, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*DeleteObjectResponse, error)
 
@@ -644,6 +878,71 @@ type ClientWithResponsesInterface interface {
 
 	// GetVersionWithResponse request
 	GetVersionWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetVersionResponse, error)
+}
+
+type LoginResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *AuthenticationToken
+}
+
+// Status returns HTTPResponse.Status
+func (r LoginResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r LoginResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type RegisterResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r RegisterResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RegisterResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetUserInfoResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *UserInfo
+}
+
+// Status returns HTTPResponse.Status
+func (r GetUserInfoResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetUserInfoResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 type DeleteObjectResponse struct {
@@ -753,6 +1052,49 @@ func (r GetVersionResponse) StatusCode() int {
 	return 0
 }
 
+// LoginWithBodyWithResponse request with arbitrary body returning *LoginResponse
+func (c *ClientWithResponses) LoginWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*LoginResponse, error) {
+	rsp, err := c.LoginWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseLoginResponse(rsp)
+}
+
+func (c *ClientWithResponses) LoginWithResponse(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*LoginResponse, error) {
+	rsp, err := c.Login(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseLoginResponse(rsp)
+}
+
+// RegisterWithBodyWithResponse request with arbitrary body returning *RegisterResponse
+func (c *ClientWithResponses) RegisterWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RegisterResponse, error) {
+	rsp, err := c.RegisterWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRegisterResponse(rsp)
+}
+
+func (c *ClientWithResponses) RegisterWithResponse(ctx context.Context, body RegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*RegisterResponse, error) {
+	rsp, err := c.Register(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRegisterResponse(rsp)
+}
+
+// GetUserInfoWithResponse request returning *GetUserInfoResponse
+func (c *ClientWithResponses) GetUserInfoWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetUserInfoResponse, error) {
+	rsp, err := c.GetUserInfo(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetUserInfoResponse(rsp)
+}
+
 // DeleteObjectWithResponse request returning *DeleteObjectResponse
 func (c *ClientWithResponses) DeleteObjectWithResponse(ctx context.Context, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*DeleteObjectResponse, error) {
 	rsp, err := c.DeleteObject(ctx, repository, params, reqEditors...)
@@ -796,6 +1138,74 @@ func (c *ClientWithResponses) GetVersionWithResponse(ctx context.Context, reqEdi
 		return nil, err
 	}
 	return ParseGetVersionResponse(rsp)
+}
+
+// ParseLoginResponse parses an HTTP response from a LoginWithResponse call
+func ParseLoginResponse(rsp *http.Response) (*LoginResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &LoginResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AuthenticationToken
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRegisterResponse parses an HTTP response from a RegisterWithResponse call
+func ParseRegisterResponse(rsp *http.Response) (*RegisterResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RegisterResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseGetUserInfoResponse parses an HTTP response from a GetUserInfoWithResponse call
+func ParseGetUserInfoResponse(rsp *http.Response) (*GetUserInfoResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetUserInfoResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UserInfo
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParseDeleteObjectResponse parses an HTTP response from a DeleteObjectWithResponse call
@@ -900,6 +1310,15 @@ func ParseGetVersionResponse(rsp *http.Response) (*GetVersionResponse, error) {
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// perform a login
+	// (POST /auth/login)
+	Login(w *JiaozifsResponse, r *http.Request)
+	// perform user registration
+	// (POST /auth/register)
+	Register(w *JiaozifsResponse, r *http.Request)
+	// get information of the currently logged-in user
+	// (GET /auth/user)
+	GetUserInfo(w *JiaozifsResponse, r *http.Request)
 	// delete object. Missing objects will not return a NotFound error.
 	// (DELETE /repositories/{repository}/objects)
 	DeleteObject(w *JiaozifsResponse, r *http.Request, repository string, params DeleteObjectParams)
@@ -920,6 +1339,24 @@ type ServerInterface interface {
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
 
 type Unimplemented struct{}
+
+// perform a login
+// (POST /auth/login)
+func (_ Unimplemented) Login(w *JiaozifsResponse, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// perform user registration
+// (POST /auth/register)
+func (_ Unimplemented) Register(w *JiaozifsResponse, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// get information of the currently logged-in user
+// (GET /auth/user)
+func (_ Unimplemented) GetUserInfo(w *JiaozifsResponse, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
 
 // delete object. Missing objects will not return a NotFound error.
 // (DELETE /repositories/{repository}/objects)
@@ -959,6 +1396,53 @@ type ServerInterfaceWrapper struct {
 
 type MiddlewareFunc func(http.Handler) http.Handler
 
+// Login operation middleware
+func (siw *ServerInterfaceWrapper) Login(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.Login(&JiaozifsResponse{w}, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// Register operation middleware
+func (siw *ServerInterfaceWrapper) Register(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.Register(&JiaozifsResponse{w}, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// GetUserInfo operation middleware
+func (siw *ServerInterfaceWrapper) GetUserInfo(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetUserInfo(&JiaozifsResponse{w}, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
 // DeleteObject operation middleware
 func (siw *ServerInterfaceWrapper) DeleteObject(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -974,9 +1458,9 @@ func (siw *ServerInterfaceWrapper) DeleteObject(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{"aaaa"})
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
 
-	ctx = context.WithValue(ctx, Basic_authScopes, []string{"aaaaa"})
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params DeleteObjectParams
@@ -1022,9 +1506,9 @@ func (siw *ServerInterfaceWrapper) GetObject(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{"aaaa"})
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
 
-	ctx = context.WithValue(ctx, Basic_authScopes, []string{"aaaaa"})
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetObjectParams
@@ -1099,9 +1583,9 @@ func (siw *ServerInterfaceWrapper) HeadObject(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{"aaaa"})
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
 
-	ctx = context.WithValue(ctx, Basic_authScopes, []string{"aaaaa"})
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params HeadObjectParams
@@ -1168,9 +1652,9 @@ func (siw *ServerInterfaceWrapper) UploadObject(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{"aaaa"})
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
 
-	ctx = context.WithValue(ctx, Basic_authScopes, []string{"aaaaa"})
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params UploadObjectParams
@@ -1361,6 +1845,15 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/auth/login", wrapper.Login)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/auth/register", wrapper.Register)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/auth/user", wrapper.GetUserInfo)
+	})
+	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/repositories/{repository}/objects", wrapper.DeleteObject)
 	})
 	r.Group(func(r chi.Router) {
@@ -1382,37 +1875,44 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"Gus4chqDEeO7Q764Wfw7AAD//58N5ajGGQAA",
+	"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",
+	"2WK0+HcAAAD//87c0PRRIwAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
