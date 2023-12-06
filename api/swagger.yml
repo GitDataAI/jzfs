@@ -13,8 +13,8 @@ servers:
     description: jiaozifs server endpoint
 
 security:
-  - jwt_token: ["aaaa"]
-  - basic_auth: ["aaaaa"]
+  - jwt_token: []
+  - basic_auth: []
 components:
   securitySchemes:
     basic_auth:
@@ -81,14 +81,6 @@ components:
         updateAt:
           type: string
           format: date-time
-
-    RegistrationMsg:
-      type: object
-      required:
-        - message
-      properties:
-        message:
-          type: string
 
     UserRegisterInfo:
       type: object
@@ -515,11 +507,7 @@ paths:
               $ref: "#/components/schemas/UserRegisterInfo"
       responses:
         201:
-          description: registration success message
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/RegistrationMsg"
+          description: registration success
         400:
           description: Bad Request - Validation Error
         420:
@@ -534,7 +522,7 @@ paths:
       operationId: getUserInfo
       summary: get information of the currently logged-in user
       security:
-        - jwt_token: ["aaaa"]
+        - jwt_token: []
       responses:
         200:
           description: Successful get of user Info
