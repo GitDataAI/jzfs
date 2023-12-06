@@ -70,7 +70,7 @@ func (r *Register) Register(ctx context.Context, repo models.IUserRepo) (err err
 		log.Error(ErrInvalidNameEmail)
 		return
 	}
-
+	// reserve temporarily
 	password, err := bcrypt.GenerateFromPassword([]byte(r.Password), passwordCost)
 	if err != nil {
 		log.Error(ErrComparePassword)
