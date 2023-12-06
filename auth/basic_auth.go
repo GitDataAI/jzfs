@@ -71,11 +71,17 @@ func (r *Register) Register(ctx context.Context, repo models.IUserRepo) (err err
 		return
 	}
 
+	password, err := bcrypt.GenerateFromPassword([]byte(r.Password), passwordCost)
+	if err != nil {
+		log.Error(ErrComparePassword)
+		return
+	}
+
 	// insert db
 	user := &models.User{
 		Name:              r.Username,
 		Email:             r.Email,
-		EncryptedPassword: r.Password,
+		EncryptedPassword: string(password),
 		CurrentSignInAt:   time.Time{},
 		LastSignInAt:      time.Time{},
 		CurrentSignInIP:   "",
