@@ -8,12 +8,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"github.com/jiaozifs/jiaozifs/models"
+	"github.com/jiaozifs/jiaozifs/testhelper"
 	"github.com/stretchr/testify/require"
 )
 
-func TestRefRepo_Insert(t *testing.T) {
+func TestRefRepoInsert(t *testing.T) {
 	ctx := context.Background()
-	postgres, db := setup(ctx, t)
+	postgres, _, db := testhelper.SetupDatabase(ctx, t)
 	defer postgres.Stop() //nolint
 
 	repo := models.NewRefRepo(db)
@@ -24,7 +25,9 @@ func TestRefRepo_Insert(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEqual(t, uuid.Nil, newRef.ID)
 
-	ref, err := repo.Get(ctx, newRef.ID)
+	ref, err := repo.Get(ctx, &models.GetRefParams{
+		ID: newRef.ID,
+	})
 	require.NoError(t, err)
 
 	require.True(t, cmp.Equal(refModel, ref, dbTimeCmpOpt))

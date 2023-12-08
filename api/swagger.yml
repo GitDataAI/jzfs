@@ -132,32 +132,15 @@ components:
       type: object
       required:
         - checksum
-        - physical_address
         - path
         - path_type
         - mtime
       properties:
         path:
           type: string
-        path_type:
-          type: string
-          enum: [common_prefix, object]
-        physical_address:
-          type: string
-          description: |
-            The location of the object on the underlying object store.
-            Formatted as a native URI with the object store type as scheme ("s3://...", "gs://...", etc.)
-            Or, in the case of presign=true, will be an HTTP URL to be consumed via regular HTTP GET
-        physical_address_expiry:
+        path_mode:
           type: integer
-          format: int64
-          description: |
-            If present and nonzero, physical_address is a pre-signed URL and
-            will expire at this Unix Epoch time.  This will be shorter than
-            the pre-signed URL lifetime if an authentication token is about
-            to expire.
-
-            This field is *optional*.
+          format: uint32
         checksum:
           type: string
         size_bytes:
@@ -233,10 +216,21 @@ paths:
               schema:
                 $ref: "#/components/schemas/VersionResult"
 
-  /repositories/{repository}/objects:
+  /object/{user}/{repository}:
     parameters:
       - in: path
+        name: user
+        required: true
+        schema:
+          type: string
+      - in: path
         name: repository
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: branch
+        description: branch to the ref
         required: true
         schema:
           type: string

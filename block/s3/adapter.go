@@ -200,9 +200,7 @@ func (a *Adapter) Put(ctx context.Context, obj block.ObjectPointer, sizeBytes in
 	if sizeBytes == 0 {
 		putObject.Body = http.NoBody
 	}
-	if opts.StorageClass != nil {
-		putObject.StorageClass = types.StorageClass(*opts.StorageClass)
-	}
+
 	if a.ServerSideEncryption != "" {
 		putObject.ServerSideEncryption = types.ServerSideEncryption(a.ServerSideEncryption)
 	}
@@ -755,7 +753,7 @@ func (a *Adapter) RuntimeStats() map[string]string {
 	}
 }
 
-func (a *Adapter) managerUpload(ctx context.Context, obj block.ObjectPointer, reader io.Reader, opts block.PutOpts) error {
+func (a *Adapter) managerUpload(ctx context.Context, obj block.ObjectPointer, reader io.Reader, _ block.PutOpts) error {
 	bucket, key, _, err := a.extractParamsFromObj(obj)
 	if err != nil {
 		return err
@@ -768,9 +766,7 @@ func (a *Adapter) managerUpload(ctx context.Context, obj block.ObjectPointer, re
 		Key:    aws.String(key),
 		Body:   reader,
 	}
-	if opts.StorageClass != nil {
-		input.StorageClass = types.StorageClass(*opts.StorageClass)
-	}
+
 	if a.ServerSideEncryption != "" {
 		input.ServerSideEncryption = types.ServerSideEncryption(a.ServerSideEncryption)
 	}

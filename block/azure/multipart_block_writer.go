@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jiaozifs/jiaozifs/utils/hash"
+
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/streaming"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/blob"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/blockblob"
@@ -23,7 +25,7 @@ import (
 var log = logging.Logger("azure")
 
 type MultipartBlockWriter struct {
-	reader *block.HashingReader // the reader that would be passed to copyFromReader, this is needed in order to get size and md5
+	reader *hash.HashingReader // the reader that would be passed to copyFromReader, this is needed in order to get size and md5
 	// to is the location we are writing our chunks to.
 	to      *blockblob.Client
 	toIDs   *blockblob.Client
@@ -31,7 +33,7 @@ type MultipartBlockWriter struct {
 	etag    string
 }
 
-func NewMultipartBlockWriter(reader *block.HashingReader, containerURL container.Client, objName string) *MultipartBlockWriter {
+func NewMultipartBlockWriter(reader *hash.HashingReader, containerURL container.Client, objName string) *MultipartBlockWriter {
 	return &MultipartBlockWriter{
 		reader:  reader,
 		to:      containerURL.NewBlockBlobClient(objName),

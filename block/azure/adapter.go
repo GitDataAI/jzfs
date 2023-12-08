@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jiaozifs/jiaozifs/utils/hash"
+
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/blob"
@@ -139,40 +141,18 @@ func resolveBlobURLInfo(obj block.ObjectPointer) (BlobURLInfo, error) {
 	return ResolveBlobURLInfoFromURL(parsedKey)
 }
 
-func (a *Adapter) translatePutOpts(_ context.Context, opts block.PutOpts) azblob.UploadStreamOptions {
-	res := azblob.UploadStreamOptions{}
-	if opts.StorageClass == nil {
-		return res
-	}
-
-	for _, t := range blob.PossibleAccessTierValues() {
-		if strings.EqualFold(*opts.StorageClass, string(t)) {
-			accessTier := t
-			res.AccessTier = &accessTier
-			break
-		}
-	}
-
-	if res.AccessTier == nil {
-		log.With("tier_type", *opts.StorageClass).Warn("Unknown Azure tier type")
-	}
-
-	return res
-}
-
-func (a *Adapter) Put(ctx context.Context, obj block.ObjectPointer, sizeBytes int64, reader io.Reader, opts block.PutOpts) error {
+func (a *Adapter) Put(ctx context.Context, obj block.ObjectPointer, sizeBytes int64, reader io.Reader, _ block.PutOpts) error {
 	var err error
 	defer reportMetrics("Put", time.Now(), &sizeBytes, &err)
 	qualifiedKey, err := resolveBlobURLInfo(obj)
 	if err != nil {
 		return err
 	}
-	o := a.translatePutOpts(ctx, opts)
 	containerClient, err := a.clientCache.NewContainerClient(qualifiedKey.StorageAccountName, qualifiedKey.ContainerName)
 	if err != nil {
 		return err
 	}
-	_, err = containerClient.NewBlockBlobClient(qualifiedKey.BlobURL).UploadStream(ctx, reader, &o)
+	_, err = containerClient.NewBlockBlobClient(qualifiedKey.BlobURL).UploadStream(ctx, reader, &azblob.UploadStreamOptions{})
 	return err
 }
 
@@ -489,7 +469,7 @@ func (a *Adapter) UploadPart(ctx context.Context, obj block.ObjectPointer, _ int
 	if err != nil {
 		return nil, err
 	}
-	hashReader := block.NewHashingReader(reader, block.HashFunctionMD5)
+	hashReader := hash.NewHashingReader(reader, hash.Md5)
 
 	multipartBlockWriter := NewMultipartBlockWriter(hashReader, *container, qualifiedKey.BlobURL)
 	_, err = copyFromReader(ctx, hashReader, multipartBlockWriter, blockblob.UploadStreamOptions{

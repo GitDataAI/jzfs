@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
@@ -12,6 +13,10 @@ import (
 	"go.uber.org/fx"
 )
 
+const (
+	AuthHeader = "Authorization"
+)
+
 type UserController struct {
 	fx.In
 
@@ -19,57 +24,52 @@ type UserController struct {
 	Config *config.Config
 }
 
-func (A UserController) Login(w *api.JiaozifsResponse, r *http.Request) {
-	ctx := r.Context()
+func (A UserController) Login(ctx context.Context, w *api.JiaozifsResponse, r *http.Request) {
 	// Decode requestBody
 	var login auth.Login
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&login); err != nil {
-		w.RespError(err)
+		w.Error(err)
 		return
 	}
 
-	// Perform login
-	resp, err := login.Login(ctx, A.Repo, A.Config)
+	// perform login
+	authToken, err := login.Login(ctx, A.Repo, A.Config)
 	if err != nil {
-		w.RespError(err)
+		w.Error(err)
 		return
 	}
-
-	// resp
-	w.RespJSON(resp)
+	w.JSON(authToken)
 }
 
-func (A UserController) Register(w *api.JiaozifsResponse, r *http.Request) {
-	ctx := r.Context()
+func (A UserController) Register(ctx context.Context, w *api.JiaozifsResponse, r *http.Request) {
 	// Decode requestBody
 	var register auth.Register
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&register); err != nil {
-		w.RespError(err)
+		w.Error(err)
+		return
 	}
-	// Perform register
+	// perform register
 	err := register.Register(ctx, A.Repo)
 	if err != nil {
-		w.RespError(err)
+		w.Error(err)
 		return
 	}
-	// resp
-	w.RespJSON("registration success")
+	w.OK()
 }
 
-func (A UserController) GetUserInfo(w *api.JiaozifsResponse, r *http.Request) {
-	ctx := r.Context()
+func (A UserController) GetUserInfo(ctx context.Context, w *api.JiaozifsResponse, r *http.Request) {
 	// Get token from Header
-	tokenString := r.Header.Get("Authorization")
+	tokenString := r.Header.Get(AuthHeader)
 	userInfo := &auth.UserInfo{Token: tokenString}
 
-	// Perform GetUserInfo
-	info, err := userInfo.UserProfile(ctx, A.Repo, A.Config)
+	// perform GetUserInfo
+	usrInfo, err := userInfo.UserProfile(ctx, A.Repo, A.Config)
 	if err != nil {
-		w.RespError(err)
+		w.Error(err)
 		return
 	}
-	// resp
-	w.RespJSON(info)
+
+	w.JSON(usrInfo)
 }
