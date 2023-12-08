@@ -20,11 +20,11 @@ const (
 type UserController struct {
 	fx.In
 
-	Repo   models.IUserRepo
+	Repo   models.IRepo
 	Config *config.Config
 }
 
-func (A UserController) Login(ctx context.Context, w *api.JiaozifsResponse, r *http.Request) {
+func (userCtl UserController) Login(ctx context.Context, w *api.JiaozifsResponse, r *http.Request) {
 	// Decode requestBody
 	var login auth.Login
 	decoder := json.NewDecoder(r.Body)
@@ -34,7 +34,7 @@ func (A UserController) Login(ctx context.Context, w *api.JiaozifsResponse, r *h
 	}
 
 	// perform login
-	authToken, err := login.Login(ctx, A.Repo, A.Config)
+	authToken, err := login.Login(ctx, userCtl.Repo.UserRepo(), userCtl.Config)
 	if err != nil {
 		w.Error(err)
 		return
@@ -42,7 +42,7 @@ func (A UserController) Login(ctx context.Context, w *api.JiaozifsResponse, r *h
 	w.JSON(authToken)
 }
 
-func (A UserController) Register(ctx context.Context, w *api.JiaozifsResponse, r *http.Request) {
+func (userCtl UserController) Register(ctx context.Context, w *api.JiaozifsResponse, r *http.Request) {
 	// Decode requestBody
 	var register auth.Register
 	decoder := json.NewDecoder(r.Body)
@@ -51,7 +51,7 @@ func (A UserController) Register(ctx context.Context, w *api.JiaozifsResponse, r
 		return
 	}
 	// perform register
-	err := register.Register(ctx, A.Repo)
+	err := register.Register(ctx, userCtl.Repo.UserRepo())
 	if err != nil {
 		w.Error(err)
 		return
@@ -59,13 +59,13 @@ func (A UserController) Register(ctx context.Context, w *api.JiaozifsResponse, r
 	w.OK()
 }
 
-func (A UserController) GetUserInfo(ctx context.Context, w *api.JiaozifsResponse, r *http.Request) {
+func (userCtl UserController) GetUserInfo(ctx context.Context, w *api.JiaozifsResponse, r *http.Request) {
 	// Get token from Header
 	tokenString := r.Header.Get(AuthHeader)
 	userInfo := &auth.UserInfo{Token: tokenString}
 
 	// perform GetUserInfo
-	usrInfo, err := userInfo.UserProfile(ctx, A.Repo, A.Config)
+	usrInfo, err := userInfo.UserProfile(ctx, userCtl.Repo.UserRepo(), userCtl.Config)
 	if err != nil {
 		w.Error(err)
 		return

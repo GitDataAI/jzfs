@@ -2,7 +2,6 @@ package models
 
 import (
 	"context"
-
 	"time"
 
 	"github.com/google/uuid"
@@ -41,11 +40,11 @@ type IUserRepo interface {
 var _ IUserRepo = (*UserRepo)(nil)
 
 type UserRepo struct {
-	db *bun.DB
+	db bun.IDB
 }
 
-func NewUserRepo(db *bun.DB) IUserRepo {
-	return &UserRepo{db}
+func NewUserRepo(db bun.IDB) IUserRepo {
+	return &UserRepo{db: db}
 }
 
 func (userRepo *UserRepo) Get(ctx context.Context, params *GetUserParam) (*User, error) {

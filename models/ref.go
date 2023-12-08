@@ -41,11 +41,11 @@ type IRefRepo interface {
 var _ IRefRepo = (*RefRepo)(nil)
 
 type RefRepo struct {
-	db *bun.DB
+	db bun.IDB
 }
 
-func NewRefRepo(db *bun.DB) IRefRepo {
-	return &RefRepo{db}
+func NewRefRepo(db bun.IDB) IRefRepo {
+	return &RefRepo{db: db}
 }
 
 func (r RefRepo) Insert(ctx context.Context, ref *Ref) (*Ref, error) {

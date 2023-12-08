@@ -295,11 +295,11 @@ type IObjectRepo interface {
 var _ IObjectRepo = (*ObjectRepo)(nil)
 
 type ObjectRepo struct {
-	db *bun.DB
+	db bun.IDB
 }
 
-func NewObjectRepo(db *bun.DB) IObjectRepo {
-	return &ObjectRepo{db}
+func NewObjectRepo(db bun.IDB) IObjectRepo {
+	return &ObjectRepo{db: db}
 }
 
 func (o ObjectRepo) Insert(ctx context.Context, obj *Object) (*Object, error) {
