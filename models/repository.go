@@ -34,11 +34,11 @@ type IRepositoryRepo interface {
 var _ IRepositoryRepo = (*RepositoryRepo)(nil)
 
 type RepositoryRepo struct {
-	db *bun.DB
+	db bun.IDB
 }
 
-func NewRepositoryRepo(db *bun.DB) IRepositoryRepo {
-	return &RepositoryRepo{db}
+func NewRepositoryRepo(db bun.IDB) IRepositoryRepo {
+	return &RepositoryRepo{db: db}
 }
 
 func (r *RepositoryRepo) Insert(ctx context.Context, repo *Repository) (*Repository, error) {

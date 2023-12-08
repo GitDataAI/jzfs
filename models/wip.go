@@ -32,7 +32,7 @@ type WorkingInProcess struct {
 	UpdatedAt     time.Time `bun:"updated_at"`
 }
 
-type GetStashParam struct {
+type GetWipParam struct {
 	ID           uuid.UUID
 	CreateID     uuid.UUID
 	RepositoryID uuid.UUID
@@ -40,18 +40,18 @@ type GetStashParam struct {
 
 type IWipRepo interface {
 	Insert(ctx context.Context, repo *WorkingInProcess) (*WorkingInProcess, error)
-	Get(ctx context.Context, params *GetStashParam) (*WorkingInProcess, error)
+	Get(ctx context.Context, params *GetWipParam) (*WorkingInProcess, error)
 	UpdateCurrentHash(ctx context.Context, id uuid.UUID, newTreeHash hash.Hash) error
 }
 
 var _ IWipRepo = (*WipRepo)(nil)
 
 type WipRepo struct {
-	db *bun.DB
+	db bun.IDB
 }
 
-func NewWipRepo(db *bun.DB) IWipRepo {
-	return &WipRepo{db}
+func NewWipRepo(db bun.IDB) IWipRepo {
+	return &WipRepo{db: db}
 }
 
 func (s *WipRepo) Insert(ctx context.Context, repo *WorkingInProcess) (*WorkingInProcess, error) {
@@ -62,7 +62,7 @@ func (s *WipRepo) Insert(ctx context.Context, repo *WorkingInProcess) (*WorkingI
 	return repo, nil
 }
 
-func (s *WipRepo) Get(ctx context.Context, params *GetStashParam) (*WorkingInProcess, error) {
+func (s *WipRepo) Get(ctx context.Context, params *GetWipParam) (*WorkingInProcess, error) {
 	repo := &WorkingInProcess{}
 	query := s.db.NewSelect().Model(repo)
 

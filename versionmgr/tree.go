@@ -32,7 +32,7 @@ var (
 	ErrNotDiretory    = fmt.Errorf("path must be a directory")
 )
 
-type TreeNodeWithNode struct {
+type ObjectWithName struct {
 	Node *models.Object
 	Name string
 }
@@ -211,9 +211,9 @@ func (treeOp *TreeOp) ReplaceTreeEntry(ctx context.Context, tn *models.TreeNode,
 	return obj.TreeNode(), nil
 }
 
-func (treeOp *TreeOp) MatchPath(ctx context.Context, tn *models.TreeNode, path string) ([]TreeNodeWithNode, []string, error) {
+func (treeOp *TreeOp) MatchPath(ctx context.Context, tn *models.TreeNode, path string) ([]ObjectWithName, []string, error) {
 	pathSegs := strings.Split(filepath.Clean(path), fmt.Sprintf("%c", os.PathSeparator))
-	var existNodes []TreeNodeWithNode
+	var existNodes []ObjectWithName
 	var missingPath []string
 	//a/b/c/d/e
 	//a/b/c
@@ -230,7 +230,7 @@ func (treeOp *TreeOp) MatchPath(ctx context.Context, tn *models.TreeNode, path s
 			if err != nil {
 				return nil, nil, err
 			}
-			existNodes = append(existNodes, TreeNodeWithNode{
+			existNodes = append(existNodes, ObjectWithName{
 				Node: tn.Object(),
 				Name: entry.Name,
 			})
@@ -240,7 +240,7 @@ func (treeOp *TreeOp) MatchPath(ctx context.Context, tn *models.TreeNode, path s
 			if err != nil {
 				return nil, nil, err
 			}
-			existNodes = append(existNodes, TreeNodeWithNode{
+			existNodes = append(existNodes, ObjectWithName{
 				Node: blob.Object(),
 				Name: entry.Name,
 			})
@@ -303,7 +303,7 @@ func (treeOp *TreeOp) AddLeaf(ctx context.Context, root *models.TreeNode, fullPa
 	}
 
 	slices.Reverse(existNode)
-	existNode = append(existNode, TreeNodeWithNode{
+	existNode = append(existNode, ObjectWithName{
 		Node: root.Object(),
 		Name: "", //root node have no name
 	})
@@ -344,7 +344,7 @@ func (treeOp *TreeOp) ReplaceLeaf(ctx context.Context, root *models.TreeNode, fu
 	}
 
 	slices.Reverse(existNode)
-	existNode = append(existNode, TreeNodeWithNode{
+	existNode = append(existNode, ObjectWithName{
 		Node: root.Object(),
 		Name: "", //root node have no name
 	})
@@ -396,7 +396,7 @@ func (treeOp *TreeOp) RemoveEntry(ctx context.Context, root *models.TreeNode, fu
 	}
 
 	slices.Reverse(existNode)
-	existNode = append(existNode, TreeNodeWithNode{
+	existNode = append(existNode, ObjectWithName{
 		Node: root.Object(),
 		Name: "", //root node have no name
 	})

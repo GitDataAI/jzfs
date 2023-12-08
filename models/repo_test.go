@@ -1,0 +1,63 @@
+package models_test
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"fmt"
+	"testing"
+
+	"github.com/google/uuid"
+
+	"github.com/brianvoe/gofakeit/v6"
+	"github.com/jiaozifs/jiaozifs/models"
+	"github.com/jiaozifs/jiaozifs/testhelper"
+	"github.com/stretchr/testify/require"
+)
+
+func TestRepoTransaction(t *testing.T) {
+	ctx := context.Background()
+	postgres, _, db := testhelper.SetupDatabase(ctx, t)
+	defer postgres.Stop() //nolint
+
+	t.Run("simple", func(t *testing.T) {
+		pgRepo := models.NewRepo(db)
+		err := pgRepo.Transaction(ctx, func(repo models.IRepo) error {
+			userModel := &models.User{}
+			require.NoError(t, gofakeit.Struct(userModel))
+			_, err := repo.UserRepo().Insert(ctx, userModel)
+			require.NoError(t, err)
+			return nil
+		})
+		require.NoError(t, err)
+	})
+
+	t.Run("transaction", func(t *testing.T) {
+		pgRepo := models.NewRepo(db)
+		err := pgRepo.Transaction(ctx, func(repo models.IRepo) error {
+			object := &models.Object{}
+			require.NoError(t, gofakeit.Struct(object))
+			_, err := repo.ObjectRepo().Insert(ctx, object)
+			require.NoError(t, err)
+			return err
+		})
+		require.NoError(t, err)
+	})
+
+	t.Run("transaction  rollback", func(t *testing.T) {
+		pgRepo := models.NewRepo(db)
+		var id uuid.UUID
+		err := pgRepo.Transaction(ctx, func(repo models.IRepo) error {
+			repositoryModel := &models.Repository{}
+			require.NoError(t, gofakeit.Struct(repositoryModel))
+			insertedModel, err := repo.RepositoryRepo().Insert(ctx, repositoryModel)
+			require.NoError(t, err)
+			id = insertedModel.ID
+			return fmt.Errorf("rollback")
+		})
+		require.Error(t, err)
+
+		_, err = pgRepo.RepositoryRepo().Get(ctx, &models.GetRepoParams{ID: id})
+		require.True(t, errors.Is(err, sql.ErrNoRows))
+	})
+}

@@ -9,13 +9,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-openapi/swag"
+	"github.com/jiaozifs/jiaozifs/models/filemode"
+
 	"github.com/jiaozifs/jiaozifs/config"
 
 	"github.com/jiaozifs/jiaozifs/versionmgr"
-
-	"github.com/jiaozifs/jiaozifs/models/filemode"
-
-	"github.com/go-openapi/swag"
 
 	"github.com/jiaozifs/jiaozifs/block"
 
@@ -33,11 +32,7 @@ type ObjectController struct {
 
 	BlockAdapter block.Adapter
 
-	StashRepo  models.WipRepo
-	UserRepo   models.IUserRepo
-	Repository models.RepositoryRepo
-	Object     models.ObjectRepo
-	Ref        models.RefRepo
+	Repo models.IRepo
 
 	Cfg config.BlockStoreConfig
 }
@@ -53,13 +48,13 @@ func (oct ObjectController) GetObject(ctx context.Context, w *api.JiaozifsRespon
 }
 
 func (oct ObjectController) HeadObject(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, userName string, repository string, params api.HeadObjectParams) { //nolint
-	user, err := oct.UserRepo.Get(ctx, &models.GetUserParam{Name: utils.String(userName)})
+	user, err := oct.Repo.UserRepo().Get(ctx, &models.GetUserParam{Name: utils.String(userName)})
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	repo, err := oct.Repository.Get(ctx, &models.GetRepoParams{
+	repo, err := oct.Repo.RepositoryRepo().Get(ctx, &models.GetRepoParams{
 		CreateID: user.ID,
 		Name:     utils.String(repository),
 	})
@@ -68,7 +63,7 @@ func (oct ObjectController) HeadObject(ctx context.Context, w *api.JiaozifsRespo
 		return
 	}
 
-	ref, err := oct.Ref.Get(ctx, &models.GetRefParams{
+	ref, err := oct.Repo.RefRepo().Get(ctx, &models.GetRefParams{
 		RepositoryID: repo.ID,
 		Name:         utils.String(params.Branch),
 	})
@@ -77,46 +72,44 @@ func (oct ObjectController) HeadObject(ctx context.Context, w *api.JiaozifsRespo
 		return
 	}
 
-	commit, err := oct.Object.Commit(ctx, ref.CommitHash)
+	commit, err := oct.Repo.ObjectRepo().Commit(ctx, ref.CommitHash)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	treeOp := versionmgr.NewTreeOp(oct.Object)
-
-	treeNode, err := oct.Object.TreeNode(ctx, commit.TreeHash)
+	objRepo := oct.Repo.ObjectRepo()
+	treeOp := versionmgr.NewTreeOp(oct.Repo.ObjectRepo())
+	treeNode, err := objRepo.TreeNode(ctx, commit.TreeHash)
 	if err != nil {
 		w.Error(err)
 		return
 	}
-
 	existNodes, missingPath, err := treeOp.MatchPath(ctx, treeNode, params.Path)
 	if err != nil {
 		w.Error(err)
 		return
 	}
-
 	if len(missingPath) == 0 {
 		w.Error(versionmgr.ErrPathNotFound)
 		return
 	}
 
-	blobWithName := existNodes[len(existNodes)-1]
+	objectWithName := existNodes[len(existNodes)-1]
 
-	blob, err := oct.Object.Blob(ctx, blobWithName.Node.Hash)
+	blob, err := objRepo.Blob(ctx, objectWithName.Node.Hash)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
 	//lookup files
-	etag := httputil.ETag(blobWithName.Node.Hash.Hex())
+	etag := httputil.ETag(objectWithName.Node.Hash.Hex())
 	w.Header().Set("ETag", etag)
-	lastModified := httputil.HeaderTimestamp(blobWithName.Node.CreatedAt)
+	lastModified := httputil.HeaderTimestamp(objectWithName.Node.CreatedAt)
 	w.Header().Set("Last-Modified", lastModified)
 	w.Header().Set("Accept-Ranges", "bytes")
-	w.Header().Set("Content-Type", httputil.ExtensionsByType(blobWithName.Name))
+	w.Header().Set("Content-Type", httputil.ExtensionsByType(objectWithName.Name))
 	// for security, make sure the browser and any proxies en route don't cache the response
 	w.Header().Set("Cache-Control", "no-store, must-revalidate")
 	w.Header().Set("Expires", "0")
@@ -144,16 +137,9 @@ func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsRes
 		w.Error(err)
 		return
 	}
-	treeOp := versionmgr.TreeOp{Object: oct.Object}
-	var blob *models.Blob
-	if mediaType != "multipart/form-data" {
-		// handle non-multipart, direct content upload
-		blob, err = treeOp.WriteBlob(ctx, oct.BlockAdapter, r.Body, r.ContentLength, block.PutOpts{})
-		if err != nil {
-			w.Error(err)
-			return
-		}
-	} else {
+
+	reader := r.Body
+	if mediaType == "multipart/form-data" {
 		// handle multipart upload
 		boundary, ok := p["boundary"]
 		if !ok {
@@ -162,9 +148,9 @@ func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsRes
 		}
 
 		contentUploaded := false
-		reader := multipart.NewReader(r.Body, boundary)
+		partReader := multipart.NewReader(r.Body, boundary)
 		for !contentUploaded {
-			part, err := reader.NextPart()
+			part, err := partReader.NextPart()
 			if err == io.EOF {
 				break
 			}
@@ -175,73 +161,74 @@ func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsRes
 			contentType = part.Header.Get("Content-Type")
 			partName := part.FormName()
 			if partName == "content" {
-				// upload the first "content" and exit the loop
-				blob, err = treeOp.WriteBlob(ctx, oct.BlockAdapter, part, -1, block.PutOpts{})
-				if err != nil {
-					_ = part.Close()
-					w.Error(err)
-					return
-				}
+				reader = part
 				contentUploaded = true
+			} else { //close not target part
+				_ = part.Close()
 			}
-			_ = part.Close()
+
 		}
 		if !contentUploaded {
 			w.Error(fmt.Errorf("multipart upload missing key 'content': %w", http.ErrMissingFile))
 			return
 		}
 	}
+	defer reader.Close() //nolint
 
-	user, err := oct.UserRepo.Get(ctx, &models.GetUserParam{Name: utils.String(userName)})
-	if err != nil {
-		w.Error(err)
-		return
-	}
+	var response api.ObjectStats
+	err = oct.Repo.Transaction(ctx, func(dRepo models.IRepo) error {
+		treeOp := versionmgr.TreeOp{Object: dRepo.ObjectRepo()}
+		blob, err := treeOp.WriteBlob(ctx, oct.BlockAdapter, reader, r.ContentLength, block.PutOpts{})
+		if err != nil {
+			return err
+		}
 
-	repo, err := oct.Repository.Get(ctx, &models.GetRepoParams{
-		CreateID: user.ID,
-		Name:     utils.String(repository),
+		user, err := dRepo.UserRepo().Get(ctx, &models.GetUserParam{Name: utils.String(userName)})
+		if err != nil {
+			return err
+		}
+
+		repo, err := dRepo.RepositoryRepo().Get(ctx, &models.GetRepoParams{
+			CreateID: user.ID,
+			Name:     utils.String(repository),
+		})
+		if err != nil {
+			return err
+		}
+
+		stash, err := dRepo.WipRepo().Get(ctx, &models.GetWipParam{
+			RepositoryID: repo.ID,
+			CreateID:     user.ID,
+		})
+		if err != nil {
+			return err
+		}
+
+		workingTreeID, err := dRepo.ObjectRepo().TreeNode(ctx, stash.CurrentTree)
+		if err != nil {
+			return err
+		}
+
+		newRoot, err := treeOp.AddLeaf(ctx, workingTreeID, params.Path, blob)
+		if err != nil {
+			return err
+		}
+		response = api.ObjectStats{
+			Checksum:    blob.Hash.Hex(),
+			Mtime:       time.Now().Unix(),
+			Path:        params.Path,
+			PathMode:    utils.Uint32(uint32(filemode.Regular)),
+			SizeBytes:   swag.Int64(blob.Size),
+			ContentType: &contentType,
+			Metadata:    &api.ObjectUserMetadata{},
+		}
+		return dRepo.WipRepo().UpdateCurrentHash(ctx, stash.ID, newRoot.Hash)
 	})
+
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	stash, err := oct.StashRepo.Get(ctx, &models.GetStashParam{
-		RepositoryID: repo.ID,
-		CreateID:     user.ID,
-	})
-	if err != nil {
-		w.Error(err)
-		return
-	}
-
-	workingTreeID, err := oct.Object.TreeNode(ctx, stash.CurrentTree)
-	if err != nil {
-		w.Error(err)
-		return
-	}
-
-	newRoot, err := treeOp.AddLeaf(ctx, workingTreeID, params.Path, blob)
-	if err != nil {
-		w.Error(err)
-		return
-	}
-
-	err = oct.StashRepo.UpdateCurrentHash(ctx, stash.ID, newRoot.Hash)
-	if err != nil {
-		w.Error(err)
-		return
-	}
-
-	response := api.ObjectStats{
-		Checksum:    blob.Hash.Hex(),
-		Mtime:       time.Now().Unix(),
-		Path:        params.Path,
-		PathMode:    utils.Uint32(uint32(filemode.Regular)),
-		SizeBytes:   swag.Int64(blob.Size),
-		ContentType: &contentType,
-		Metadata:    &api.ObjectUserMetadata{},
-	}
 	w.JSON(response)
 }
