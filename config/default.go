@@ -1,5 +1,7 @@
 package config
 
+import "github.com/jiaozifs/jiaozifs/utils"
+
 var DefaultLocalBSPath = "~/.jiaozifs/blockstore"
 
 var defaultCfg = Config{
@@ -12,7 +14,7 @@ var defaultCfg = Config{
 	},
 	Blockstore: BlockStoreConfig{
 		Type:                   "local",
-		DefaultNamespacePrefix: nil,
+		DefaultNamespacePrefix: utils.String("data"),
 		Local: (*struct {
 			Path                    string   `mapstructure:"path"`
 			ImportEnabled           bool     `mapstructure:"import_enabled"`

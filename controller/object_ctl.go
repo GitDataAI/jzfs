@@ -12,8 +12,6 @@ import (
 	"github.com/go-openapi/swag"
 	"github.com/jiaozifs/jiaozifs/models/filemode"
 
-	"github.com/jiaozifs/jiaozifs/config"
-
 	"github.com/jiaozifs/jiaozifs/versionmgr"
 
 	"github.com/jiaozifs/jiaozifs/block"
@@ -33,8 +31,6 @@ type ObjectController struct {
 	BlockAdapter block.Adapter
 
 	Repo models.IRepo
-
-	Cfg config.BlockStoreConfig
 }
 
 func (oct ObjectController) DeleteObject(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, user string, repository string, params api.DeleteObjectParams) { //nolint
