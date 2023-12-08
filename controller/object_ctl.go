@@ -33,7 +33,7 @@ type ObjectController struct {
 
 	BlockAdapter block.Adapter
 
-	StashRepo  models.StashRepo
+	StashRepo  models.WipRepo
 	UserRepo   models.IUserRepo
 	Repository models.RepositoryRepo
 	Object     models.ObjectRepo

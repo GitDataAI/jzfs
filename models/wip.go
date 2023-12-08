@@ -21,8 +21,8 @@ const (
 	Modify
 )
 
-type Stash struct {
-	bun.BaseModel `bun:"table:stash"`
+type WorkingInProcess struct {
+	bun.BaseModel `bun:"table:wip"`
 	ID            uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
 	CurrentTree   hash.Hash `bun:"current_tree,type:bytea,notnull"`
 	ParentTree    hash.Hash `bun:"parent_tree,type:bytea,notnull"`
@@ -38,23 +38,23 @@ type GetStashParam struct {
 	RepositoryID uuid.UUID
 }
 
-type IStashRepo interface {
-	Insert(ctx context.Context, repo *Stash) (*Stash, error)
-	Get(ctx context.Context, params *GetStashParam) (*Stash, error)
+type IWipRepo interface {
+	Insert(ctx context.Context, repo *WorkingInProcess) (*WorkingInProcess, error)
+	Get(ctx context.Context, params *GetStashParam) (*WorkingInProcess, error)
 	UpdateCurrentHash(ctx context.Context, id uuid.UUID, newTreeHash hash.Hash) error
 }
 
-var _ IStashRepo = (*StashRepo)(nil)
+var _ IWipRepo = (*WipRepo)(nil)
 
-type StashRepo struct {
+type WipRepo struct {
 	db *bun.DB
 }
 
-func NewStashRepo(db *bun.DB) IStashRepo {
-	return &StashRepo{db}
+func NewWipRepo(db *bun.DB) IWipRepo {
+	return &WipRepo{db}
 }
 
-func (s *StashRepo) Insert(ctx context.Context, repo *Stash) (*Stash, error) {
+func (s *WipRepo) Insert(ctx context.Context, repo *WorkingInProcess) (*WorkingInProcess, error) {
 	_, err := s.db.NewInsert().Model(repo).Exec(ctx)
 	if err != nil {
 		return nil, err
@@ -62,8 +62,8 @@ func (s *StashRepo) Insert(ctx context.Context, repo *Stash) (*Stash, error) {
 	return repo, nil
 }
 
-func (s *StashRepo) Get(ctx context.Context, params *GetStashParam) (*Stash, error) {
-	repo := &Stash{}
+func (s *WipRepo) Get(ctx context.Context, params *GetStashParam) (*WorkingInProcess, error) {
+	repo := &WorkingInProcess{}
 	query := s.db.NewSelect().Model(repo)
 
 	if uuid.Nil != params.ID {
@@ -80,8 +80,8 @@ func (s *StashRepo) Get(ctx context.Context, params *GetStashParam) (*Stash, err
 	return repo, query.Scan(ctx, repo)
 }
 
-func (s *StashRepo) UpdateCurrentHash(ctx context.Context, id uuid.UUID, newTreeHash hash.Hash) error {
-	repo := &Stash{
+func (s *WipRepo) UpdateCurrentHash(ctx context.Context, id uuid.UUID, newTreeHash hash.Hash) error {
+	repo := &WorkingInProcess{
 		CurrentTree: newTreeHash,
 	}
 	_, err := s.db.NewUpdate().Model(repo).OmitZero().Column("current_tree").
