@@ -40,7 +40,7 @@ func TestNewUserRepo(t *testing.T) {
 	user, err := repo.Get(ctx, &models.GetUserParam{ID: newUser.ID})
 	require.NoError(t, err)
 
-	require.True(t, cmp.Equal(userModel.UpdatedAt, user.UpdatedAt, dbTimeCmpOpt))
+	require.True(t, cmp.Equal(userModel, user, dbTimeCmpOpt))
 
 	ep, err := repo.GetEPByName(ctx, newUser.Name)
 	require.NoError(t, err)
@@ -48,9 +48,9 @@ func TestNewUserRepo(t *testing.T) {
 
 	userByEmail, err := repo.Get(ctx, &models.GetUserParam{Email: utils.String(newUser.Email)})
 	require.NoError(t, err)
-	require.True(t, cmp.Equal(userModel.UpdatedAt, userByEmail.UpdatedAt, dbTimeCmpOpt))
+	require.True(t, cmp.Equal(userModel, userByEmail, dbTimeCmpOpt))
 
 	userByName, err := repo.Get(ctx, &models.GetUserParam{Name: utils.String(newUser.Name)})
 	require.NoError(t, err)
-	require.True(t, cmp.Equal(userModel.UpdatedAt, userByName.UpdatedAt, dbTimeCmpOpt))
+	require.True(t, cmp.Equal(userModel, userByName, dbTimeCmpOpt))
 }

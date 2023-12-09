@@ -35,6 +35,7 @@ type GetRefParams struct {
 
 type IRefRepo interface {
 	Insert(ctx context.Context, repo *Ref) (*Ref, error)
+	UpdateCommitHash(ctx context.Context, id uuid.UUID, commitHash hash.Hash) error
 	Get(ctx context.Context, id *GetRefParams) (*Ref, error)
 }
 
@@ -65,7 +66,7 @@ func (r RefRepo) Get(ctx context.Context, params *GetRefParams) (*Ref, error) {
 	}
 
 	if uuid.Nil != params.RepositoryID {
-		query = query.Where("create_id = ?", params.RepositoryID)
+		query = query.Where("repository_id = ?", params.RepositoryID)
 	}
 
 	if params.Name != nil {
@@ -73,5 +74,9 @@ func (r RefRepo) Get(ctx context.Context, params *GetRefParams) (*Ref, error) {
 	}
 
 	return repo, query.Scan(ctx, repo)
+}
 
+func (r RefRepo) UpdateCommitHash(ctx context.Context, id uuid.UUID, commitHash hash.Hash) error {
+	_, err := r.db.NewUpdate().Model((*Ref)(nil)).SetColumn("commit_hash", "?", commitHash).Where("id = ?", id).Exec(ctx)
+	return err
 }

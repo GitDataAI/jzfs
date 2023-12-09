@@ -46,6 +46,13 @@ func init() {
 		if err != nil {
 			return err
 		}
+		//wip
+		_, err = db.NewCreateTable().
+			Model((*models.WorkingInProcess)(nil)).
+			Exec(ctx)
+		if err != nil {
+			return err
+		}
 		//object
 		_, err = db.NewCreateTable().
 			Model((*models.Object)(nil)).
