@@ -14,7 +14,7 @@ import (
 	"github.com/jiaozifs/jiaozifs/testhelper"
 )
 
-func TestCommitNode_MergeBase(t *testing.T) {
+func TestCommitNodeMergeBase(t *testing.T) {
 	ctx := context.Background()
 	postgres, _, db := testhelper.SetupDatabase(ctx, t)
 	defer postgres.Stop() //nolint
@@ -23,7 +23,7 @@ func TestCommitNode_MergeBase(t *testing.T) {
 	//mock data
 	//     | -> c -------
 	//     |             |
-	//a ------> b ------d----f---------merge?
+	//a ------> b ------d--f1-f2---f--merge?
 	//          |                       |
 	//          | ----------------->e----
 
@@ -32,7 +32,9 @@ a|
 b|a
 c|a
 d|b,c
-f|d
+f1|d
+f2|f1
+f|f2
 e|b
 `
 	commitMap, err := loadCommitTestData(ctx, objRepo, testData)
@@ -46,6 +48,16 @@ e|b
 		require.NoError(t, err)
 		require.Len(t, ancestorNode, 1)
 		require.Equal(t, "a", string(ancestorNode[0].Commit().Hash))
+	})
+
+	t.Run("fast forward", func(t *testing.T) {
+		//simple
+		baseCommit := commitMap["f"]
+		mergeCommit := commitMap["f1"]
+		ancestorNode, err := baseCommit.MergeBase(mergeCommit)
+		require.NoError(t, err)
+		require.Len(t, ancestorNode, 1)
+		require.Equal(t, "f1", string(ancestorNode[0].Commit().Hash))
 	})
 
 	t.Run("multiple merge", func(t *testing.T) {

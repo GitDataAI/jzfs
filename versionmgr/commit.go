@@ -8,19 +8,16 @@ import (
 	"time"
 
 	"github.com/go-git/go-git/v5/utils/merkletrie"
-
-	"github.com/jiaozifs/jiaozifs/models/filemode"
-
 	"github.com/go-git/go-git/v5/utils/merkletrie/noder"
-
-	"github.com/jiaozifs/jiaozifs/utils/hash"
-
 	"github.com/google/uuid"
-
+	logging "github.com/ipfs/go-log/v2"
 	"github.com/jiaozifs/jiaozifs/models"
+	"github.com/jiaozifs/jiaozifs/models/filemode"
+	"github.com/jiaozifs/jiaozifs/utils/hash"
 )
 
 var (
+	commitLog   = logging.Logger("commit")
 	ErrConflict = errors.New("conflict dected but not found resolver")
 )
 
@@ -155,15 +152,40 @@ func (commitOp *CommitOp) Merge(ctx context.Context, mergerID uuid.UUID, toMerge
 	}
 
 	//find accesstor
-	baseCommitNode := NewCommitNode(ctx, commitOp.commit, commitOp.object)
+	baseCommitNode := NewCommitNode(ctx, commitOp.Commit(), commitOp.object)
 	toMergeCommitNode := NewCommitNode(ctx, toMergeCommit, commitOp.object)
+
+	{
+		//do nothing while merge is ancestor of base
+		mergeIsAncestorOfBase, err := toMergeCommitNode.IsAncestor(baseCommitNode)
+		if err != nil {
+			return nil, err
+		}
+
+		if mergeIsAncestorOfBase {
+			commitLog.Warnf("merge commit %s is ancestor of base commit %s", toMergeCommitHash, commitOp.Commit().Hash)
+			return commitOp.Commit(), nil
+		}
+	}
+
+	{
+		//try fast-forward merge no need to create new commit node
+		baseIsAncestorOfMerge, err := baseCommitNode.IsAncestor(toMergeCommitNode)
+		if err != nil {
+			return nil, err
+		}
+
+		if baseIsAncestorOfMerge {
+			commitLog.Warnf("base commit %s is ancestor of merge commit %s", toMergeCommitHash, commitOp.Commit().Hash)
+			return toMergeCommit, nil
+		}
+	}
+
+	// three way merge
 	bestAncestor, err := baseCommitNode.MergeBase(toMergeCommitNode)
 	if err != nil {
 		return nil, err
 	}
-
-	//Fast forward merge
-	//3 way merge
 
 	if len(bestAncestor) == 0 {
 		return nil, fmt.Errorf("no common ancesstor find")
