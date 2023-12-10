@@ -220,7 +220,7 @@ func (a *Adapter) Remove(ctx context.Context, obj block.ObjectPointer) error {
 	}
 	err = a.client.Bucket(bucket).Object(key).Delete(ctx)
 	if err != nil {
-		return fmt.Errorf("Object(%q).Delete: %w", key, err)
+		return fmt.Errorf("object(%q).Delete: %w", key, err)
 	}
 	return nil
 }

@@ -116,25 +116,24 @@ func (commitOp *CommitOp) DiffCommit(ctx context.Context, baseCommitID, toCommit
 		return nil, err
 	}
 
-	fromNode := &TreeNode{
-		Ctx: ctx,
-		TreeEntry: models.TreeEntry{
-			Name: "",
-			Mode: filemode.Dir,
-			Hash: baseCommit.TreeHash,
-		},
-		Object: commitOp.Object,
+	fromNode, err := NewTreeNode(ctx, models.TreeEntry{
+		Name: "",
+		Mode: filemode.Dir,
+		Hash: baseCommit.TreeHash,
+	}, commitOp.Object)
+	if err != nil {
+		return nil, err
 	}
 
-	toNode := &TreeNode{
-		Ctx: ctx,
-		TreeEntry: models.TreeEntry{
-			Name: "",
-			Mode: filemode.Dir,
-			Hash: toCommit.TreeHash,
-		},
-		Object: commitOp.Object,
+	toNode, err := NewTreeNode(ctx, models.TreeEntry{
+		Name: "",
+		Mode: filemode.Dir,
+		Hash: toCommit.TreeHash,
+	}, commitOp.Object)
+	if err != nil {
+		return nil, err
 	}
+
 	return merkletrie.DiffTreeContext(ctx, fromNode, toNode, func(a, b noder.Hasher) bool {
 		return bytes.Equal(a.Hash(), b.Hash())
 	})

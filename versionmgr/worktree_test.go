@@ -6,6 +6,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/jiaozifs/jiaozifs/utils/hash"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -25,7 +27,8 @@ func TestTreeOpWriteBlob(t *testing.T) {
 	adapter := mem.New(ctx)
 	objRepo := models.NewObjectRepo(db)
 
-	treeOp := NewTreeOp(objRepo)
+	treeOp, err := NewWorkTree(ctx, objRepo, EmptyDirEntry)
+	require.NoError(t, err)
 
 	binary := []byte("Build simple, secure, scalable systems with Go")
 	bLen := int64(len(binary))
@@ -44,7 +47,8 @@ func TestTreeOpTreeOp(t *testing.T) {
 	adapter := mem.New(ctx)
 	objRepo := models.NewObjectRepo(db)
 
-	treeOp := NewTreeOp(objRepo)
+	treeOp, err := NewWorkTree(ctx, objRepo, EmptyDirEntry)
+	require.NoError(t, err)
 
 	binary := []byte("Build simple, secure, scalable systems with Go")
 	bLen := int64(len(binary))
@@ -52,12 +56,12 @@ func TestTreeOpTreeOp(t *testing.T) {
 	blob, err := treeOp.WriteBlob(ctx, adapter, r, bLen, block.PutOpts{})
 	require.NoError(t, err)
 
-	oriRoot, err := treeOp.AddLeaf(ctx, EmptyRoot, "a/b/c.txt", blob)
+	err = treeOp.AddLeaf(ctx, "a/b/c.txt", blob)
 	require.NoError(t, err)
-	require.Equal(t, "3bf643c30934d121ee45d413b165f135", oriRoot.Hash.Hex())
+	require.Equal(t, "3bf643c30934d121ee45d413b165f135", hash.Hash(treeOp.Root().Hash()).Hex())
 
 	//add again expect get an error
-	_, err = treeOp.AddLeaf(ctx, oriRoot, "a/b/c.txt", blob)
+	err = treeOp.AddLeaf(ctx, "a/b/c.txt", blob)
 	require.True(t, errors.Is(err, ErrEntryExit))
 
 	//update path
@@ -67,21 +71,21 @@ func TestTreeOpTreeOp(t *testing.T) {
 	blob, err = treeOp.WriteBlob(ctx, adapter, r, bLen, block.PutOpts{})
 	require.NoError(t, err)
 
-	updatedRoot, err := treeOp.ReplaceLeaf(ctx, oriRoot, "a/b/c.txt", blob)
+	err = treeOp.ReplaceLeaf(ctx, "a/b/c.txt", blob)
 	require.NoError(t, err)
-	require.Equal(t, "8856b15f0f6c7ad21bfabe812df69e83", updatedRoot.Hash.Hex())
+	require.Equal(t, "8856b15f0f6c7ad21bfabe812df69e83", hash.Hash(treeOp.Root().Hash()).Hex())
 
 	{
 		//add another branch
-		updatedRoot, err = treeOp.AddLeaf(ctx, updatedRoot, "a/b/d.txt", blob)
+		err = treeOp.AddLeaf(ctx, "a/b/d.txt", blob)
 		require.NoError(t, err)
-		require.Equal(t, "225f0ca6233681a441969922a7425db2", updatedRoot.Hash.Hex())
+		require.Equal(t, "225f0ca6233681a441969922a7425db2", hash.Hash(treeOp.Root().Hash()).Hex())
 
 	}
 
 	{
 		//check fs structure
-		rootDir, err := objRepo.TreeNode(ctx, updatedRoot.Hash)
+		rootDir, err := objRepo.TreeNode(ctx, treeOp.Root().Hash())
 		require.NoError(t, err)
 		require.Len(t, rootDir.SubObjects, 1)
 		require.Equal(t, "a", rootDir.SubObjects[0].Name)
@@ -100,25 +104,25 @@ func TestTreeOpTreeOp(t *testing.T) {
 
 	{
 		//check ls
-		subObjects, err := treeOp.Ls(ctx, updatedRoot, "a")
+		subObjects, err := treeOp.Ls(ctx, "a")
 		require.NoError(t, err)
 		require.Len(t, subObjects, 1)
 		require.Equal(t, "b", subObjects[0].Name)
 
-		subObjects, err = treeOp.Ls(ctx, updatedRoot, "a/b")
+		subObjects, err = treeOp.Ls(ctx, "a/b")
 		require.NoError(t, err)
 		require.Len(t, subObjects, 2)
 		require.Equal(t, "c.txt", subObjects[0].Name)
 		require.Equal(t, "d.txt", subObjects[1].Name)
 	}
 
-	rootAfterRemove, err := treeOp.RemoveEntry(ctx, updatedRoot, "a/b/c.txt")
+	err = treeOp.RemoveEntry(ctx, "a/b/c.txt")
 	require.NoError(t, err)
-	require.Equal(t, "f90e2d306ad172824fa171b9e0d9e133", rootAfterRemove.Hash.Hex())
+	require.Equal(t, "f90e2d306ad172824fa171b9e0d9e133", hash.Hash(treeOp.Root().Hash()).Hex())
 
-	rootAfterRemoveAll, err := treeOp.RemoveEntry(ctx, rootAfterRemove, "a/b/d.txt")
+	err = treeOp.RemoveEntry(ctx, "a/b/d.txt")
 	require.NoError(t, err)
-	require.Equal(t, "", rootAfterRemoveAll.Hash.Hex())
+	require.Equal(t, "", hash.Hash(treeOp.Root().Hash()).Hex())
 }
 
 func TestRemoveEntry(t *testing.T) {
@@ -129,7 +133,8 @@ func TestRemoveEntry(t *testing.T) {
 	adapter := mem.New(ctx)
 	objRepo := models.NewObjectRepo(db)
 
-	treeOp := NewTreeOp(objRepo)
+	treeOp, err := NewWorkTree(ctx, objRepo, EmptyDirEntry)
+	require.NoError(t, err)
 
 	binary := []byte("Build simple, secure, scalable systems with Go")
 	bLen := int64(len(binary))
@@ -137,9 +142,9 @@ func TestRemoveEntry(t *testing.T) {
 	blob, err := treeOp.WriteBlob(ctx, adapter, r, bLen, block.PutOpts{})
 	require.NoError(t, err)
 
-	root, err := treeOp.AddLeaf(ctx, EmptyRoot, "a/b/c.txt", blob)
+	err = treeOp.AddLeaf(ctx, "a/b/c.txt", blob)
 	require.NoError(t, err)
-	require.Equal(t, "3bf643c30934d121ee45d413b165f135", root.Hash.Hex())
+	require.Equal(t, "3bf643c30934d121ee45d413b165f135", hash.Hash(treeOp.Root().Hash()).Hex())
 
 	//update path
 	binary = []byte(`“At the time, no single team member knew Go, but within a month, everyone was writing in Go and we were building out the endpoints. ”`)
@@ -149,11 +154,11 @@ func TestRemoveEntry(t *testing.T) {
 	require.NoError(t, err)
 
 	//add another branch
-	root, err = treeOp.AddLeaf(ctx, root, "a/b/d.txt", blob)
+	err = treeOp.AddLeaf(ctx, "a/b/d.txt", blob)
 	require.NoError(t, err)
-	require.Equal(t, "81173b4a85cc5643feacd38b975e61a1", root.Hash.Hex())
+	require.Equal(t, "81173b4a85cc5643feacd38b975e61a1", hash.Hash(treeOp.Root().Hash()).Hex())
 
-	rootAfterRemoveAll, err := treeOp.RemoveEntry(ctx, root, "a/b")
+	err = treeOp.RemoveEntry(ctx, "a/b")
 	require.NoError(t, err)
-	require.Equal(t, "", rootAfterRemoveAll.Hash.Hex())
+	require.Equal(t, "", hash.Hash(treeOp.Root().Hash()).Hex())
 }

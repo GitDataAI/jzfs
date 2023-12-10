@@ -1,6 +1,7 @@
 package models
 
 import (
+	"bytes"
 	"context"
 	"time"
 
@@ -36,6 +37,17 @@ type TreeEntry struct {
 	Name string            `bun:"name"`
 	Mode filemode.FileMode `bun:"mode"`
 	Hash hash.Hash         `bun:"hash"`
+}
+
+func NewRootTreeEntry(hash hash.Hash) TreeEntry {
+	return TreeEntry{
+		Name: "",
+		Mode: filemode.Dir,
+		Hash: hash,
+	}
+}
+func (treeEntry TreeEntry) Equal(other TreeEntry) bool {
+	return bytes.Equal(treeEntry.Hash, other.Hash) && treeEntry.Mode == other.Mode && treeEntry.Name == other.Name
 }
 
 type Blob struct {
@@ -188,6 +200,10 @@ func (commit *Commit) GetHash() (hash.Hash, error) {
 	}
 
 	_, err = hasher.Write(commit.TreeHash)
+	if err != nil {
+		return nil, err
+	}
+
 	for _, h := range commit.ParentHashes {
 		_, err = hasher.Write(h)
 		if err != nil {

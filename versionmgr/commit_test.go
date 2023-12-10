@@ -68,7 +68,7 @@ b/e.txt |e2
 
 func makeUser(ctx context.Context, userRepo models.IUserRepo, name string) (*models.User, error) {
 	user := &models.User{
-		Name:              "name",
+		Name:              name,
 		Email:             "xxx@gg.com",
 		EncryptedPassword: "123",
 		CurrentSignInAt:   time.Time{},
@@ -120,9 +120,10 @@ func makeWip(ctx context.Context, wipRepo models.IWipRepo, repoID, refID uuid.UU
 }
 func makeRoot(ctx context.Context, objRepo models.IObjectRepo, testData string) (*models.TreeNode, error) {
 	lines := strings.Split(testData, "\n")
-	treeOp := NewTreeOp(objRepo)
-	root := EmptyRoot
-	var err error
+	treeOp, err := NewWorkTree(ctx, objRepo, EmptyDirEntry)
+	if err != nil {
+		return nil, err
+	}
 	for _, line := range lines {
 		if len(strings.TrimSpace(line)) == 0 {
 			continue
@@ -138,10 +139,10 @@ func makeRoot(ctx context.Context, objRepo models.IObjectRepo, testData string) 
 			UpdatedAt: time.Now(),
 		}
 
-		root, err = treeOp.AddLeaf(ctx, root, fullPath, blob)
+		err = treeOp.AddLeaf(ctx, fullPath, blob)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return root, nil
+	return treeOp.Root().TreeNode(), nil
 }

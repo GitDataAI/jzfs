@@ -29,15 +29,11 @@ func (c *CommitNode) Tree() (*TreeNode, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &TreeNode{
-		Ctx: c.Ctx,
-		TreeEntry: models.TreeEntry{
-			Name: "",
-			Mode: filemode.Dir,
-			Hash: treeNode.Hash,
-		},
-		Object: c.Object,
-	}, nil
+	return NewTreeNode(c.Ctx, models.TreeEntry{
+		Name: "",
+		Mode: filemode.Dir,
+		Hash: treeNode.Hash,
+	}, c.Object)
 }
 
 // Parents return a CommitIter to the parent Commits.
