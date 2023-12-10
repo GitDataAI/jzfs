@@ -59,13 +59,13 @@ func (w *bfsCommitIterator) Next() (*CommitNode, error) {
 		c = w.queue[0]
 		w.queue = w.queue[1:]
 
-		if w.seen[c.Hash.Hex()] || w.seenExternal[c.Hash.Hex()] {
+		if w.seen[c.Commit().Hash.Hex()] || w.seenExternal[c.Commit().Hash.Hex()] {
 			continue
 		}
 
-		w.seen[c.Hash.Hex()] = true
+		w.seen[c.Commit().Hash.Hex()] = true
 
-		for _, h := range c.ParentHashes {
+		for _, h := range c.Commit().ParentHashes {
 			err := w.appendHash(c, h)
 			if err != nil {
 				return nil, err

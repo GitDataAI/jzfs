@@ -72,10 +72,10 @@ func (w *filterCommitIter) Next() (*CommitNode, error) {
 			return nil, w.close(err)
 		}
 
-		w.visited[commit.Hash.Hex()] = struct{}{}
+		w.visited[commit.Commit().Hash.Hex()] = struct{}{}
 
 		if !w.isLimit(commit) {
-			err = w.addToQueue(commit, commit.ParentHashes...)
+			err = w.addToQueue(commit, commit.Commit().ParentHashes...)
 			if err != nil {
 				return nil, w.close(err)
 			}
@@ -148,7 +148,7 @@ func (w *filterCommitIter) popNewFromQueue() (*CommitNode, error) {
 
 		first = w.queue[0]
 		w.queue = w.queue[1:]
-		if _, ok := w.visited[first.Hash.Hex()]; ok {
+		if _, ok := w.visited[first.Commit().Hash.Hex()]; ok {
 			continue
 		}
 

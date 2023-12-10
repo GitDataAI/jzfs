@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-git/go-git/v5/utils/merkletrie"
+
 	"github.com/jiaozifs/jiaozifs/block"
 	"github.com/jiaozifs/jiaozifs/utils/hash"
 	"github.com/jiaozifs/jiaozifs/utils/pathutil"
@@ -482,4 +484,28 @@ func (workTree *WorkTree) Ls(ctx context.Context, fullPath string) ([]models.Tre
 	}
 
 	return lastNode.Node().SubObjects, nil
+}
+
+func (workTree *WorkTree) ApplyOneChange(ctx context.Context, change *Change) error {
+	action, err := change.Action()
+	if err != nil {
+		return err
+	}
+	switch action {
+	case merkletrie.Insert:
+		blob, err := workTree.object.Blob(ctx, change.From.Hash())
+		if err != nil {
+			return err
+		}
+		return workTree.AddLeaf(ctx, change.From.String(), blob)
+	case merkletrie.Delete:
+		return workTree.RemoveEntry(ctx, change.From.String())
+	case merkletrie.Modify:
+		blob, err := workTree.object.Blob(ctx, change.From.Hash())
+		if err != nil {
+			return err
+		}
+		return workTree.ReplaceLeaf(ctx, change.From.String(), blob)
+	}
+	return fmt.Errorf("unexpect change action: %s", action)
 }

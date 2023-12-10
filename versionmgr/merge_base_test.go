@@ -45,7 +45,7 @@ e|b
 		ancestorNode, err := baseCommit.MergeBase(mergeCommit)
 		require.NoError(t, err)
 		require.Len(t, ancestorNode, 1)
-		require.Equal(t, "a", string(ancestorNode[0].Hash))
+		require.Equal(t, "a", string(ancestorNode[0].Commit().Hash))
 	})
 
 	t.Run("multiple merge", func(t *testing.T) {
@@ -54,7 +54,7 @@ e|b
 		ancestorNode, err := baseCommit.MergeBase(mergeCommit)
 		require.NoError(t, err)
 		require.Len(t, ancestorNode, 1)
-		require.Equal(t, "b", string(ancestorNode[0].Hash))
+		require.Equal(t, "b", string(ancestorNode[0].Commit().Hash))
 	})
 }
 
@@ -68,11 +68,7 @@ func loadCommitTestData(ctx context.Context, objRepo models.IObjectRepo, testDat
 		commitData := strings.Split(strings.TrimSpace(line), "|")
 		hashName := strings.TrimSpace(commitData[0])
 		commit := newCommit(hashName, strings.Split(commitData[1], ","))
-		commitMap[hashName] = &CommitNode{
-			Ctx:    ctx,
-			Commit: *commit,
-			Object: objRepo,
-		}
+		commitMap[hashName] = NewCommitNode(ctx, commit, objRepo)
 		_, err := objRepo.Insert(ctx, commit.Object())
 		if err != nil {
 			return nil, err

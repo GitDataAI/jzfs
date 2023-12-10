@@ -48,7 +48,7 @@ func (c *CommitNode) IsAncestor(other *CommitNode) (bool, error) {
 	found := false
 	iter := NewCommitPreorderIter(other, nil, nil)
 	err := iter.ForEach(func(comm *CommitNode) error {
-		if !bytes.Equal(comm.Hash, c.Hash) {
+		if !bytes.Equal(comm.Commit().Hash, c.Commit().Hash) {
 			return nil
 		}
 
@@ -63,18 +63,18 @@ func (c *CommitNode) IsAncestor(other *CommitNode) (bool, error) {
 // excluded one is not one of them. It returns errIsReachable if the excluded commit
 // is ancestor of the starting, or another error if the history is not traversable.
 func ancestorsIndex(excluded, starting *CommitNode) (map[string]struct{}, error) {
-	if bytes.Equal(excluded.Hash, starting.Hash) {
+	if bytes.Equal(excluded.Commit().Hash, starting.Commit().Hash) {
 		return nil, errIsReachable
 	}
 
 	startingHistory := map[string]struct{}{}
 	startingIter := NewCommitIterBSF(starting, nil, nil)
 	err := startingIter.ForEach(func(commit *CommitNode) error {
-		if bytes.Equal(commit.Hash, excluded.Hash) {
+		if bytes.Equal(commit.Commit().Hash, excluded.Commit().Hash) {
 			return errIsReachable
 		}
 
-		startingHistory[commit.Hash.Hex()] = struct{}{}
+		startingHistory[commit.Commit().Hash.Hex()] = struct{}{}
 		return nil
 	})
 
@@ -94,7 +94,7 @@ func Independents(commits []*CommitNode) ([]*CommitNode, error) {
 
 	seen := map[string]struct{}{}
 	var isLimit CommitFilter = func(commit *CommitNode) bool {
-		_, ok := seen[commit.Hash.Hex()]
+		_, ok := seen[commit.Commit().Hash.Hex()]
 		return ok
 	}
 
@@ -109,7 +109,7 @@ func Independents(commits []*CommitNode) ([]*CommitNode, error) {
 		fromHistoryIter := NewFilterCommitIter(from, nil, &isLimit)
 		err := fromHistoryIter.ForEach(func(fromAncestor *CommitNode) error {
 			for _, other := range others {
-				if bytes.Equal(fromAncestor.Hash, other.Hash) {
+				if bytes.Equal(fromAncestor.Commit().Hash, other.Commit().Hash) {
 					candidates = remove(candidates, other)
 					others = remove(others, other)
 				}
@@ -119,7 +119,7 @@ func Independents(commits []*CommitNode) ([]*CommitNode, error) {
 				return storer.ErrStop
 			}
 
-			seen[fromAncestor.Hash.Hex()] = struct{}{}
+			seen[fromAncestor.Commit().Hash.Hex()] = struct{}{}
 			return nil
 		})
 
@@ -150,7 +150,7 @@ func sortByCommitDateDesc(commits ...*CommitNode) []*CommitNode {
 	sorted := make([]*CommitNode, len(commits))
 	copy(sorted, commits)
 	sort.Slice(sorted, func(i, j int) bool {
-		return sorted[i].Committer.When.After(sorted[j].Committer.When)
+		return sorted[i].Commit().Committer.When.After(sorted[j].Commit().Committer.When)
 	})
 
 	return sorted
@@ -159,7 +159,7 @@ func sortByCommitDateDesc(commits ...*CommitNode) []*CommitNode {
 // indexOf returns the first position where target was found in the passed commits
 func indexOf(commits []*CommitNode, target *CommitNode) int {
 	for i, commit := range commits {
-		if bytes.Equal(target.Hash, commit.Hash) {
+		if bytes.Equal(target.Commit().Hash, commit.Commit().Hash) {
 			return i
 		}
 	}
@@ -172,7 +172,7 @@ func remove(commits []*CommitNode, toDelete *CommitNode) []*CommitNode {
 	res := make([]*CommitNode, len(commits))
 	j := 0
 	for _, commit := range commits {
-		if bytes.Equal(commit.Hash, toDelete.Hash) {
+		if bytes.Equal(commit.Commit().Hash, toDelete.Commit().Hash) {
 			continue
 		}
 
@@ -189,11 +189,11 @@ func removeDuplicated(commits []*CommitNode) []*CommitNode {
 	res := make([]*CommitNode, len(commits))
 	j := 0
 	for _, commit := range commits {
-		if _, ok := seen[commit.Hash.Hex()]; ok {
+		if _, ok := seen[commit.Commit().Hash.Hex()]; ok {
 			continue
 		}
 
-		seen[commit.Hash.Hex()] = struct{}{}
+		seen[commit.Commit().Hash.Hex()] = struct{}{}
 		res[j] = commit
 		j++
 	}
@@ -205,7 +205,7 @@ func removeDuplicated(commits []*CommitNode) []*CommitNode {
 // if the commit is in the passed index.
 func isInIndexCommitFilter(index map[string]struct{}) CommitFilter {
 	return func(c *CommitNode) bool {
-		_, ok := index[c.Hash.Hex()]
+		_, ok := index[c.Commit().Hash.Hex()]
 		return ok
 	}
 }

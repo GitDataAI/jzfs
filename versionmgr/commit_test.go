@@ -39,7 +39,6 @@ b/e.txt |e2
 	require.NoError(t, err)
 	root2, err := makeRoot(ctx, repo.ObjectRepo(), testData2)
 	require.NoError(t, err)
-	op := NewCommitOp(repo)
 
 	user, err := makeUser(ctx, repo.UserRepo(), "admin")
 	require.NoError(t, err)
@@ -47,23 +46,26 @@ b/e.txt |e2
 	project, err := makeRepository(ctx, repo.RepositoryRepo(), "testproject")
 	require.NoError(t, err)
 
+	//base branch
 	baseRef, err := makeRef(ctx, repo.RefRepo(), "feat/base", project.ID, hash.Hash("a"))
 	require.NoError(t, err)
 	baseWip, err := makeWip(ctx, repo.WipRepo(), project.ID, baseRef.ID, root1.Hash)
 	require.NoError(t, err)
-	baseCommit, err := op.AddCommit(ctx, baseRef.ID, user.ID, baseWip.ID, "base commit")
+
+	baseCommit, err := NewCommitOp(repo, nil).AddCommit(ctx, user.ID, baseWip.ID, "base commit")
 	require.NoError(t, err)
 
+	//toMerge branch
 	mergeRef, err := makeRef(ctx, repo.RefRepo(), "feat/merge", project.ID, hash.Hash("a"))
 	require.NoError(t, err)
 	mergeWip, err := makeWip(ctx, repo.WipRepo(), project.ID, mergeRef.ID, root2.Hash)
 	require.NoError(t, err)
-	mergeCommit, err := op.AddCommit(ctx, mergeRef.ID, user.ID, mergeWip.ID, "merge commit")
+	mergeCommit, err := NewCommitOp(repo, nil).AddCommit(ctx, user.ID, mergeWip.ID, "merge commit")
 	require.NoError(t, err)
 
-	changes, err := op.DiffCommit(ctx, baseCommit.Hash, mergeCommit.Hash)
+	changes, err := baseCommit.DiffCommit(ctx, mergeCommit.Commit().Hash)
 	require.NoError(t, err)
-	require.Len(t, changes, 3)
+	require.Len(t, changes.Num(), 3)
 }
 
 func makeUser(ctx context.Context, userRepo models.IUserRepo, name string) (*models.User, error) {
@@ -93,6 +95,30 @@ func makeRepository(ctx context.Context, repoRepo models.IRepositoryRepo, name s
 	return repoRepo.Insert(ctx, user)
 }
 
+func makeCommit(ctx context.Context, commitRepo models.IObjectRepo, treeHash hash.Hash, msg string, parentsHash ...hash.Hash) (*models.Commit, error) {
+	commit := &models.Commit{
+		Hash: hash.Hash("mock"),
+		Type: models.CommitObject,
+		Author: models.Signature{
+			Name:  "admin",
+			Email: "xxx@gg.com",
+			When:  time.Time{},
+		},
+		Committer: models.Signature{
+			Name:  "admin",
+			Email: "xxx@gg.com",
+			When:  time.Time{},
+		},
+		TreeHash:     treeHash,
+		ParentHashes: parentsHash,
+		Message:      msg,
+	}
+	obj, err := commitRepo.Insert(ctx, commit.Object())
+	if err != nil {
+		return nil, err
+	}
+	return obj.Commit(), nil
+}
 func makeRef(ctx context.Context, refRepo models.IRefRepo, name string, repoID uuid.UUID, commitHash hash.Hash) (*models.Ref, error) {
 	ref := &models.Ref{
 		RepositoryID: repoID,

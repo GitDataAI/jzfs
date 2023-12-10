@@ -65,13 +65,13 @@ func (w *commitPreIterator) Next() (*CommitNode, error) {
 			}
 		}
 
-		if w.seen[c.Hash.Hex()] || w.seenExternal[c.Hash.Hex()] {
+		if w.seen[c.Commit().Hash.Hex()] || w.seenExternal[c.Commit().Hash.Hex()] {
 			continue
 		}
 
-		w.seen[c.Hash.Hex()] = true
+		w.seen[c.Commit().Hash.Hex()] = true
 
-		if c.NumParents() > 0 {
+		if c.Commit().NumParents() > 0 {
 			commitIter, err := filteredParentIter(c, w.seen)
 			if err != nil {
 				return nil, err
@@ -85,7 +85,7 @@ func (w *commitPreIterator) Next() (*CommitNode, error) {
 
 func filteredParentIter(c *CommitNode, seen map[string]bool) (CommitIter, error) {
 	var hashes []hash.Hash
-	for _, h := range c.ParentHashes {
+	for _, h := range c.Commit().ParentHashes {
 		if !seen[h.Hex()] {
 			hashes = append(hashes, h)
 		}
@@ -109,7 +109,7 @@ func (w *commitPreIterator) ForEach(cb func(*CommitNode) error) error {
 		}
 
 		err = cb(c)
-		if err == storer.ErrStop {
+		if err == ErrStop {
 			break
 		}
 		if err != nil {
@@ -151,11 +151,11 @@ func (w *commitPostIterator) Next() (*CommitNode, error) {
 		c := w.stack[len(w.stack)-1]
 		w.stack = w.stack[:len(w.stack)-1]
 
-		if w.seen[c.Hash.Hex()] {
+		if w.seen[c.Commit().Hash.Hex()] {
 			continue
 		}
 
-		w.seen[c.Hash.Hex()] = true
+		w.seen[c.Commit().Hash.Hex()] = true
 
 		parentCommits, err := c.Parents()
 		if err != nil {
