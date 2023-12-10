@@ -65,7 +65,7 @@ b/e.txt |e2
 
 	changes, err := baseCommit.DiffCommit(ctx, mergeCommit.Commit().Hash)
 	require.NoError(t, err)
-	require.Len(t, changes.Num(), 3)
+	require.Equal(t, 3, changes.Num())
 }
 
 func makeUser(ctx context.Context, userRepo models.IUserRepo, name string) (*models.User, error) {
@@ -95,6 +95,7 @@ func makeRepository(ctx context.Context, repoRepo models.IRepositoryRepo, name s
 	return repoRepo.Insert(ctx, user)
 }
 
+// nolint
 func makeCommit(ctx context.Context, commitRepo models.IObjectRepo, treeHash hash.Hash, msg string, parentsHash ...hash.Hash) (*models.Commit, error) {
 	commit := &models.Commit{
 		Hash: hash.Hash("mock"),

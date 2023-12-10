@@ -42,33 +42,33 @@ func NewChanges(changes []Change) *Changes {
 	return &Changes{changes: changes, idx: -1}
 }
 
-func (c Changes) Num() int {
+func (c *Changes) Num() int {
 	return len(c.changes)
 }
 
-func (c Changes) Changes() []Change {
+func (c *Changes) Changes() []Change {
 	return c.changes
 }
 
-func (c Changes) Next() (Change, error) {
+func (c *Changes) Next() (*Change, error) {
 	if c.idx == len(c.changes)-1 {
 		c.idx++
-		return c.changes[c.idx], nil
+		return &c.changes[c.idx], nil
 	}
-	return Change{}, io.EOF
+	return nil, io.EOF
 }
 
-func (c Changes) Has() bool {
+func (c *Changes) Has() bool {
 	return c.idx == len(c.changes)-1
 }
 
-func (c Changes) Back() {
+func (c *Changes) Back() {
 	if c.idx > -1 {
 		c.idx--
 	}
 }
 
-func (c Changes) Reset() {
+func (c *Changes) Reset() {
 	c.idx = -1
 }
 
@@ -92,15 +92,15 @@ func NewChangesMergeIter(baseChanges *Changes, mergerChanges *Changes, resolver 
 	return &ChangesMergeIter{baseChanges: baseChanges, mergerChanges: mergerChanges, resolver: resolver}
 }
 
-func (cw ChangesMergeIter) Has() bool {
+func (cw *ChangesMergeIter) Has() bool {
 	return cw.baseChanges.Has() || cw.mergerChanges.Has()
 }
 
-func (cw ChangesMergeIter) Reset() {
+func (cw *ChangesMergeIter) Reset() {
 	cw.baseChanges.Reset()
 	cw.mergerChanges.Reset()
 }
-func (cw ChangesMergeIter) Next() (*Change, error) {
+func (cw *ChangesMergeIter) Next() (*Change, error) {
 	baseNode, baseErr := cw.baseChanges.Next()
 	if baseErr != nil && baseErr != io.EOF {
 		return nil, baseErr
@@ -116,46 +116,27 @@ func (cw ChangesMergeIter) Next() (*Change, error) {
 	}
 
 	if baseErr == io.EOF {
-		return &mergeNode, nil
+		return mergeNode, nil
 	}
 
 	if mergerError == io.EOF {
-		return &baseNode, nil
+		return baseNode, nil
 	}
 
 	compare := strings.Compare(baseNode.Path(), mergeNode.Path())
 	if compare < 0 {
 		//only merger change
 		cw.baseChanges.Back()
-		return &mergeNode, nil
+		return mergeNode, nil
 	} else if compare == 0 {
-
-		//both change
-		if baseNode.From == nil && mergeNode.From == nil {
-			//both delete
-			return &baseNode, nil
-		}
-		if bytes.Equal(baseNode.From.Hash(), mergeNode.From.Hash()) {
-			//both modify/add apply any
-			return &baseNode, nil
-		}
-		//conflict
-		if cw.resolver != nil {
-			resolveResult, err := cw.resolver(&baseNode, &mergeNode)
-			if err != nil {
-				return nil, err
-			}
-			return resolveResult, nil
-		}
-		return nil, fmt.Errorf("path %s confilict %w", mergeNode.Path(), ErrConflict)
-	} else {
-		//only base change
-		cw.mergerChanges.Back()
-		return &baseNode, nil
+		return cw.compareBothChange(baseNode, mergeNode)
 	}
+	//only base change
+	cw.mergerChanges.Back()
+	return baseNode, nil
 }
 
-func (cw ChangesMergeIter) compareBothChange(base, merge *Change) (*Change, error) {
+func (cw *ChangesMergeIter) compareBothChange(base, merge *Change) (*Change, error) {
 	baseAction, err := base.Action()
 	if err != nil {
 		return nil, err
@@ -168,14 +149,14 @@ func (cw ChangesMergeIter) compareBothChange(base, merge *Change) (*Change, erro
 	case merkletrie.Insert:
 		switch mergeAction {
 		case merkletrie.Delete:
-			return cw.resolver(base, merge)
+			return cw.resolveConflict(base, merge)
 		case merkletrie.Modify:
 			return nil, fmt.Errorf("%s merge should never be Modify while the other diff is Insert, must be a bug, fire issue at https://github.com/jiaozifs/jiaozifs/issues", base.Path())
 		case merkletrie.Insert:
 			if bytes.Equal(base.From.Hash(), merge.From.Hash()) {
 				return base, nil
 			}
-			return cw.resolver(base, merge)
+			return cw.resolveConflict(base, merge)
 		}
 	case merkletrie.Delete:
 		switch mergeAction {
@@ -184,25 +165,25 @@ func (cw ChangesMergeIter) compareBothChange(base, merge *Change) (*Change, erro
 		case merkletrie.Insert:
 			return nil, fmt.Errorf("%s merge should never be Insert while the other diff is Delete, must be a bug, fire issue at https://github.com/jiaozifs/jiaozifs/issues", base.Path())
 		case merkletrie.Modify:
-			return cw.resolver(base, merge)
+			return cw.resolveConflict(base, merge)
 		}
 	case merkletrie.Modify:
 		switch mergeAction {
 		case merkletrie.Insert:
 			return nil, fmt.Errorf("%s merge should never be Insert while the other diff is Modify, must be a bug, fire issue at https://github.com/jiaozifs/jiaozifs/issues", base.Path())
 		case merkletrie.Delete:
-			return cw.resolver(base, merge)
+			return cw.resolveConflict(base, merge)
 		case merkletrie.Modify:
 			if bytes.Equal(base.From.Hash(), merge.From.Hash()) {
 				return base, nil
 			}
-			return cw.resolver(base, merge)
+			return cw.resolveConflict(base, merge)
 		}
 	}
 	return nil, fmt.Errorf("not match action")
 }
 
-func (cw ChangesMergeIter) resolveConflict(base, merge *Change) (*Change, error) {
+func (cw *ChangesMergeIter) resolveConflict(base, merge *Change) (*Change, error) {
 	if cw.resolver != nil {
 		resolveResult, err := cw.resolver(base, merge)
 		if err != nil {
