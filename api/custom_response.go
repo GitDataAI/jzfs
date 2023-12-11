@@ -38,3 +38,6 @@ func (response *JiaozifsResponse) CodeMsg(code int, msg string) {
 	response.WriteHeader(code)
 	_, _ = response.Write([]byte(msg))
 }
+func (response *JiaozifsResponse) Code(code int) {
+	response.WriteHeader(code)
+}

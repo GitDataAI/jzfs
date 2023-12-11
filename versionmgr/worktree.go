@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jiaozifs/jiaozifs/utils/httputil"
+
 	"github.com/go-git/go-git/v5/utils/merkletrie"
 
 	"github.com/jiaozifs/jiaozifs/block"
@@ -72,6 +74,40 @@ func (workTree *WorkTree) Root() *TreeNode {
 	return workTree.root
 }
 
+// ReadBlob read blob content with range
+func (workTree *WorkTree) ReadBlob(ctx context.Context, adapter block.Adapter, blob *models.Blob, rangeSpec *string) (io.ReadCloser, error) {
+	address := pathutil.PathOfHash(blob.Hash)
+	pointer := block.ObjectPointer{
+		StorageNamespace: adapter.BlockstoreType() + "://",
+		IdentifierType:   block.IdentifierTypeRelative,
+		Identifier:       address,
+	}
+
+	// setup response
+	var reader io.ReadCloser
+
+	// handle partial response if byte range supplied
+	if rangeSpec != nil {
+		rng, err := httputil.ParseRange(*rangeSpec, blob.Size)
+		if err != nil {
+			return nil, err
+		}
+		reader, err = adapter.GetRange(ctx, pointer, rng.StartOffset, rng.EndOffset)
+		if err != nil {
+			return nil, err
+		}
+
+	} else {
+		var err error
+		reader, err = adapter.Get(ctx, pointer, blob.Size)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return reader, nil
+}
+
+// WriteBlob write blob content to storage
 func (workTree *WorkTree) WriteBlob(ctx context.Context, adapter block.Adapter, body io.Reader, contentLength int64, opts block.PutOpts) (*models.Blob, error) {
 	// handle the upload itself
 	hashReader := hash.NewHashingReader(body, hash.Md5)
@@ -107,6 +143,7 @@ func (workTree *WorkTree) WriteBlob(ctx context.Context, adapter block.Adapter, 
 	}
 
 	return &models.Blob{
+		Type: models.BlobObject,
 		Hash: hash,
 		Size: hashReader.CopiedSize,
 	}, nil
@@ -484,6 +521,24 @@ func (workTree *WorkTree) Ls(ctx context.Context, fullPath string) ([]models.Tre
 	}
 
 	return lastNode.Node().SubObjects, nil
+}
+
+func (workTree *WorkTree) FindBlob(ctx context.Context, fullPath string) (*models.Blob, string, error) {
+	existNode, missingPath, err := workTree.MatchPath(ctx, fullPath)
+	if err != nil {
+		return nil, "", err
+	}
+
+	if len(missingPath) > 0 {
+		return nil, "", ErrPathNotFound
+	}
+
+	lastNode := existNode[len(existNode)-1]
+	if lastNode.Node().Type != models.BlobObject {
+		return nil, "", ErrPathNotFound
+	}
+
+	return lastNode.Node().Blob(), lastNode.Entry().Name, nil
 }
 
 func (workTree *WorkTree) ApplyOneChange(ctx context.Context, change IChange) error {

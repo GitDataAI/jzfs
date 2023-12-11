@@ -254,11 +254,6 @@ paths:
           schema:
             type: string
             pattern: '^bytes=((\d*-\d*,? ?)+)$'
-        - in: query
-          name: presign
-          required: false
-          schema:
-            type: boolean
       responses:
         200:
           description: object content
@@ -395,12 +390,12 @@ paths:
 
       parameters:
         - in: query
-          name: storageClass
-          description: Deprecated, this capability will not be supported in future releases.
-          required: false
-          deprecated: true
+          name: wipID
+          description: working in process
+          required: true
           schema:
             type: string
+            format: uuid
         - in: header
           name: If-None-Match
           description: |
@@ -436,6 +431,14 @@ paths:
         - objects
       operationId: deleteObject
       summary: delete object. Missing objects will not return a NotFound error.
+      parameters:
+        - in: query
+          name: wipID
+          description: working in process
+          required: true
+          schema:
+            type: string
+            format: uuid
       responses:
         204:
           description: object deleted successfully
