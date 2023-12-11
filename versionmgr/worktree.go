@@ -143,6 +143,7 @@ func (workTree *WorkTree) WriteBlob(ctx context.Context, adapter block.Adapter, 
 	}
 
 	return &models.Blob{
+		Type: models.BlobObject,
 		Hash: hash,
 		Size: hashReader.CopiedSize,
 	}, nil
