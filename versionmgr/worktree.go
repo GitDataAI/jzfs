@@ -486,26 +486,26 @@ func (workTree *WorkTree) Ls(ctx context.Context, fullPath string) ([]models.Tre
 	return lastNode.Node().SubObjects, nil
 }
 
-func (workTree *WorkTree) ApplyOneChange(ctx context.Context, change *Change) error {
+func (workTree *WorkTree) ApplyOneChange(ctx context.Context, change IChange) error {
 	action, err := change.Action()
 	if err != nil {
 		return err
 	}
 	switch action {
 	case merkletrie.Insert:
-		blob, err := workTree.object.Blob(ctx, change.From.Hash())
+		blob, err := workTree.object.Blob(ctx, change.To().Hash())
 		if err != nil {
 			return err
 		}
-		return workTree.AddLeaf(ctx, change.From.String(), blob)
+		return workTree.AddLeaf(ctx, change.To().String(), blob)
 	case merkletrie.Delete:
-		return workTree.RemoveEntry(ctx, change.From.String())
+		return workTree.RemoveEntry(ctx, change.From().String())
 	case merkletrie.Modify:
-		blob, err := workTree.object.Blob(ctx, change.From.Hash())
+		blob, err := workTree.object.Blob(ctx, change.To().Hash())
 		if err != nil {
 			return err
 		}
-		return workTree.ReplaceLeaf(ctx, change.From.String(), blob)
+		return workTree.ReplaceLeaf(ctx, change.To().String(), blob)
 	}
 	return fmt.Errorf("unexpect change action: %s", action)
 }

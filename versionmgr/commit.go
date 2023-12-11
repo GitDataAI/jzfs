@@ -3,7 +3,6 @@ package versionmgr
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -17,8 +16,7 @@ import (
 )
 
 var (
-	commitLog   = logging.Logger("commit")
-	ErrConflict = errors.New("conflict dected but not found resolver")
+	commitLog = logging.Logger("commit")
 )
 
 type CommitOp struct {
@@ -42,16 +40,9 @@ func (commitOp *CommitOp) Commit() *models.Commit {
 	return commitOp.commit
 }
 
-func (commitOp *CommitOp) AddCommit(ctx context.Context, committerID, wipID uuid.UUID, msg string) (*CommitOp, error) {
+func (commitOp *CommitOp) AddCommit(ctx context.Context, committer *models.User, wipID uuid.UUID, msg string) (*CommitOp, error) {
 	wip, err := commitOp.wip.Get(ctx, &models.GetWipParam{
 		ID: wipID,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	committer, err := commitOp.user.Get(ctx, &models.GetUserParam{
-		ID: committerID,
 	})
 	if err != nil {
 		return nil, err
@@ -138,13 +129,7 @@ func (commitOp *CommitOp) DiffCommit(ctx context.Context, toCommitID hash.Hash) 
 	return newChanges(changes), nil
 }
 
-func (commitOp *CommitOp) Merge(ctx context.Context, mergerID uuid.UUID, toMergeCommitHash hash.Hash, msg string) (*models.Commit, error) {
-	merger, err := commitOp.user.Get(ctx, &models.GetUserParam{
-		ID: mergerID,
-	})
-	if err != nil {
-		return nil, err
-	}
+func (commitOp *CommitOp) Merge(ctx context.Context, merger *models.User, toMergeCommitHash hash.Hash, msg string, resolver ConflictResolver) (*models.Commit, error) {
 
 	toMergeCommit, err := commitOp.object.Commit(ctx, toMergeCommitHash)
 	if err != nil {
@@ -181,7 +166,7 @@ func (commitOp *CommitOp) Merge(ctx context.Context, mergerID uuid.UUID, toMerge
 		}
 	}
 
-	// three way merge
+	// three-way merge
 	bestAncestor, err := baseCommitNode.MergeBase(toMergeCommitNode)
 	if err != nil {
 		return nil, err
@@ -200,7 +185,7 @@ func (commitOp *CommitOp) Merge(ctx context.Context, mergerID uuid.UUID, toMerge
 			object: commitOp.object,
 			wip:    commitOp.wip,
 		}
-		virtualCommit, err := firstCommit.Merge(ctx, mergerID, bestAncestor[1].Commit().Hash, "")
+		virtualCommit, err := firstCommit.Merge(ctx, merger, bestAncestor[1].Commit().Hash, "", resolver)
 		if err != nil {
 			return nil, err
 		}
@@ -208,29 +193,30 @@ func (commitOp *CommitOp) Merge(ctx context.Context, mergerID uuid.UUID, toMerge
 		bestCommit = NewCommitNode(ctx, virtualCommit, commitOp.object)
 	}
 
-	baseDiff, err := commitOp.DiffCommit(ctx, bestCommit.Commit().Hash)
-	if err != nil {
-		return nil, err
-	}
-
-	mergeCommitOp := &CommitOp{
-		commit: toMergeCommit,
+	bestCommitOp := &CommitOp{
+		commit: bestAncestor[0].Commit(),
 		user:   commitOp.user,
 		object: commitOp.object,
 		wip:    commitOp.wip,
 	}
-	mergeDiff, err := mergeCommitOp.DiffCommit(ctx, bestCommit.Commit().Hash)
+
+	baseDiff, err := bestCommitOp.DiffCommit(ctx, commitOp.Commit().Hash)
+	if err != nil {
+		return nil, err
+	}
+
+	mergeDiff, err := bestCommitOp.DiffCommit(ctx, toMergeCommit.Hash)
 	if err != nil {
 		return nil, err
 	}
 
 	//merge diff
-	cmw := NewChangesMergeIter(baseDiff, mergeDiff, nil)
 	workTree, err := NewWorkTree(ctx, commitOp.object, models.NewRootTreeEntry(bestCommit.Commit().TreeHash))
 	if err != nil {
 		return nil, err
 	}
 
+	cmw := NewChangesMergeIter(baseDiff, mergeDiff, resolver)
 	for cmw.Has() {
 		change, err := cmw.Next()
 		if err != nil {

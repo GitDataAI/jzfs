@@ -117,15 +117,15 @@ func newArrayCommitIter(commits []*CommitNode) *arraryCommitIter {
 	}
 }
 
-func (a arraryCommitIter) Next() (*CommitNode, error) {
-	if a.idx == len(a.commits)-1 {
+func (a *arraryCommitIter) Next() (*CommitNode, error) {
+	if a.idx < len(a.commits)-1 {
 		a.idx++
 		return a.commits[a.idx], nil
 	}
 	return nil, io.EOF
 }
 
-func (a arraryCommitIter) ForEach(f func(*CommitNode) error) error {
+func (a *arraryCommitIter) ForEach(f func(*CommitNode) error) error {
 	for _, commit := range a.commits {
 		err := f(commit)
 		if errors.Is(err, storer.ErrStop) {
@@ -138,6 +138,6 @@ func (a arraryCommitIter) ForEach(f func(*CommitNode) error) error {
 	return nil
 }
 
-func (a arraryCommitIter) Has() bool {
+func (a *arraryCommitIter) Has() bool {
 	return a.idx == len(a.commits)-1
 }
