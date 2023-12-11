@@ -19,6 +19,7 @@ var (
 	commitLog = logging.Logger("commit")
 )
 
+// CommitOp used to wrap some function for commit, todo not easy to use, optimize it
 type CommitOp struct {
 	commit *models.Commit
 
@@ -27,6 +28,7 @@ type CommitOp struct {
 	wip    models.IWipRepo
 }
 
+// NewCommitOp create commit operation with repo and exit commit, if operate with new repo, set commit arguments to nil
 func NewCommitOp(repo models.IRepo, commit *models.Commit) *CommitOp {
 	return &CommitOp{
 		commit: commit,
@@ -36,10 +38,13 @@ func NewCommitOp(repo models.IRepo, commit *models.Commit) *CommitOp {
 	}
 }
 
+// Commit return commit
 func (commitOp *CommitOp) Commit() *models.Commit {
 	return commitOp.commit
 }
 
+// AddCommit append a new commit to current head, read changes from wip, than create a new commit with parent point to current head,
+// and replace tree hash with wip's currentTreeHash.
 func (commitOp *CommitOp) AddCommit(ctx context.Context, committer *models.User, wipID uuid.UUID, msg string) (*CommitOp, error) {
 	wip, err := commitOp.wip.Get(ctx, &models.GetWipParam{
 		ID: wipID,
@@ -97,6 +102,7 @@ func (commitOp *CommitOp) AddCommit(ctx context.Context, committer *models.User,
 	}, nil
 }
 
+// DiffCommit find file changes in two commit
 func (commitOp *CommitOp) DiffCommit(ctx context.Context, toCommitID hash.Hash) (*Changes, error) {
 	fromNode, err := NewTreeNode(ctx, models.TreeEntry{
 		Name: "",
@@ -129,6 +135,7 @@ func (commitOp *CommitOp) DiffCommit(ctx context.Context, toCommitID hash.Hash) 
 	return newChanges(changes), nil
 }
 
+// Merge implement merge like git, docs https://en.wikipedia.org/wiki/Merge_(version_control)
 func (commitOp *CommitOp) Merge(ctx context.Context, merger *models.User, toMergeCommitHash hash.Hash, msg string, resolver ConflictResolver) (*models.Commit, error) {
 
 	toMergeCommit, err := commitOp.object.Commit(ctx, toMergeCommitHash)
