@@ -15,6 +15,7 @@ require (
 	github.com/aws/smithy-go v1.18.1
 	github.com/benburkert/dns v0.0.0-20190225204957-d356cf78cdfc
 	github.com/brianvoe/gofakeit/v6 v6.25.0
+	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/deepmap/oapi-codegen/v2 v2.0.1-0.20231120160225-add3126ee845
 	github.com/fergusstrange/embedded-postgres v1.25.0
@@ -50,6 +51,7 @@ require (
 	github.com/uptrace/bun/driver/pgdriver v1.1.16
 	github.com/uptrace/bun/extra/bundebug v1.1.16
 	go.uber.org/fx v1.20.1
+	go.uber.org/mock v0.3.0
 	golang.org/x/crypto v0.16.0
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 	golang.org/x/oauth2 v0.13.0

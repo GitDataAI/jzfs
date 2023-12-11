@@ -73,7 +73,7 @@ func (r RefRepo) Get(ctx context.Context, params *GetRefParams) (*Ref, error) {
 		query = query.Where("name = ?", *params.Name)
 	}
 
-	return repo, query.Scan(ctx, repo)
+	return repo, query.Limit(1).Scan(ctx, repo)
 }
 
 func (r RefRepo) UpdateCommitHash(ctx context.Context, id uuid.UUID, commitHash hash.Hash) error {

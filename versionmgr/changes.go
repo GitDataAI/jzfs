@@ -90,7 +90,7 @@ func (c *Changes) Changes() []IChange {
 	return c.changes
 }
 
-// Next get next element in array
+// Next get element in array
 func (c *Changes) Next() (IChange, error) {
 	if c.idx < len(c.changes)-1 {
 		c.idx++
@@ -99,9 +99,23 @@ func (c *Changes) Next() (IChange, error) {
 	return nil, io.EOF
 }
 
-// Has checke whether all element was consumed
+// Has check whether all element was consumed
 func (c *Changes) Has() bool {
 	return c.idx < len(c.changes)-1
+}
+
+func (c *Changes) ForEach(fn func(IChange) error) error {
+	for _, change := range c.changes {
+		err := fn(change)
+		if err == nil {
+			continue
+		}
+		if errors.Is(err, ErrStop) {
+			return nil
+		}
+		return err
+	}
+	return nil
 }
 
 // Back a element in array

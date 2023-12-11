@@ -14,4 +14,6 @@ type APIController struct {
 	controller.VersionController
 	controller.ObjectController
 	controller.UserController
+	controller.WipController
+	controller.CommitController
 }

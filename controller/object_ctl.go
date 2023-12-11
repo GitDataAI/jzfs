@@ -138,7 +138,7 @@ func (oct ObjectController) GetObject(ctx context.Context, w *api.JiaozifsRespon
 	if params.Range != nil {
 		rng, err := httputil.ParseRange(*params.Range, blob.Size)
 		if err != nil {
-			w.CodeMsg(http.StatusRequestedRangeNotSatisfiable, "Requested Range Not Satisfiable")
+			w.String("Requested Range Not Satisfiable", http.StatusRequestedRangeNotSatisfiable)
 			return
 		}
 		w.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", rng.StartOffset, rng.EndOffset, blob.Size))
@@ -241,12 +241,12 @@ func (oct ObjectController) HeadObject(ctx context.Context, w *api.JiaozifsRespo
 	if params.Range != nil {
 		rng, err := httputil.ParseRange(*params.Range, blob.Size)
 		if err != nil {
-			w.CodeMsg(http.StatusRequestedRangeNotSatisfiable, "")
+			w.String(fmt.Sprintf("get blob range fail %v", err), http.StatusRequestedRangeNotSatisfiable)
 			return
 		}
 		w.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", rng.StartOffset, rng.EndOffset, blob.Size))
 		w.Header().Set("Content-Length", fmt.Sprintf("%d", rng.EndOffset-rng.StartOffset+1))
-		w.CodeMsg(http.StatusPartialContent, "")
+		w.Code(http.StatusPartialContent)
 	} else {
 		w.Header().Set("Content-Length", fmt.Sprint(blob.Size))
 	}

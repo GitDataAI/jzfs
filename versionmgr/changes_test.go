@@ -1,6 +1,7 @@
 package versionmgr
 
 import (
+	"fmt"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -277,5 +278,51 @@ func TestNewChangesMergeIter(t *testing.T) {
 
 		require.Equal(t, "b.txt", finalChjange[1].Path())
 		require.Equal(t, "h3", string(finalChjange[1].From().Hash()))
+	})
+}
+
+func TestChanges_ForEach(t *testing.T) {
+	changeData1 := `
+1|c.txt|h3
+1|a.txt|h1
+1|b.txt|h2
+`
+	changeSet, err := makeMockChange(changeData1)
+	require.NoError(t, err)
+
+	t.Run("simple", func(t *testing.T) {
+		var path []string
+		err := changeSet.ForEach(func(change IChange) error {
+			path = append(path, change.Path())
+			return nil
+		})
+		require.NoError(t, err)
+		require.Equal(t, []string{"a.txt", "b.txt", "c.txt"}, path)
+	})
+
+	t.Run("check stop", func(t *testing.T) {
+		var path []string
+		err := changeSet.ForEach(func(change IChange) error {
+			path = append(path, change.Path())
+			if change.Path() == "b.txt" {
+				return ErrStop
+			}
+			return nil
+		})
+		require.NoError(t, err)
+		require.Equal(t, []string{"a.txt", "b.txt"}, path)
+	})
+	t.Run("error check", func(t *testing.T) {
+		var path []string
+		var stopErr = fmt.Errorf("stop at b,txt")
+		err := changeSet.ForEach(func(change IChange) error {
+			path = append(path, change.Path())
+			if change.Path() == "b.txt" {
+				return stopErr
+			}
+			return nil
+		})
+		require.ErrorIs(t, err, stopErr)
+		require.Equal(t, []string{"a.txt", "b.txt"}, path)
 	})
 }
