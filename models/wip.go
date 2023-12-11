@@ -9,16 +9,11 @@ import (
 	"github.com/uptrace/bun"
 )
 
-// Action values represent the kind of things a Change can represent:
-// insertion, deletions or modifications of files.
-type Action int
+type WipState int
 
-// The set of possible actions in a change.
 const (
-	_ Action = iota
-	Insert
-	Delete
-	Modify
+	Init WipState = iota
+	Completed
 )
 
 type WorkingInProcess struct {
@@ -26,7 +21,9 @@ type WorkingInProcess struct {
 	ID            uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
 	CurrentTree   hash.Hash `bun:"current_tree,type:bytea,notnull"`
 	ParentTree    hash.Hash `bun:"parent_tree,type:bytea,notnull"`
+	RefID         uuid.UUID `bun:"ref_id,type:uuid,notnull"`
 	RepositoryID  uuid.UUID `bun:"repository_id,type:uuid,notnull"`
+	State         WipState  `bun:"state"`
 	CreateID      uuid.UUID `bun:"create_id,type:uuid,notnull"`
 	CreatedAt     time.Time `bun:"created_at"`
 	UpdatedAt     time.Time `bun:"updated_at"`
@@ -42,6 +39,7 @@ type IWipRepo interface {
 	Insert(ctx context.Context, repo *WorkingInProcess) (*WorkingInProcess, error)
 	Get(ctx context.Context, params *GetWipParam) (*WorkingInProcess, error)
 	UpdateCurrentHash(ctx context.Context, id uuid.UUID, newTreeHash hash.Hash) error
+	UpdateState(ctx context.Context, id uuid.UUID, state WipState) error
 }
 
 var _ IWipRepo = (*WipRepo)(nil)
@@ -81,10 +79,21 @@ func (s *WipRepo) Get(ctx context.Context, params *GetWipParam) (*WorkingInProce
 }
 
 func (s *WipRepo) UpdateCurrentHash(ctx context.Context, id uuid.UUID, newTreeHash hash.Hash) error {
-	repo := &WorkingInProcess{
+	wip := &WorkingInProcess{
 		CurrentTree: newTreeHash,
 	}
-	_, err := s.db.NewUpdate().Model(repo).OmitZero().Column("current_tree").
+	_, err := s.db.NewUpdate().Model(wip).OmitZero().Column("current_tree").
+		Where("id = ?", id).
+		Exec(ctx)
+	return err
+}
+
+func (s *WipRepo) UpdateState(ctx context.Context, id uuid.UUID, state WipState) error {
+	wip := &WorkingInProcess{
+		State: state,
+	}
+
+	_, err := s.db.NewUpdate().Model(wip).OmitZero().Column("state").
 		Where("id = ?", id).
 		Exec(ctx)
 	return err

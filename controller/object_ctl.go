@@ -75,13 +75,13 @@ func (oct ObjectController) HeadObject(ctx context.Context, w *api.JiaozifsRespo
 	}
 
 	objRepo := oct.Repo.ObjectRepo()
-	treeOp := versionmgr.NewTreeOp(oct.Repo.ObjectRepo())
-	treeNode, err := objRepo.TreeNode(ctx, commit.TreeHash)
+	treeOp, err := versionmgr.NewWorkTree(ctx, oct.Repo.ObjectRepo(), models.NewRootTreeEntry(commit.TreeHash))
 	if err != nil {
 		w.Error(err)
 		return
 	}
-	existNodes, missingPath, err := treeOp.MatchPath(ctx, treeNode, params.Path)
+
+	existNodes, missingPath, err := treeOp.MatchPath(ctx, params.Path)
 	if err != nil {
 		w.Error(err)
 		return
@@ -93,19 +93,19 @@ func (oct ObjectController) HeadObject(ctx context.Context, w *api.JiaozifsRespo
 
 	objectWithName := existNodes[len(existNodes)-1]
 
-	blob, err := objRepo.Blob(ctx, objectWithName.Node.Hash)
+	blob, err := objRepo.Blob(ctx, objectWithName.Node().Hash)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
 	//lookup files
-	etag := httputil.ETag(objectWithName.Node.Hash.Hex())
+	etag := httputil.ETag(objectWithName.Node().Hash.Hex())
 	w.Header().Set("ETag", etag)
-	lastModified := httputil.HeaderTimestamp(objectWithName.Node.CreatedAt)
+	lastModified := httputil.HeaderTimestamp(objectWithName.Node().CreatedAt)
 	w.Header().Set("Last-Modified", lastModified)
 	w.Header().Set("Accept-Ranges", "bytes")
-	w.Header().Set("Content-Type", httputil.ExtensionsByType(objectWithName.Name))
+	w.Header().Set("Content-Type", httputil.ExtensionsByType(objectWithName.Entry().Name))
 	// for security, make sure the browser and any proxies en route don't cache the response
 	w.Header().Set("Cache-Control", "no-store, must-revalidate")
 	w.Header().Set("Expires", "0")
@@ -173,12 +173,6 @@ func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsRes
 
 	var response api.ObjectStats
 	err = oct.Repo.Transaction(ctx, func(dRepo models.IRepo) error {
-		treeOp := versionmgr.TreeOp{Object: dRepo.ObjectRepo()}
-		blob, err := treeOp.WriteBlob(ctx, oct.BlockAdapter, reader, r.ContentLength, block.PutOpts{})
-		if err != nil {
-			return err
-		}
-
 		user, err := dRepo.UserRepo().Get(ctx, &models.GetUserParam{Name: utils.String(userName)})
 		if err != nil {
 			return err
@@ -200,12 +194,17 @@ func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsRes
 			return err
 		}
 
-		workingTreeID, err := dRepo.ObjectRepo().TreeNode(ctx, stash.CurrentTree)
+		workingTree, err := versionmgr.NewWorkTree(ctx, dRepo.ObjectRepo(), models.NewRootTreeEntry(stash.CurrentTree))
 		if err != nil {
 			return err
 		}
 
-		newRoot, err := treeOp.AddLeaf(ctx, workingTreeID, params.Path, blob)
+		blob, err := workingTree.WriteBlob(ctx, oct.BlockAdapter, reader, r.ContentLength, block.PutOpts{})
+		if err != nil {
+			return err
+		}
+
+		err = workingTree.AddLeaf(ctx, params.Path, blob)
 		if err != nil {
 			return err
 		}
@@ -218,7 +217,7 @@ func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsRes
 			ContentType: &contentType,
 			Metadata:    &api.ObjectUserMetadata{},
 		}
-		return dRepo.WipRepo().UpdateCurrentHash(ctx, stash.ID, newRoot.Hash)
+		return dRepo.WipRepo().UpdateCurrentHash(ctx, stash.ID, workingTree.Root().Hash())
 	})
 
 	if err != nil {

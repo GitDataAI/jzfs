@@ -1,6 +1,7 @@
 package models
 
 import (
+	"bytes"
 	"context"
 	"time"
 
@@ -36,6 +37,17 @@ type TreeEntry struct {
 	Name string            `bun:"name"`
 	Mode filemode.FileMode `bun:"mode"`
 	Hash hash.Hash         `bun:"hash"`
+}
+
+func NewRootTreeEntry(hash hash.Hash) TreeEntry {
+	return TreeEntry{
+		Name: "",
+		Mode: filemode.Dir,
+		Hash: hash,
+	}
+}
+func (treeEntry TreeEntry) Equal(other TreeEntry) bool {
+	return bytes.Equal(treeEntry.Hash, other.Hash) && treeEntry.Mode == other.Mode && treeEntry.Name == other.Name
 }
 
 type Blob struct {
@@ -114,7 +126,7 @@ func (tn *TreeNode) GetHash() (hash.Hash, error) {
 		}
 	}
 
-	return hash.Hash(hasher.Md5.Sum(nil)), nil
+	return hasher.Md5.Sum(nil), nil
 }
 
 type Commit struct {
@@ -133,12 +145,77 @@ type Commit struct {
 	// Message is the commit/tag message, contains arbitrary text.
 	Message string `bun:"message"`
 	// TreeHash is the hash of the root tree of the commit.
-	TreeHash hash.Hash `bun:"tree+hash,type:bytea,notnull"`
+	TreeHash hash.Hash `bun:"tree_hash,type:bytea,notnull"`
 	// ParentHashes are the hashes of the parent commits of the commit.
 	ParentHashes []hash.Hash `bun:"parent_hashes,type:bytea[]"`
 
 	CreatedAt time.Time `bun:"created_at"`
 	UpdatedAt time.Time `bun:"updated_at"`
+}
+
+func (commit *Commit) GetHash() (hash.Hash, error) {
+	hasher := hash.NewHasher(hash.Md5)
+	err := hasher.WriteInt8(int8(commit.Type))
+	if err != nil {
+		return nil, err
+	}
+	err = hasher.WriteString(commit.Author.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	err = hasher.WriteString(commit.Author.Email)
+	if err != nil {
+		return nil, err
+	}
+
+	err = hasher.WritInt64(commit.Author.When.Unix())
+	if err != nil {
+		return nil, err
+	}
+
+	err = hasher.WriteString(commit.Committer.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	err = hasher.WriteString(commit.Committer.Email)
+	if err != nil {
+		return nil, err
+	}
+
+	err = hasher.WritInt64(commit.Committer.When.Unix())
+	if err != nil {
+		return nil, err
+	}
+
+	err = hasher.WriteString(commit.MergeTag)
+	if err != nil {
+		return nil, err
+	}
+
+	err = hasher.WriteString(commit.Message)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = hasher.Write(commit.TreeHash)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, h := range commit.ParentHashes {
+		_, err = hasher.Write(h)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return hasher.Md5.Sum(nil), nil
+}
+
+func (commit *Commit) NumParents() int {
+	return len(commit.ParentHashes)
 }
 
 func (commit *Commit) Object() *Object {
