@@ -91,6 +91,9 @@ type LoginJSONBody struct {
 
 // DeleteObjectParams defines parameters for DeleteObject.
 type DeleteObjectParams struct {
+	// WipID working in process
+	WipID openapi_types.UUID `form:"wipID" json:"wipID"`
+
 	// Branch branch to the ref
 	Branch string `form:"branch" json:"branch"`
 
@@ -100,8 +103,6 @@ type DeleteObjectParams struct {
 
 // GetObjectParams defines parameters for GetObject.
 type GetObjectParams struct {
-	Presign *bool `form:"presign,omitempty" json:"presign,omitempty"`
-
 	// Branch branch to the ref
 	Branch string `form:"branch" json:"branch"`
 
@@ -132,8 +133,8 @@ type UploadObjectMultipartBody struct {
 
 // UploadObjectParams defines parameters for UploadObject.
 type UploadObjectParams struct {
-	// StorageClass Deprecated, this capability will not be supported in future releases.
-	StorageClass *string `form:"storageClass,omitempty" json:"storageClass,omitempty"`
+	// WipID working in process
+	WipID openapi_types.UUID `form:"wipID" json:"wipID"`
 
 	// Branch branch to the ref
 	Branch string `form:"branch" json:"branch"`
@@ -520,6 +521,18 @@ func NewDeleteObjectRequest(server string, user string, repository string, param
 	if params != nil {
 		queryValues := queryURL.Query()
 
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "wipID", runtime.ParamLocationQuery, params.WipID); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
 		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "branch", runtime.ParamLocationQuery, params.Branch); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
@@ -590,22 +603,6 @@ func NewGetObjectRequest(server string, user string, repository string, params *
 
 	if params != nil {
 		queryValues := queryURL.Query()
-
-		if params.Presign != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "presign", runtime.ParamLocationQuery, *params.Presign); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
 
 		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "branch", runtime.ParamLocationQuery, params.Branch); err != nil {
 			return nil, err
@@ -779,20 +776,16 @@ func NewUploadObjectRequestWithBody(server string, user string, repository strin
 	if params != nil {
 		queryValues := queryURL.Query()
 
-		if params.StorageClass != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "storageClass", runtime.ParamLocationQuery, *params.StorageClass); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "wipID", runtime.ParamLocationQuery, params.WipID); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
 				}
 			}
-
 		}
 
 		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "branch", runtime.ParamLocationQuery, params.Branch); err != nil {
@@ -1540,6 +1533,21 @@ func (siw *ServerInterfaceWrapper) DeleteObject(w http.ResponseWriter, r *http.R
 	// Parameter object where we will unmarshal all parameters from the context
 	var params DeleteObjectParams
 
+	// ------------- Required query parameter "wipID" -------------
+
+	if paramValue := r.URL.Query().Get("wipID"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "wipID"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "wipID", r.URL.Query(), &params.WipID)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "wipID", Err: err})
+		return
+	}
+
 	// ------------- Required query parameter "branch" -------------
 
 	if paramValue := r.URL.Query().Get("branch"); paramValue != "" {
@@ -1611,14 +1619,6 @@ func (siw *ServerInterfaceWrapper) GetObject(w http.ResponseWriter, r *http.Requ
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetObjectParams
-
-	// ------------- Optional query parameter "presign" -------------
-
-	err = runtime.BindQueryParameter("form", true, false, "presign", r.URL.Query(), &params.Presign)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "presign", Err: err})
-		return
-	}
 
 	// ------------- Required query parameter "branch" -------------
 
@@ -1806,11 +1806,18 @@ func (siw *ServerInterfaceWrapper) UploadObject(w http.ResponseWriter, r *http.R
 	// Parameter object where we will unmarshal all parameters from the context
 	var params UploadObjectParams
 
-	// ------------- Optional query parameter "storageClass" -------------
+	// ------------- Required query parameter "wipID" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "storageClass", r.URL.Query(), &params.StorageClass)
+	if paramValue := r.URL.Query().Get("wipID"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "wipID"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "wipID", r.URL.Query(), &params.WipID)
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "storageClass", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "wipID", Err: err})
 		return
 	}
 
@@ -2037,40 +2044,40 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"73qPL0aLfwUAAP//iqm+sXAhAAA=",
+	"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",
+	"1X8CAAD//16H5RCTIQAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"mime"
@@ -9,9 +10,10 @@ import (
 	"net/http"
 	"time"
 
+	logging "github.com/ipfs/go-log/v2"
+
 	"github.com/go-openapi/swag"
 	"github.com/jiaozifs/jiaozifs/models/filemode"
-
 	"github.com/jiaozifs/jiaozifs/versionmgr"
 
 	"github.com/jiaozifs/jiaozifs/block"
@@ -25,6 +27,8 @@ import (
 	"go.uber.org/fx"
 )
 
+var objLog = logging.Logger("object_ctl")
+
 type ObjectController struct {
 	fx.In
 
@@ -33,14 +37,137 @@ type ObjectController struct {
 	Repo models.IRepo
 }
 
-func (oct ObjectController) DeleteObject(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, user string, repository string, params api.DeleteObjectParams) { //nolint
-	//TODO implement me
-	panic("implement me")
+func (oct ObjectController) DeleteObject(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, userName string, repositoryName string, params api.DeleteObjectParams) { //nolint
+	user, err := oct.Repo.UserRepo().Get(ctx, &models.GetUserParam{Name: utils.String(userName)})
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	repository, err := oct.Repo.RepositoryRepo().Get(ctx, &models.GetRepoParams{
+		CreateID: user.ID,
+		Name:     utils.String(repositoryName),
+	})
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	ref, err := oct.Repo.RefRepo().Get(ctx, &models.GetRefParams{
+		RepositoryID: repository.ID,
+		Name:         utils.String(params.Branch),
+	})
+	if err != nil {
+		w.Error(err)
+		return
+	}
+	commit, err := oct.Repo.ObjectRepo().Commit(ctx, ref.CommitHash)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	workTree, err := versionmgr.NewWorkTree(ctx, oct.Repo.ObjectRepo(), models.NewRootTreeEntry(commit.TreeHash))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	err = workTree.RemoveEntry(ctx, params.Path)
+	if errors.Is(err, versionmgr.ErrPathNotFound) {
+		w.Code(http.StatusNotFound)
+		return
+	}
+
+	err = oct.Repo.WipRepo().UpdateCurrentHash(ctx, params.WipID, workTree.Root().Hash())
+	if err != nil {
+		w.Error(err)
+		return
+	}
+	w.OK()
 }
 
-func (oct ObjectController) GetObject(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, user string, repository string, params api.GetObjectParams) { //nolint
-	//TODO implement me
-	panic("implement me")
+func (oct ObjectController) GetObject(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, userName string, repositoryName string, params api.GetObjectParams) { //nolint
+	user, err := oct.Repo.UserRepo().Get(ctx, &models.GetUserParam{Name: utils.String(userName)})
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	repository, err := oct.Repo.RepositoryRepo().Get(ctx, &models.GetRepoParams{
+		CreateID: user.ID,
+		Name:     utils.String(repositoryName),
+	})
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	ref, err := oct.Repo.RefRepo().Get(ctx, &models.GetRefParams{
+		RepositoryID: repository.ID,
+		Name:         utils.String(params.Branch),
+	})
+	if err != nil {
+		w.Error(err)
+		return
+	}
+	commit, err := oct.Repo.ObjectRepo().Commit(ctx, ref.CommitHash)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	workTree, err := versionmgr.NewWorkTree(ctx, oct.Repo.ObjectRepo(), models.NewRootTreeEntry(commit.TreeHash))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	blob, name, err := workTree.FindBlob(ctx, params.Path)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+	reader, err := workTree.ReadBlob(ctx, oct.BlockAdapter, blob, params.Range)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+	defer reader.Close() //nolint
+	// handle partial response if byte range supplied
+	if params.Range != nil {
+		rng, err := httputil.ParseRange(*params.Range, blob.Size)
+		if err != nil {
+			w.CodeMsg(http.StatusRequestedRangeNotSatisfiable, "Requested Range Not Satisfiable")
+			return
+		}
+		w.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", rng.StartOffset, rng.EndOffset, blob.Size))
+		w.Header().Set("Content-Length", fmt.Sprintf("%d", rng.EndOffset-rng.StartOffset+1))
+		w.Code(http.StatusPartialContent)
+	} else {
+		w.Header().Set("Content-Length", fmt.Sprint(blob.Size))
+	}
+
+	etag := httputil.ETag(blob.Hash.Hex())
+	w.Header().Set("ETag", etag)
+	lastModified := httputil.HeaderTimestamp(blob.CreatedAt)
+	w.Header().Set("Last-Modified", lastModified)
+	w.Header().Set("Content-Type", httputil.ExtensionsByType(name))
+	// for security, make sure the browser and any proxies en route don't cache the response
+	w.Header().Set("Cache-Control", "no-store, must-revalidate")
+	w.Header().Set("Expires", "0")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Header().Set("X-Frame-Options", "SAMEORIGIN")
+	w.Header().Set("Content-Security-Policy", "default-src 'none'")
+	_, err = io.Copy(w, reader)
+	if err != nil {
+		objLog.With(
+			"user", userName,
+			"repo", repositoryName,
+			"path", params.Path).
+			Debugf("GetObject copy content %v", err)
+
+	}
 }
 
 func (oct ObjectController) HeadObject(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, userName string, repository string, params api.HeadObjectParams) { //nolint
@@ -173,22 +300,8 @@ func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsRes
 
 	var response api.ObjectStats
 	err = oct.Repo.Transaction(ctx, func(dRepo models.IRepo) error {
-		user, err := dRepo.UserRepo().Get(ctx, &models.GetUserParam{Name: utils.String(userName)})
-		if err != nil {
-			return err
-		}
-
-		repo, err := dRepo.RepositoryRepo().Get(ctx, &models.GetRepoParams{
-			CreateID: user.ID,
-			Name:     utils.String(repository),
-		})
-		if err != nil {
-			return err
-		}
-
 		stash, err := dRepo.WipRepo().Get(ctx, &models.GetWipParam{
-			RepositoryID: repo.ID,
-			CreateID:     user.ID,
+			ID: params.WipID,
 		})
 		if err != nil {
 			return err
