@@ -65,5 +65,5 @@ func (r *RepositoryRepo) Get(ctx context.Context, params *GetRepoParams) (*Repos
 		query = query.Where("name = ?", *params.Name)
 	}
 
-	return repo, query.Scan(ctx, repo)
+	return repo, query.Limit(1).Scan(ctx, repo)
 }

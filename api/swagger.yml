@@ -9,7 +9,7 @@ info:
   version: 1.0.0
 
 servers:
-  - url: "/api/v1"
+  - url: "http://localhost:34913/api/v1"
     description: jiaozifs server endpoint
 
 security:
@@ -37,6 +37,134 @@ components:
       in: cookie
       name: saml_auth_session
   schemas:
+    Blob:
+      type: object
+      properties:
+        Hash:
+          type: string
+        Type:
+          type: integer
+          format: int8
+        Size:
+          type: integer
+          format: int64
+        CreatedAt:
+          type: string
+          format: date-time
+        UpdatedAt:
+          type: string
+          format: date-time
+
+    Signature:
+      type: object
+      properties:
+        Name:
+          type: string
+        Email:
+          type: string
+          format: email
+        Timestamp:
+          type: string
+          format: date-time
+
+    Commit:
+      type: object
+      properties:
+        Hash:
+          type: string
+        Type:
+          type: integer
+          format: int8
+        Author:
+          $ref: "#/components/schemas/Signature"
+        Committer:
+          $ref: "#/components/schemas/Signature"
+        MergeTag:
+          type: string
+        Message:
+          type: string
+        TreeHash:
+          type: string
+        ParentHashes:
+          type: array
+          items:
+            type: string
+        CreatedAt:
+          type: string
+          format: date-time
+        UpdatedAt:
+          type: string
+          format: date-time
+    TreeEntry:
+      type: object
+      properties:
+        Name:
+          type: string
+        Hash:
+          type: string
+        Mode:
+          type: integer
+          format: uint32
+    TreeNode:
+      type: object
+      properties:
+        Hash:
+          type: string
+        Type:
+          type: integer
+          format: int8
+        SubObjects:
+          type: array
+          items:
+            $ref: "#/components/schemas/TreeEntry"
+        CreatedAt:
+          type: string
+          format: date-time
+        UpdatedAt:
+          type: string
+          format: date-time
+    Wip:
+      type: object
+      properties:
+        ID:
+          type: string
+          format: uuid
+        Name:
+          type: string
+        CurrentTree:
+          type: string
+        BaseTree:
+          type: string
+        RepositoryID:
+          type: string
+          format: uuid
+        State:
+          type: integer
+          format: int
+        CreateID:
+          type: string
+          format: uuid
+        CreatedAt:
+          type: string
+          format: date-time
+        UpdatedAt:
+          type: string
+          format: date-time
+    Change:
+      type: object
+      required:
+        - Path
+        - Action
+      properties:
+        Path:
+          type: string
+        Action:
+          type: integer
+          format: int
+        BaseHash:
+          type: string
+        ToHash:
+          type: string
     UserUpdate:
       type: object
       required:
@@ -123,6 +251,7 @@ components:
         api_version:
           type: string
           description: runtime version
+
     ObjectUserMetadata:
       type: object
       additionalProperties:
@@ -191,6 +320,7 @@ components:
           type: integer
           minimum: 0
           description: Maximal number of entries per page
+
     Error:
       type: object
       required:
@@ -216,7 +346,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/VersionResult"
 
-  /object/{user}/{repository}:
+  /{user}/{repository}/object:
     parameters:
       - in: path
         name: user
@@ -450,6 +580,266 @@ paths:
           description: NotFound
         420:
           description: too many requests
+
+  /{user}/{repository}/wip/{refID}:
+    parameters:
+      - in: path
+        name: user
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: repository
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: refID
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags:
+        - wip
+      operationId: getWip
+      summary: get working in process
+      responses:
+        200:
+          description: working in process
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Wip"
+        400:
+          description: ValidationError
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden
+    delete:
+      tags:
+        - wip
+      operationId: deleteWip
+      summary: remove working in process
+      responses:
+        200:
+          description: success to delete wip
+        400:
+          description: ValidationError
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden
+    post:
+      tags:
+        - wip
+      operationId: createWip
+      summary: create working in process
+      parameters:
+        - in: query
+          name: name
+          description: wip name
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: baseCommitID
+          description: base commit to create wip
+          required: true
+          schema:
+            type: string
+      responses:
+        201:
+          description: working in process created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Wip"
+        400:
+          description: ValidationError
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden
+        502:
+          description: internal server error
+  /{user}/{repository}/wip/commit/{refID}:
+    parameters:
+      - in: path
+        name: user
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: repository
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: refID
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      tags:
+        - wip
+      operationId: commitWip
+      summary: commit working in process to branch
+      parameters:
+        - in: query
+          name: msg
+          description: commit message
+          required: false
+          schema:
+            type: string
+      responses:
+        200:
+          description: commit success and response with new wip
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Wip"
+        400:
+          description: ValidationError
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden
+        502:
+          description: internal server error
+
+  /{user}/{repository}/wip/list:
+    parameters:
+      - in: path
+        name: user
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: repository
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - wip
+      operationId: listWip
+      summary: list wip in specific project and user
+      responses:
+        200:
+          description: working in process
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Wip"
+        400:
+          description: ValidationError
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden
+
+  /{user}/{repository}/commit/ls/{commitHash}:
+    parameters:
+      - in: path
+        name: user
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: repository
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: commitHash
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - commit
+      operationId: getEntriesInCommit
+      summary: list entries in commit
+      parameters:
+        - in: query
+          name: path
+          description: specific path, if not specific return entries in root
+          required: false
+          schema:
+            type: string
+      responses:
+        200:
+          description: commit
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TreeEntry"
+        400:
+          description: ValidationError
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden
+        404:
+          description: url not found
+
+  /{user}/{repository}/commit/diff/{baseCommit}/{toCommit}:
+    parameters:
+      - in: path
+        name: user
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: repository
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: baseCommit
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: toCommit
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - commit
+      operationId: getCommitDiff
+      summary: get commit differences
+      parameters:
+        - in: query
+          name: path
+          description: specific path, if not specific return entries in root
+          required: false
+          schema:
+            type: string
+      responses:
+        200:
+          description: commit diff
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Change"
+        400:
+          description: ValidationError
+        401:
+          description: Unauthorized
+        503:
+          description: server internal error
+
 
   /auth/login:
     post:

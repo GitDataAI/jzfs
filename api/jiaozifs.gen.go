@@ -37,6 +37,14 @@ type AuthenticationToken struct {
 	TokenExpiration *int64 `json:"token_expiration,omitempty"`
 }
 
+// Change defines model for Change.
+type Change struct {
+	Action   int     `json:"Action"`
+	BaseHash *string `json:"BaseHash,omitempty"`
+	Path     string  `json:"Path"`
+	ToHash   *string `json:"ToHash,omitempty"`
+}
+
 // ObjectStats defines model for ObjectStats.
 type ObjectStats struct {
 	Checksum string `json:"checksum"`
@@ -54,6 +62,13 @@ type ObjectStats struct {
 
 // ObjectUserMetadata defines model for ObjectUserMetadata.
 type ObjectUserMetadata map[string]string
+
+// TreeEntry defines model for TreeEntry.
+type TreeEntry struct {
+	Hash *string `json:"Hash,omitempty"`
+	Mode *uint32 `json:"Mode,omitempty"`
+	Name *string `json:"Name,omitempty"`
+}
 
 // UserInfo defines model for UserInfo.
 type UserInfo struct {
@@ -83,10 +98,35 @@ type VersionResult struct {
 	Version string `json:"version"`
 }
 
+// Wip defines model for Wip.
+type Wip struct {
+	BaseTree     *string             `json:"BaseTree,omitempty"`
+	CreateID     *openapi_types.UUID `json:"CreateID,omitempty"`
+	CreatedAt    *time.Time          `json:"CreatedAt,omitempty"`
+	CurrentTree  *string             `json:"CurrentTree,omitempty"`
+	ID           *openapi_types.UUID `json:"ID,omitempty"`
+	Name         *string             `json:"Name,omitempty"`
+	RepositoryID *openapi_types.UUID `json:"RepositoryID,omitempty"`
+	State        *int                `json:"State,omitempty"`
+	UpdatedAt    *time.Time          `json:"UpdatedAt,omitempty"`
+}
+
 // LoginJSONBody defines parameters for Login.
 type LoginJSONBody struct {
 	Password string `json:"password"`
 	Username string `json:"username"`
+}
+
+// GetCommitDiffParams defines parameters for GetCommitDiff.
+type GetCommitDiffParams struct {
+	// Path specific path, if not specific return entries in root
+	Path *string `form:"path,omitempty" json:"path,omitempty"`
+}
+
+// GetEntriesInCommitParams defines parameters for GetEntriesInCommit.
+type GetEntriesInCommitParams struct {
+	// Path specific path, if not specific return entries in root
+	Path *string `form:"path,omitempty" json:"path,omitempty"`
 }
 
 // DeleteObjectParams defines parameters for DeleteObject.
@@ -145,6 +185,21 @@ type UploadObjectParams struct {
 	// IfNoneMatch Currently supports only "*" to allow uploading an object only if one doesn't exist yet.
 	// Deprecated, this capability will not be supported in future releases.
 	IfNoneMatch *string `json:"If-None-Match,omitempty"`
+}
+
+// CommitWipParams defines parameters for CommitWip.
+type CommitWipParams struct {
+	// Msg commit message
+	Msg *string `form:"msg,omitempty" json:"msg,omitempty"`
+}
+
+// CreateWipParams defines parameters for CreateWip.
+type CreateWipParams struct {
+	// Name wip name
+	Name string `form:"name" json:"name"`
+
+	// BaseCommitID base commit to create wip
+	BaseCommitID string `form:"baseCommitID" json:"baseCommitID"`
 }
 
 // LoginJSONRequestBody defines body for Login for application/json ContentType.
@@ -242,6 +297,15 @@ type ClientInterface interface {
 	// GetUserInfo request
 	GetUserInfo(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetVersion request
+	GetVersion(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetCommitDiff request
+	GetCommitDiff(ctx context.Context, user string, repository string, baseCommit string, toCommit string, params *GetCommitDiffParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetEntriesInCommit request
+	GetEntriesInCommit(ctx context.Context, user string, repository string, commitHash string, params *GetEntriesInCommitParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// DeleteObject request
 	DeleteObject(ctx context.Context, user string, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -254,8 +318,20 @@ type ClientInterface interface {
 	// UploadObjectWithBody request with any body
 	UploadObjectWithBody(ctx context.Context, user string, repository string, params *UploadObjectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetVersion request
-	GetVersion(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// CommitWip request
+	CommitWip(ctx context.Context, user string, repository string, refID openapi_types.UUID, params *CommitWipParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListWip request
+	ListWip(ctx context.Context, user string, repository string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteWip request
+	DeleteWip(ctx context.Context, user string, repository string, refID openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetWip request
+	GetWip(ctx context.Context, user string, repository string, refID openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateWip request
+	CreateWip(ctx context.Context, user string, repository string, refID openapi_types.UUID, params *CreateWipParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) LoginWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -318,6 +394,42 @@ func (c *Client) GetUserInfo(ctx context.Context, reqEditors ...RequestEditorFn)
 	return c.Client.Do(req)
 }
 
+func (c *Client) GetVersion(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetVersionRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetCommitDiff(ctx context.Context, user string, repository string, baseCommit string, toCommit string, params *GetCommitDiffParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetCommitDiffRequest(c.Server, user, repository, baseCommit, toCommit, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetEntriesInCommit(ctx context.Context, user string, repository string, commitHash string, params *GetEntriesInCommitParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetEntriesInCommitRequest(c.Server, user, repository, commitHash, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) DeleteObject(ctx context.Context, user string, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDeleteObjectRequest(c.Server, user, repository, params)
 	if err != nil {
@@ -366,8 +478,56 @@ func (c *Client) UploadObjectWithBody(ctx context.Context, user string, reposito
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetVersion(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetVersionRequest(c.Server)
+func (c *Client) CommitWip(ctx context.Context, user string, repository string, refID openapi_types.UUID, params *CommitWipParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCommitWipRequest(c.Server, user, repository, refID, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListWip(ctx context.Context, user string, repository string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListWipRequest(c.Server, user, repository)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteWip(ctx context.Context, user string, repository string, refID openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteWipRequest(c.Server, user, repository, refID)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetWip(ctx context.Context, user string, repository string, refID openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetWipRequest(c.Server, user, repository, refID)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateWip(ctx context.Context, user string, repository string, refID openapi_types.UUID, params *CreateWipParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateWipRequest(c.Server, user, repository, refID, params)
 	if err != nil {
 		return nil, err
 	}
@@ -485,6 +645,180 @@ func NewGetUserInfoRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewGetVersionRequest generates requests for GetVersion
+func NewGetVersionRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/version")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetCommitDiffRequest generates requests for GetCommitDiff
+func NewGetCommitDiffRequest(server string, user string, repository string, baseCommit string, toCommit string, params *GetCommitDiffParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "user", runtime.ParamLocationPath, user)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "baseCommit", runtime.ParamLocationPath, baseCommit)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam3 string
+
+	pathParam3, err = runtime.StyleParamWithLocation("simple", false, "toCommit", runtime.ParamLocationPath, toCommit)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/%s/%s/commit/diff/%s/%s", pathParam0, pathParam1, pathParam2, pathParam3)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Path != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "path", runtime.ParamLocationQuery, *params.Path); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetEntriesInCommitRequest generates requests for GetEntriesInCommit
+func NewGetEntriesInCommitRequest(server string, user string, repository string, commitHash string, params *GetEntriesInCommitParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "user", runtime.ParamLocationPath, user)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "commitHash", runtime.ParamLocationPath, commitHash)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/%s/%s/commit/ls/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Path != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "path", runtime.ParamLocationQuery, *params.Path); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewDeleteObjectRequest generates requests for DeleteObject
 func NewDeleteObjectRequest(server string, user string, repository string, params *DeleteObjectParams) (*http.Request, error) {
 	var err error
@@ -508,7 +842,7 @@ func NewDeleteObjectRequest(server string, user string, repository string, param
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/object/%s/%s", pathParam0, pathParam1)
+	operationPath := fmt.Sprintf("/%s/%s/object", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -591,7 +925,7 @@ func NewGetObjectRequest(server string, user string, repository string, params *
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/object/%s/%s", pathParam0, pathParam1)
+	operationPath := fmt.Sprintf("/%s/%s/object", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -677,7 +1011,7 @@ func NewHeadObjectRequest(server string, user string, repository string, params 
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/object/%s/%s", pathParam0, pathParam1)
+	operationPath := fmt.Sprintf("/%s/%s/object", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -763,7 +1097,7 @@ func NewUploadObjectRequestWithBody(server string, user string, repository strin
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/object/%s/%s", pathParam0, pathParam1)
+	operationPath := fmt.Sprintf("/%s/%s/object", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -840,16 +1174,100 @@ func NewUploadObjectRequestWithBody(server string, user string, repository strin
 	return req, nil
 }
 
-// NewGetVersionRequest generates requests for GetVersion
-func NewGetVersionRequest(server string) (*http.Request, error) {
+// NewCommitWipRequest generates requests for CommitWip
+func NewCommitWipRequest(server string, user string, repository string, refID openapi_types.UUID, params *CommitWipParams) (*http.Request, error) {
 	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "user", runtime.ParamLocationPath, user)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "refID", runtime.ParamLocationPath, refID)
+	if err != nil {
+		return nil, err
+	}
 
 	serverURL, err := url.Parse(server)
 	if err != nil {
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/version")
+	operationPath := fmt.Sprintf("/%s/%s/wip/commit/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Msg != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "msg", runtime.ParamLocationQuery, *params.Msg); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListWipRequest generates requests for ListWip
+func NewListWipRequest(server string, user string, repository string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "user", runtime.ParamLocationPath, user)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/%s/%s/wip/list", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -860,6 +1278,180 @@ func NewGetVersionRequest(server string) (*http.Request, error) {
 	}
 
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewDeleteWipRequest generates requests for DeleteWip
+func NewDeleteWipRequest(server string, user string, repository string, refID openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "user", runtime.ParamLocationPath, user)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "refID", runtime.ParamLocationPath, refID)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/%s/%s/wip/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetWipRequest generates requests for GetWip
+func NewGetWipRequest(server string, user string, repository string, refID openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "user", runtime.ParamLocationPath, user)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "refID", runtime.ParamLocationPath, refID)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/%s/%s/wip/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateWipRequest generates requests for CreateWip
+func NewCreateWipRequest(server string, user string, repository string, refID openapi_types.UUID, params *CreateWipParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "user", runtime.ParamLocationPath, user)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "refID", runtime.ParamLocationPath, refID)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/%s/%s/wip/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "name", runtime.ParamLocationQuery, params.Name); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "baseCommitID", runtime.ParamLocationQuery, params.BaseCommitID); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -923,6 +1515,15 @@ type ClientWithResponsesInterface interface {
 	// GetUserInfoWithResponse request
 	GetUserInfoWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetUserInfoResponse, error)
 
+	// GetVersionWithResponse request
+	GetVersionWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetVersionResponse, error)
+
+	// GetCommitDiffWithResponse request
+	GetCommitDiffWithResponse(ctx context.Context, user string, repository string, baseCommit string, toCommit string, params *GetCommitDiffParams, reqEditors ...RequestEditorFn) (*GetCommitDiffResponse, error)
+
+	// GetEntriesInCommitWithResponse request
+	GetEntriesInCommitWithResponse(ctx context.Context, user string, repository string, commitHash string, params *GetEntriesInCommitParams, reqEditors ...RequestEditorFn) (*GetEntriesInCommitResponse, error)
+
 	// DeleteObjectWithResponse request
 	DeleteObjectWithResponse(ctx context.Context, user string, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*DeleteObjectResponse, error)
 
@@ -935,8 +1536,20 @@ type ClientWithResponsesInterface interface {
 	// UploadObjectWithBodyWithResponse request with any body
 	UploadObjectWithBodyWithResponse(ctx context.Context, user string, repository string, params *UploadObjectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadObjectResponse, error)
 
-	// GetVersionWithResponse request
-	GetVersionWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetVersionResponse, error)
+	// CommitWipWithResponse request
+	CommitWipWithResponse(ctx context.Context, user string, repository string, refID openapi_types.UUID, params *CommitWipParams, reqEditors ...RequestEditorFn) (*CommitWipResponse, error)
+
+	// ListWipWithResponse request
+	ListWipWithResponse(ctx context.Context, user string, repository string, reqEditors ...RequestEditorFn) (*ListWipResponse, error)
+
+	// DeleteWipWithResponse request
+	DeleteWipWithResponse(ctx context.Context, user string, repository string, refID openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteWipResponse, error)
+
+	// GetWipWithResponse request
+	GetWipWithResponse(ctx context.Context, user string, repository string, refID openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetWipResponse, error)
+
+	// CreateWipWithResponse request
+	CreateWipWithResponse(ctx context.Context, user string, repository string, refID openapi_types.UUID, params *CreateWipParams, reqEditors ...RequestEditorFn) (*CreateWipResponse, error)
 }
 
 type LoginResponse struct {
@@ -998,6 +1611,72 @@ func (r GetUserInfoResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetUserInfoResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetVersionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *VersionResult
+}
+
+// Status returns HTTPResponse.Status
+func (r GetVersionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetVersionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetCommitDiffResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]Change
+}
+
+// Status returns HTTPResponse.Status
+func (r GetCommitDiffResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetCommitDiffResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetEntriesInCommitResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]TreeEntry
+}
+
+// Status returns HTTPResponse.Status
+func (r GetEntriesInCommitResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetEntriesInCommitResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1089,14 +1768,14 @@ func (r UploadObjectResponse) StatusCode() int {
 	return 0
 }
 
-type GetVersionResponse struct {
+type CommitWipResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *VersionResult
+	JSON200      *Wip
 }
 
 // Status returns HTTPResponse.Status
-func (r GetVersionResponse) Status() string {
+func (r CommitWipResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -1104,7 +1783,94 @@ func (r GetVersionResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetVersionResponse) StatusCode() int {
+func (r CommitWipResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListWipResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]Wip
+}
+
+// Status returns HTTPResponse.Status
+func (r ListWipResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListWipResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteWipResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteWipResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteWipResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetWipResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Wip
+}
+
+// Status returns HTTPResponse.Status
+func (r GetWipResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetWipResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateWipResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *Wip
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateWipResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateWipResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1154,6 +1920,33 @@ func (c *ClientWithResponses) GetUserInfoWithResponse(ctx context.Context, reqEd
 	return ParseGetUserInfoResponse(rsp)
 }
 
+// GetVersionWithResponse request returning *GetVersionResponse
+func (c *ClientWithResponses) GetVersionWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetVersionResponse, error) {
+	rsp, err := c.GetVersion(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetVersionResponse(rsp)
+}
+
+// GetCommitDiffWithResponse request returning *GetCommitDiffResponse
+func (c *ClientWithResponses) GetCommitDiffWithResponse(ctx context.Context, user string, repository string, baseCommit string, toCommit string, params *GetCommitDiffParams, reqEditors ...RequestEditorFn) (*GetCommitDiffResponse, error) {
+	rsp, err := c.GetCommitDiff(ctx, user, repository, baseCommit, toCommit, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetCommitDiffResponse(rsp)
+}
+
+// GetEntriesInCommitWithResponse request returning *GetEntriesInCommitResponse
+func (c *ClientWithResponses) GetEntriesInCommitWithResponse(ctx context.Context, user string, repository string, commitHash string, params *GetEntriesInCommitParams, reqEditors ...RequestEditorFn) (*GetEntriesInCommitResponse, error) {
+	rsp, err := c.GetEntriesInCommit(ctx, user, repository, commitHash, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetEntriesInCommitResponse(rsp)
+}
+
 // DeleteObjectWithResponse request returning *DeleteObjectResponse
 func (c *ClientWithResponses) DeleteObjectWithResponse(ctx context.Context, user string, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*DeleteObjectResponse, error) {
 	rsp, err := c.DeleteObject(ctx, user, repository, params, reqEditors...)
@@ -1190,13 +1983,49 @@ func (c *ClientWithResponses) UploadObjectWithBodyWithResponse(ctx context.Conte
 	return ParseUploadObjectResponse(rsp)
 }
 
-// GetVersionWithResponse request returning *GetVersionResponse
-func (c *ClientWithResponses) GetVersionWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetVersionResponse, error) {
-	rsp, err := c.GetVersion(ctx, reqEditors...)
+// CommitWipWithResponse request returning *CommitWipResponse
+func (c *ClientWithResponses) CommitWipWithResponse(ctx context.Context, user string, repository string, refID openapi_types.UUID, params *CommitWipParams, reqEditors ...RequestEditorFn) (*CommitWipResponse, error) {
+	rsp, err := c.CommitWip(ctx, user, repository, refID, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetVersionResponse(rsp)
+	return ParseCommitWipResponse(rsp)
+}
+
+// ListWipWithResponse request returning *ListWipResponse
+func (c *ClientWithResponses) ListWipWithResponse(ctx context.Context, user string, repository string, reqEditors ...RequestEditorFn) (*ListWipResponse, error) {
+	rsp, err := c.ListWip(ctx, user, repository, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListWipResponse(rsp)
+}
+
+// DeleteWipWithResponse request returning *DeleteWipResponse
+func (c *ClientWithResponses) DeleteWipWithResponse(ctx context.Context, user string, repository string, refID openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteWipResponse, error) {
+	rsp, err := c.DeleteWip(ctx, user, repository, refID, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteWipResponse(rsp)
+}
+
+// GetWipWithResponse request returning *GetWipResponse
+func (c *ClientWithResponses) GetWipWithResponse(ctx context.Context, user string, repository string, refID openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetWipResponse, error) {
+	rsp, err := c.GetWip(ctx, user, repository, refID, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetWipResponse(rsp)
+}
+
+// CreateWipWithResponse request returning *CreateWipResponse
+func (c *ClientWithResponses) CreateWipWithResponse(ctx context.Context, user string, repository string, refID openapi_types.UUID, params *CreateWipParams, reqEditors ...RequestEditorFn) (*CreateWipResponse, error) {
+	rsp, err := c.CreateWip(ctx, user, repository, refID, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateWipResponse(rsp)
 }
 
 // ParseLoginResponse parses an HTTP response from a LoginWithResponse call
@@ -1257,6 +2086,84 @@ func ParseGetUserInfoResponse(rsp *http.Response) (*GetUserInfoResponse, error) 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest UserInfo
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetVersionResponse parses an HTTP response from a GetVersionWithResponse call
+func ParseGetVersionResponse(rsp *http.Response) (*GetVersionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetVersionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest VersionResult
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetCommitDiffResponse parses an HTTP response from a GetCommitDiffWithResponse call
+func ParseGetCommitDiffResponse(rsp *http.Response) (*GetCommitDiffResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetCommitDiffResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []Change
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetEntriesInCommitResponse parses an HTTP response from a GetEntriesInCommitWithResponse call
+func ParseGetEntriesInCommitResponse(rsp *http.Response) (*GetEntriesInCommitResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetEntriesInCommitResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []TreeEntry
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -1341,26 +2248,120 @@ func ParseUploadObjectResponse(rsp *http.Response) (*UploadObjectResponse, error
 	return response, nil
 }
 
-// ParseGetVersionResponse parses an HTTP response from a GetVersionWithResponse call
-func ParseGetVersionResponse(rsp *http.Response) (*GetVersionResponse, error) {
+// ParseCommitWipResponse parses an HTTP response from a CommitWipWithResponse call
+func ParseCommitWipResponse(rsp *http.Response) (*CommitWipResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetVersionResponse{
+	response := &CommitWipResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest VersionResult
+		var dest Wip
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListWipResponse parses an HTTP response from a ListWipWithResponse call
+func ParseListWipResponse(rsp *http.Response) (*ListWipResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListWipResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []Wip
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteWipResponse parses an HTTP response from a DeleteWipWithResponse call
+func ParseDeleteWipResponse(rsp *http.Response) (*DeleteWipResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteWipResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseGetWipResponse parses an HTTP response from a GetWipWithResponse call
+func ParseGetWipResponse(rsp *http.Response) (*GetWipResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetWipResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Wip
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateWipResponse parses an HTTP response from a CreateWipWithResponse call
+func ParseCreateWipResponse(rsp *http.Response) (*CreateWipResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateWipResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest Wip
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
 
 	}
 
@@ -1378,21 +2379,42 @@ type ServerInterface interface {
 	// get information of the currently logged-in user
 	// (GET /auth/user)
 	GetUserInfo(ctx context.Context, w *JiaozifsResponse, r *http.Request)
-	// delete object. Missing objects will not return a NotFound error.
-	// (DELETE /object/{user}/{repository})
-	DeleteObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params DeleteObjectParams)
-	// get object content
-	// (GET /object/{user}/{repository})
-	GetObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params GetObjectParams)
-	// check if object exists
-	// (HEAD /object/{user}/{repository})
-	HeadObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params HeadObjectParams)
-
-	// (POST /object/{user}/{repository})
-	UploadObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params UploadObjectParams)
 	// return program and runtime version
 	// (GET /version)
 	GetVersion(ctx context.Context, w *JiaozifsResponse, r *http.Request)
+	// get commit differences
+	// (GET /{user}/{repository}/commit/diff/{baseCommit}/{toCommit})
+	GetCommitDiff(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, baseCommit string, toCommit string, params GetCommitDiffParams)
+	// list entries in commit
+	// (GET /{user}/{repository}/commit/ls/{commitHash})
+	GetEntriesInCommit(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, commitHash string, params GetEntriesInCommitParams)
+	// delete object. Missing objects will not return a NotFound error.
+	// (DELETE /{user}/{repository}/object)
+	DeleteObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params DeleteObjectParams)
+	// get object content
+	// (GET /{user}/{repository}/object)
+	GetObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params GetObjectParams)
+	// check if object exists
+	// (HEAD /{user}/{repository}/object)
+	HeadObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params HeadObjectParams)
+
+	// (POST /{user}/{repository}/object)
+	UploadObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params UploadObjectParams)
+	// commit working in process to branch
+	// (POST /{user}/{repository}/wip/commit/{refID})
+	CommitWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, refID openapi_types.UUID, params CommitWipParams)
+	// list wip in specific project and user
+	// (GET /{user}/{repository}/wip/list)
+	ListWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string)
+	// remove working in process
+	// (DELETE /{user}/{repository}/wip/{refID})
+	DeleteWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, refID openapi_types.UUID)
+	// get working in process
+	// (GET /{user}/{repository}/wip/{refID})
+	GetWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, refID openapi_types.UUID)
+	// create working in process
+	// (POST /{user}/{repository}/wip/{refID})
+	CreateWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, refID openapi_types.UUID, params CreateWipParams)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -1417,32 +2439,74 @@ func (_ Unimplemented) GetUserInfo(ctx context.Context, w *JiaozifsResponse, r *
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// return program and runtime version
+// (GET /version)
+func (_ Unimplemented) GetVersion(ctx context.Context, w *JiaozifsResponse, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// get commit differences
+// (GET /{user}/{repository}/commit/diff/{baseCommit}/{toCommit})
+func (_ Unimplemented) GetCommitDiff(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, baseCommit string, toCommit string, params GetCommitDiffParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// list entries in commit
+// (GET /{user}/{repository}/commit/ls/{commitHash})
+func (_ Unimplemented) GetEntriesInCommit(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, commitHash string, params GetEntriesInCommitParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // delete object. Missing objects will not return a NotFound error.
-// (DELETE /object/{user}/{repository})
+// (DELETE /{user}/{repository}/object)
 func (_ Unimplemented) DeleteObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params DeleteObjectParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // get object content
-// (GET /object/{user}/{repository})
+// (GET /{user}/{repository}/object)
 func (_ Unimplemented) GetObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params GetObjectParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // check if object exists
-// (HEAD /object/{user}/{repository})
+// (HEAD /{user}/{repository}/object)
 func (_ Unimplemented) HeadObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params HeadObjectParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// (POST /object/{user}/{repository})
+// (POST /{user}/{repository}/object)
 func (_ Unimplemented) UploadObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params UploadObjectParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// return program and runtime version
-// (GET /version)
-func (_ Unimplemented) GetVersion(ctx context.Context, w *JiaozifsResponse, r *http.Request) {
+// commit working in process to branch
+// (POST /{user}/{repository}/wip/commit/{refID})
+func (_ Unimplemented) CommitWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, refID openapi_types.UUID, params CommitWipParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// list wip in specific project and user
+// (GET /{user}/{repository}/wip/list)
+func (_ Unimplemented) ListWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// remove working in process
+// (DELETE /{user}/{repository}/wip/{refID})
+func (_ Unimplemented) DeleteWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, refID openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// get working in process
+// (GET /{user}/{repository}/wip/{refID})
+func (_ Unimplemented) GetWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, refID openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// create working in process
+// (POST /{user}/{repository}/wip/{refID})
+func (_ Unimplemented) CreateWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, refID openapi_types.UUID, params CreateWipParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -1493,6 +2557,150 @@ func (siw *ServerInterfaceWrapper) GetUserInfo(w http.ResponseWriter, r *http.Re
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetUserInfo(r.Context(), &JiaozifsResponse{w}, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// GetVersion operation middleware
+func (siw *ServerInterfaceWrapper) GetVersion(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetVersion(r.Context(), &JiaozifsResponse{w}, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// GetCommitDiff operation middleware
+func (siw *ServerInterfaceWrapper) GetCommitDiff(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "user" -------------
+	var user string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user", chi.URLParam(r, "user"), &user, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "baseCommit" -------------
+	var baseCommit string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "baseCommit", chi.URLParam(r, "baseCommit"), &baseCommit, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "baseCommit", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "toCommit" -------------
+	var toCommit string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "toCommit", chi.URLParam(r, "toCommit"), &toCommit, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "toCommit", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetCommitDiffParams
+
+	// ------------- Optional query parameter "path" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "path", r.URL.Query(), &params.Path)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "path", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCommitDiff(r.Context(), &JiaozifsResponse{w}, r, user, repository, baseCommit, toCommit, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// GetEntriesInCommit operation middleware
+func (siw *ServerInterfaceWrapper) GetEntriesInCommit(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "user" -------------
+	var user string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user", chi.URLParam(r, "user"), &user, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "commitHash" -------------
+	var commitHash string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "commitHash", chi.URLParam(r, "commitHash"), &commitHash, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "commitHash", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetEntriesInCommitParams
+
+	// ------------- Optional query parameter "path" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "path", r.URL.Query(), &params.Path)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "path", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetEntriesInCommit(r.Context(), &JiaozifsResponse{w}, r, user, repository, commitHash, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1883,14 +3091,272 @@ func (siw *ServerInterfaceWrapper) UploadObject(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
-// GetVersion operation middleware
-func (siw *ServerInterfaceWrapper) GetVersion(w http.ResponseWriter, r *http.Request) {
+// CommitWip operation middleware
+func (siw *ServerInterfaceWrapper) CommitWip(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "user" -------------
+	var user string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user", chi.URLParam(r, "user"), &user, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "refID" -------------
+	var refID openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "refID", chi.URLParam(r, "refID"), &refID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "refID", Err: err})
+		return
+	}
 
 	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
 
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CommitWipParams
+
+	// ------------- Optional query parameter "msg" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "msg", r.URL.Query(), &params.Msg)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "msg", Err: err})
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetVersion(r.Context(), &JiaozifsResponse{w}, r)
+		siw.Handler.CommitWip(r.Context(), &JiaozifsResponse{w}, r, user, repository, refID, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// ListWip operation middleware
+func (siw *ServerInterfaceWrapper) ListWip(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "user" -------------
+	var user string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user", chi.URLParam(r, "user"), &user, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWip(r.Context(), &JiaozifsResponse{w}, r, user, repository)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// DeleteWip operation middleware
+func (siw *ServerInterfaceWrapper) DeleteWip(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "user" -------------
+	var user string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user", chi.URLParam(r, "user"), &user, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "refID" -------------
+	var refID openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "refID", chi.URLParam(r, "refID"), &refID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "refID", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteWip(r.Context(), &JiaozifsResponse{w}, r, user, repository, refID)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// GetWip operation middleware
+func (siw *ServerInterfaceWrapper) GetWip(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "user" -------------
+	var user string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user", chi.URLParam(r, "user"), &user, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "refID" -------------
+	var refID openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "refID", chi.URLParam(r, "refID"), &refID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "refID", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWip(r.Context(), &JiaozifsResponse{w}, r, user, repository, refID)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// CreateWip operation middleware
+func (siw *ServerInterfaceWrapper) CreateWip(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "user" -------------
+	var user string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user", chi.URLParam(r, "user"), &user, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "refID" -------------
+	var refID openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "refID", chi.URLParam(r, "refID"), &refID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "refID", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateWipParams
+
+	// ------------- Required query parameter "name" -------------
+
+	if paramValue := r.URL.Query().Get("name"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "name"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "name", r.URL.Query(), &params.Name)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
+		return
+	}
+
+	// ------------- Required query parameter "baseCommitID" -------------
+
+	if paramValue := r.URL.Query().Get("baseCommitID"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "baseCommitID"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "baseCommitID", r.URL.Query(), &params.BaseCommitID)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "baseCommitID", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateWip(r.Context(), &JiaozifsResponse{w}, r, user, repository, refID, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2023,19 +3489,40 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/auth/user", wrapper.GetUserInfo)
 	})
 	r.Group(func(r chi.Router) {
-		r.Delete(options.BaseURL+"/object/{user}/{repository}", wrapper.DeleteObject)
-	})
-	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/object/{user}/{repository}", wrapper.GetObject)
-	})
-	r.Group(func(r chi.Router) {
-		r.Head(options.BaseURL+"/object/{user}/{repository}", wrapper.HeadObject)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/object/{user}/{repository}", wrapper.UploadObject)
-	})
-	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/version", wrapper.GetVersion)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/{user}/{repository}/commit/diff/{baseCommit}/{toCommit}", wrapper.GetCommitDiff)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/{user}/{repository}/commit/ls/{commitHash}", wrapper.GetEntriesInCommit)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/{user}/{repository}/object", wrapper.DeleteObject)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/{user}/{repository}/object", wrapper.GetObject)
+	})
+	r.Group(func(r chi.Router) {
+		r.Head(options.BaseURL+"/{user}/{repository}/object", wrapper.HeadObject)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/{user}/{repository}/object", wrapper.UploadObject)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/{user}/{repository}/wip/commit/{refID}", wrapper.CommitWip)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/{user}/{repository}/wip/list", wrapper.ListWip)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/{user}/{repository}/wip/{refID}", wrapper.DeleteWip)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/{user}/{repository}/wip/{refID}", wrapper.GetWip)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/{user}/{repository}/wip/{refID}", wrapper.CreateWip)
 	})
 
 	return r
@@ -2044,40 +3531,49 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"1X8CAAD//16H5RCTIQAA",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
