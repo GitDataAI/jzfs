@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/jiaozifs/jiaozifs/models"
+
 	"go.uber.org/mock/gomock"
 )
 
@@ -18,6 +20,15 @@ func TestJiaozifsResponse(t *testing.T) {
 		jzResp.NotFound()
 	})
 
+	t.Run("not found", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		resp := NewMockResponseWriter(ctrl)
+		jzResp := JiaozifsResponse{resp}
+
+		resp.EXPECT().WriteHeader(http.StatusUnauthorized)
+		jzResp.Unauthorized()
+	})
+
 	t.Run("ok", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		resp := NewMockResponseWriter(ctrl)
@@ -26,6 +37,17 @@ func TestJiaozifsResponse(t *testing.T) {
 		resp.EXPECT().WriteHeader(http.StatusOK)
 		jzResp.OK()
 	})
+
+	t.Run("bad request", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		resp := NewMockResponseWriter(ctrl)
+		jzResp := JiaozifsResponse{resp}
+
+		resp.EXPECT().WriteHeader(http.StatusBadRequest)
+		resp.EXPECT().Write([]byte("bad request"))
+		jzResp.BadRequest("bad request")
+	})
+
 	t.Run("code", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		resp := NewMockResponseWriter(ctrl)
@@ -42,6 +64,15 @@ func TestJiaozifsResponse(t *testing.T) {
 		resp.EXPECT().WriteHeader(http.StatusInternalServerError)
 		resp.EXPECT().Write([]byte("mock"))
 		jzResp.Error(fmt.Errorf("mock"))
+	})
+
+	t.Run("error not found", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		resp := NewMockResponseWriter(ctrl)
+		jzResp := JiaozifsResponse{resp}
+
+		resp.EXPECT().WriteHeader(http.StatusNotFound)
+		jzResp.Error(fmt.Errorf("mock %w", models.ErrNotFound))
 	})
 
 	t.Run("string", func(t *testing.T) {

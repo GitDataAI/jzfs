@@ -358,6 +358,15 @@ type GetObjParams struct {
 	Hash hash.Hash
 }
 
+func NewGetObjParams() *GetObjParams {
+	return &GetObjParams{}
+}
+
+func (gop *GetObjParams) SetHash(hash hash.Hash) *GetObjParams {
+	gop.Hash = hash
+	return gop
+}
+
 type IObjectRepo interface {
 	Insert(ctx context.Context, repo *Object) (*Object, error)
 	Get(ctx context.Context, params *GetObjParams) (*Object, error)

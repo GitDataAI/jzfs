@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jiaozifs/jiaozifs/utils"
-
 	"github.com/jiaozifs/jiaozifs/config"
 
 	"github.com/golang-jwt/jwt"
@@ -64,11 +62,11 @@ type Register struct {
 
 func (r *Register) Register(ctx context.Context, repo models.IUserRepo) error {
 	// check username, email
-	count1, err := repo.Count(ctx, &models.CountUserParams{Name: utils.String(r.Username)})
+	count1, err := repo.Count(ctx, models.NewCountUserParam().SetName(r.Username))
 	if err != nil {
 		return err
 	}
-	count2, err := repo.Count(ctx, &models.CountUserParams{Name: utils.String(r.Email)})
+	count2, err := repo.Count(ctx, models.NewCountUserParam().SetName(r.Email))
 	if err != nil {
 		return err
 	}
@@ -129,7 +127,7 @@ func (u *UserInfo) UserProfile(ctx context.Context, repo models.IUserRepo, confi
 	username := claims["sub"].(string)
 
 	// Get user by username
-	user, err := repo.Get(ctx, &models.GetUserParam{Name: utils.String(username)})
+	user, err := repo.Get(ctx, models.NewGetUserParams().SetName(username))
 	if err != nil {
 		return userInfo, err
 	}

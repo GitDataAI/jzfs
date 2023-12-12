@@ -16,6 +16,17 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
   var err error
   {{end}}
 
+  {{if .HasBody}}{{range .Bodies}}{{if and .Default (eq .NameTag "JSON")}}// ------------- Body parse -------------
+  var body {{$opid}}{{.NameTag}}RequestBody
+  parseBody := {{if .Required}}true{{else}}r.ContentLength != 0{{end}}
+  if parseBody {
+      if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+          http.Error(w, "Error unmarshalling body '{{$opid}}' as JSON", http.StatusBadRequest)
+          return
+      }
+  }
+  {{end}}{{end}}{{end}}
+
   {{range .PathParams}}// ------------- Path parameter "{{.ParamName}}" -------------
   var {{$varName := .GoVariableName}}{{$varName}} {{.TypeDef}}
 
@@ -174,7 +185,7 @@ func (siw *ServerInterfaceWrapper) {{$opid}}(w http.ResponseWriter, r *http.Requ
   {{end}}
 
   handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-    siw.Handler.{{.OperationId}}(r.Context(), &JiaozifsResponse{w}, r{{genParamNames .PathParams}}{{if .RequiresParamObject}}, params{{end}})
+      siw.Handler.{{.OperationId}}(r.Context(), &JiaozifsResponse{w}, r{{if .HasBody}}{{range .Bodies}}{{if and .Default (eq .NameTag "JSON")}}, body{{end}}{{end}}{{end}}{{genParamNames .PathParams}}{{if .RequiresParamObject}}, params{{end}})
   }))
 
   {{if opts.Compatibility.ApplyChiMiddlewareFirstToLast}}

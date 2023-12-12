@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiaozifs/jiaozifs/utils"
+
 	"github.com/go-git/go-git/v5/utils/merkletrie"
 
 	"github.com/google/uuid"
@@ -317,9 +319,9 @@ func makeUser(ctx context.Context, userRepo models.IUserRepo, name string) (*mod
 func makeRepository(ctx context.Context, repoRepo models.IRepositoryRepo, name string) (*models.Repository, error) {
 	user := &models.Repository{
 		Name:        name,
-		Description: "",
+		Description: utils.String("test"),
 		HEAD:        "main",
-		CreateID:    uuid.UUID{},
+		CreatorID:   uuid.UUID{},
 		CreatedAt:   time.Time{},
 		UpdatedAt:   time.Time{},
 	}
@@ -357,8 +359,8 @@ func makeRef(ctx context.Context, refRepo models.IRefRepo, name string, repoID u
 		RepositoryID: repoID,
 		CommitHash:   commitHash,
 		Name:         name,
-		Description:  "",
-		CreateID:     uuid.UUID{},
+		Description:  utils.String("test"),
+		CreatorID:    uuid.UUID{},
 		CreatedAt:    time.Time{},
 		UpdatedAt:    time.Time{},
 	}
@@ -371,7 +373,7 @@ func makeWip(ctx context.Context, wipRepo models.IWipRepo, repoID, refID uuid.UU
 		BaseTree:     parentHash,
 		RefID:        refID,
 		RepositoryID: repoID,
-		CreateID:     uuid.UUID{},
+		CreatorID:    uuid.UUID{},
 		CreatedAt:    time.Time{},
 		UpdatedAt:    time.Time{},
 	}

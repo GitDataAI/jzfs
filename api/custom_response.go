@@ -2,7 +2,10 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
+
+	"github.com/jiaozifs/jiaozifs/models"
 )
 
 type JiaozifsResponse struct {
@@ -36,8 +39,23 @@ func (response *JiaozifsResponse) NotFound() {
 	response.WriteHeader(http.StatusNotFound)
 }
 
+// Unauthorized response with 401
+func (response *JiaozifsResponse) Unauthorized() {
+	response.WriteHeader(http.StatusUnauthorized)
+}
+
+func (response *JiaozifsResponse) BadRequest(msg string) {
+	response.WriteHeader(http.StatusBadRequest)
+	_, _ = response.Write([]byte(msg))
+}
+
 // Error response with 500 and error message
 func (response *JiaozifsResponse) Error(err error) {
+	if errors.Is(err, models.ErrNotFound) {
+		response.NotFound()
+		return
+	}
+
 	response.WriteHeader(http.StatusInternalServerError)
 	_, _ = response.Write([]byte(err.Error()))
 }

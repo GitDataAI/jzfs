@@ -19,9 +19,9 @@ type Ref struct {
 	// Path name/path of branch
 	Name string `bun:"name,notnull"`
 	// Description
-	Description string `bun:"description"`
-	// CreateId who create this branch
-	CreateID uuid.UUID `bun:"create_id,type:uuid,notnull"`
+	Description *string `bun:"description"`
+	// CreatorID who create this branch
+	CreatorID uuid.UUID `bun:"creator_id,type:uuid,notnull"`
 
 	CreatedAt time.Time `bun:"created_at"`
 	UpdatedAt time.Time `bun:"updated_at"`
@@ -33,9 +33,43 @@ type GetRefParams struct {
 	Name         *string
 }
 
+func NewGetRefParams() *GetRefParams {
+	return &GetRefParams{}
+}
+
+func (gup *GetRefParams) SetID(id uuid.UUID) *GetRefParams {
+	gup.ID = id
+	return gup
+}
+
+func (gup *GetRefParams) SetRepositoryID(repositoryID uuid.UUID) *GetRefParams {
+	gup.RepositoryID = repositoryID
+	return gup
+}
+
+func (gup *GetRefParams) SetName(name string) *GetRefParams {
+	gup.Name = &name
+	return gup
+}
+
+type UpdateRefParams struct {
+	bun.BaseModel `bun:"table:ref"`
+	ID            uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
+	CommitHash    hash.Hash `bun:"commit_hash,type:bytea,notnull"`
+}
+
+func NewUpdateRefParams(id uuid.UUID) *UpdateRefParams {
+	return &UpdateRefParams{ID: id}
+}
+
+func (up *UpdateRefParams) SetCommitHash(commitHash hash.Hash) *UpdateRefParams {
+	up.CommitHash = commitHash
+	return up
+}
+
 type IRefRepo interface {
 	Insert(ctx context.Context, repo *Ref) (*Ref, error)
-	UpdateCommitHash(ctx context.Context, id uuid.UUID, commitHash hash.Hash) error
+	UpdateByID(ctx context.Context, params *UpdateRefParams) error
 	Get(ctx context.Context, id *GetRefParams) (*Ref, error)
 }
 
@@ -76,7 +110,7 @@ func (r RefRepo) Get(ctx context.Context, params *GetRefParams) (*Ref, error) {
 	return repo, query.Limit(1).Scan(ctx, repo)
 }
 
-func (r RefRepo) UpdateCommitHash(ctx context.Context, id uuid.UUID, commitHash hash.Hash) error {
-	_, err := r.db.NewUpdate().Model((*Ref)(nil)).SetColumn("commit_hash", "?", commitHash).Where("id = ?", id).Exec(ctx)
+func (r RefRepo) UpdateByID(ctx context.Context, updateModel *UpdateRefParams) error {
+	_, err := r.db.NewUpdate().Model(updateModel).WherePK().Exec(ctx)
 	return err
 }

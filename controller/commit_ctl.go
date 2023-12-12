@@ -3,7 +3,6 @@ package controller
 import (
 	"context"
 	"encoding/hex"
-	"errors"
 	"net/http"
 	"strings"
 
@@ -48,10 +47,6 @@ func (commitCtl CommitController) GetEntriesInCommit(ctx context.Context, w *api
 	}
 	treeEntry, err := workTree.Ls(ctx, path)
 	if err != nil {
-		if errors.Is(err, versionmgr.ErrPathNotFound) {
-			w.NotFound()
-			return
-		}
 		w.Error(err)
 		return
 	}
