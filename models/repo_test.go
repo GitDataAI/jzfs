@@ -57,7 +57,7 @@ func TestRepoTransaction(t *testing.T) {
 		})
 		require.Error(t, err)
 
-		_, err = pgRepo.RepositoryRepo().Get(ctx, &models.GetRepoParams{ID: id})
+		_, err = pgRepo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetID(id))
 		require.True(t, errors.Is(err, sql.ErrNoRows))
 	})
 }

@@ -2,7 +2,6 @@ package controller
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 
 	"github.com/jiaozifs/jiaozifs/config"
@@ -24,13 +23,10 @@ type UserController struct {
 	Config *config.Config
 }
 
-func (userCtl UserController) Login(ctx context.Context, w *api.JiaozifsResponse, r *http.Request) {
-	// Decode requestBody
-	var login auth.Login
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&login); err != nil {
-		w.Error(err)
-		return
+func (userCtl UserController) Login(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, body api.LoginJSONRequestBody) {
+	login := auth.Login{
+		Username: body.Username,
+		Password: body.Password,
 	}
 
 	// perform login
@@ -42,14 +38,13 @@ func (userCtl UserController) Login(ctx context.Context, w *api.JiaozifsResponse
 	w.JSON(authToken)
 }
 
-func (userCtl UserController) Register(ctx context.Context, w *api.JiaozifsResponse, r *http.Request) {
-	// Decode requestBody
-	var register auth.Register
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&register); err != nil {
-		w.Error(err)
-		return
+func (userCtl UserController) Register(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, body api.RegisterJSONRequestBody) {
+	register := auth.Register{
+		Username: body.Username,
+		Email:    string(body.Email),
+		Password: body.Password,
 	}
+
 	// perform register
 	err := register.Register(ctx, userCtl.Repo.UserRepo())
 	if err != nil {

@@ -38,15 +38,15 @@ type ObjectController struct {
 }
 
 func (oct ObjectController) DeleteObject(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, userName string, repositoryName string, params api.DeleteObjectParams) { //nolint
-	user, err := oct.Repo.UserRepo().Get(ctx, &models.GetUserParam{Name: utils.String(userName)})
+	user, err := oct.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(userName))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
 	repository, err := oct.Repo.RepositoryRepo().Get(ctx, &models.GetRepoParams{
-		CreateID: user.ID,
-		Name:     utils.String(repositoryName),
+		CreatorID: user.ID,
+		Name:      utils.String(repositoryName),
 	})
 	if err != nil {
 		w.Error(err)
@@ -79,7 +79,7 @@ func (oct ObjectController) DeleteObject(ctx context.Context, w *api.JiaozifsRes
 		return
 	}
 
-	err = oct.Repo.WipRepo().UpdateCurrentHash(ctx, params.WipID, workTree.Root().Hash())
+	err = oct.Repo.WipRepo().UpdateByID(ctx, models.NewUpdateWipParams(params.WipID).SetCurrentTree(workTree.Root().Hash()))
 	if err != nil {
 		w.Error(err)
 		return
@@ -88,15 +88,15 @@ func (oct ObjectController) DeleteObject(ctx context.Context, w *api.JiaozifsRes
 }
 
 func (oct ObjectController) GetObject(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, userName string, repositoryName string, params api.GetObjectParams) { //nolint
-	user, err := oct.Repo.UserRepo().Get(ctx, &models.GetUserParam{Name: utils.String(userName)})
+	user, err := oct.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(userName))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
 	repository, err := oct.Repo.RepositoryRepo().Get(ctx, &models.GetRepoParams{
-		CreateID: user.ID,
-		Name:     utils.String(repositoryName),
+		CreatorID: user.ID,
+		Name:      utils.String(repositoryName),
 	})
 	if err != nil {
 		w.Error(err)
@@ -171,15 +171,15 @@ func (oct ObjectController) GetObject(ctx context.Context, w *api.JiaozifsRespon
 }
 
 func (oct ObjectController) HeadObject(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, userName string, repository string, params api.HeadObjectParams) { //nolint
-	user, err := oct.Repo.UserRepo().Get(ctx, &models.GetUserParam{Name: utils.String(userName)})
+	user, err := oct.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(userName))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
 	repo, err := oct.Repo.RepositoryRepo().Get(ctx, &models.GetRepoParams{
-		CreateID: user.ID,
-		Name:     utils.String(repository),
+		CreatorID: user.ID,
+		Name:      utils.String(repository),
 	})
 	if err != nil {
 		w.Error(err)
@@ -300,7 +300,7 @@ func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsRes
 
 	var response api.ObjectStats
 	err = oct.Repo.Transaction(ctx, func(dRepo models.IRepo) error {
-		stash, err := dRepo.WipRepo().Get(ctx, &models.GetWipParam{
+		stash, err := dRepo.WipRepo().Get(ctx, &models.GetWipParams{
 			ID: params.WipID,
 		})
 		if err != nil {
@@ -330,7 +330,7 @@ func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsRes
 			ContentType: &contentType,
 			Metadata:    &api.ObjectUserMetadata{},
 		}
-		return dRepo.WipRepo().UpdateCurrentHash(ctx, stash.ID, workingTree.Root().Hash())
+		return dRepo.WipRepo().UpdateByID(ctx, models.NewUpdateWipParams(stash.ID).SetCurrentTree(workingTree.Root().Hash()))
 	})
 
 	if err != nil {

@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiaozifs/jiaozifs/utils"
-
 	"github.com/jiaozifs/jiaozifs/testhelper"
 
 	"github.com/brianvoe/gofakeit/v6"
@@ -37,7 +35,7 @@ func TestNewUserRepo(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEqual(t, uuid.Nil, newUser.ID)
 
-	user, err := repo.Get(ctx, &models.GetUserParam{ID: newUser.ID})
+	user, err := repo.Get(ctx, models.NewGetUserParams().SetID(newUser.ID))
 	require.NoError(t, err)
 
 	require.True(t, cmp.Equal(userModel, user, dbTimeCmpOpt))
@@ -46,11 +44,11 @@ func TestNewUserRepo(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, cmp.Equal(userModel.EncryptedPassword, ep))
 
-	userByEmail, err := repo.Get(ctx, &models.GetUserParam{Email: utils.String(newUser.Email)})
+	userByEmail, err := repo.Get(ctx, models.NewGetUserParams().SetEmail(newUser.Email))
 	require.NoError(t, err)
 	require.True(t, cmp.Equal(userModel, userByEmail, dbTimeCmpOpt))
 
-	userByName, err := repo.Get(ctx, &models.GetUserParam{Name: utils.String(newUser.Name)})
+	userByName, err := repo.Get(ctx, models.NewGetUserParams().SetName(newUser.Name))
 	require.NoError(t, err)
 	require.True(t, cmp.Equal(userModel, userByName, dbTimeCmpOpt))
 }

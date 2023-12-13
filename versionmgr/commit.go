@@ -46,16 +46,12 @@ func (commitOp *CommitOp) Commit() *models.Commit {
 // AddCommit append a new commit to current head, read changes from wip, than create a new commit with parent point to current head,
 // and replace tree hash with wip's currentTreeHash.
 func (commitOp *CommitOp) AddCommit(ctx context.Context, committer *models.User, wipID uuid.UUID, msg string) (*CommitOp, error) {
-	wip, err := commitOp.wip.Get(ctx, &models.GetWipParam{
-		ID: wipID,
-	})
+	wip, err := commitOp.wip.Get(ctx, models.NewGetWipParams().SetID(wipID))
 	if err != nil {
 		return nil, err
 	}
 
-	creator, err := commitOp.user.Get(ctx, &models.GetUserParam{
-		ID: wip.CreateID,
-	})
+	creator, err := commitOp.user.Get(ctx, models.NewGetUserParams().SetID(wip.CreatorID))
 	if err != nil {
 		return nil, err
 	}

@@ -22,16 +22,39 @@ type User struct {
 	UpdatedAt         time.Time `bun:"updated_at"`
 }
 
-type GetUserParam struct {
+type GetUserParams struct {
 	ID    uuid.UUID
 	Name  *string
 	Email *string
 }
 
-type CountUserParams = GetUserParam
+func NewGetUserParams() *GetUserParams {
+	return &GetUserParams{}
+}
+
+func (gup *GetUserParams) SetID(id uuid.UUID) *GetUserParams {
+	gup.ID = id
+	return gup
+}
+
+func (gup *GetUserParams) SetName(name string) *GetUserParams {
+	gup.Name = &name
+	return gup
+}
+
+func (gup *GetUserParams) SetEmail(email string) *GetUserParams {
+	gup.Email = &email
+	return gup
+}
+
+type CountUserParams = GetUserParams
+
+func NewCountUserParam() *CountUserParams {
+	return &CountUserParams{}
+}
 
 type IUserRepo interface {
-	Get(ctx context.Context, params *GetUserParam) (*User, error)
+	Get(ctx context.Context, params *GetUserParams) (*User, error)
 	Count(ctx context.Context, params *CountUserParams) (int, error)
 	Insert(ctx context.Context, user *User) (*User, error)
 	GetEPByName(ctx context.Context, name string) (string, error)
@@ -47,7 +70,7 @@ func NewUserRepo(db bun.IDB) IUserRepo {
 	return &UserRepo{db: db}
 }
 
-func (userRepo *UserRepo) Get(ctx context.Context, params *GetUserParam) (*User, error) {
+func (userRepo *UserRepo) Get(ctx context.Context, params *GetUserParams) (*User, error) {
 	user := &User{}
 	query := userRepo.db.NewSelect().Model(user)
 
@@ -66,7 +89,7 @@ func (userRepo *UserRepo) Get(ctx context.Context, params *GetUserParam) (*User,
 	return user, query.Limit(1).Scan(ctx)
 }
 
-func (userRepo *UserRepo) Count(ctx context.Context, params *GetUserParam) (int, error) {
+func (userRepo *UserRepo) Count(ctx context.Context, params *GetUserParams) (int, error) {
 	query := userRepo.db.NewSelect().Model((*User)(nil))
 
 	if uuid.Nil != params.ID {

@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jiaozifs/jiaozifs/utils"
 	"github.com/jiaozifs/jiaozifs/utils/hash"
 
 	"github.com/brianvoe/gofakeit/v6"
@@ -28,17 +27,17 @@ func TestRefRepoInsert(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEqual(t, uuid.Nil, newRef.ID)
 
-	ref, err := repo.Get(ctx, &models.GetRefParams{
-		ID:           newRef.ID,
-		RepositoryID: newRef.RepositoryID,
-		Name:         utils.String(newRef.Name),
-	})
+	getRefParams := models.NewGetRefParams().
+		SetID(newRef.ID).
+		SetRepositoryID(newRef.RepositoryID).
+		SetName(newRef.Name)
+	ref, err := repo.Get(ctx, getRefParams)
 	require.NoError(t, err)
 
 	require.True(t, cmp.Equal(refModel, ref, dbTimeCmpOpt))
 
 	mockHash := hash.Hash("mock hash")
-	err = repo.UpdateCommitHash(ctx, ref.ID, mockHash)
+	err = repo.UpdateByID(ctx, models.NewUpdateRefParams(newRef.ID).SetCommitHash(mockHash))
 	require.NoError(t, err)
 
 	refAfterUpdated, err := repo.Get(ctx, &models.GetRefParams{

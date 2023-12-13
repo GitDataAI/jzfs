@@ -32,9 +32,7 @@ func TestObjectRepo_Insert(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 1, len(list))
 
-	ref, err := repo.Get(ctx, &models.GetObjParams{
-		Hash: newObj.Hash,
-	})
+	ref, err := repo.Get(ctx, models.NewGetObjParams().SetHash(newObj.Hash))
 	require.NoError(t, err)
 
 	require.True(t, cmp.Equal(newObj, ref, dbTimeCmpOpt))
