@@ -40,6 +40,7 @@ var versionCmd = &cobra.Command{
 		if okResp.JSON200 == nil {
 			return fmt.Errorf("request version fail %d %s", okResp.HTTPResponse.StatusCode, okResp.HTTPResponse.Body)
 		}
+
 		fmt.Println("Runtime Version ", okResp.JSON200.Version)
 		fmt.Println("Runtime API Version ", okResp.JSON200.ApiVersion)
 		return nil
