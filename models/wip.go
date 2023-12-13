@@ -17,7 +17,7 @@ const (
 )
 
 type WorkingInProcess struct {
-	bun.BaseModel `bun:"table:wip"`
+	bun.BaseModel `bun:"table:wips"`
 	ID            uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
 	Name          string    `bun:"name,notnull"`
 	CurrentTree   hash.Hash `bun:"current_tree,type:bytea,notnull"`
@@ -117,7 +117,7 @@ func (dwp *DeleteWipParams) SetRefID(refID uuid.UUID) *DeleteWipParams {
 }
 
 type UpdateWipParams struct {
-	bun.BaseModel `bun:"table:wip"`
+	bun.BaseModel `bun:"table:wips"`
 	ID            uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
 	CurrentTree   hash.Hash `bun:"current_tree,type:bytea,notnull"`
 	BaseTree      hash.Hash `bun:"base_tree,type:bytea,notnull"`

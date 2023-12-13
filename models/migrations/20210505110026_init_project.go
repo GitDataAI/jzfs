@@ -53,6 +53,12 @@ func init() {
 		if err != nil {
 			return err
 		}
+		_, err = db.NewCreateTable().
+			Model((*models.MergeRequest)(nil)).
+			Exec(ctx)
+		if err != nil {
+			return err
+		}
 		//object
 		_, err = db.NewCreateTable().
 			Model((*models.Object)(nil)).

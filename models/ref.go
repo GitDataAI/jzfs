@@ -11,7 +11,7 @@ import (
 )
 
 type Ref struct {
-	bun.BaseModel `bun:"table:ref"`
+	bun.BaseModel `bun:"table:refs"`
 	ID            uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
 	// RepositoryId which repository this branch belong
 	RepositoryID uuid.UUID `bun:"repository_id,type:uuid,notnull"`
@@ -53,7 +53,7 @@ func (gup *GetRefParams) SetName(name string) *GetRefParams {
 }
 
 type UpdateRefParams struct {
-	bun.BaseModel `bun:"table:ref"`
+	bun.BaseModel `bun:"table:refs"`
 	ID            uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
 	CommitHash    hash.Hash `bun:"commit_hash,type:bytea,notnull"`
 }
