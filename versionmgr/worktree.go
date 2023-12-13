@@ -1,6 +1,7 @@
 package versionmgr
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -9,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/go-git/go-git/v5/utils/merkletrie/noder"
 
 	"github.com/jiaozifs/jiaozifs/utils/httputil"
 
@@ -563,4 +566,22 @@ func (workTree *WorkTree) ApplyOneChange(ctx context.Context, change IChange) er
 		return workTree.ReplaceLeaf(ctx, change.To().String(), blob)
 	}
 	return fmt.Errorf("unexpect change action: %s", action)
+}
+
+func (workTree *WorkTree) Diff(ctx context.Context, rootTreeHash hash.Hash) (*Changes, error) {
+	toNode, err := NewTreeNode(ctx, models.NewRootTreeEntry(rootTreeHash), workTree.object)
+	if err != nil {
+		return nil, err
+	}
+
+	changes, err := merkletrie.DiffTreeContext(ctx, workTree.Root(), toNode, func(a, b noder.Hasher) bool {
+		return bytes.Equal(a.Hash(), b.Hash())
+	})
+	if err != nil {
+		return nil, err
+	}
+	if err != nil {
+		return nil, err
+	}
+	return newChanges(changes), nil
 }

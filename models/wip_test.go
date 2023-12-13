@@ -92,7 +92,7 @@ func TestWipRepoUpdateByID(t *testing.T) {
 
 	updateModel := models.NewUpdateWipParams(newWipModel.ID).
 		SetState(models.Completed).
-		SetBaseTree(hash.Hash("mock base hash")).
+		SetBaseCommit(hash.Hash("mock base hash")).
 		SetCurrentTree(hash.Hash("mock hash"))
 
 	err = repo.UpdateByID(ctx, updateModel)
@@ -100,6 +100,6 @@ func TestWipRepoUpdateByID(t *testing.T) {
 	updatedUser, err := repo.Get(ctx, models.NewGetWipParams().SetID(newWipModel.ID))
 	require.NoError(t, err)
 	require.Equal(t, models.Completed, updatedUser.State)
-	require.Equal(t, "mock base hash", string(updatedUser.BaseTree))
+	require.Equal(t, "mock base hash", string(updatedUser.BaseCommit))
 	require.Equal(t, "mock hash", string(updatedUser.CurrentTree))
 }

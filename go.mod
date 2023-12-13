@@ -2,8 +2,6 @@ module github.com/jiaozifs/jiaozifs
 
 go 1.20
 
-replace github.com/flowchartsman/swaggerui => /home/hunjixin/code/swaggerui
-
 require (
 	cloud.google.com/go/storage v1.33.0
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.9.0
@@ -25,7 +23,6 @@ require (
 	github.com/flowchartsman/swaggerui v0.0.0-20221017034628-909ed4f3701b
 	github.com/getkin/kin-openapi v0.118.0
 	github.com/go-chi/chi/v5 v5.0.10
-	github.com/go-chi/cors v1.2.1
 	github.com/go-git/go-git/v5 v5.10.1
 	github.com/go-openapi/swag v0.22.4
 	github.com/go-test/deep v1.1.0
@@ -46,6 +43,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.17.0
 	github.com/puzpuzpuz/xsync v1.5.2
+	github.com/rs/cors v1.10.1
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.17.0
 	github.com/stretchr/testify v1.8.4
@@ -150,7 +148,6 @@ require (
 	github.com/prometheus/common v0.44.0 // indirect
 	github.com/prometheus/procfs v0.11.1 // indirect
 	github.com/rogpeppe/go-internal v1.11.0 // indirect
-	github.com/rs/cors v1.10.1 // indirect
 	github.com/rs/xid v1.5.0 // indirect
 	github.com/sagikazarmark/locafero v0.3.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect

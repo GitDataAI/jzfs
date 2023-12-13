@@ -21,7 +21,7 @@ type WorkingInProcess struct {
 	ID            uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
 	Name          string    `bun:"name,notnull"`
 	CurrentTree   hash.Hash `bun:"current_tree,type:bytea,notnull"`
-	BaseTree      hash.Hash `bun:"base_tree,type:bytea,notnull"`
+	BaseCommit    hash.Hash `bun:"base_commit,type:bytea,notnull"`
 	RepositoryID  uuid.UUID `bun:"repository_id,type:uuid,notnull"`
 	RefID         uuid.UUID `bun:"ref_id,type:uuid,notnull"`
 	State         WipState  `bun:"state,notnull"`
@@ -120,7 +120,7 @@ type UpdateWipParams struct {
 	bun.BaseModel `bun:"table:wips"`
 	ID            uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
 	CurrentTree   hash.Hash `bun:"current_tree,type:bytea,notnull"`
-	BaseTree      hash.Hash `bun:"base_tree,type:bytea,notnull"`
+	BaseCommit    hash.Hash `bun:"base_commit,type:bytea,notnull"`
 	State         WipState  `bun:"state,notnull"`
 	UpdatedAt     time.Time `bun:"updated_at"`
 }
@@ -134,8 +134,8 @@ func (up *UpdateWipParams) SetCurrentTree(currentTree hash.Hash) *UpdateWipParam
 	return up
 }
 
-func (up *UpdateWipParams) SetBaseTree(baseTree hash.Hash) *UpdateWipParams {
-	up.BaseTree = baseTree
+func (up *UpdateWipParams) SetBaseCommit(commitHash hash.Hash) *UpdateWipParams {
+	up.BaseCommit = commitHash
 	return up
 }
 

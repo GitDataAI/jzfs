@@ -190,7 +190,7 @@ components:
           type: string
         CurrentTree:
           type: string
-        BaseTree:
+        BaseCommit:
           type: string
         RepositoryID:
           type: string
@@ -693,12 +693,6 @@ paths:
           required: true
           schema:
             type: string
-        - in: query
-          name: baseCommitID
-          description: base commit to create wip
-          required: true
-          schema:
-            type: string
       responses:
         201:
           description: working in process created
@@ -714,6 +708,45 @@ paths:
           description: Forbidden
         502:
           description: internal server error
+
+  /wip/{repository}/changes:
+    parameters:
+      - in: path
+        name: repository
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - wip
+      operationId: getWipChanges
+      summary: get working in process changes
+      parameters:
+        - in: query
+          name: refName
+          description: ref name
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: path
+          description: path
+          required: false
+          schema:
+            type: string
+      responses:
+        200:
+          description: working in process changes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Change"
+        400:
+          description: ValidationError
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden
 
   /wip/{repository}/commit:
     parameters:

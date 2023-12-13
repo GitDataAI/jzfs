@@ -111,6 +111,7 @@ func (commitCtl CommitController) GetCommitDiff(ctx context.Context, w *api.Jiao
 			if change.To() != nil {
 				apiChange.ToHash = utils.String(hex.EncodeToString(change.To().Hash()))
 			}
+			changesResp = append(changesResp, apiChange)
 		}
 		return nil
 	})
