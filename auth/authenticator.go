@@ -9,5 +9,5 @@ import "context"
 type Authenticator interface {
 	// AuthenticateUser authenticates a user matching username and
 	// password and returns their ID.
-	AuthenticateUser(ctx context.Context, username, password string) (string, error)
+	AuthenticateUser(ctx context.Context, ak, sk string) (string, error)
 }

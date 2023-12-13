@@ -51,3 +51,23 @@ func (hash Hash) MarshalJSON() ([]byte, error) {
 	}
 	return []byte(`"` + hash.Hex() + `"`), nil
 }
+
+func HashesOfHexArray(hashesStr ...string) ([]Hash, error) {
+	hashes := make([]Hash, len(hashesStr))
+	for i, hashStr := range hashesStr {
+		hash, err := hex.DecodeString(hashStr)
+		if err != nil {
+			return nil, err
+		}
+		hashes[i] = hash
+	}
+	return hashes, nil
+}
+
+func HexArrayOfHashes(hashes ...Hash) []string {
+	hashesStr := make([]string, len(hashes))
+	for i, hash := range hashes {
+		hashesStr[i] = hash.Hex()
+	}
+	return hashesStr
+}

@@ -1,17 +1,14 @@
-package object
+package versionmgr
 
 import (
 	"io"
 
 	"github.com/emirpasic/gods/trees/binaryheap"
-
-	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/plumbing/storer"
 )
 
 type commitIteratorByCTime struct {
-	seenExternal map[plumbing.Hash]bool
-	seen         map[plumbing.Hash]bool
+	seenExternal map[string]bool
+	seen         map[string]bool
 	heap         *binaryheap.Heap
 }
 
@@ -24,17 +21,17 @@ type commitIteratorByCTime struct {
 // cannot be traversed (e.g. missing objects). Ignore allows to skip some
 // commits from being iterated.
 func NewCommitIterCTime(
-	c *Commit,
-	seenExternal map[plumbing.Hash]bool,
-	ignore []plumbing.Hash,
+	c *CommitNode,
+	seenExternal map[string]bool,
+	ignore []string,
 ) CommitIter {
-	seen := make(map[plumbing.Hash]bool)
+	seen := make(map[string]bool)
 	for _, h := range ignore {
 		seen[h] = true
 	}
 
 	heap := binaryheap.NewWith(func(a, b interface{}) int {
-		if a.(*Commit).Committer.When.Before(b.(*Commit).Committer.When) {
+		if a.(*CommitNode).Commit().Committer.When.Before(b.(*CommitNode).Commit().Committer.When) {
 			return 1
 		}
 		return -1
@@ -48,26 +45,26 @@ func NewCommitIterCTime(
 	}
 }
 
-func (w *commitIteratorByCTime) Next() (*Commit, error) {
-	var c *Commit
+func (w *commitIteratorByCTime) Next() (*CommitNode, error) {
+	var c *CommitNode
 	for {
 		cIn, ok := w.heap.Pop()
 		if !ok {
 			return nil, io.EOF
 		}
-		c = cIn.(*Commit)
+		c = cIn.(*CommitNode)
 
-		if w.seen[c.Hash] || w.seenExternal[c.Hash] {
+		if w.seen[c.Commit().Hash.Hex()] || w.seenExternal[c.Commit().Hash.Hex()] {
 			continue
 		}
 
-		w.seen[c.Hash] = true
+		w.seen[c.Commit().Hash.Hex()] = true
 
-		for _, h := range c.ParentHashes {
-			if w.seen[h] || w.seenExternal[h] {
+		for _, h := range c.Commit().ParentHashes {
+			if w.seen[h.Hex()] || w.seenExternal[h.Hex()] {
 				continue
 			}
-			pc, err := GetCommit(c.s, h)
+			pc, err := c.GetCommit(h)
 			if err != nil {
 				return nil, err
 			}
@@ -78,7 +75,7 @@ func (w *commitIteratorByCTime) Next() (*Commit, error) {
 	}
 }
 
-func (w *commitIteratorByCTime) ForEach(cb func(*Commit) error) error {
+func (w *commitIteratorByCTime) ForEach(cb func(*CommitNode) error) error {
 	for {
 		c, err := w.Next()
 		if err == io.EOF {
@@ -89,7 +86,7 @@ func (w *commitIteratorByCTime) ForEach(cb func(*Commit) error) error {
 		}
 
 		err = cb(c)
-		if err == storer.ErrStop {
+		if err == ErrStop {
 			break
 		}
 		if err != nil {

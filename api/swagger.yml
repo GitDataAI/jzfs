@@ -11,10 +11,12 @@ info:
 servers:
   - url: "http://localhost:34913/api/v1"
     description: jiaozifs server endpoint
-
+  - url: "/api/v1"
+    description: jiaozifs server endpoint
 security:
   - jwt_token: []
   - basic_auth: []
+  - cookie_auth: []
 components:
   securitySchemes:
     basic_auth:
@@ -28,15 +30,16 @@ components:
       type: apiKey
       in: cookie
       name: internal_auth_session
-    oidc_auth:
-      type: apiKey
-      in: cookie
-      name: oidc_auth_session
-    saml_auth:
-      type: apiKey
-      in: cookie
-      name: saml_auth_session
   schemas:
+    CreateRepository:
+      type: object
+      required:
+        - Name
+      properties:
+        Description:
+          type: string
+        Name:
+          type: string
     UpdateRepository:
       type: object
       properties:
@@ -44,6 +47,13 @@ components:
           type: string
     Repository:
       type: object
+      required:
+        - ID
+        - Name
+        - Head
+        - CreatorID
+        - CreatedAt
+        - UpdatedAt
       properties:
         ID:
           type: string
@@ -65,6 +75,12 @@ components:
           format: date-time
     Blob:
       type: object
+      required:
+        - Hash
+        - Type
+        - Size
+        - CreatedAt
+        - UpdatedAt
       properties:
         Hash:
           type: string
@@ -83,18 +99,33 @@ components:
 
     Signature:
       type: object
+      required:
+        - Name
+        - Email
+        - When
       properties:
         Name:
           type: string
         Email:
           type: string
           format: email
-        Timestamp:
+        When:
           type: string
           format: date-time
 
     Commit:
       type: object
+      required:
+        - Hash
+        - Type
+        - Author
+        - Committer
+        - MergeTag
+        - Message
+        - TreeHash
+        - ParentHashes
+        - CreatedAt
+        - UpdatedAt
       properties:
         Hash:
           type: string
@@ -362,8 +393,6 @@ paths:
         - common
       operationId: getVersion
       summary: return program and runtime version
-      security:
-        - jwt_token: []
       responses:
         200:
           description: program version
@@ -372,7 +401,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/VersionResult"
 
-  /{user}/{repository}/object:
+  /object/{user}/{repository}:
     parameters:
       - in: path
         name: user
@@ -607,24 +636,19 @@ paths:
         420:
           description: too many requests
 
-  /{user}/{repository}/wip/{refID}:
+  /wip/{repository}:
     parameters:
-      - in: path
-        name: user
-        required: true
-        schema:
-          type: string
       - in: path
         name: repository
         required: true
         schema:
           type: string
-      - in: path
-        name: refID
+      - in: query
+        name: refName
+        description: ref name
         required: true
         schema:
           type: string
-          format: uuid
     get:
       tags:
         - wip
@@ -691,24 +715,19 @@ paths:
         502:
           description: internal server error
 
-  /{user}/{repository}/wip/commit/{refID}:
+  /wip/{repository}/commit:
     parameters:
-      - in: path
-        name: user
-        required: true
-        schema:
-          type: string
       - in: path
         name: repository
         required: true
         schema:
           type: string
-      - in: path
-        name: refID
+      - in: query
+        name: refName
+        description: ref name
         required: true
         schema:
           type: string
-          format: uuid
     post:
       tags:
         - wip
@@ -737,13 +756,8 @@ paths:
         502:
           description: internal server error
 
-  /{user}/{repository}/wip/list:
+  /wip/{repository}/list:
     parameters:
-      - in: path
-        name: user
-        required: true
-        schema:
-          type: string
       - in: path
         name: repository
         required: true
@@ -770,7 +784,7 @@ paths:
         403:
           description: Forbidden
 
-  /{user}/{repository}/commit/ls/{commitHash}:
+  /repos/{user}/{repository}/contents/:
     parameters:
       - in: path
         name: user
@@ -779,11 +793,6 @@ paths:
           type: string
       - in: path
         name: repository
-        required: true
-        schema:
-          type: string
-      - in: path
-        name: commitHash
         required: true
         schema:
           type: string
@@ -796,6 +805,12 @@ paths:
         - in: query
           name: path
           description: specific path, if not specific return entries in root
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: ref
+          description: specific ref
           required: false
           schema:
             type: string
@@ -817,7 +832,7 @@ paths:
         404:
           description: url not found
 
-  /{user}/{repository}/commit/diff/{baseCommit}/{toCommit}:
+  /repos/{user}/{repository}/compare/{basehead}:
     parameters:
       - in: path
         name: user
@@ -830,12 +845,7 @@ paths:
         schema:
           type: string
       - in: path
-        name: baseCommit
-        required: true
-        schema:
-          type: string
-      - in: path
-        name: toCommit
+        name: basehead
         required: true
         schema:
           type: string
@@ -867,49 +877,41 @@ paths:
         503:
           description: server internal error
 
-
-  /{user}/repository/new:
+  /repos/{user}/{repository}/commits:
     parameters:
       - in: path
         name: user
         required: true
         schema:
           type: string
-    post:
+      - in: path
+        name: repository
+        required: true
+        schema:
+          type: string
+    get:
       tags:
         - repo
-      operationId: createRepository
-      summary: create repository
+      operationId: getCommitsInRepository
+      summary: get commits in repository
       parameters:
         - in: query
-          name: name
-          description: repository name
-          required: true
-          schema:
-            type: string
-        - in: query
-          name: description
-          description: repository description
+          name: refName
+          description: ref(branch/tag) name
           required: false
           schema:
             type: string
       responses:
-        201:
-          description: new repository
+        200:
+          description: get commits
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Repository"
-        400:
-          description: ValidationError
-        401:
-          description: Unauthorized
-        403:
-          description: Forbidden
+                  $ref: "#/components/schemas/Commit"
 
-  /{user}/{repository}:
+  /repos/{user}/{repository}:
     parameters:
       - in: path
         name: user
@@ -974,13 +976,8 @@ paths:
         403:
           description: Forbidden
 
-  /{user}/repository/list:
-    parameters:
-      - in: path
-        name: user
-        required: true
-        schema:
-          type: string
+# 必须授权
+  /users/repos:
     get:
       tags:
         - repo
@@ -1001,8 +998,34 @@ paths:
           description: Unauthorized
         403:
           description: Forbidden
+    post:
+      tags:
+        - repo
+      operationId: createRepository
+      summary: create repository
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRepository"
+      responses:
+        201:
+          description: new repository
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Repository"
+        400:
+          description: ValidationError
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden
 
-  /auth/login:
+  /users/login:
     post:
       tags:
         - auth
@@ -1029,7 +1052,7 @@ paths:
             Set-Cookie:
               schema:
                 type: string
-                example: "access_token=abcde12356; Path=/; HttpOnly"
+                example: "internal_auth_session=abcde12356; Path=/; HttpOnly"
           content:
             application/json:
               schema:
@@ -1041,13 +1064,28 @@ paths:
         default:
           description: Internal Server Error
 
-  /auth/register:
+  /users/logout:
+    post:
+      tags:
+        - auth
+      operationId: logout
+      summary: perform a logout
+      responses:
+        200:
+          description: successful logout
+        401:
+          description: Unauthorized ValidationError
+        420:
+          description: too many requests
+        default:
+          description: Internal Server Error
+
+  /users/register:
     post:
       tags:
         - auth
       operationId: register
       summary: perform user registration
-      security: [] # No authentication
       requestBody:
         content:
           application/json:
@@ -1063,14 +1101,12 @@ paths:
         default:
           description: Internal Server Error
 
-  /auth/user:
+  /users/user:
     get:
       tags:
         - auth
       operationId: getUserInfo
       summary: get information of the currently logged-in user
-      security:
-        - jwt_token: []
       responses:
         200:
           description: Successful get of user Info

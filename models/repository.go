@@ -50,7 +50,7 @@ type ListRepoParams struct {
 	CreatorID uuid.UUID
 }
 
-func NewListRepoParam() *ListRepoParams {
+func NewListRepoParams() *ListRepoParams {
 	return &ListRepoParams{}
 }
 

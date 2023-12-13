@@ -21,15 +21,19 @@ type CommitController struct {
 	Repo models.IRepo
 }
 
-func (commitCtl CommitController) GetEntriesInCommit(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, _ string, _ string, commitHashStr string, params api.GetEntriesInCommitParams) {
-	commitHash, err := hex.DecodeString(commitHashStr)
+func (commitCtl CommitController) GetEntriesInCommit(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, _ string, _ string, params api.GetEntriesInCommitParams) {
+	refName := "main"
+	if params.Path != nil {
+		refName = *params.Ref
+	}
+
+	ref, err := commitCtl.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetName(refName))
 	if err != nil {
 		w.Error(err)
 		return
 	}
-	commit, err := commitCtl.Repo.ObjectRepo().Get(ctx, &models.GetObjParams{
-		Hash: commitHash,
-	})
+
+	commit, err := commitCtl.Repo.ObjectRepo().Get(ctx, models.NewGetObjParams().SetHash(ref.CommitHash))
 	if err != nil {
 		w.Error(err)
 		return
@@ -53,13 +57,19 @@ func (commitCtl CommitController) GetEntriesInCommit(ctx context.Context, w *api
 	w.JSON(treeEntry)
 }
 
-func (commitCtl CommitController) GetCommitDiff(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, _ string, _ string, baseCommitStr string, toCommitStr string, params api.GetCommitDiffParams) {
-	bashCommitHash, err := hex.DecodeString(baseCommitStr)
+func (commitCtl CommitController) GetCommitDiff(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, _ string, _ string, basehead string, params api.GetCommitDiffParams) {
+	baseHead := strings.Split(basehead, "...")
+	if len(baseHead) != 2 {
+		w.BadRequest("invalid basehead must be base...head")
+		return
+	}
+
+	bashCommitHash, err := hex.DecodeString(baseHead[0])
 	if err != nil {
 		w.Error(err)
 		return
 	}
-	toCommitHash, err := hex.DecodeString(toCommitStr)
+	toCommitHash, err := hex.DecodeString(baseHead[1])
 	if err != nil {
 		w.Error(err)
 		return

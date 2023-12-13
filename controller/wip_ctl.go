@@ -8,9 +8,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/jiaozifs/jiaozifs/auth"
 	"github.com/jiaozifs/jiaozifs/versionmgr"
-
-	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/jiaozifs/jiaozifs/utils"
 
@@ -25,8 +24,13 @@ type WipController struct {
 	Repo models.IRepo
 }
 
-func (wipCtl WipController) CreateWip(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, userName string, repository string, refID openapi_types.UUID, params api.CreateWipParams) {
-	user, err := wipCtl.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(userName))
+func (wipCtl WipController) CreateWip(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, repository string, params api.CreateWipParams) {
+	user, err := auth.GetUser(ctx)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+	ref, err := wipCtl.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetName(params.RefName))
 	if err != nil {
 		w.Error(err)
 		return
@@ -51,7 +55,7 @@ func (wipCtl WipController) CreateWip(ctx context.Context, w *api.JiaozifsRespon
 		CurrentTree:  baseCommitID,
 		BaseTree:     baseCommitID,
 		RepositoryID: repo.ID,
-		RefID:        refID,
+		RefID:        ref.ID,
 		State:        0,
 		Name:         params.Name,
 		CreatorID:    user.ID,
@@ -66,8 +70,8 @@ func (wipCtl WipController) CreateWip(ctx context.Context, w *api.JiaozifsRespon
 	w.JSON(wip, http.StatusCreated)
 }
 
-func (wipCtl WipController) GetWip(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, userName string, repositoryName string, refID openapi_types.UUID) {
-	user, err := wipCtl.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(userName))
+func (wipCtl WipController) GetWip(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, repositoryName string, params api.GetWipParams) {
+	user, err := auth.GetUser(ctx)
 	if err != nil {
 		w.Error(err)
 		return
@@ -79,8 +83,14 @@ func (wipCtl WipController) GetWip(ctx context.Context, w *api.JiaozifsResponse,
 		return
 	}
 
+	ref, err := wipCtl.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetName(params.RefName))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
 	wip, err := wipCtl.Repo.WipRepo().Get(ctx, &models.GetWipParams{
-		RefID:        refID,
+		RefID:        ref.ID,
 		CreatorID:    user.ID,
 		RepositoryID: repository.ID,
 	})
@@ -92,8 +102,8 @@ func (wipCtl WipController) GetWip(ctx context.Context, w *api.JiaozifsResponse,
 	w.JSON(wip)
 }
 
-func (wipCtl WipController) ListWip(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, userName string, repositoryName string) {
-	user, err := wipCtl.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(userName))
+func (wipCtl WipController) ListWip(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, repositoryName string) {
+	user, err := auth.GetUser(ctx)
 	if err != nil {
 		w.Error(err)
 		return
@@ -114,8 +124,8 @@ func (wipCtl WipController) ListWip(ctx context.Context, w *api.JiaozifsResponse
 	w.JSON(wips)
 }
 
-func (wipCtl WipController) CommitWip(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, userName string, repositoryName string, refID openapi_types.UUID, params api.CommitWipParams) {
-	user, err := wipCtl.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(userName))
+func (wipCtl WipController) CommitWip(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, repositoryName string, params api.CommitWipParams) {
+	user, err := auth.GetUser(ctx)
 	if err != nil {
 		w.Error(err)
 		return
@@ -127,7 +137,7 @@ func (wipCtl WipController) CommitWip(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
-	ref, err := wipCtl.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetID(refID))
+	ref, err := wipCtl.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetName(params.RefName))
 	if err != nil {
 		w.Error(err)
 		return
@@ -139,11 +149,7 @@ func (wipCtl WipController) CommitWip(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
-	wip, err := wipCtl.Repo.WipRepo().Get(ctx, &models.GetWipParams{
-		RefID:        refID,
-		CreatorID:    user.ID,
-		RepositoryID: repository.ID,
-	})
+	wip, err := wipCtl.Repo.WipRepo().Get(ctx, models.NewGetWipParams().SetRefID(ref.ID).SetCreatorID(user.ID).SetRepositoryID(repository.ID))
 	if err != nil {
 		w.Error(err)
 		return
@@ -172,7 +178,7 @@ func (wipCtl WipController) CommitWip(ctx context.Context, w *api.JiaozifsRespon
 			return err
 		}
 
-		return repo.RefRepo().UpdateByID(ctx, models.NewUpdateRefParams(refID).SetCommitHash(commit.Commit().Hash))
+		return repo.RefRepo().UpdateByID(ctx, models.NewUpdateRefParams(ref.ID).SetCommitHash(commit.Commit().Hash))
 	})
 	if err != nil {
 		w.Error(err)
@@ -183,8 +189,8 @@ func (wipCtl WipController) CommitWip(ctx context.Context, w *api.JiaozifsRespon
 }
 
 // DeleteWip delete a active working in process
-func (wipCtl WipController) DeleteWip(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, userName string, repositoryName string, refID openapi_types.UUID) {
-	user, err := wipCtl.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(userName))
+func (wipCtl WipController) DeleteWip(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, repositoryName string, params api.DeleteWipParams) {
+	user, err := auth.GetUser(ctx)
 	if err != nil {
 		w.Error(err)
 		return
@@ -196,10 +202,16 @@ func (wipCtl WipController) DeleteWip(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
+	ref, err := wipCtl.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetName(params.RefName))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
 	deleteWipParams := models.NewDeleteWipParams().
 		SetCreatorID(user.ID).
 		SetRepositoryID(repository.ID).
-		SetRefID(refID)
+		SetRefID(ref.ID)
 
 	err = wipCtl.Repo.WipRepo().Delete(ctx, deleteWipParams)
 	if err != nil {

@@ -2,8 +2,9 @@ package auth
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/treeverse/lakefs/pkg/auth/model"
+	"github.com/jiaozifs/jiaozifs/models"
 )
 
 type contextKey string
@@ -12,14 +13,14 @@ const (
 	userContextKey contextKey = "user"
 )
 
-func GetUser(ctx context.Context) (*model.User, error) {
-	user, ok := ctx.Value(userContextKey).(*model.User)
+func GetUser(ctx context.Context) (*models.User, error) {
+	user, ok := ctx.Value(userContextKey).(*models.User)
 	if !ok {
-		return nil, ErrUserNotFound
+		return nil, fmt.Errorf("UserNotFound")
 	}
 	return user, nil
 }
 
-func WithUser(ctx context.Context, user *model.User) context.Context {
+func WithUser(ctx context.Context, user *models.User) context.Context {
 	return context.WithValue(ctx, userContextKey, user)
 }

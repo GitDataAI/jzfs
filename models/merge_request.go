@@ -21,13 +21,14 @@ type MergeRequest struct {
 	MergeStatus   MergeStatus `bun:"merge_status,notnull"`
 	Description   *string     `bun:"description"`
 
-	AuthorID    uuid.UUID `bun:"author_id,type:bytea,notnull"`
-	AssigneeID  uuid.UUID `bun:"assignee_id,type:bytea"`
-	MergeUserID uuid.UUID `bun:"merge_user_id,type:bytea"`
+	AuthorID uuid.UUID `bun:"author_id,type:bytea,notnull"`
 
+	AssigneeID           uuid.UUID `bun:"assignee_id,type:bytea"`
+	MergeUserID          uuid.UUID `bun:"merge_user_id,type:bytea"`
 	ApprovalsBeforeMerge int       `bun:"approvals_before_merge"`
-	CreatedAt            time.Time `bun:"created_at"`
-	UpdatedAt            time.Time `bun:"updated_at"`
+
+	CreatedAt time.Time `bun:"created_at"`
+	UpdatedAt time.Time `bun:"updated_at"`
 }
 
 type GetMergeRequestParams struct {

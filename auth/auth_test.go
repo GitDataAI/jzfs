@@ -19,7 +19,7 @@ func TestLogin_Success(t *testing.T) {
 	// repo
 	mockRepo := models.NewUserRepo(db)
 	// config
-	mockConfig := &config.Config{Auth: config.AuthConfig{SecretKey: []byte("THIS_MUST_BE_CHANGED_IN_PRODUCTION")}}
+	mockConfig := &config.AuthConfig{SecretKey: []byte("THIS_MUST_BE_CHANGED_IN_PRODUCTION")}
 	// user
 	userModel := &models.User{}
 	require.NoError(t, gofakeit.Struct(userModel))

@@ -24,7 +24,7 @@ type Login struct {
 	Password string `json:"password"`
 }
 
-func (l *Login) Login(ctx context.Context, repo models.IUserRepo, config *config.Config) (token api.AuthenticationToken, err error) {
+func (l *Login) Login(ctx context.Context, repo models.IUserRepo, config *config.AuthConfig) (token api.AuthenticationToken, err error) {
 	// get user encryptedPassword by username
 	ep, err := repo.GetEPByName(ctx, l.Username)
 	if err != nil {
@@ -40,7 +40,7 @@ func (l *Login) Login(ctx context.Context, repo models.IUserRepo, config *config
 	// Generate user token
 	loginTime := time.Now()
 	expires := loginTime.Add(expirationDuration)
-	secretKey := config.Auth.SecretKey
+	secretKey := config.SecretKey
 
 	tokenString, err := GenerateJWTLogin(secretKey, l.Username, loginTime, expires)
 	if err != nil {
@@ -106,11 +106,11 @@ type UserInfo struct {
 	Token string `json:"token"`
 }
 
-func (u *UserInfo) UserProfile(ctx context.Context, repo models.IUserRepo, config *config.Config) (api.UserInfo, error) {
+func (u *UserInfo) UserProfile(ctx context.Context, repo models.IUserRepo, config *config.AuthConfig) (api.UserInfo, error) {
 	userInfo := api.UserInfo{}
 	// Parse JWT Token
 	token, err := jwt.Parse(u.Token, func(token *jwt.Token) (interface{}, error) {
-		return config.Auth.SecretKey, nil
+		return config.SecretKey, nil
 	})
 	if err != nil {
 		return userInfo, fmt.Errorf("cannot parse token %s %w", token.Raw, err)

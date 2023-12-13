@@ -1,9 +1,14 @@
 package auth
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/golang-jwt/jwt"
+)
+
+var (
+	ErrUnexpectedSigningMethod = errors.New("unexpected signing method")
 )
 
 func VerifyToken(secret []byte, tokenString string) (*jwt.StandardClaims, error) {
