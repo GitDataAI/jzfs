@@ -223,7 +223,7 @@ func (wipCtl WipController) DeleteWip(ctx context.Context, w *api.JiaozifsRespon
 	w.OK()
 }
 
-func (wipCtl WipController) GetWipChanges(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, repositoryName string, params api.GetWipChangesParams) {
+func (wipCtl WipController) GetWipChanges(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, repositoryName string, params api.GetWipChangesParams) {
 	user, err := auth.GetUser(ctx)
 	if err != nil {
 		w.Error(err)
