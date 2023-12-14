@@ -9,11 +9,11 @@ import (
 	"go.uber.org/fx"
 )
 
-type VersionController struct {
+type CommonController struct {
 	fx.In
 }
 
-func (A VersionController) GetVersion(_ context.Context, w *api.JiaozifsResponse, _ *http.Request) {
+func (c CommonController) GetVersion(_ context.Context, w *api.JiaozifsResponse, _ *http.Request) {
 	swagger, err := api.GetSwagger()
 	if err != nil {
 		w.Error(err)
@@ -24,4 +24,9 @@ func (A VersionController) GetVersion(_ context.Context, w *api.JiaozifsResponse
 		ApiVersion: swagger.Info.Version,
 		Version:    version.UserVersion(),
 	})
+}
+
+func (c CommonController) GetSetupState(ctx context.Context, w *api.JiaozifsResponse, r *http.Request) {
+	//TODO implement me
+	panic("implement me")
 }
