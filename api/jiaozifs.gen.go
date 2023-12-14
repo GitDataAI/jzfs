@@ -29,6 +29,18 @@ const (
 	Jwt_tokenScopes   = "jwt_token.Scopes"
 )
 
+// Defines values for LoginConfigRBAC.
+const (
+	External   LoginConfigRBAC = "external"
+	Simplified LoginConfigRBAC = "simplified"
+)
+
+// Defines values for SetupStateState.
+const (
+	Initialized    SetupStateState = "initialized"
+	NotInitialized SetupStateState = "not_initialized"
+)
+
 // AuthenticationToken defines model for AuthenticationToken.
 type AuthenticationToken struct {
 	// Token a JWT token that could be used to authenticate requests
@@ -71,6 +83,36 @@ type CreateRepository struct {
 	Description *string `json:"Description,omitempty"`
 	Name        string  `json:"Name"`
 }
+
+// LoginConfig defines model for LoginConfig.
+type LoginConfig struct {
+	// RBAC RBAC will remain enabled on GUI if "external".  That only works
+	// with an external auth service.
+	RBAC *LoginConfigRBAC `json:"RBAC,omitempty"`
+
+	// FallbackLoginLabel label to place on fallback_login_url.
+	FallbackLoginLabel *string `json:"fallback_login_label,omitempty"`
+
+	// FallbackLoginUrl secondary URL to offer users to use for login.
+	FallbackLoginUrl *string `json:"fallback_login_url,omitempty"`
+
+	// LoginCookieNames cookie names used to store JWT
+	LoginCookieNames []string `json:"login_cookie_names"`
+
+	// LoginFailedMessage message to display to users who fail to login; a full sentence that is rendered
+	// in HTML and may contain a link to a secondary login method
+	LoginFailedMessage *string `json:"login_failed_message,omitempty"`
+
+	// LoginUrl primary URL to use for login.
+	LoginUrl string `json:"login_url"`
+
+	// LogoutUrl URL to use for logging out.
+	LogoutUrl string `json:"logout_url"`
+}
+
+// LoginConfigRBAC RBAC will remain enabled on GUI if "external".  That only works
+// with an external auth service.
+type LoginConfigRBAC string
 
 // ObjectStats defines model for ObjectStats.
 type ObjectStats struct {
@@ -128,6 +170,17 @@ type Repository struct {
 	UpdatedAt   time.Time          `json:"UpdatedAt"`
 }
 
+// SetupState defines model for SetupState.
+type SetupState struct {
+	// CommPrefsMissing true if the comm prefs are missing.
+	CommPrefsMissing *bool            `json:"comm_prefs_missing,omitempty"`
+	LoginConfig      *LoginConfig     `json:"login_config,omitempty"`
+	State            *SetupStateState `json:"state,omitempty"`
+}
+
+// SetupStateState defines model for SetupState.State.
+type SetupStateState string
+
 // Signature defines model for Signature.
 type Signature struct {
 	Email openapi_types.Email `json:"Email"`
@@ -169,7 +222,8 @@ type UserRegisterInfo struct {
 // VersionResult defines model for VersionResult.
 type VersionResult struct {
 	// ApiVersion runtime version
-	ApiVersion string `json:"api_version"`
+	ApiVersion    string  `json:"api_version"`
+	LatestVersion *string `json:"latest_version,omitempty"`
 
 	// Version program version
 	Version string `json:"version"`
@@ -408,6 +462,9 @@ type ClientInterface interface {
 
 	Login(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// Logout request
+	Logout(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// DeleteObject request
 	DeleteObject(ctx context.Context, user string, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -440,8 +497,8 @@ type ClientInterface interface {
 	// GetEntriesInCommit request
 	GetEntriesInCommit(ctx context.Context, user string, repository string, params *GetEntriesInCommitParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// Logout request
-	Logout(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetSetupState request
+	GetSetupState(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// RegisterWithBody request with any body
 	RegisterWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -509,6 +566,18 @@ func (c *Client) LoginWithBody(ctx context.Context, contentType string, body io.
 
 func (c *Client) Login(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewLoginRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) Logout(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewLogoutRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -651,8 +720,8 @@ func (c *Client) GetEntriesInCommit(ctx context.Context, user string, repository
 	return c.Client.Do(req)
 }
 
-func (c *Client) Logout(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewLogoutRequest(c.Server)
+func (c *Client) GetSetupState(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetSetupStateRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -915,6 +984,33 @@ func NewLoginRequestWithBody(server string, contentType string, body io.Reader) 
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewLogoutRequest generates requests for Logout
+func NewLogoutRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/auth/logout")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -1622,8 +1718,8 @@ func NewGetEntriesInCommitRequest(server string, user string, repository string,
 	return req, nil
 }
 
-// NewLogoutRequest generates requests for Logout
-func NewLogoutRequest(server string) (*http.Request, error) {
+// NewGetSetupStateRequest generates requests for GetSetupState
+func NewGetSetupStateRequest(server string) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -1631,7 +1727,7 @@ func NewLogoutRequest(server string) (*http.Request, error) {
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/users/logout")
+	operationPath := fmt.Sprintf("/setup")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -1641,7 +1737,7 @@ func NewLogoutRequest(server string) (*http.Request, error) {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -2387,6 +2483,9 @@ type ClientWithResponsesInterface interface {
 
 	LoginWithResponse(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*LoginResponse, error)
 
+	// LogoutWithResponse request
+	LogoutWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*LogoutResponse, error)
+
 	// DeleteObjectWithResponse request
 	DeleteObjectWithResponse(ctx context.Context, user string, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*DeleteObjectResponse, error)
 
@@ -2419,8 +2518,8 @@ type ClientWithResponsesInterface interface {
 	// GetEntriesInCommitWithResponse request
 	GetEntriesInCommitWithResponse(ctx context.Context, user string, repository string, params *GetEntriesInCommitParams, reqEditors ...RequestEditorFn) (*GetEntriesInCommitResponse, error)
 
-	// LogoutWithResponse request
-	LogoutWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*LogoutResponse, error)
+	// GetSetupStateWithResponse request
+	GetSetupStateWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetSetupStateResponse, error)
 
 	// RegisterWithBodyWithResponse request with any body
 	RegisterWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RegisterResponse, error)
@@ -2490,6 +2589,27 @@ func (r LoginResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r LoginResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type LogoutResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r LogoutResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r LogoutResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -2711,13 +2831,14 @@ func (r GetEntriesInCommitResponse) StatusCode() int {
 	return 0
 }
 
-type LogoutResponse struct {
+type GetSetupStateResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *SetupState
 }
 
 // Status returns HTTPResponse.Status
-func (r LogoutResponse) Status() string {
+func (r GetSetupStateResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -2725,7 +2846,7 @@ func (r LogoutResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r LogoutResponse) StatusCode() int {
+func (r GetSetupStateResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -3075,6 +3196,15 @@ func (c *ClientWithResponses) LoginWithResponse(ctx context.Context, body LoginJ
 	return ParseLoginResponse(rsp)
 }
 
+// LogoutWithResponse request returning *LogoutResponse
+func (c *ClientWithResponses) LogoutWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*LogoutResponse, error) {
+	rsp, err := c.Logout(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseLogoutResponse(rsp)
+}
+
 // DeleteObjectWithResponse request returning *DeleteObjectResponse
 func (c *ClientWithResponses) DeleteObjectWithResponse(ctx context.Context, user string, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*DeleteObjectResponse, error) {
 	rsp, err := c.DeleteObject(ctx, user, repository, params, reqEditors...)
@@ -3173,13 +3303,13 @@ func (c *ClientWithResponses) GetEntriesInCommitWithResponse(ctx context.Context
 	return ParseGetEntriesInCommitResponse(rsp)
 }
 
-// LogoutWithResponse request returning *LogoutResponse
-func (c *ClientWithResponses) LogoutWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*LogoutResponse, error) {
-	rsp, err := c.Logout(ctx, reqEditors...)
+// GetSetupStateWithResponse request returning *GetSetupStateResponse
+func (c *ClientWithResponses) GetSetupStateWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetSetupStateResponse, error) {
+	rsp, err := c.GetSetupState(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseLogoutResponse(rsp)
+	return ParseGetSetupStateResponse(rsp)
 }
 
 // RegisterWithBodyWithResponse request with arbitrary body returning *RegisterResponse
@@ -3362,6 +3492,22 @@ func ParseLoginResponse(rsp *http.Response) (*LoginResponse, error) {
 		}
 		response.JSON200 = &dest
 
+	}
+
+	return response, nil
+}
+
+// ParseLogoutResponse parses an HTTP response from a LogoutWithResponse call
+func ParseLogoutResponse(rsp *http.Response) (*LogoutResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &LogoutResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
 	}
 
 	return response, nil
@@ -3577,17 +3723,27 @@ func ParseGetEntriesInCommitResponse(rsp *http.Response) (*GetEntriesInCommitRes
 	return response, nil
 }
 
-// ParseLogoutResponse parses an HTTP response from a LogoutWithResponse call
-func ParseLogoutResponse(rsp *http.Response) (*LogoutResponse, error) {
+// ParseGetSetupStateResponse parses an HTTP response from a GetSetupStateWithResponse call
+func ParseGetSetupStateResponse(rsp *http.Response) (*GetSetupStateResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &LogoutResponse{
+	response := &GetSetupStateResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SetupState
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	}
 
 	return response, nil
@@ -3948,6 +4104,9 @@ type ServerInterface interface {
 	// perform a login
 	// (POST /auth/login)
 	Login(ctx context.Context, w *JiaozifsResponse, r *http.Request, body LoginJSONRequestBody)
+	// perform a logout
+	// (POST /auth/logout)
+	Logout(ctx context.Context, w *JiaozifsResponse, r *http.Request)
 	// delete object. Missing objects will not return a NotFound error.
 	// (DELETE /object/{user}/{repository})
 	DeleteObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params DeleteObjectParams)
@@ -3978,9 +4137,9 @@ type ServerInterface interface {
 	// list entries in commit
 	// (GET /repos/{user}/{repository}/contents/)
 	GetEntriesInCommit(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params GetEntriesInCommitParams)
-	// perform a logout
-	// (POST /users/logout)
-	Logout(ctx context.Context, w *JiaozifsResponse, r *http.Request)
+	// check if jiaozifs setup
+	// (GET /setup)
+	GetSetupState(ctx context.Context, w *JiaozifsResponse, r *http.Request)
 	// perform user registration
 	// (POST /users/register)
 	Register(ctx context.Context, w *JiaozifsResponse, r *http.Request, body RegisterJSONRequestBody)
@@ -4035,6 +4194,12 @@ type Unimplemented struct{}
 // perform a login
 // (POST /auth/login)
 func (_ Unimplemented) Login(ctx context.Context, w *JiaozifsResponse, r *http.Request, body LoginJSONRequestBody) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// perform a logout
+// (POST /auth/logout)
+func (_ Unimplemented) Logout(ctx context.Context, w *JiaozifsResponse, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -4097,9 +4262,9 @@ func (_ Unimplemented) GetEntriesInCommit(ctx context.Context, w *JiaozifsRespon
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// perform a logout
-// (POST /users/logout)
-func (_ Unimplemented) Logout(ctx context.Context, w *JiaozifsResponse, r *http.Request) {
+// check if jiaozifs setup
+// (GET /setup)
+func (_ Unimplemented) GetSetupState(ctx context.Context, w *JiaozifsResponse, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -4218,6 +4383,27 @@ func (siw *ServerInterfaceWrapper) Login(w http.ResponseWriter, r *http.Request)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.Login(r.Context(), &JiaozifsResponse{w}, r, body)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// Logout operation middleware
+func (siw *ServerInterfaceWrapper) Logout(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.Logout(r.Context(), &JiaozifsResponse{w}, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -4922,18 +5108,12 @@ func (siw *ServerInterfaceWrapper) GetEntriesInCommit(w http.ResponseWriter, r *
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
-// Logout operation middleware
-func (siw *ServerInterfaceWrapper) Logout(w http.ResponseWriter, r *http.Request) {
+// GetSetupState operation middleware
+func (siw *ServerInterfaceWrapper) GetSetupState(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
-
-	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
-
-	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
-
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.Logout(r.Context(), &JiaozifsResponse{w}, r)
+		siw.Handler.GetSetupState(r.Context(), &JiaozifsResponse{w}, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -5695,6 +5875,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/auth/login", wrapper.Login)
 	})
 	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/auth/logout", wrapper.Logout)
+	})
+	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/object/{user}/{repository}", wrapper.DeleteObject)
 	})
 	r.Group(func(r chi.Router) {
@@ -5725,7 +5908,7 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/repos/{user}/{repository}/contents/", wrapper.GetEntriesInCommit)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/users/logout", wrapper.Logout)
+		r.Get(options.BaseURL+"/setup", wrapper.GetSetupState)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/users/register", wrapper.Register)
@@ -5779,63 +5962,70 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"BfOpF3f/CQAA//8NlYT7L1MAAA==",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

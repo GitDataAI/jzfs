@@ -4,6 +4,10 @@ import (
 	"context"
 	"net/http"
 
+	logging "github.com/ipfs/go-log/v2"
+
+	"github.com/jiaozifs/jiaozifs/utils"
+
 	"github.com/go-openapi/swag"
 	"github.com/jiaozifs/jiaozifs/config"
 
@@ -12,10 +16,13 @@ import (
 	"go.uber.org/fx"
 )
 
+var commonLog = logging.Logger("common")
+
 type CommonController struct {
 	fx.In
 
-	Config *config.Config
+	VersionChecker version.IChecker
+	Config         *config.Config
 }
 
 func (c CommonController) GetVersion(_ context.Context, w *api.JiaozifsResponse, _ *http.Request) {
@@ -25,9 +32,20 @@ func (c CommonController) GetVersion(_ context.Context, w *api.JiaozifsResponse,
 		return
 	}
 
+	latestVersionResp, err := c.VersionChecker.CheckLatestVersion()
+	if err == nil {
+		commonLog.Errorf("fetch latest version failed: %v", err)
+	}
+
+	var latestVersion *string
+	if latestVersionResp != nil {
+		latestVersion = utils.String(latestVersionResp.LatestVersion)
+	}
+
 	w.JSON(api.VersionResult{
-		ApiVersion: swagger.Info.Version,
-		Version:    version.UserVersion(),
+		ApiVersion:    swagger.Info.Version,
+		Version:       version.UserVersion(),
+		LatestVersion: latestVersion,
 	})
 }
 

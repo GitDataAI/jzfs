@@ -43,6 +43,7 @@ var versionCmd = &cobra.Command{
 
 		fmt.Println("Runtime Version ", okResp.JSON200.Version)
 		fmt.Println("Runtime API Version ", okResp.JSON200.ApiVersion)
+		fmt.Println("LatestVersion Version ", okResp.JSON200.LatestVersion)
 		return nil
 	},
 }

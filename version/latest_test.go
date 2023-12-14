@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/jiaozifs/jiaozifs/version"
 	"github.com/stretchr/testify/require"
-	"github.com/treeverse/lakefs/pkg/version"
 )
 
 type checkLatestVersionTestCase struct {
@@ -18,21 +18,21 @@ type checkLatestVersionTestCase struct {
 func TestCheckLatestVersion(t *testing.T) {
 	cases := []checkLatestVersionTestCase{
 		{
-			CurrentVersion:   version.Version,
+			CurrentVersion:   version.UserVersion(),
 			LatestVersion:    "1.0.0",
 			ExpectedOutdated: false,
 		},
 		{
-			CurrentVersion:   "0.0.1",
+			CurrentVersion:   "v0.0.1",
 			LatestVersion:    "1.2.3",
 			ExpectedOutdated: true,
 		},
 		{
-			CurrentVersion: "1.2.3",
+			CurrentVersion: "v1.2.3",
 			LatestVersion:  "1.2.3",
 		},
 		{
-			CurrentVersion: "1.2.3",
+			CurrentVersion: "v1.2.3",
 			LatestVersion:  "1.0.0",
 		},
 		{
@@ -42,7 +42,7 @@ func TestCheckLatestVersion(t *testing.T) {
 	}
 	for idx, tc := range cases {
 		t.Run(fmt.Sprintf("check_latest_version_%d", idx), func(t *testing.T) {
-			version.Version = tc.CurrentVersion
+			version.BuildVersion = tc.CurrentVersion
 			t.Logf("check_latest_version test case input %+v", tc)
 			latest, err := version.CheckLatestVersion(tc.LatestVersion)
 

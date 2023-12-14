@@ -387,7 +387,8 @@ components:
         api_version:
           type: string
           description: runtime version
-
+        latest_version:
+          type: string
     ObjectUserMetadata:
       type: object
       additionalProperties:
@@ -1156,7 +1157,6 @@ paths:
         403:
           description: Forbidden
 
-  /auth/login:
   /{user}/{reopsitory}/branches:
     parameters:
       - in: path

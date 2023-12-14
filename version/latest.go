@@ -14,11 +14,11 @@ import (
 const (
 	latestVersionTimeout = 10 * time.Second
 
-	DefaultReleasesURL = "https://github.com/treeverse/lakeFS/releases"
+	DefaultReleasesURL = "https://github.com/jiaozifs/jiaozifs/releases"
 	githubBaseURL      = "https://api.github.com/"
 
-	GithubRepoOwner = "treeverse"
-	GithubRepoName  = "lakeFS"
+	GithubRepoOwner = "jiaozifs"
+	GithubRepoName  = "jiaozifs"
 )
 
 var ErrHTTPStatus = errors.New("unexpected HTTP status code")
@@ -122,6 +122,14 @@ func CheckLatestVersion(targetVersion string) (*LatestVersionResponse, error) {
 		return nil, fmt.Errorf("tag parse %s: %w", targetVersion, err)
 	}
 
+	if IsVersionUnreleased() {
+		return &LatestVersionResponse{
+			Outdated:       false,
+			LatestVersion:  targetV.String(),
+			CurrentVersion: UserVersion(),
+		}, nil
+	}
+
 	currentV, err := goversion.NewVersion(UserVersion())
 	if err != nil {
 		return nil, fmt.Errorf("version parse %s: %w", UserVersion(), err)
@@ -130,6 +138,41 @@ func CheckLatestVersion(targetVersion string) (*LatestVersionResponse, error) {
 	return &LatestVersionResponse{
 		Outdated:       currentV.LessThan(targetV),
 		LatestVersion:  targetV.String(),
-		CurrentVersion: currentV.String(),
+		CurrentVersion: UserVersion(),
 	}, nil
+}
+
+type IChecker interface {
+	CheckLatestVersion() (*LatestVersionResponse, error)
+}
+
+type Checker struct {
+	Client         http.Client
+	Version        string
+	latestReleases Source
+}
+
+func NewVersionChecker() *Checker {
+	return &Checker{
+		Client:         http.Client{},
+		Version:        UserVersion(),
+		latestReleases: NewDefaultVersionSource(time.Hour),
+	}
+}
+
+// CheckLatestVersion will return the latest version of the current package compared to the current version
+func (a *Checker) CheckLatestVersion() (*LatestVersionResponse, error) {
+	if a == nil || a.latestReleases == nil {
+		return &LatestVersionResponse{}, nil
+	}
+
+	latest, err := a.latestReleases.FetchLatestVersion()
+	if err != nil {
+		return nil, err
+	}
+	result, err := CheckLatestVersion(latest)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }

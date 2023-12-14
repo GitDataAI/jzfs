@@ -6,7 +6,7 @@ GOGENERATE=$(GOCMD) generate
 all: build
 .PHONY: all
 
-ldflags=-X=github.com/jiaozofs/jiaozifs/version.CurrentCommit=+git.$(subst -,.,$(shell git describe --always --match=NeVeRmAtCh --dirty 2>/dev/null || git rev-parse --short HEAD 2>/dev/null))
+ldflags=-X=github.com/jiaozifs/jiaozifs/version.CurrentCommit=+git.$(subst -,.,$(shell git describe --always --match=NeVeRmAtCh --dirty 2>/dev/null || git rev-parse --short HEAD 2>/dev/null))
 ifneq ($(strip $(LDFLAGS)),)
 	ldflags+=-extldflags=$(LDFLAGS)
 endif
