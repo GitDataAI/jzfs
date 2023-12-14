@@ -52,6 +52,26 @@ func (gup *GetRefParams) SetName(name string) *GetRefParams {
 	return gup
 }
 
+type DeleteRefParams struct {
+	ID           uuid.UUID
+	RepositoryID uuid.UUID
+	Name         *string
+}
+
+func NewDeleteRefParams() *DeleteRefParams {
+	return &DeleteRefParams{}
+}
+
+func (gup *DeleteRefParams) SetRepositoryID(repositoryID uuid.UUID) *DeleteRefParams {
+	gup.RepositoryID = repositoryID
+	return gup
+}
+
+func (gup *DeleteRefParams) SetName(name string) *DeleteRefParams {
+	gup.Name = &name
+	return gup
+}
+
 type UpdateRefParams struct {
 	bun.BaseModel `bun:"table:refs"`
 	ID            uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
@@ -71,6 +91,9 @@ type IRefRepo interface {
 	Insert(ctx context.Context, repo *Ref) (*Ref, error)
 	UpdateByID(ctx context.Context, params *UpdateRefParams) error
 	Get(ctx context.Context, id *GetRefParams) (*Ref, error)
+
+	List(ctx context.Context, id uuid.UUID) ([]Ref, error)
+	Delete(ctx context.Context, params *DeleteRefParams) error
 }
 
 var _ IRefRepo = (*RefRepo)(nil)
@@ -108,6 +131,26 @@ func (r RefRepo) Get(ctx context.Context, params *GetRefParams) (*Ref, error) {
 	}
 
 	return repo, query.Limit(1).Scan(ctx, repo)
+}
+
+func (r RefRepo) List(ctx context.Context, id uuid.UUID) ([]Ref, error) {
+	var refs []Ref
+	return refs, r.db.NewSelect().Model(&refs).Where("id = ?", id).Scan(ctx)
+}
+
+func (r RefRepo) Delete(ctx context.Context, params *DeleteRefParams) error {
+	ref := &Ref{}
+	query := r.db.NewSelect().Model(ref)
+
+	if uuid.Nil != params.ID {
+		query = query.Where("id = ?", params.ID)
+	}
+
+	if uuid.Nil != params.RepositoryID && params.Name != nil {
+		query = query.Where("repository_id = ? AND name = ?", params.RepositoryID, *params.Name)
+	}
+
+	return query.Limit(1).Scan(ctx, ref)
 }
 
 func (r RefRepo) UpdateByID(ctx context.Context, updateModel *UpdateRefParams) error {
