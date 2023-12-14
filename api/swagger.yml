@@ -31,6 +31,53 @@ components:
       in: cookie
       name: internal_auth_session
   schemas:
+    LoginConfig:
+      type: object
+      properties:
+        RBAC:
+          description: |
+            RBAC will remain enabled on GUI if "external".  That only works
+            with an external auth service.
+          type: string
+          enum: [ simplified, external ]
+        login_url:
+          description: primary URL to use for login.
+          type: string
+        login_failed_message:
+          description: |
+            message to display to users who fail to login; a full sentence that is rendered
+            in HTML and may contain a link to a secondary login method
+          type: string
+        fallback_login_url:
+          description: secondary URL to offer users to use for login.
+          type: string
+        fallback_login_label:
+          description: label to place on fallback_login_url.
+          type: string
+        login_cookie_names:
+          description: cookie names used to store JWT
+          type: array
+          items:
+            type: string
+        logout_url:
+          description: URL to use for logging out.
+          type: string
+      required:
+        - login_url
+        - login_cookie_names
+        - logout_url
+
+    SetupState:
+      type: object
+      properties:
+        state:
+          type: string
+          enum: [ initialized, not_initialized ]
+        comm_prefs_missing:
+          type: boolean
+          description: true if the comm prefs are missing.
+        login_config:
+          $ref: "#/components/schemas/LoginConfig"
     BranchCreation:
       type: object
       required:
@@ -432,6 +479,25 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/VersionResult"
+
+  /setup:
+    get:
+      tags:
+        - common
+      operationId: getSetupState
+      summary: check if jiaozifs setup
+      security: []
+      responses:
+        200:
+          description: jiaozifs setup state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SetupState"
+        420:
+          description: too many requests
+        503:
+          description: service unavailable
 
   /object/{user}/{repository}:
     parameters:
@@ -1090,6 +1156,7 @@ paths:
         403:
           description: Forbidden
 
+  /auth/login:
   /{user}/{reopsitory}/branches:
     parameters:
       - in: path
@@ -1240,7 +1307,7 @@ paths:
         default:
           description: Internal Server Error
 
-  /users/logout:
+  /auth/logout:
     post:
       tags:
         - auth
