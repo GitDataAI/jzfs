@@ -11,7 +11,7 @@ var _ api.ServerInterface = (*APIController)(nil)
 type APIController struct {
 	fx.In
 
-	controller.VersionController
+	controller.CommonController
 	controller.ObjectController
 	controller.UserController
 	controller.WipController

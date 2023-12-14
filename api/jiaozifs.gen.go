@@ -29,6 +29,18 @@ const (
 	Jwt_tokenScopes   = "jwt_token.Scopes"
 )
 
+// Defines values for LoginConfigRBAC.
+const (
+	External   LoginConfigRBAC = "external"
+	Simplified LoginConfigRBAC = "simplified"
+)
+
+// Defines values for SetupStateState.
+const (
+	Initialized    SetupStateState = "initialized"
+	NotInitialized SetupStateState = "not_initialized"
+)
+
 // AuthenticationToken defines model for AuthenticationToken.
 type AuthenticationToken struct {
 	// Token a JWT token that could be used to authenticate requests
@@ -66,6 +78,36 @@ type CreateRepository struct {
 	Name        string  `json:"Name"`
 }
 
+// LoginConfig defines model for LoginConfig.
+type LoginConfig struct {
+	// RBAC RBAC will remain enabled on GUI if "external".  That only works
+	// with an external auth service.
+	RBAC *LoginConfigRBAC `json:"RBAC,omitempty"`
+
+	// FallbackLoginLabel label to place on fallback_login_url.
+	FallbackLoginLabel *string `json:"fallback_login_label,omitempty"`
+
+	// FallbackLoginUrl secondary URL to offer users to use for login.
+	FallbackLoginUrl *string `json:"fallback_login_url,omitempty"`
+
+	// LoginCookieNames cookie names used to store JWT
+	LoginCookieNames []string `json:"login_cookie_names"`
+
+	// LoginFailedMessage message to display to users who fail to login; a full sentence that is rendered
+	// in HTML and may contain a link to a secondary login method
+	LoginFailedMessage *string `json:"login_failed_message,omitempty"`
+
+	// LoginUrl primary URL to use for login.
+	LoginUrl string `json:"login_url"`
+
+	// LogoutUrl URL to use for logging out.
+	LogoutUrl string `json:"logout_url"`
+}
+
+// LoginConfigRBAC RBAC will remain enabled on GUI if "external".  That only works
+// with an external auth service.
+type LoginConfigRBAC string
+
 // ObjectStats defines model for ObjectStats.
 type ObjectStats struct {
 	Checksum string `json:"checksum"`
@@ -94,6 +136,17 @@ type Repository struct {
 	Name        string             `json:"Name"`
 	UpdatedAt   time.Time          `json:"UpdatedAt"`
 }
+
+// SetupState defines model for SetupState.
+type SetupState struct {
+	// CommPrefsMissing true if the comm prefs are missing.
+	CommPrefsMissing *bool            `json:"comm_prefs_missing,omitempty"`
+	LoginConfig      *LoginConfig     `json:"login_config,omitempty"`
+	State            *SetupStateState `json:"state,omitempty"`
+}
+
+// SetupStateState defines model for SetupState.State.
+type SetupStateState string
 
 // Signature defines model for Signature.
 type Signature struct {
@@ -153,6 +206,12 @@ type Wip struct {
 	RepositoryID *openapi_types.UUID `json:"RepositoryID,omitempty"`
 	State        *int                `json:"State,omitempty"`
 	UpdatedAt    *time.Time          `json:"UpdatedAt,omitempty"`
+}
+
+// LoginJSONBody defines parameters for Login.
+type LoginJSONBody struct {
+	Password string `json:"password"`
+	Username string `json:"username"`
 }
 
 // DeleteObjectParams defines parameters for DeleteObject.
@@ -234,12 +293,6 @@ type GetEntriesInCommitParams struct {
 	Ref *string `form:"ref,omitempty" json:"ref,omitempty"`
 }
 
-// LoginJSONBody defines parameters for Login.
-type LoginJSONBody struct {
-	Password string `json:"password"`
-	Username string `json:"username"`
-}
-
 // DeleteWipParams defines parameters for DeleteWip.
 type DeleteWipParams struct {
 	// RefName ref name
@@ -279,14 +332,14 @@ type CommitWipParams struct {
 	RefName string `form:"refName" json:"refName"`
 }
 
+// LoginJSONRequestBody defines body for Login for application/json ContentType.
+type LoginJSONRequestBody LoginJSONBody
+
 // UploadObjectMultipartRequestBody defines body for UploadObject for multipart/form-data ContentType.
 type UploadObjectMultipartRequestBody UploadObjectMultipartBody
 
 // UpdateRepositoryJSONRequestBody defines body for UpdateRepository for application/json ContentType.
 type UpdateRepositoryJSONRequestBody = UpdateRepository
-
-// LoginJSONRequestBody defines body for Login for application/json ContentType.
-type LoginJSONRequestBody LoginJSONBody
 
 // RegisterJSONRequestBody defines body for Register for application/json ContentType.
 type RegisterJSONRequestBody = UserRegisterInfo
@@ -367,6 +420,14 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// LoginWithBody request with any body
+	LoginWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	Login(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// Logout request
+	Logout(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// DeleteObject request
 	DeleteObject(ctx context.Context, user string, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -399,13 +460,8 @@ type ClientInterface interface {
 	// GetEntriesInCommit request
 	GetEntriesInCommit(ctx context.Context, user string, repository string, params *GetEntriesInCommitParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// LoginWithBody request with any body
-	LoginWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	Login(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// Logout request
-	Logout(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetSetupState request
+	GetSetupState(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// RegisterWithBody request with any body
 	RegisterWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -443,6 +499,42 @@ type ClientInterface interface {
 
 	// ListWip request
 	ListWip(ctx context.Context, repository string, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) LoginWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewLoginRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) Login(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewLoginRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) Logout(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewLogoutRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) DeleteObject(ctx context.Context, user string, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -577,32 +669,8 @@ func (c *Client) GetEntriesInCommit(ctx context.Context, user string, repository
 	return c.Client.Do(req)
 }
 
-func (c *Client) LoginWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewLoginRequestWithBody(c.Server, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) Login(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewLoginRequest(c.Server, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) Logout(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewLogoutRequest(c.Server)
+func (c *Client) GetSetupState(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetSetupStateRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -767,6 +835,73 @@ func (c *Client) ListWip(ctx context.Context, repository string, reqEditors ...R
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+// NewLoginRequest calls the generic Login builder with application/json body
+func NewLoginRequest(server string, body LoginJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewLoginRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewLoginRequestWithBody generates requests for Login with any type of body
+func NewLoginRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/auth/login")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewLogoutRequest generates requests for Logout
+func NewLogoutRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/auth/logout")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
 }
 
 // NewDeleteObjectRequest generates requests for DeleteObject
@@ -1472,19 +1607,8 @@ func NewGetEntriesInCommitRequest(server string, user string, repository string,
 	return req, nil
 }
 
-// NewLoginRequest calls the generic Login builder with application/json body
-func NewLoginRequest(server string, body LoginJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewLoginRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewLoginRequestWithBody generates requests for Login with any type of body
-func NewLoginRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+// NewGetSetupStateRequest generates requests for GetSetupState
+func NewGetSetupStateRequest(server string) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -1492,7 +1616,7 @@ func NewLoginRequestWithBody(server string, contentType string, body io.Reader) 
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/users/login")
+	operationPath := fmt.Sprintf("/setup_lakefs")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -1502,36 +1626,7 @@ func NewLoginRequestWithBody(server string, contentType string, body io.Reader) 
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewLogoutRequest generates requests for Logout
-func NewLogoutRequest(server string) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/users/logout")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -2081,6 +2176,14 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// LoginWithBodyWithResponse request with any body
+	LoginWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*LoginResponse, error)
+
+	LoginWithResponse(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*LoginResponse, error)
+
+	// LogoutWithResponse request
+	LogoutWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*LogoutResponse, error)
+
 	// DeleteObjectWithResponse request
 	DeleteObjectWithResponse(ctx context.Context, user string, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*DeleteObjectResponse, error)
 
@@ -2113,13 +2216,8 @@ type ClientWithResponsesInterface interface {
 	// GetEntriesInCommitWithResponse request
 	GetEntriesInCommitWithResponse(ctx context.Context, user string, repository string, params *GetEntriesInCommitParams, reqEditors ...RequestEditorFn) (*GetEntriesInCommitResponse, error)
 
-	// LoginWithBodyWithResponse request with any body
-	LoginWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*LoginResponse, error)
-
-	LoginWithResponse(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*LoginResponse, error)
-
-	// LogoutWithResponse request
-	LogoutWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*LogoutResponse, error)
+	// GetSetupStateWithResponse request
+	GetSetupStateWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetSetupStateResponse, error)
 
 	// RegisterWithBodyWithResponse request with any body
 	RegisterWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RegisterResponse, error)
@@ -2157,6 +2255,49 @@ type ClientWithResponsesInterface interface {
 
 	// ListWipWithResponse request
 	ListWipWithResponse(ctx context.Context, repository string, reqEditors ...RequestEditorFn) (*ListWipResponse, error)
+}
+
+type LoginResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *AuthenticationToken
+}
+
+// Status returns HTTPResponse.Status
+func (r LoginResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r LoginResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type LogoutResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r LogoutResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r LogoutResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 type DeleteObjectResponse struct {
@@ -2374,14 +2515,14 @@ func (r GetEntriesInCommitResponse) StatusCode() int {
 	return 0
 }
 
-type LoginResponse struct {
+type GetSetupStateResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *AuthenticationToken
+	JSON200      *SetupState
 }
 
 // Status returns HTTPResponse.Status
-func (r LoginResponse) Status() string {
+func (r GetSetupStateResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -2389,28 +2530,7 @@ func (r LoginResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r LoginResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type LogoutResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r LogoutResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r LogoutResponse) StatusCode() int {
+func (r GetSetupStateResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -2657,6 +2777,32 @@ func (r ListWipResponse) StatusCode() int {
 	return 0
 }
 
+// LoginWithBodyWithResponse request with arbitrary body returning *LoginResponse
+func (c *ClientWithResponses) LoginWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*LoginResponse, error) {
+	rsp, err := c.LoginWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseLoginResponse(rsp)
+}
+
+func (c *ClientWithResponses) LoginWithResponse(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*LoginResponse, error) {
+	rsp, err := c.Login(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseLoginResponse(rsp)
+}
+
+// LogoutWithResponse request returning *LogoutResponse
+func (c *ClientWithResponses) LogoutWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*LogoutResponse, error) {
+	rsp, err := c.Logout(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseLogoutResponse(rsp)
+}
+
 // DeleteObjectWithResponse request returning *DeleteObjectResponse
 func (c *ClientWithResponses) DeleteObjectWithResponse(ctx context.Context, user string, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*DeleteObjectResponse, error) {
 	rsp, err := c.DeleteObject(ctx, user, repository, params, reqEditors...)
@@ -2755,30 +2901,13 @@ func (c *ClientWithResponses) GetEntriesInCommitWithResponse(ctx context.Context
 	return ParseGetEntriesInCommitResponse(rsp)
 }
 
-// LoginWithBodyWithResponse request with arbitrary body returning *LoginResponse
-func (c *ClientWithResponses) LoginWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*LoginResponse, error) {
-	rsp, err := c.LoginWithBody(ctx, contentType, body, reqEditors...)
+// GetSetupStateWithResponse request returning *GetSetupStateResponse
+func (c *ClientWithResponses) GetSetupStateWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetSetupStateResponse, error) {
+	rsp, err := c.GetSetupState(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseLoginResponse(rsp)
-}
-
-func (c *ClientWithResponses) LoginWithResponse(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*LoginResponse, error) {
-	rsp, err := c.Login(ctx, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseLoginResponse(rsp)
-}
-
-// LogoutWithResponse request returning *LogoutResponse
-func (c *ClientWithResponses) LogoutWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*LogoutResponse, error) {
-	rsp, err := c.Logout(ctx, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseLogoutResponse(rsp)
+	return ParseGetSetupStateResponse(rsp)
 }
 
 // RegisterWithBodyWithResponse request with arbitrary body returning *RegisterResponse
@@ -2894,6 +3023,48 @@ func (c *ClientWithResponses) ListWipWithResponse(ctx context.Context, repositor
 		return nil, err
 	}
 	return ParseListWipResponse(rsp)
+}
+
+// ParseLoginResponse parses an HTTP response from a LoginWithResponse call
+func ParseLoginResponse(rsp *http.Response) (*LoginResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &LoginResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AuthenticationToken
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseLogoutResponse parses an HTTP response from a LogoutWithResponse call
+func ParseLogoutResponse(rsp *http.Response) (*LogoutResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &LogoutResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
 }
 
 // ParseDeleteObjectResponse parses an HTTP response from a DeleteObjectWithResponse call
@@ -3106,43 +3277,27 @@ func ParseGetEntriesInCommitResponse(rsp *http.Response) (*GetEntriesInCommitRes
 	return response, nil
 }
 
-// ParseLoginResponse parses an HTTP response from a LoginWithResponse call
-func ParseLoginResponse(rsp *http.Response) (*LoginResponse, error) {
+// ParseGetSetupStateResponse parses an HTTP response from a GetSetupStateWithResponse call
+func ParseGetSetupStateResponse(rsp *http.Response) (*GetSetupStateResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &LoginResponse{
+	response := &GetSetupStateResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest AuthenticationToken
+		var dest SetupState
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON200 = &dest
 
-	}
-
-	return response, nil
-}
-
-// ParseLogoutResponse parses an HTTP response from a LogoutWithResponse call
-func ParseLogoutResponse(rsp *http.Response) (*LogoutResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &LogoutResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
 	}
 
 	return response, nil
@@ -3416,6 +3571,12 @@ func ParseListWipResponse(rsp *http.Response) (*ListWipResponse, error) {
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// perform a login
+	// (POST /auth/login)
+	Login(ctx context.Context, w *JiaozifsResponse, r *http.Request, body LoginJSONRequestBody)
+	// perform a logout
+	// (POST /auth/logout)
+	Logout(ctx context.Context, w *JiaozifsResponse, r *http.Request)
 	// delete object. Missing objects will not return a NotFound error.
 	// (DELETE /object/{user}/{repository})
 	DeleteObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params DeleteObjectParams)
@@ -3446,12 +3607,9 @@ type ServerInterface interface {
 	// list entries in commit
 	// (GET /repos/{user}/{repository}/contents/)
 	GetEntriesInCommit(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params GetEntriesInCommitParams)
-	// perform a login
-	// (POST /users/login)
-	Login(ctx context.Context, w *JiaozifsResponse, r *http.Request, body LoginJSONRequestBody)
-	// perform a logout
-	// (POST /users/logout)
-	Logout(ctx context.Context, w *JiaozifsResponse, r *http.Request)
+	// check if the lakeFS installation is already set up
+	// (GET /setup_lakefs)
+	GetSetupState(ctx context.Context, w *JiaozifsResponse, r *http.Request)
 	// perform user registration
 	// (POST /users/register)
 	Register(ctx context.Context, w *JiaozifsResponse, r *http.Request, body RegisterJSONRequestBody)
@@ -3490,6 +3648,18 @@ type ServerInterface interface {
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
 
 type Unimplemented struct{}
+
+// perform a login
+// (POST /auth/login)
+func (_ Unimplemented) Login(ctx context.Context, w *JiaozifsResponse, r *http.Request, body LoginJSONRequestBody) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// perform a logout
+// (POST /auth/logout)
+func (_ Unimplemented) Logout(ctx context.Context, w *JiaozifsResponse, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
 
 // delete object. Missing objects will not return a NotFound error.
 // (DELETE /object/{user}/{repository})
@@ -3550,15 +3720,9 @@ func (_ Unimplemented) GetEntriesInCommit(ctx context.Context, w *JiaozifsRespon
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// perform a login
-// (POST /users/login)
-func (_ Unimplemented) Login(ctx context.Context, w *JiaozifsResponse, r *http.Request, body LoginJSONRequestBody) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// perform a logout
-// (POST /users/logout)
-func (_ Unimplemented) Logout(ctx context.Context, w *JiaozifsResponse, r *http.Request) {
+// check if the lakeFS installation is already set up
+// (GET /setup_lakefs)
+func (_ Unimplemented) GetSetupState(ctx context.Context, w *JiaozifsResponse, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -3636,6 +3800,52 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// Login operation middleware
+func (siw *ServerInterfaceWrapper) Login(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// ------------- Body parse -------------
+	var body LoginJSONRequestBody
+	parseBody := r.ContentLength != 0
+	if parseBody {
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, "Error unmarshalling body 'Login' as JSON", http.StatusBadRequest)
+			return
+		}
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.Login(r.Context(), &JiaozifsResponse{w}, r, body)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// Logout operation middleware
+func (siw *ServerInterfaceWrapper) Logout(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.Logout(r.Context(), &JiaozifsResponse{w}, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
 
 // DeleteObject operation middleware
 func (siw *ServerInterfaceWrapper) DeleteObject(w http.ResponseWriter, r *http.Request) {
@@ -4332,43 +4542,12 @@ func (siw *ServerInterfaceWrapper) GetEntriesInCommit(w http.ResponseWriter, r *
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
-// Login operation middleware
-func (siw *ServerInterfaceWrapper) Login(w http.ResponseWriter, r *http.Request) {
+// GetSetupState operation middleware
+func (siw *ServerInterfaceWrapper) GetSetupState(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// ------------- Body parse -------------
-	var body LoginJSONRequestBody
-	parseBody := r.ContentLength != 0
-	if parseBody {
-		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			http.Error(w, "Error unmarshalling body 'Login' as JSON", http.StatusBadRequest)
-			return
-		}
-	}
-
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.Login(r.Context(), &JiaozifsResponse{w}, r, body)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r.WithContext(ctx))
-}
-
-// Logout operation middleware
-func (siw *ServerInterfaceWrapper) Logout(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
-
-	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
-
-	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.Logout(r.Context(), &JiaozifsResponse{w}, r)
+		siw.Handler.GetSetupState(r.Context(), &JiaozifsResponse{w}, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -4935,6 +5114,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/auth/login", wrapper.Login)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/auth/logout", wrapper.Logout)
+	})
+	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/object/{user}/{repository}", wrapper.DeleteObject)
 	})
 	r.Group(func(r chi.Router) {
@@ -4965,10 +5150,7 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/repos/{user}/{repository}/contents/", wrapper.GetEntriesInCommit)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/users/login", wrapper.Login)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/users/logout", wrapper.Logout)
+		r.Get(options.BaseURL+"/setup_lakefs", wrapper.GetSetupState)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/users/register", wrapper.Register)
@@ -5010,56 +5192,64 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"dW+38sB869XdfwMAAP//t0YWRJNHAAA=",
+	"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",
+	"BYuplzf/DQAA//9QcQ5Cvk0AAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
