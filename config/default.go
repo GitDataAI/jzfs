@@ -29,5 +29,19 @@ var defaultCfg = Config{
 	},
 	Auth: AuthConfig{
 		SecretKey: []byte("THIS_MUST_BE_CHANGED_IN_PRODUCTION"),
+		UIConfig: struct {
+			RBAC               string   `mapstructure:"rbac"`
+			LoginURL           string   `mapstructure:"login_url"`
+			LoginFailedMessage string   `mapstructure:"login_failed_message"`
+			FallbackLoginURL   *string  `mapstructure:"fallback_login_url"`
+			FallbackLoginLabel *string  `mapstructure:"fallback_login_label"`
+			LoginCookieNames   []string `mapstructure:"login_cookie_names"`
+			LogoutURL          string   `mapstructure:"logout_url"`
+		}{RBAC: AuthRBACSimplified,
+			LoginURL:           "api/v1/login",
+			LoginFailedMessage: "",
+			LoginCookieNames:   nil,
+			LogoutURL:          "auth/logout",
+		},
 	},
 }

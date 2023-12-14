@@ -3,6 +3,8 @@ package cmd
 import (
 	"context"
 
+	"github.com/jiaozifs/jiaozifs/version"
+
 	"github.com/gorilla/sessions"
 	"github.com/jiaozifs/jiaozifs/auth"
 
@@ -45,6 +47,8 @@ var daemonCmd = &cobra.Command{
 		stop, err := fx_opt.New(cmd.Context(),
 			fx_opt.Override(new(context.Context), cmd.Context()),
 			fx_opt.Override(new(utils.Shutdown), shutdown),
+			//version
+			fx_opt.Override(new(version.IChecker), version.NewVersionChecker),
 			//config
 			fx_opt.Override(new(*config.Config), cfg),
 			fx_opt.Override(new(*config.APIConfig), &cfg.API),

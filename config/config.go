@@ -10,6 +10,11 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	AuthRBACSimplified = "simplified"
+	AuthRBACExternal   = "external"
+)
+
 type Config struct {
 	Path     string         `mapstructure:"config"`
 	Log      LogConfig      `mapstructure:"log"`
@@ -35,6 +40,16 @@ type DatabaseConfig struct {
 
 type AuthConfig struct {
 	SecretKey []byte `mapstructure:"secretKey"`
+
+	UIConfig struct {
+		RBAC               string   `mapstructure:"rbac"`
+		LoginURL           string   `mapstructure:"login_url"`
+		LoginFailedMessage string   `mapstructure:"login_failed_message"`
+		FallbackLoginURL   *string  `mapstructure:"fallback_login_url"`
+		FallbackLoginLabel *string  `mapstructure:"fallback_login_label"`
+		LoginCookieNames   []string `mapstructure:"login_cookie_names"`
+		LogoutURL          string   `mapstructure:"logout_url"`
+	} `mapstructure:"ui_config"`
 }
 
 func InitConfig() error {
