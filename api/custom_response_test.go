@@ -80,10 +80,10 @@ func TestJiaozifsResponse(t *testing.T) {
 		resp := NewMockResponseWriter(ctrl)
 		jzResp := JiaozifsResponse{resp}
 
-		resp.EXPECT().WriteHeader(http.StatusOK)
 		resp.EXPECT().Header().DoAndReturn(func() http.Header {
 			return make(http.Header)
 		})
+		resp.EXPECT().WriteHeader(http.StatusOK)
 		resp.EXPECT().Write([]byte("test"))
 		jzResp.String("test")
 	})
@@ -93,10 +93,10 @@ func TestJiaozifsResponse(t *testing.T) {
 		resp := NewMockResponseWriter(ctrl)
 		jzResp := JiaozifsResponse{resp}
 
-		resp.EXPECT().WriteHeader(http.StatusCreated)
 		resp.EXPECT().Header().DoAndReturn(func() http.Header {
 			return make(http.Header)
 		})
+		resp.EXPECT().WriteHeader(http.StatusCreated)
 		resp.EXPECT().Write([]byte("test"))
 		jzResp.String("test", http.StatusCreated)
 	})
@@ -106,12 +106,12 @@ func TestJiaozifsResponse(t *testing.T) {
 		resp := NewMockResponseWriter(ctrl)
 		jzResp := JiaozifsResponse{resp}
 
-		resp.EXPECT().WriteHeader(http.StatusOK)
 		resp.EXPECT().Header().DoAndReturn(func() http.Header {
 			return make(http.Header)
 		})
-
+		resp.EXPECT().WriteHeader(http.StatusOK)
 		resp.EXPECT().Write([]byte("{\"Name\":\"aa\"}\n"))
+
 		jzResp.JSON(struct {
 			Name string
 		}{Name: "aa"})

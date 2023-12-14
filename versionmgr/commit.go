@@ -1,17 +1,13 @@
 package versionmgr
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/go-git/go-git/v5/utils/merkletrie"
-	"github.com/go-git/go-git/v5/utils/merkletrie/noder"
 	"github.com/google/uuid"
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/jiaozifs/jiaozifs/models"
-	"github.com/jiaozifs/jiaozifs/models/filemode"
 	"github.com/jiaozifs/jiaozifs/utils/hash"
 )
 
@@ -100,35 +96,16 @@ func (commitOp *CommitOp) AddCommit(ctx context.Context, committer *models.User,
 
 // DiffCommit find file changes in two commit
 func (commitOp *CommitOp) DiffCommit(ctx context.Context, toCommitID hash.Hash) (*Changes, error) {
-	fromNode, err := NewTreeNode(ctx, models.TreeEntry{
-		Name: "",
-		Mode: filemode.Dir,
-		Hash: commitOp.commit.TreeHash,
-	}, commitOp.object)
+	workTree, err := NewWorkTree(ctx, commitOp.object, models.NewRootTreeEntry(commitOp.Commit().TreeHash))
 	if err != nil {
 		return nil, err
 	}
-
 	toCommit, err := commitOp.object.Commit(ctx, toCommitID)
 	if err != nil {
 		return nil, err
 	}
-	toNode, err := NewTreeNode(ctx, models.TreeEntry{
-		Name: "",
-		Mode: filemode.Dir,
-		Hash: toCommit.TreeHash,
-	}, commitOp.object)
-	if err != nil {
-		return nil, err
-	}
 
-	changes, err := merkletrie.DiffTreeContext(ctx, fromNode, toNode, func(a, b noder.Hasher) bool {
-		return bytes.Equal(a.Hash(), b.Hash())
-	})
-	if err != nil {
-		return nil, err
-	}
-	return newChanges(changes), nil
+	return workTree.Diff(ctx, toCommit.TreeHash)
 }
 
 // Merge implement merge like git, docs https://en.wikipedia.org/wiki/Merge_(version_control)

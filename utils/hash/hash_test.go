@@ -33,3 +33,14 @@ func TestHashJSON(t *testing.T) {
 		require.Equal(t, "", string(a.H))
 	})
 }
+
+func TestHexArrayOfHashes(t *testing.T) {
+	hashes := []Hash{Hash("aaaaaa"), Hash("bbbbbb"), Hash("cccccc"), Hash("dddddd")}
+	hexArray := HexArrayOfHashes(hashes...)
+	require.Equal(t, "616161616161", hexArray[0])
+	require.Equal(t, "636363636363", hexArray[2])
+
+	hashes2, err := HashesOfHexArray(hexArray...)
+	require.NoError(t, err)
+	require.Equal(t, hashes, hashes2)
+}

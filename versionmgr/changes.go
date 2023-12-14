@@ -8,9 +8,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/go-git/go-git/v5/utils/merkletrie/noder"
-
 	"github.com/go-git/go-git/v5/utils/merkletrie"
+	"github.com/go-git/go-git/v5/utils/merkletrie/noder"
 )
 
 var (

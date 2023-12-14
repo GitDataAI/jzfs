@@ -370,7 +370,7 @@ func makeRef(ctx context.Context, refRepo models.IRefRepo, name string, repoID u
 func makeWip(ctx context.Context, wipRepo models.IWipRepo, repoID, refID uuid.UUID, parentHash, curHash hash.Hash) (*models.WorkingInProcess, error) {
 	wip := &models.WorkingInProcess{
 		CurrentTree:  curHash,
-		BaseTree:     parentHash,
+		BaseCommit:   parentHash,
 		RefID:        refID,
 		RepositoryID: repoID,
 		CreatorID:    uuid.UUID{},

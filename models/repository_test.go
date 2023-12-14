@@ -44,7 +44,7 @@ func TestRepositoryRepo_Insert(t *testing.T) {
 	require.NotEqual(t, uuid.Nil, secRepo.ID)
 
 	//list
-	repos, err := repo.List(ctx, models.NewListRepoParam().SetCreatorID(secModel.CreatorID))
+	repos, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID))
 	require.NoError(t, err)
 	require.Len(t, repos, 2)
 

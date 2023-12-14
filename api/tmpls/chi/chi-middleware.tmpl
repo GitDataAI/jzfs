@@ -270,3 +270,9 @@ type TooManyValuesForParamError struct {
 func (e *TooManyValuesForParamError) Error() string {
     return fmt.Sprintf("Expected one value for %s, got %d", e.ParamName, e.Count)
 }
+
+
+// RawSpec hack to get swagger json for swagger ui
+func RawSpec() ([]byte, error) {
+	return rawSpec()
+}

@@ -51,7 +51,7 @@ func (treeEntry TreeEntry) Equal(other TreeEntry) bool {
 }
 
 type Blob struct {
-	bun.BaseModel `bun:"table:object"`
+	bun.BaseModel `bun:"table:objects"`
 	Hash          hash.Hash  `bun:"hash,pk,type:bytea"`
 	Type          ObjectType `bun:"type"`
 	Size          int64      `bun:"size"`
@@ -71,7 +71,7 @@ func (blob *Blob) Object() *Object {
 }
 
 type TreeNode struct {
-	bun.BaseModel `bun:"table:object"`
+	bun.BaseModel `bun:"table:objects"`
 	Hash          hash.Hash   `bun:"hash,pk,type:bytea"`
 	Type          ObjectType  `bun:"type"`
 	SubObjects    []TreeEntry `bun:"subObjs,type:jsonb"`
@@ -130,7 +130,7 @@ func (tn *TreeNode) GetHash() (hash.Hash, error) {
 }
 
 type Commit struct {
-	bun.BaseModel `bun:"table:object"`
+	bun.BaseModel `bun:"table:objects"`
 	Hash          hash.Hash  `bun:"hash,pk,type:bytea"`
 	Type          ObjectType `bun:"type"`
 	//////********commit********////////
@@ -234,7 +234,7 @@ func (commit *Commit) Object() *Object {
 }
 
 type Tag struct {
-	bun.BaseModel `bun:"table:object"`
+	bun.BaseModel `bun:"table:objects"`
 	Hash          hash.Hash  `bun:"hash,pk,type:bytea"`
 	Type          ObjectType `bun:"type"`
 	//////********commit********////////
@@ -268,7 +268,7 @@ func (tag *Tag) Object() *Object {
 }
 
 type Object struct {
-	bun.BaseModel `bun:"table:object"`
+	bun.BaseModel `bun:"table:objects"`
 	Hash          hash.Hash  `bun:"hash,pk,type:bytea"`
 	Type          ObjectType `bun:"type"`
 	Size          int64      `bun:"size"`

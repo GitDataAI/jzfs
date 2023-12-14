@@ -16,12 +16,14 @@ type JiaozifsResponse struct {
 // if not specific code, default code is 200. given code will
 // overwrite default code, if more than one code, the first one will be used.
 func (response *JiaozifsResponse) JSON(v any, code ...int) {
+	response.Header().Set("Content-Type", "application/json")
+
 	if len(code) == 0 {
 		response.WriteHeader(http.StatusOK)
 	} else {
 		response.WriteHeader(code[0])
 	}
-	response.Header().Set("Content-Type", "application/json")
+
 	err := json.NewEncoder(response.ResponseWriter).Encode(v)
 	if err != nil {
 		response.Error(err)
@@ -64,12 +66,13 @@ func (response *JiaozifsResponse) Error(err error) {
 // if not specific code, default code is 200. given code will
 // overwrite default code, if more than one code, the first one will be used.
 func (response *JiaozifsResponse) String(msg string, code ...int) {
+	response.Header().Set("Content-Type", "text/plain;charset=UTF-8")
+
 	if len(code) == 0 {
 		response.WriteHeader(http.StatusOK)
 	} else {
 		response.WriteHeader(code[0])
 	}
-	response.Header().Set("Content-Type", "text/plain;charset=UTF-8")
 	_, _ = response.Write([]byte(msg))
 }
 

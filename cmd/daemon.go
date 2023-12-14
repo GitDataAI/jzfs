@@ -3,6 +3,9 @@ package cmd
 import (
 	"context"
 
+	"github.com/gorilla/sessions"
+	"github.com/jiaozifs/jiaozifs/auth"
+
 	"github.com/jiaozifs/jiaozifs/block/params"
 
 	"github.com/jiaozifs/jiaozifs/block"
@@ -45,6 +48,7 @@ var daemonCmd = &cobra.Command{
 			//config
 			fx_opt.Override(new(*config.Config), cfg),
 			fx_opt.Override(new(*config.APIConfig), &cfg.API),
+			fx_opt.Override(new(*config.AuthConfig), &cfg.Auth),
 			fx_opt.Override(new(*config.DatabaseConfig), &cfg.Database),
 			fx_opt.Override(new(params.AdapterConfig), &cfg.Blockstore),
 			//blockstore
@@ -57,6 +61,7 @@ var daemonCmd = &cobra.Command{
 
 			fx_opt.Override(fx_opt.NextInvoke(), migrations.MigrateDatabase),
 			//api
+			fx_opt.Override(new(sessions.Store), auth.NewSessionStore),
 			fx_opt.Override(fx_opt.NextInvoke(), apiImpl.SetupAPI),
 		)
 		if err != nil {

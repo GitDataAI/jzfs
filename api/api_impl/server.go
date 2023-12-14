@@ -6,11 +6,21 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/MadAppGang/httplog"
+	"github.com/rs/cors"
+
+	"github.com/flowchartsman/swaggerui"
+
+	"github.com/gorilla/sessions"
+
+	"github.com/jiaozifs/jiaozifs/models"
+
+	"github.com/jiaozifs/jiaozifs/auth"
+
 	"net/url"
 
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/cors"
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/jiaozifs/jiaozifs/api"
 	"github.com/jiaozifs/jiaozifs/config"
@@ -22,7 +32,7 @@ var log = logging.Logger("rpc")
 
 const APIV1Prefix = "/api/v1"
 
-func SetupAPI(lc fx.Lifecycle, apiConfig *config.APIConfig, controller APIController) error {
+func SetupAPI(lc fx.Lifecycle, apiConfig *config.APIConfig, sessionStore sessions.Store, repo models.IRepo, controller APIController) error {
 	swagger, err := api.GetSwagger()
 	if err != nil {
 		return err
@@ -30,35 +40,41 @@ func SetupAPI(lc fx.Lifecycle, apiConfig *config.APIConfig, controller APIContro
 
 	// This is how you set up a basic chi router
 	r := chi.NewRouter()
-
+	r.Use(httplog.LoggerWithName("http"),
+		cors.New(cors.Options{
+			AllowedOrigins: []string{"*"},
+			AllowedMethods: []string{
+				http.MethodHead,
+				http.MethodGet,
+				http.MethodPost,
+				http.MethodPut,
+				http.MethodPatch,
+				http.MethodDelete,
+			},
+			AllowedHeaders:   []string{"*"},
+			AllowCredentials: true,
+		}).Handler,
+	)
 	// Use our validation middleware to check all requests against the
 	// OpenAPI schema.
-	r.Use(
-		cors.Handler(cors.Options{
-			// Basic CORS
-			// for more ideas, see: https://developer.github.com/v3/#cross-origin-resource-sharing
-
-			// AllowedOrigins:   []string{"https://foo.com"}, // Use this to allow specific origin hosts
-			AllowedOrigins: []string{"https://*", "http://*"},
-			// AllowOriginFunc:  func(r *http.Request, origin string) bool { return true },
-			AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-			AllowedHeaders:   []string{"*"},
-			ExposedHeaders:   []string{"*"},
-			AllowCredentials: false,
-			MaxAge:           300, // Maximum value not ignored by any of major browsers
-		}),
-
+	apiRouter := r.With(
 		middleware.OapiRequestValidatorWithOptions(swagger, &middleware.Options{
 			Options: openapi3filter.Options{
-				AuthenticationFunc: func(ctx context.Context, input *openapi3filter.AuthenticationInput) error {
-					return nil
-				},
+				AuthenticationFunc: openapi3filter.NoopAuthenticationFunc,
 			},
 			SilenceServersWarning: true,
 		}),
+		auth.Middleware(swagger, nil, nil, repo.UserRepo(), sessionStore),
 	)
 
-	api.HandlerFromMuxWithBaseURL(controller, r, APIV1Prefix)
+	raw, err := api.RawSpec()
+	if err != nil {
+		return err
+	}
+
+	api.HandlerFromMuxWithBaseURL(controller, apiRouter, APIV1Prefix)
+	r.Handle("/api/docs/*", http.StripPrefix("/api/docs", swaggerui.Handler(raw)))
+
 	url, err := url.Parse(apiConfig.Listen)
 	if err != nil {
 		return err

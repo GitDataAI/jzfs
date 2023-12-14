@@ -9,7 +9,7 @@ import (
 )
 
 type Repository struct {
-	bun.BaseModel `bun:"table:repository"`
+	bun.BaseModel `bun:"table:repositories"`
 	ID            uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
 	Name          string    `bun:"name,notnull"`
 	Description   *string   `bun:"description"`
@@ -50,7 +50,7 @@ type ListRepoParams struct {
 	CreatorID uuid.UUID
 }
 
-func NewListRepoParam() *ListRepoParams {
+func NewListRepoParams() *ListRepoParams {
 	return &ListRepoParams{}
 }
 
@@ -78,7 +78,7 @@ func (drp *DeleteRepoParams) SetID(id uuid.UUID) *DeleteRepoParams {
 }
 
 type UpdateRepoParams struct {
-	bun.BaseModel `bun:"table:repository"`
+	bun.BaseModel `bun:"table:repositories"`
 	ID            uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
 	Description   *string   `bun:"description"`
 }
