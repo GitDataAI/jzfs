@@ -80,6 +80,10 @@ func (bct BranchController) CreateBranch(ctx context.Context, w *api.JiaozifsRes
 	params.SetName(bc.Source)
 	params.SetRepositoryID(repository.ID)
 	ref, err := bct.Repo.RefRepo().Get(ctx, params)
+	if err != nil {
+		w.Error(err)
+		return
+	}
 	// Create branch
 	newRef := &models.Ref{
 		RepositoryID: repository.ID,
