@@ -38,6 +38,12 @@ type AuthenticationToken struct {
 	TokenExpiration *int64 `json:"token_expiration,omitempty"`
 }
 
+// BranchCreation defines model for BranchCreation.
+type BranchCreation struct {
+	Name   string `json:"name"`
+	Source string `json:"source"`
+}
+
 // Change defines model for Change.
 type Change struct {
 	Action   int     `json:"Action"`
@@ -83,6 +89,33 @@ type ObjectStats struct {
 
 // ObjectUserMetadata defines model for ObjectUserMetadata.
 type ObjectUserMetadata map[string]string
+
+// Pagination defines model for Pagination.
+type Pagination struct {
+	// HasMore Next page is available
+	HasMore bool `json:"has_more"`
+
+	// MaxPerPage Maximal number of entries per page
+	MaxPerPage int `json:"max_per_page"`
+
+	// NextOffset Token used to retrieve the next page
+	NextOffset string `json:"next_offset"`
+
+	// Results Number of values found in the results
+	Results int `json:"results"`
+}
+
+// Ref defines model for Ref.
+type Ref struct {
+	CommitHash string `json:"CommitHash"`
+	Name       string `json:"Name"`
+}
+
+// RefList defines model for RefList.
+type RefList struct {
+	Pagination Pagination `json:"pagination"`
+	Results    []Ref      `json:"results"`
+}
 
 // Repository defines model for Repository.
 type Repository struct {
@@ -153,6 +186,12 @@ type Wip struct {
 	RepositoryID *openapi_types.UUID `json:"RepositoryID,omitempty"`
 	State        *int                `json:"State,omitempty"`
 	UpdatedAt    *time.Time          `json:"UpdatedAt,omitempty"`
+}
+
+// LoginJSONBody defines parameters for Login.
+type LoginJSONBody struct {
+	Password string `json:"password"`
+	Username string `json:"username"`
 }
 
 // DeleteObjectParams defines parameters for DeleteObject.
@@ -234,12 +273,6 @@ type GetEntriesInCommitParams struct {
 	Ref *string `form:"ref,omitempty" json:"ref,omitempty"`
 }
 
-// LoginJSONBody defines parameters for Login.
-type LoginJSONBody struct {
-	Password string `json:"password"`
-	Username string `json:"username"`
-}
-
 // DeleteWipParams defines parameters for DeleteWip.
 type DeleteWipParams struct {
 	// RefName ref name
@@ -279,20 +312,23 @@ type CommitWipParams struct {
 	RefName string `form:"refName" json:"refName"`
 }
 
+// LoginJSONRequestBody defines body for Login for application/json ContentType.
+type LoginJSONRequestBody LoginJSONBody
+
 // UploadObjectMultipartRequestBody defines body for UploadObject for multipart/form-data ContentType.
 type UploadObjectMultipartRequestBody UploadObjectMultipartBody
 
 // UpdateRepositoryJSONRequestBody defines body for UpdateRepository for application/json ContentType.
 type UpdateRepositoryJSONRequestBody = UpdateRepository
 
-// LoginJSONRequestBody defines body for Login for application/json ContentType.
-type LoginJSONRequestBody LoginJSONBody
-
 // RegisterJSONRequestBody defines body for Register for application/json ContentType.
 type RegisterJSONRequestBody = UserRegisterInfo
 
 // CreateRepositoryJSONRequestBody defines body for CreateRepository for application/json ContentType.
 type CreateRepositoryJSONRequestBody = CreateRepository
+
+// CreateBranchJSONRequestBody defines body for CreateBranch for application/json ContentType.
+type CreateBranchJSONRequestBody = BranchCreation
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -367,6 +403,11 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// LoginWithBody request with any body
+	LoginWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	Login(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// DeleteObject request
 	DeleteObject(ctx context.Context, user string, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -398,11 +439,6 @@ type ClientInterface interface {
 
 	// GetEntriesInCommit request
 	GetEntriesInCommit(ctx context.Context, user string, repository string, params *GetEntriesInCommitParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// LoginWithBody request with any body
-	LoginWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	Login(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// Logout request
 	Logout(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -443,6 +479,44 @@ type ClientInterface interface {
 
 	// ListWip request
 	ListWip(ctx context.Context, repository string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListBranches request
+	ListBranches(ctx context.Context, user string, reopsitory string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateBranchWithBody request with any body
+	CreateBranchWithBody(ctx context.Context, user string, reopsitory string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateBranch(ctx context.Context, user string, reopsitory string, body CreateBranchJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteBranch request
+	DeleteBranch(ctx context.Context, user string, repository string, branch string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetBranch request
+	GetBranch(ctx context.Context, user string, repository string, branch string, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) LoginWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewLoginRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) Login(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewLoginRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) DeleteObject(ctx context.Context, user string, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -567,30 +641,6 @@ func (c *Client) GetCommitDiff(ctx context.Context, user string, repository stri
 
 func (c *Client) GetEntriesInCommit(ctx context.Context, user string, repository string, params *GetEntriesInCommitParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetEntriesInCommitRequest(c.Server, user, repository, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) LoginWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewLoginRequestWithBody(c.Server, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) Login(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewLoginRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -767,6 +817,106 @@ func (c *Client) ListWip(ctx context.Context, repository string, reqEditors ...R
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+func (c *Client) ListBranches(ctx context.Context, user string, reopsitory string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListBranchesRequest(c.Server, user, reopsitory)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateBranchWithBody(ctx context.Context, user string, reopsitory string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateBranchRequestWithBody(c.Server, user, reopsitory, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateBranch(ctx context.Context, user string, reopsitory string, body CreateBranchJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateBranchRequest(c.Server, user, reopsitory, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteBranch(ctx context.Context, user string, repository string, branch string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteBranchRequest(c.Server, user, repository, branch)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetBranch(ctx context.Context, user string, repository string, branch string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetBranchRequest(c.Server, user, repository, branch)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// NewLoginRequest calls the generic Login builder with application/json body
+func NewLoginRequest(server string, body LoginJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewLoginRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewLoginRequestWithBody generates requests for Login with any type of body
+func NewLoginRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/auth/login")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
 }
 
 // NewDeleteObjectRequest generates requests for DeleteObject
@@ -1472,46 +1622,6 @@ func NewGetEntriesInCommitRequest(server string, user string, repository string,
 	return req, nil
 }
 
-// NewLoginRequest calls the generic Login builder with application/json body
-func NewLoginRequest(server string, body LoginJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewLoginRequestWithBody(server, "application/json", bodyReader)
-}
-
-// NewLoginRequestWithBody generates requests for Login with any type of body
-func NewLoginRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/users/login")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
 // NewLogoutRequest generates requests for Logout
 func NewLogoutRequest(server string) (*http.Request, error) {
 	var err error
@@ -2038,6 +2148,197 @@ func NewListWipRequest(server string, repository string) (*http.Request, error) 
 	return req, nil
 }
 
+// NewListBranchesRequest generates requests for ListBranches
+func NewListBranchesRequest(server string, user string, reopsitory string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "user", runtime.ParamLocationPath, user)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "reopsitory", runtime.ParamLocationPath, reopsitory)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/%s/%s/branches", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateBranchRequest calls the generic CreateBranch builder with application/json body
+func NewCreateBranchRequest(server string, user string, reopsitory string, body CreateBranchJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateBranchRequestWithBody(server, user, reopsitory, "application/json", bodyReader)
+}
+
+// NewCreateBranchRequestWithBody generates requests for CreateBranch with any type of body
+func NewCreateBranchRequestWithBody(server string, user string, reopsitory string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "user", runtime.ParamLocationPath, user)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "reopsitory", runtime.ParamLocationPath, reopsitory)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/%s/%s/branches", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteBranchRequest generates requests for DeleteBranch
+func NewDeleteBranchRequest(server string, user string, repository string, branch string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "user", runtime.ParamLocationPath, user)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "branch", runtime.ParamLocationPath, branch)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/%s/%s/branches/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetBranchRequest generates requests for GetBranch
+func NewGetBranchRequest(server string, user string, repository string, branch string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "user", runtime.ParamLocationPath, user)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "branch", runtime.ParamLocationPath, branch)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/%s/%s/branches/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -2081,6 +2382,11 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// LoginWithBodyWithResponse request with any body
+	LoginWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*LoginResponse, error)
+
+	LoginWithResponse(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*LoginResponse, error)
+
 	// DeleteObjectWithResponse request
 	DeleteObjectWithResponse(ctx context.Context, user string, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*DeleteObjectResponse, error)
 
@@ -2112,11 +2418,6 @@ type ClientWithResponsesInterface interface {
 
 	// GetEntriesInCommitWithResponse request
 	GetEntriesInCommitWithResponse(ctx context.Context, user string, repository string, params *GetEntriesInCommitParams, reqEditors ...RequestEditorFn) (*GetEntriesInCommitResponse, error)
-
-	// LoginWithBodyWithResponse request with any body
-	LoginWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*LoginResponse, error)
-
-	LoginWithResponse(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*LoginResponse, error)
 
 	// LogoutWithResponse request
 	LogoutWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*LogoutResponse, error)
@@ -2157,6 +2458,42 @@ type ClientWithResponsesInterface interface {
 
 	// ListWipWithResponse request
 	ListWipWithResponse(ctx context.Context, repository string, reqEditors ...RequestEditorFn) (*ListWipResponse, error)
+
+	// ListBranchesWithResponse request
+	ListBranchesWithResponse(ctx context.Context, user string, reopsitory string, reqEditors ...RequestEditorFn) (*ListBranchesResponse, error)
+
+	// CreateBranchWithBodyWithResponse request with any body
+	CreateBranchWithBodyWithResponse(ctx context.Context, user string, reopsitory string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateBranchResponse, error)
+
+	CreateBranchWithResponse(ctx context.Context, user string, reopsitory string, body CreateBranchJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateBranchResponse, error)
+
+	// DeleteBranchWithResponse request
+	DeleteBranchWithResponse(ctx context.Context, user string, repository string, branch string, reqEditors ...RequestEditorFn) (*DeleteBranchResponse, error)
+
+	// GetBranchWithResponse request
+	GetBranchWithResponse(ctx context.Context, user string, repository string, branch string, reqEditors ...RequestEditorFn) (*GetBranchResponse, error)
+}
+
+type LoginResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *AuthenticationToken
+}
+
+// Status returns HTTPResponse.Status
+func (r LoginResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r LoginResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 type DeleteObjectResponse struct {
@@ -2368,28 +2705,6 @@ func (r GetEntriesInCommitResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetEntriesInCommitResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type LoginResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *AuthenticationToken
-}
-
-// Status returns HTTPResponse.Status
-func (r LoginResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r LoginResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -2657,6 +2972,109 @@ func (r ListWipResponse) StatusCode() int {
 	return 0
 }
 
+type ListBranchesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *RefList
+}
+
+// Status returns HTTPResponse.Status
+func (r ListBranchesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListBranchesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateBranchResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateBranchResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateBranchResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteBranchResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteBranchResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteBranchResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetBranchResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Ref
+}
+
+// Status returns HTTPResponse.Status
+func (r GetBranchResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetBranchResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// LoginWithBodyWithResponse request with arbitrary body returning *LoginResponse
+func (c *ClientWithResponses) LoginWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*LoginResponse, error) {
+	rsp, err := c.LoginWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseLoginResponse(rsp)
+}
+
+func (c *ClientWithResponses) LoginWithResponse(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*LoginResponse, error) {
+	rsp, err := c.Login(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseLoginResponse(rsp)
+}
+
 // DeleteObjectWithResponse request returning *DeleteObjectResponse
 func (c *ClientWithResponses) DeleteObjectWithResponse(ctx context.Context, user string, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*DeleteObjectResponse, error) {
 	rsp, err := c.DeleteObject(ctx, user, repository, params, reqEditors...)
@@ -2753,23 +3171,6 @@ func (c *ClientWithResponses) GetEntriesInCommitWithResponse(ctx context.Context
 		return nil, err
 	}
 	return ParseGetEntriesInCommitResponse(rsp)
-}
-
-// LoginWithBodyWithResponse request with arbitrary body returning *LoginResponse
-func (c *ClientWithResponses) LoginWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*LoginResponse, error) {
-	rsp, err := c.LoginWithBody(ctx, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseLoginResponse(rsp)
-}
-
-func (c *ClientWithResponses) LoginWithResponse(ctx context.Context, body LoginJSONRequestBody, reqEditors ...RequestEditorFn) (*LoginResponse, error) {
-	rsp, err := c.Login(ctx, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseLoginResponse(rsp)
 }
 
 // LogoutWithResponse request returning *LogoutResponse
@@ -2894,6 +3295,76 @@ func (c *ClientWithResponses) ListWipWithResponse(ctx context.Context, repositor
 		return nil, err
 	}
 	return ParseListWipResponse(rsp)
+}
+
+// ListBranchesWithResponse request returning *ListBranchesResponse
+func (c *ClientWithResponses) ListBranchesWithResponse(ctx context.Context, user string, reopsitory string, reqEditors ...RequestEditorFn) (*ListBranchesResponse, error) {
+	rsp, err := c.ListBranches(ctx, user, reopsitory, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListBranchesResponse(rsp)
+}
+
+// CreateBranchWithBodyWithResponse request with arbitrary body returning *CreateBranchResponse
+func (c *ClientWithResponses) CreateBranchWithBodyWithResponse(ctx context.Context, user string, reopsitory string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateBranchResponse, error) {
+	rsp, err := c.CreateBranchWithBody(ctx, user, reopsitory, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateBranchResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateBranchWithResponse(ctx context.Context, user string, reopsitory string, body CreateBranchJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateBranchResponse, error) {
+	rsp, err := c.CreateBranch(ctx, user, reopsitory, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateBranchResponse(rsp)
+}
+
+// DeleteBranchWithResponse request returning *DeleteBranchResponse
+func (c *ClientWithResponses) DeleteBranchWithResponse(ctx context.Context, user string, repository string, branch string, reqEditors ...RequestEditorFn) (*DeleteBranchResponse, error) {
+	rsp, err := c.DeleteBranch(ctx, user, repository, branch, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteBranchResponse(rsp)
+}
+
+// GetBranchWithResponse request returning *GetBranchResponse
+func (c *ClientWithResponses) GetBranchWithResponse(ctx context.Context, user string, repository string, branch string, reqEditors ...RequestEditorFn) (*GetBranchResponse, error) {
+	rsp, err := c.GetBranch(ctx, user, repository, branch, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetBranchResponse(rsp)
+}
+
+// ParseLoginResponse parses an HTTP response from a LoginWithResponse call
+func ParseLoginResponse(rsp *http.Response) (*LoginResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &LoginResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AuthenticationToken
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParseDeleteObjectResponse parses an HTTP response from a DeleteObjectWithResponse call
@@ -3096,32 +3567,6 @@ func ParseGetEntriesInCommitResponse(rsp *http.Response) (*GetEntriesInCommitRes
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest []TreeEntry
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseLoginResponse parses an HTTP response from a LoginWithResponse call
-func ParseLoginResponse(rsp *http.Response) (*LoginResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &LoginResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest AuthenticationToken
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -3414,8 +3859,95 @@ func ParseListWipResponse(rsp *http.Response) (*ListWipResponse, error) {
 	return response, nil
 }
 
+// ParseListBranchesResponse parses an HTTP response from a ListBranchesWithResponse call
+func ParseListBranchesResponse(rsp *http.Response) (*ListBranchesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListBranchesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest RefList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateBranchResponse parses an HTTP response from a CreateBranchWithResponse call
+func ParseCreateBranchResponse(rsp *http.Response) (*CreateBranchResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateBranchResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseDeleteBranchResponse parses an HTTP response from a DeleteBranchWithResponse call
+func ParseDeleteBranchResponse(rsp *http.Response) (*DeleteBranchResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteBranchResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseGetBranchResponse parses an HTTP response from a GetBranchWithResponse call
+func ParseGetBranchResponse(rsp *http.Response) (*GetBranchResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetBranchResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Ref
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// perform a login
+	// (POST /auth/login)
+	Login(ctx context.Context, w *JiaozifsResponse, r *http.Request, body LoginJSONRequestBody)
 	// delete object. Missing objects will not return a NotFound error.
 	// (DELETE /object/{user}/{repository})
 	DeleteObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params DeleteObjectParams)
@@ -3446,9 +3978,6 @@ type ServerInterface interface {
 	// list entries in commit
 	// (GET /repos/{user}/{repository}/contents/)
 	GetEntriesInCommit(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params GetEntriesInCommitParams)
-	// perform a login
-	// (POST /users/login)
-	Login(ctx context.Context, w *JiaozifsResponse, r *http.Request, body LoginJSONRequestBody)
 	// perform a logout
 	// (POST /users/logout)
 	Logout(ctx context.Context, w *JiaozifsResponse, r *http.Request)
@@ -3485,11 +4014,29 @@ type ServerInterface interface {
 	// list wip in specific project and user
 	// (GET /wip/{repository}/list)
 	ListWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, repository string)
+	// list branches
+	// (GET /{user}/{reopsitory}/branches)
+	ListBranches(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, reopsitory string)
+	// create branch
+	// (POST /{user}/{reopsitory}/branches)
+	CreateBranch(ctx context.Context, w *JiaozifsResponse, r *http.Request, body CreateBranchJSONRequestBody, user string, reopsitory string)
+	// delete branch
+	// (DELETE /{user}/{repository}/branches/{branch})
+	DeleteBranch(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, branch string)
+	// get branch
+	// (GET /{user}/{repository}/branches/{branch})
+	GetBranch(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, branch string)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
 
 type Unimplemented struct{}
+
+// perform a login
+// (POST /auth/login)
+func (_ Unimplemented) Login(ctx context.Context, w *JiaozifsResponse, r *http.Request, body LoginJSONRequestBody) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
 
 // delete object. Missing objects will not return a NotFound error.
 // (DELETE /object/{user}/{repository})
@@ -3547,12 +4094,6 @@ func (_ Unimplemented) GetCommitDiff(ctx context.Context, w *JiaozifsResponse, r
 // list entries in commit
 // (GET /repos/{user}/{repository}/contents/)
 func (_ Unimplemented) GetEntriesInCommit(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params GetEntriesInCommitParams) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// perform a login
-// (POST /users/login)
-func (_ Unimplemented) Login(ctx context.Context, w *JiaozifsResponse, r *http.Request, body LoginJSONRequestBody) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -3628,6 +4169,30 @@ func (_ Unimplemented) ListWip(ctx context.Context, w *JiaozifsResponse, r *http
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// list branches
+// (GET /{user}/{reopsitory}/branches)
+func (_ Unimplemented) ListBranches(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, reopsitory string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// create branch
+// (POST /{user}/{reopsitory}/branches)
+func (_ Unimplemented) CreateBranch(ctx context.Context, w *JiaozifsResponse, r *http.Request, body CreateBranchJSONRequestBody, user string, reopsitory string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// delete branch
+// (DELETE /{user}/{repository}/branches/{branch})
+func (_ Unimplemented) DeleteBranch(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, branch string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// get branch
+// (GET /{user}/{repository}/branches/{branch})
+func (_ Unimplemented) GetBranch(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, branch string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // ServerInterfaceWrapper converts contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler            ServerInterface
@@ -3636,6 +4201,31 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// Login operation middleware
+func (siw *ServerInterfaceWrapper) Login(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// ------------- Body parse -------------
+	var body LoginJSONRequestBody
+	parseBody := r.ContentLength != 0
+	if parseBody {
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, "Error unmarshalling body 'Login' as JSON", http.StatusBadRequest)
+			return
+		}
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.Login(r.Context(), &JiaozifsResponse{w}, r, body)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
 
 // DeleteObject operation middleware
 func (siw *ServerInterfaceWrapper) DeleteObject(w http.ResponseWriter, r *http.Request) {
@@ -4332,31 +4922,6 @@ func (siw *ServerInterfaceWrapper) GetEntriesInCommit(w http.ResponseWriter, r *
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
-// Login operation middleware
-func (siw *ServerInterfaceWrapper) Login(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	// ------------- Body parse -------------
-	var body LoginJSONRequestBody
-	parseBody := r.ContentLength != 0
-	if parseBody {
-		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			http.Error(w, "Error unmarshalling body 'Login' as JSON", http.StatusBadRequest)
-			return
-		}
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.Login(r.Context(), &JiaozifsResponse{w}, r, body)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r.WithContext(ctx))
-}
-
 // Logout operation middleware
 func (siw *ServerInterfaceWrapper) Logout(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -4816,6 +5381,198 @@ func (siw *ServerInterfaceWrapper) ListWip(w http.ResponseWriter, r *http.Reques
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
+// ListBranches operation middleware
+func (siw *ServerInterfaceWrapper) ListBranches(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "user" -------------
+	var user string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user", chi.URLParam(r, "user"), &user, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "reopsitory" -------------
+	var reopsitory string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "reopsitory", chi.URLParam(r, "reopsitory"), &reopsitory, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "reopsitory", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListBranches(r.Context(), &JiaozifsResponse{w}, r, user, reopsitory)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// CreateBranch operation middleware
+func (siw *ServerInterfaceWrapper) CreateBranch(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Body parse -------------
+	var body CreateBranchJSONRequestBody
+	parseBody := true
+	if parseBody {
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, "Error unmarshalling body 'CreateBranch' as JSON", http.StatusBadRequest)
+			return
+		}
+	}
+
+	// ------------- Path parameter "user" -------------
+	var user string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user", chi.URLParam(r, "user"), &user, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "reopsitory" -------------
+	var reopsitory string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "reopsitory", chi.URLParam(r, "reopsitory"), &reopsitory, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "reopsitory", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateBranch(r.Context(), &JiaozifsResponse{w}, r, body, user, reopsitory)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// DeleteBranch operation middleware
+func (siw *ServerInterfaceWrapper) DeleteBranch(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "user" -------------
+	var user string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user", chi.URLParam(r, "user"), &user, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "branch" -------------
+	var branch string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "branch", chi.URLParam(r, "branch"), &branch, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "branch", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteBranch(r.Context(), &JiaozifsResponse{w}, r, user, repository, branch)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// GetBranch operation middleware
+func (siw *ServerInterfaceWrapper) GetBranch(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "user" -------------
+	var user string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user", chi.URLParam(r, "user"), &user, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "branch" -------------
+	var branch string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "branch", chi.URLParam(r, "branch"), &branch, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "branch", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetBranch(r.Context(), &JiaozifsResponse{w}, r, user, repository, branch)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -4935,6 +5692,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/auth/login", wrapper.Login)
+	})
+	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/object/{user}/{repository}", wrapper.DeleteObject)
 	})
 	r.Group(func(r chi.Router) {
@@ -4963,9 +5723,6 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/repos/{user}/{repository}/contents/", wrapper.GetEntriesInCommit)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/users/login", wrapper.Login)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/users/logout", wrapper.Logout)
@@ -5003,6 +5760,18 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/wip/{repository}/list", wrapper.ListWip)
 	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/{user}/{reopsitory}/branches", wrapper.ListBranches)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/{user}/{reopsitory}/branches", wrapper.CreateBranch)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/{user}/{repository}/branches/{branch}", wrapper.DeleteBranch)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/{user}/{repository}/branches/{branch}", wrapper.GetBranch)
+	})
 
 	return r
 }
@@ -5010,56 +5779,63 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"dW+38sB869XdfwMAAP//t0YWRJNHAAA=",
+	"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",
+	"BfOpF3f/CQAA//8NlYT7L1MAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

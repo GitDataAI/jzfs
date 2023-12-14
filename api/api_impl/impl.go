@@ -17,4 +17,5 @@ type APIController struct {
 	controller.WipController
 	controller.CommitController
 	controller.RepositoryController
+	controller.BranchController
 }
