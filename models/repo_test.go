@@ -35,9 +35,9 @@ func TestRepoTransaction(t *testing.T) {
 	t.Run("transaction", func(t *testing.T) {
 		pgRepo := models.NewRepo(db)
 		err := pgRepo.Transaction(ctx, func(repo models.IRepo) error {
-			object := &models.Object{}
+			object := &models.FileTree{}
 			require.NoError(t, gofakeit.Struct(object))
-			_, err := repo.ObjectRepo().Insert(ctx, object)
+			_, err := repo.FileTreeRepo().Insert(ctx, object)
 			require.NoError(t, err)
 			return err
 		})

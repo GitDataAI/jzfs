@@ -6,9 +6,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiaozifs/jiaozifs/models/filemode"
+
 	"github.com/jiaozifs/jiaozifs/utils"
 
-	"github.com/go-git/go-git/v5/utils/merkletrie"
+	"github.com/jiaozifs/jiaozifs/versionmgr/merkletrie"
 
 	"github.com/google/uuid"
 
@@ -46,7 +48,7 @@ func TestCommitOpDiffCommit(t *testing.T) {
 1|b/e.txt |e1
 `
 
-	root1, err := makeRoot(ctx, repo.ObjectRepo(), EmptyDirEntry, testData1)
+	root1, err := makeRoot(ctx, repo.FileTreeRepo(), EmptyDirEntry, testData1)
 	require.NoError(t, err)
 	baseWip, err := makeWip(ctx, repo.WipRepo(), project.ID, baseRef.ID, EmptyRoot.Hash, root1.Hash)
 	require.NoError(t, err)
@@ -60,7 +62,7 @@ func TestCommitOpDiffCommit(t *testing.T) {
 3|b/e.txt |e2
 1|b/g.txt |g1
 `
-	root2, err := makeRoot(ctx, repo.ObjectRepo(), models.NewRootTreeEntry(root1.Hash), testData2)
+	root2, err := makeRoot(ctx, repo.FileTreeRepo(), models.NewRootTreeEntry(root1.Hash), testData2)
 	require.NoError(t, err)
 
 	secondWip, err := makeWip(ctx, repo.WipRepo(), project.ID, baseRef.ID, EmptyRoot.Hash, root2.Hash)
@@ -120,7 +122,7 @@ func TestCommitOpMerge(t *testing.T) {
 1|a.txt	|h1
 1|b/c.txt	|h2
 `
-	oriRoot, err := makeRoot(ctx, repo.ObjectRepo(), EmptyDirEntry, testData)
+	oriRoot, err := makeRoot(ctx, repo.FileTreeRepo(), EmptyDirEntry, testData)
 	require.NoError(t, err)
 	//base branch
 	baseRef, err := makeRef(ctx, repo.RefRepo(), "feat/base", project.ID, hash.Hash("a"))
@@ -138,7 +140,7 @@ func TestCommitOpMerge(t *testing.T) {
 3|a.txt	|h5 
 3|b/c.txt	|h2
 `
-	baseModify, err := makeRoot(ctx, repo.ObjectRepo(), models.NewRootTreeEntry(oriRoot.Hash), testData)
+	baseModify, err := makeRoot(ctx, repo.FileTreeRepo(), models.NewRootTreeEntry(oriRoot.Hash), testData)
 	require.NoError(t, err)
 
 	baseWip, err := makeWip(ctx, repo.WipRepo(), project.ID, baseRef.ID, oriRoot.Hash, baseModify.Hash)
@@ -157,7 +159,7 @@ func TestCommitOpMerge(t *testing.T) {
 3|a.txt	|h4
 3|b/c.txt	|h2
 `
-	mergeModify, err := makeRoot(ctx, repo.ObjectRepo(), models.NewRootTreeEntry(oriRoot.Hash), testData)
+	mergeModify, err := makeRoot(ctx, repo.FileTreeRepo(), models.NewRootTreeEntry(oriRoot.Hash), testData)
 	require.NoError(t, err)
 	mergeWip, err := makeWip(ctx, repo.WipRepo(), project.ID, mergeRef.ID, oriRoot.Hash, mergeModify.Hash)
 	require.NoError(t, err)
@@ -172,7 +174,7 @@ func TestCommitOpMerge(t *testing.T) {
 	testData = `
 1|x.txt	|h4
 `
-	rootF, err := makeRoot(ctx, repo.ObjectRepo(), models.NewRootTreeEntry(commitAB.TreeHash), testData)
+	rootF, err := makeRoot(ctx, repo.FileTreeRepo(), models.NewRootTreeEntry(commitAB.TreeHash), testData)
 	require.NoError(t, err)
 	mergeWipF, err := makeWip(ctx, repo.WipRepo(), project.ID, mergeRef.ID, commitAB.TreeHash, rootF.Hash)
 	require.NoError(t, err)
@@ -189,7 +191,7 @@ func TestCommitOpMerge(t *testing.T) {
 3|b/c.txt	|h6
 1|g/c.txt	|h7
 `
-	modifyD, err := makeRoot(ctx, repo.ObjectRepo(), models.NewRootTreeEntry(commitB.Commit().TreeHash), testData)
+	modifyD, err := makeRoot(ctx, repo.FileTreeRepo(), models.NewRootTreeEntry(commitB.Commit().TreeHash), testData)
 	require.NoError(t, err)
 	mergeWipD, err := makeWip(ctx, repo.WipRepo(), project.ID, mergeRef.ID, commitB.Commit().Hash, modifyD.Hash)
 	require.NoError(t, err)
@@ -199,7 +201,7 @@ func TestCommitOpMerge(t *testing.T) {
 	testData = `
 2|a.txt	|h4
 `
-	modifyE, err := makeRoot(ctx, repo.ObjectRepo(), models.NewRootTreeEntry(commitD.Commit().TreeHash), testData)
+	modifyE, err := makeRoot(ctx, repo.FileTreeRepo(), models.NewRootTreeEntry(commitD.Commit().TreeHash), testData)
 	require.NoError(t, err)
 	mergeWipE, err := makeWip(ctx, repo.WipRepo(), project.ID, mergeRef.ID, commitD.Commit().Hash, modifyE.Hash)
 	require.NoError(t, err)
@@ -248,7 +250,7 @@ func TestCrissCrossMerge(t *testing.T) {
 1|a.txt	|h1
 1|b.txt	|h2
 `
-	oriRoot, err := makeRoot(ctx, repo.ObjectRepo(), EmptyDirEntry, testData)
+	oriRoot, err := makeRoot(ctx, repo.FileTreeRepo(), EmptyDirEntry, testData)
 	require.NoError(t, err)
 	//base branch
 	baseRef, err := makeRef(ctx, repo.RefRepo(), "feat/base", project.ID, hash.Hash("a"))
@@ -265,7 +267,7 @@ func TestCrissCrossMerge(t *testing.T) {
 3|a.txt	|h1 
 3|b.txt	|h3
 `
-	baseModify, err := makeRoot(ctx, repo.ObjectRepo(), models.NewRootTreeEntry(oriRoot.Hash), testData)
+	baseModify, err := makeRoot(ctx, repo.FileTreeRepo(), models.NewRootTreeEntry(oriRoot.Hash), testData)
 	require.NoError(t, err)
 
 	baseWip, err := makeWip(ctx, repo.WipRepo(), project.ID, baseRef.ID, oriRoot.Hash, baseModify.Hash)
@@ -284,7 +286,7 @@ func TestCrissCrossMerge(t *testing.T) {
 3|a.txt	|h4 
 3|b.txt	|h2
 `
-	mergeModify, err := makeRoot(ctx, repo.ObjectRepo(), models.NewRootTreeEntry(oriRoot.Hash), testData)
+	mergeModify, err := makeRoot(ctx, repo.FileTreeRepo(), models.NewRootTreeEntry(oriRoot.Hash), testData)
 	require.NoError(t, err)
 	mergeWip, err := makeWip(ctx, repo.WipRepo(), project.ID, mergeRef.ID, oriRoot.Hash, mergeModify.Hash)
 	require.NoError(t, err)
@@ -329,10 +331,9 @@ func makeRepository(ctx context.Context, repoRepo models.IRepositoryRepo, name s
 }
 
 // nolint
-func makeCommit(ctx context.Context, commitRepo models.IObjectRepo, treeHash hash.Hash, msg string, parentsHash ...hash.Hash) (*models.Commit, error) {
+func makeCommit(ctx context.Context, commitRepo models.ICommitRepo, treeHash hash.Hash, msg string, parentsHash ...hash.Hash) (*models.Commit, error) {
 	commit := &models.Commit{
 		Hash: hash.Hash("mock"),
-		Type: models.CommitObject,
 		Author: models.Signature{
 			Name:  "admin",
 			Email: "xxx@gg.com",
@@ -347,11 +348,11 @@ func makeCommit(ctx context.Context, commitRepo models.IObjectRepo, treeHash has
 		ParentHashes: parentsHash,
 		Message:      msg,
 	}
-	obj, err := commitRepo.Insert(ctx, commit.Object())
+	obj, err := commitRepo.Insert(ctx, commit)
 	if err != nil {
 		return nil, err
 	}
-	return obj.Commit(), nil
+	return obj, nil
 }
 
 func makeRef(ctx context.Context, refRepo models.IRefRepo, name string, repoID uuid.UUID, commitHash hash.Hash) (*models.Ref, error) {
@@ -380,7 +381,7 @@ func makeWip(ctx context.Context, wipRepo models.IWipRepo, repoID, refID uuid.UU
 	return wipRepo.Insert(ctx, wip)
 }
 
-func makeRoot(ctx context.Context, objRepo models.IObjectRepo, treeEntry models.TreeEntry, testData string) (*models.TreeNode, error) {
+func makeRoot(ctx context.Context, objRepo models.IFileTreeRepo, treeEntry models.TreeEntry, testData string) (*models.TreeNode, error) {
 	lines := strings.Split(testData, "\n")
 	treeOp, err := NewWorkTree(ctx, objRepo, treeEntry)
 	if err != nil {
@@ -394,11 +395,12 @@ func makeRoot(ctx context.Context, objRepo models.IObjectRepo, treeEntry models.
 		fullPath := strings.TrimSpace(commitData[1])
 		fileHash := strings.TrimSpace(commitData[2])
 		blob := &models.Blob{
-			Hash:      hash.Hash(fileHash),
-			Type:      models.BlobObject,
-			Size:      10,
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
+			Hash:       hash.Hash(fileHash),
+			Type:       models.BlobObject,
+			Size:       10,
+			Properties: models.Property{Mode: filemode.Regular},
+			CreatedAt:  time.Now(),
+			UpdatedAt:  time.Now(),
 		}
 
 		if commitData[0] == "1" {

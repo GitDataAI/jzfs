@@ -157,15 +157,23 @@ components:
       required:
         - Hash
         - Type
+        - CheckSum
+        - Properties
         - Size
         - CreatedAt
         - UpdatedAt
       properties:
         Hash:
           type: string
+        CheckSum:
+          type: string
         Type:
           type: integer
           format: int8
+        Properties:
+          type: object
+          additionalProperties:
+            type: string
         Size:
           type: integer
           format: int64
@@ -208,9 +216,6 @@ components:
       properties:
         Hash:
           type: string
-        Type:
-          type: integer
-          format: int8
         Author:
           $ref: "#/components/schemas/Signature"
         Committer:
@@ -238,17 +243,27 @@ components:
           type: string
         Hash:
           type: string
-        Mode:
-          type: integer
-          format: uint32
+        IsDir:
+          type: boolean
     TreeNode:
       type: object
+      required:
+        - Hash
+        - Type
+        - Properties
+        - SubObjects
+        - CreatedAt
+        - UpdatedAt
       properties:
         Hash:
           type: string
         Type:
           type: integer
           format: int8
+        Properties:
+          type: object
+          additionalProperties:
+            type: string
         SubObjects:
           type: array
           items:

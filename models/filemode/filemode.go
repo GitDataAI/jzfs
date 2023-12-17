@@ -2,6 +2,7 @@ package filemode
 
 import (
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -187,4 +188,22 @@ func (m FileMode) ToOSFileMode() (os.FileMode, error) {
 	}
 
 	return os.FileMode(0), fmt.Errorf("malformed mode (%s)", m)
+}
+func (m *FileMode) UnmarshalJSON(data []byte) error { //nolint
+	var s string
+	err := json.Unmarshal(data, &s)
+	if err != nil {
+		return err
+	}
+
+	v, err := New(s)
+	if err != nil {
+		return err
+	}
+	*m = v
+	return nil
+}
+
+func (m FileMode) MarshalJSON() ([]byte, error) {
+	return json.Marshal(m.String())
 }

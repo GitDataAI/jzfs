@@ -186,14 +186,14 @@ func (repositoryCtl RepositoryController) GetCommitsInRepository(ctx context.Con
 		return
 	}
 
-	commit, err := repositoryCtl.Repo.ObjectRepo().Commit(ctx, ref.CommitHash)
+	commit, err := repositoryCtl.Repo.CommitRepo().Commit(ctx, ref.CommitHash)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
 	var commits []api.Commit
-	iter := versionmgr.NewCommitPreorderIter(versionmgr.NewCommitNode(ctx, commit, repositoryCtl.Repo.ObjectRepo()), nil, nil)
+	iter := versionmgr.NewCommitPreorderIter(versionmgr.NewCommitNode(ctx, commit, repositoryCtl.Repo.CommitRepo()), nil, nil)
 	for {
 		commit, err := iter.Next()
 		if err == nil {
@@ -215,7 +215,6 @@ func (repositoryCtl RepositoryController) GetCommitsInRepository(ctx context.Con
 				Message:      modelCommit.Message,
 				ParentHashes: hash.HexArrayOfHashes(modelCommit.ParentHashes...),
 				TreeHash:     modelCommit.TreeHash.Hex(),
-				Type:         int8(modelCommit.Type),
 				UpdatedAt:    modelCommit.UpdatedAt,
 			})
 			continue

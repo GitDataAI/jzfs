@@ -59,9 +59,23 @@ func init() {
 		if err != nil {
 			return err
 		}
-		//object
+		//commits
 		_, err = db.NewCreateTable().
-			Model((*models.Object)(nil)).
+			Model((*models.Commit)(nil)).
+			Exec(ctx)
+		if err != nil {
+			return err
+		}
+		//tags
+		_, err = db.NewCreateTable().
+			Model((*models.Tag)(nil)).
+			Exec(ctx)
+		if err != nil {
+			return err
+		}
+		//filetree
+		_, err = db.NewCreateTable().
+			Model((*models.FileTree)(nil)).
 			Exec(ctx)
 		if err != nil {
 			return err

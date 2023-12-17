@@ -33,13 +33,13 @@ func (commitCtl CommitController) GetEntriesInCommit(ctx context.Context, w *api
 		return
 	}
 
-	commit, err := commitCtl.Repo.ObjectRepo().Get(ctx, models.NewGetObjParams().SetHash(ref.CommitHash))
+	commit, err := commitCtl.Repo.CommitRepo().Commit(ctx, ref.CommitHash)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	workTree, err := versionmgr.NewWorkTree(ctx, commitCtl.Repo.ObjectRepo(), models.NewRootTreeEntry(commit.TreeHash))
+	workTree, err := versionmgr.NewWorkTree(ctx, commitCtl.Repo.FileTreeRepo(), models.NewRootTreeEntry(commit.TreeHash))
 	if err != nil {
 		w.Error(err)
 		return
@@ -75,7 +75,7 @@ func (commitCtl CommitController) GetCommitDiff(ctx context.Context, w *api.Jiao
 		return
 	}
 
-	bashCommit, err := commitCtl.Repo.ObjectRepo().Commit(ctx, bashCommitHash)
+	bashCommit, err := commitCtl.Repo.CommitRepo().Commit(ctx, bashCommitHash)
 	if err != nil {
 		w.Error(err)
 		return

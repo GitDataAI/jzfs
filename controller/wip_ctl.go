@@ -46,7 +46,7 @@ func (wipCtl WipController) CreateWip(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
-	baseCommit, err := wipCtl.Repo.ObjectRepo().Commit(ctx, ref.CommitHash)
+	baseCommit, err := wipCtl.Repo.CommitRepo().Commit(ctx, ref.CommitHash)
 	if err != nil {
 		w.Error(err)
 		return
@@ -144,7 +144,7 @@ func (wipCtl WipController) CommitWip(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
-	commit, err := wipCtl.Repo.ObjectRepo().Commit(ctx, ref.CommitHash)
+	commit, err := wipCtl.Repo.CommitRepo().Commit(ctx, ref.CommitHash)
 	if err != nil {
 		w.Error(err)
 		return
@@ -248,13 +248,13 @@ func (wipCtl WipController) GetWipChanges(ctx context.Context, w *api.JiaozifsRe
 		return
 	}
 
-	commit, err := wipCtl.Repo.ObjectRepo().Commit(ctx, wip.BaseCommit)
+	commit, err := wipCtl.Repo.CommitRepo().Commit(ctx, wip.BaseCommit)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	workTree, err := versionmgr.NewWorkTree(ctx, wipCtl.Repo.ObjectRepo(), models.NewRootTreeEntry(commit.TreeHash))
+	workTree, err := versionmgr.NewWorkTree(ctx, wipCtl.Repo.FileTreeRepo(), models.NewRootTreeEntry(commit.TreeHash))
 	if err != nil {
 		w.Error(err)
 		return
