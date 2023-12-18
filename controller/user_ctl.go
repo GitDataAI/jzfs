@@ -2,8 +2,9 @@ package controller
 
 import (
 	"context"
-	"fmt"
 	"net/http"
+
+	openapitypes "github.com/oapi-codegen/runtime/types"
 
 	logging "github.com/ipfs/go-log/v2"
 
@@ -71,25 +72,26 @@ func (userCtl UserController) Register(ctx context.Context, w *api.JiaozifsRespo
 	w.OK()
 }
 
-func (userCtl UserController) GetUserInfo(ctx context.Context, w *api.JiaozifsResponse, r *http.Request) {
+func (userCtl UserController) GetUserInfo(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request) {
 	// Get token from Header
 	user, err := auth.GetUser(ctx)
 	if err != nil {
 		w.Error(err)
 		return
 	}
-	fmt.Println(user)
-	tokenString := r.Header.Get(AuthHeader)
-	userInfo := &auth.UserInfo{Token: tokenString}
 
 	// perform GetUserInfo
-	usrInfo, err := userInfo.UserProfile(ctx, userCtl.Repo.UserRepo(), userCtl.Config)
-	if err != nil {
-		w.Error(err)
-		return
+	userInfo := api.UserInfo{
+		CreatedAt:       &user.CreatedAt,
+		CurrentSignInAt: &user.CurrentSignInAt,
+		CurrentSignInIP: &user.CurrentSignInIP,
+		Email:           openapitypes.Email(user.Email),
+		LastSignInAt:    &user.LastSignInAt,
+		LastSignInIP:    &user.LastSignInIP,
+		UpdateAt:        &user.UpdatedAt,
+		Username:        user.Name,
 	}
-
-	w.JSON(usrInfo)
+	w.JSON(userInfo)
 }
 
 func (userCtl UserController) Logout(_ context.Context, w *api.JiaozifsResponse, r *http.Request) {

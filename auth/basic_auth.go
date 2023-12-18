@@ -7,9 +7,6 @@ import (
 
 	"github.com/jiaozifs/jiaozifs/config"
 
-	"github.com/golang-jwt/jwt"
-	openapitypes "github.com/oapi-codegen/runtime/types"
-
 	"github.com/go-openapi/swag"
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/jiaozifs/jiaozifs/api"
@@ -100,47 +97,4 @@ func (r *Register) Register(ctx context.Context, repo models.IUserRepo) error {
 
 	log.Infof("%s registration success", insertUser.Name)
 	return nil
-}
-
-type UserInfo struct {
-	Token string `json:"token"`
-}
-
-func (u *UserInfo) UserProfile(ctx context.Context, repo models.IUserRepo, config *config.AuthConfig) (api.UserInfo, error) {
-	userInfo := api.UserInfo{}
-	// Parse JWT Token
-	token, err := jwt.Parse(u.Token, func(token *jwt.Token) (interface{}, error) {
-		return config.SecretKey, nil
-	})
-	if err != nil {
-		return userInfo, fmt.Errorf("cannot parse token %s %w", token.Raw, err)
-	}
-	// check token validity
-	if !token.Valid {
-		return userInfo, fmt.Errorf("token %s invalid %w", token.Raw, ErrInvalidToken)
-	}
-	// Get username by token
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		return userInfo, ErrExtractClaims
-	}
-	username := claims["sub"].(string)
-
-	// Get user by username
-	user, err := repo.Get(ctx, models.NewGetUserParams().SetName(username))
-	if err != nil {
-		return userInfo, err
-	}
-	userInfo = api.UserInfo{
-		CreatedAt:       &user.CreatedAt,
-		CurrentSignInAt: &user.CurrentSignInAt,
-		CurrentSignInIP: &user.CurrentSignInIP,
-		Email:           openapitypes.Email(user.Email),
-		LastSignInAt:    &user.LastSignInAt,
-		LastSignInIP:    &user.LastSignInIP,
-		UpdateAt:        &user.UpdatedAt,
-		Username:        user.Name,
-	}
-	log.Info("get user profile success")
-	return userInfo, nil
 }

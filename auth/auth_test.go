@@ -42,9 +42,4 @@ func TestLogin_Success(t *testing.T) {
 	require.NoError(t, err, "Login should not return an error")
 	require.NotEmpty(t, token.Token, "Token should not be empty")
 	require.NotNil(t, token.TokenExpiration, "Token expiration should not be nil")
-	// profile
-	userInfo := &UserInfo{Token: token.Token}
-	profile, err := userInfo.UserProfile(ctx, mockRepo, mockConfig)
-	require.NoError(t, err)
-	require.NotEmpty(t, profile)
 }
