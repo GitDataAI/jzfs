@@ -12,21 +12,19 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/jiaozifs/jiaozifs/block"
-
 	"github.com/jiaozifs/jiaozifs/block/mem"
 	"github.com/jiaozifs/jiaozifs/models"
 
 	"github.com/jiaozifs/jiaozifs/testhelper"
 )
 
-func TestTreeOpWriteBlob(t *testing.T) {
+func TestTreeWriteBlob(t *testing.T) {
 	ctx := context.Background()
 	postgres, _, db := testhelper.SetupDatabase(ctx, t)
 	defer postgres.Stop() //nolint
 
 	adapter := mem.New(ctx)
-	objRepo := models.NewObjectRepo(db)
+	objRepo := models.NewFileTree(db)
 
 	workTree, err := NewWorkTree(ctx, objRepo, EmptyDirEntry)
 	require.NoError(t, err)
@@ -34,10 +32,11 @@ func TestTreeOpWriteBlob(t *testing.T) {
 	binary := []byte("Build simple, secure, scalable systems with Go")
 	bLen := int64(len(binary))
 	r := bytes.NewReader(binary)
-	blob, err := workTree.WriteBlob(ctx, adapter, r, bLen, block.PutOpts{})
+	blob, err := workTree.WriteBlob(ctx, adapter, r, bLen, models.DefaultLeafProperty())
 	require.NoError(t, err)
 	assert.Equal(t, bLen, blob.Size)
-	assert.Equal(t, "f3b39786b86a96372589aa1166966643", blob.Hash.Hex())
+	assert.Equal(t, "99b91d4c517d0cded9506be9298b8d02", blob.Hash.Hex())
+	assert.Equal(t, "f3b39786b86a96372589aa1166966643", blob.CheckSum.Hex())
 
 	reader, err := workTree.ReadBlob(ctx, adapter, blob, nil)
 	require.NoError(t, err)
@@ -46,13 +45,13 @@ func TestTreeOpWriteBlob(t *testing.T) {
 	require.Equal(t, binary, content)
 }
 
-func TestTreeOpTreeOp(t *testing.T) {
+func TestWorkTreeTreeOp(t *testing.T) {
 	ctx := context.Background()
 	postgres, _, db := testhelper.SetupDatabase(ctx, t)
 	defer postgres.Stop() //nolint
 
 	adapter := mem.New(ctx)
-	objRepo := models.NewObjectRepo(db)
+	objRepo := models.NewFileTree(db)
 
 	workTree, err := NewWorkTree(ctx, objRepo, EmptyDirEntry)
 	require.NoError(t, err)
@@ -60,12 +59,12 @@ func TestTreeOpTreeOp(t *testing.T) {
 	binary := []byte("Build simple, secure, scalable systems with Go")
 	bLen := int64(len(binary))
 	r := bytes.NewReader(binary)
-	blob, err := workTree.WriteBlob(ctx, adapter, r, bLen, block.PutOpts{})
+	blob, err := workTree.WriteBlob(ctx, adapter, r, bLen, models.DefaultLeafProperty())
 	require.NoError(t, err)
 
 	err = workTree.AddLeaf(ctx, "a/b/c.txt", blob)
 	require.NoError(t, err)
-	require.Equal(t, "3bf643c30934d121ee45d413b165f135", hash.Hash(workTree.Root().Hash()).Hex())
+	require.Equal(t, "faf499deee898c13e4ae4a2e6c4230fb", hash.Hash(workTree.Root().Hash()).Hex())
 
 	//add again expect get an error
 	err = workTree.AddLeaf(ctx, "a/b/c.txt", blob)
@@ -75,12 +74,12 @@ func TestTreeOpTreeOp(t *testing.T) {
 	binary = []byte(`“At the time, no single team member knew Go, but within a month, everyone was writing in Go and we were building out the endpoints. ”`)
 	bLen = int64(len(binary))
 	r = bytes.NewReader(binary)
-	blob, err = workTree.WriteBlob(ctx, adapter, r, bLen, block.PutOpts{})
+	blob, err = workTree.WriteBlob(ctx, adapter, r, bLen, models.DefaultLeafProperty())
 	require.NoError(t, err)
 
 	err = workTree.ReplaceLeaf(ctx, "a/b/c.txt", blob)
 	require.NoError(t, err)
-	require.Equal(t, "8856b15f0f6c7ad21bfabe812df69e83", hash.Hash(workTree.Root().Hash()).Hex())
+	require.Equal(t, "d08bf786f0b4375dd6edd880859dc47a", hash.Hash(workTree.Root().Hash()).Hex())
 
 	{
 		//find blob
@@ -93,7 +92,7 @@ func TestTreeOpTreeOp(t *testing.T) {
 		//add another branch
 		err = workTree.AddLeaf(ctx, "a/b/d.txt", blob)
 		require.NoError(t, err)
-		require.Equal(t, "225f0ca6233681a441969922a7425db2", hash.Hash(workTree.Root().Hash()).Hex())
+		require.Equal(t, "b37d803cc5431587ef6f6e4d3aa8ada4", hash.Hash(workTree.Root().Hash()).Hex())
 
 	}
 
@@ -132,7 +131,7 @@ func TestTreeOpTreeOp(t *testing.T) {
 
 	err = workTree.RemoveEntry(ctx, "a/b/c.txt")
 	require.NoError(t, err)
-	require.Equal(t, "f90e2d306ad172824fa171b9e0d9e133", hash.Hash(workTree.Root().Hash()).Hex())
+	require.Equal(t, "291af4419b76a09b60aa0cf911c72d06", hash.Hash(workTree.Root().Hash()).Hex())
 
 	err = workTree.RemoveEntry(ctx, "a/b/d.txt")
 	require.NoError(t, err)
@@ -145,34 +144,37 @@ func TestRemoveEntry(t *testing.T) {
 	defer postgres.Stop() //nolint
 
 	adapter := mem.New(ctx)
-	objRepo := models.NewObjectRepo(db)
+	objRepo := models.NewFileTree(db)
 
-	treeOp, err := NewWorkTree(ctx, objRepo, EmptyDirEntry)
+	workTree, err := NewWorkTree(ctx, objRepo, EmptyDirEntry)
 	require.NoError(t, err)
 
 	binary := []byte("Build simple, secure, scalable systems with Go")
 	bLen := int64(len(binary))
 	r := bytes.NewReader(binary)
-	blob, err := treeOp.WriteBlob(ctx, adapter, r, bLen, block.PutOpts{})
+	blob, err := workTree.WriteBlob(ctx, adapter, r, bLen, models.DefaultLeafProperty())
 	require.NoError(t, err)
 
-	err = treeOp.AddLeaf(ctx, "a/b/c.txt", blob)
+	err = workTree.AddLeaf(ctx, "a/b/c.txt", blob)
 	require.NoError(t, err)
-	require.Equal(t, "3bf643c30934d121ee45d413b165f135", hash.Hash(treeOp.Root().Hash()).Hex())
+	require.Equal(t, "faf499deee898c13e4ae4a2e6c4230fb", hash.Hash(workTree.Root().Hash()).Hex())
 
 	//update path
 	binary = []byte(`“At the time, no single team member knew Go, but within a month, everyone was writing in Go and we were building out the endpoints. ”`)
 	bLen = int64(len(binary))
 	r = bytes.NewReader(binary)
-	blob, err = treeOp.WriteBlob(ctx, adapter, r, bLen, block.PutOpts{})
+	blob, err = workTree.WriteBlob(ctx, adapter, r, bLen, models.DefaultLeafProperty())
 	require.NoError(t, err)
 
 	//add another branch
-	err = treeOp.AddLeaf(ctx, "a/b/d.txt", blob)
+	err = workTree.AddLeaf(ctx, "a/b/d.txt", blob)
 	require.NoError(t, err)
-	require.Equal(t, "81173b4a85cc5643feacd38b975e61a1", hash.Hash(treeOp.Root().Hash()).Hex())
+	require.Equal(t, "77e60b4b1f28022818a3b97dfe064a3e", hash.Hash(workTree.Root().Hash()).Hex())
 
-	err = treeOp.RemoveEntry(ctx, "a/b")
+	err = workTree.RemoveEntry(ctx, "a/b")
 	require.NoError(t, err)
-	require.Equal(t, "", hash.Hash(treeOp.Root().Hash()).Hex())
+	require.Equal(t, "", hash.Hash(workTree.Root().Hash()).Hex())
+	entries, err := workTree.Ls(ctx, "")
+	require.NoError(t, err)
+	require.Len(t, entries, 0)
 }

@@ -61,13 +61,13 @@ func (oct ObjectController) DeleteObject(ctx context.Context, w *api.JiaozifsRes
 		w.Error(err)
 		return
 	}
-	commit, err := oct.Repo.ObjectRepo().Commit(ctx, ref.CommitHash)
+	commit, err := oct.Repo.CommitRepo().Commit(ctx, ref.CommitHash)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	workTree, err := versionmgr.NewWorkTree(ctx, oct.Repo.ObjectRepo(), models.NewRootTreeEntry(commit.TreeHash))
+	workTree, err := versionmgr.NewWorkTree(ctx, oct.Repo.FileTreeRepo(), models.NewRootTreeEntry(commit.TreeHash))
 	if err != nil {
 		w.Error(err)
 		return
@@ -111,13 +111,13 @@ func (oct ObjectController) GetObject(ctx context.Context, w *api.JiaozifsRespon
 		w.Error(err)
 		return
 	}
-	commit, err := oct.Repo.ObjectRepo().Commit(ctx, ref.CommitHash)
+	commit, err := oct.Repo.CommitRepo().Commit(ctx, ref.CommitHash)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	workTree, err := versionmgr.NewWorkTree(ctx, oct.Repo.ObjectRepo(), models.NewRootTreeEntry(commit.TreeHash))
+	workTree, err := versionmgr.NewWorkTree(ctx, oct.Repo.FileTreeRepo(), models.NewRootTreeEntry(commit.TreeHash))
 	if err != nil {
 		w.Error(err)
 		return
@@ -195,14 +195,14 @@ func (oct ObjectController) HeadObject(ctx context.Context, w *api.JiaozifsRespo
 		return
 	}
 
-	commit, err := oct.Repo.ObjectRepo().Commit(ctx, ref.CommitHash)
+	commit, err := oct.Repo.CommitRepo().Commit(ctx, ref.CommitHash)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	objRepo := oct.Repo.ObjectRepo()
-	treeOp, err := versionmgr.NewWorkTree(ctx, oct.Repo.ObjectRepo(), models.NewRootTreeEntry(commit.TreeHash))
+	fileRepo := oct.Repo.FileTreeRepo()
+	treeOp, err := versionmgr.NewWorkTree(ctx, fileRepo, models.NewRootTreeEntry(commit.TreeHash))
 	if err != nil {
 		w.Error(err)
 		return
@@ -220,7 +220,7 @@ func (oct ObjectController) HeadObject(ctx context.Context, w *api.JiaozifsRespo
 
 	objectWithName := existNodes[len(existNodes)-1]
 
-	blob, err := objRepo.Blob(ctx, objectWithName.Node().Hash)
+	blob, err := fileRepo.Blob(ctx, objectWithName.Node().Hash)
 	if err != nil {
 		w.Error(err)
 		return
@@ -307,12 +307,12 @@ func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsRes
 			return err
 		}
 
-		workingTree, err := versionmgr.NewWorkTree(ctx, dRepo.ObjectRepo(), models.NewRootTreeEntry(stash.CurrentTree))
+		workingTree, err := versionmgr.NewWorkTree(ctx, dRepo.FileTreeRepo(), models.NewRootTreeEntry(stash.CurrentTree))
 		if err != nil {
 			return err
 		}
 
-		blob, err := workingTree.WriteBlob(ctx, oct.BlockAdapter, reader, r.ContentLength, block.PutOpts{})
+		blob, err := workingTree.WriteBlob(ctx, oct.BlockAdapter, reader, r.ContentLength, models.DefaultLeafProperty())
 		if err != nil {
 			return err
 		}

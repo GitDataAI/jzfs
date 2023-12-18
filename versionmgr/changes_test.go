@@ -1,6 +1,7 @@
 package versionmgr
 
 import (
+	"bytes"
 	"fmt"
 	"path/filepath"
 	"strconv"
@@ -9,11 +10,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/go-git/go-git/v5/utils/merkletrie"
+	"github.com/jiaozifs/jiaozifs/versionmgr/merkletrie"
 
 	"github.com/jiaozifs/jiaozifs/utils/hash"
 
-	"github.com/go-git/go-git/v5/utils/merkletrie/noder"
+	"github.com/jiaozifs/jiaozifs/versionmgr/merkletrie/noder"
 )
 
 var _ noder.Noder = (*MockNode)(nil)
@@ -29,6 +30,10 @@ func NewMockNode(name string, hash hash.Hash) *MockNode {
 
 func (m MockNode) Hash() []byte {
 	return m.hash
+}
+
+func (m MockNode) Equal(other noder.Noder) bool {
+	return bytes.Equal(m.Hash(), other.Hash())
 }
 
 func (m MockNode) String() string {

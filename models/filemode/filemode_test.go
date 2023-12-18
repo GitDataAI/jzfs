@@ -1,6 +1,7 @@
 package filemode
 
 import (
+	"encoding/json"
 	"os"
 	"testing"
 
@@ -42,6 +43,20 @@ func (s *ModeSuite) TestNew(c *C) {
 		c.Assert(obtained, Equals, test.expected, comment)
 		c.Assert(err, IsNil, comment)
 	}
+}
+
+func (s *ModeSuite) TestJson(c *C) {
+	type A struct {
+		Mode FileMode
+	}
+	a := A{Mode: Regular}
+	aData, err := json.Marshal(a)
+	c.Assert(err, IsNil)
+	c.Assert(string(aData), Equals, `{"Mode":"0100644"}`)
+	a2 := A{}
+	err = json.Unmarshal(aData, &a2)
+	c.Assert(err, IsNil)
+	c.Assert(a2.Mode, Equals, Regular)
 }
 
 func (s *ModeSuite) TestNewErrors(c *C) {

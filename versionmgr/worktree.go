@@ -1,7 +1,6 @@
 package versionmgr
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -9,13 +8,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
-
-	"github.com/go-git/go-git/v5/utils/merkletrie/noder"
 
 	"github.com/jiaozifs/jiaozifs/utils/httputil"
 
-	"github.com/go-git/go-git/v5/utils/merkletrie"
+	"github.com/jiaozifs/jiaozifs/versionmgr/merkletrie"
 
 	"github.com/jiaozifs/jiaozifs/block"
 	"github.com/jiaozifs/jiaozifs/utils/hash"
@@ -35,7 +31,6 @@ var EmptyRoot = &models.TreeNode{
 var EmptyDirEntry = models.TreeEntry{
 	Name: "",
 	Hash: hash.Hash([]byte{}),
-	Mode: filemode.Dir,
 }
 
 var (
@@ -46,23 +41,23 @@ var (
 )
 
 type FullObject struct {
-	node  *models.Object
+	node  *models.FileTree
 	entry models.TreeEntry
 }
 
 func (objectName FullObject) Entry() models.TreeEntry {
 	return objectName.entry
 }
-func (objectName FullObject) Node() *models.Object {
+func (objectName FullObject) Node() *models.FileTree {
 	return objectName.node
 }
 
 type WorkTree struct {
-	object models.IObjectRepo
+	object models.IFileTreeRepo
 	root   *TreeNode
 }
 
-func NewWorkTree(ctx context.Context, object models.IObjectRepo, root models.TreeEntry) (*WorkTree, error) {
+func NewWorkTree(ctx context.Context, object models.IFileTreeRepo, root models.TreeEntry) (*WorkTree, error) {
 	rootNode, err := NewTreeNode(ctx, root, object)
 	if err != nil {
 		return nil, err
@@ -79,7 +74,7 @@ func (workTree *WorkTree) Root() *TreeNode {
 
 // ReadBlob read blob content with range
 func (workTree *WorkTree) ReadBlob(ctx context.Context, adapter block.Adapter, blob *models.Blob, rangeSpec *string) (io.ReadCloser, error) {
-	address := pathutil.PathOfHash(blob.Hash)
+	address := pathutil.PathOfHash(blob.CheckSum)
 	pointer := block.ObjectPointer{
 		StorageNamespace: adapter.BlockstoreType() + "://",
 		IdentifierType:   block.IdentifierTypeRelative,
@@ -111,7 +106,7 @@ func (workTree *WorkTree) ReadBlob(ctx context.Context, adapter block.Adapter, b
 }
 
 // WriteBlob write blob content to storage
-func (workTree *WorkTree) WriteBlob(ctx context.Context, adapter block.Adapter, body io.Reader, contentLength int64, opts block.PutOpts) (*models.Blob, error) {
+func (workTree *WorkTree) WriteBlob(ctx context.Context, adapter block.Adapter, body io.Reader, contentLength int64, properties models.Property) (*models.Blob, error) {
 	// handle the upload itself
 	hashReader := hash.NewHashingReader(body, hash.Md5)
 	tempf, err := os.CreateTemp("", "*")
@@ -123,7 +118,7 @@ func (workTree *WorkTree) WriteBlob(ctx context.Context, adapter block.Adapter, 
 		return nil, err
 	}
 
-	hash := hash.Hash(hashReader.Md5.Sum(nil))
+	checkSum := hash.Hash(hashReader.Md5.Sum(nil))
 	_, err = tempf.Seek(0, io.SeekStart)
 	if err != nil {
 		return nil, err
@@ -135,21 +130,17 @@ func (workTree *WorkTree) WriteBlob(ctx context.Context, adapter block.Adapter, 
 		_ = os.RemoveAll(name)
 	}()
 
-	address := pathutil.PathOfHash(hash)
+	address := pathutil.PathOfHash(checkSum)
 	err = adapter.Put(ctx, block.ObjectPointer{
 		StorageNamespace: adapter.BlockstoreType() + "://",
 		IdentifierType:   block.IdentifierTypeRelative,
 		Identifier:       address,
-	}, contentLength, tempf, opts)
+	}, contentLength, tempf, block.PutOpts{})
 	if err != nil {
 		return nil, err
 	}
 
-	return &models.Blob{
-		Type: models.BlobObject,
-		Hash: hash,
-		Size: hashReader.CopiedSize,
-	}, nil
+	return models.NewBlob(properties, checkSum, hashReader.CopiedSize)
 }
 
 func (workTree *WorkTree) AppendDirectEntry(ctx context.Context, treeEntry models.TreeEntry) (*models.TreeNode, error) {
@@ -163,20 +154,14 @@ func (workTree *WorkTree) AppendDirectEntry(ctx context.Context, treeEntry model
 		}
 	}
 
-	newTree := &models.TreeNode{
-		Type:       workTree.root.Type(),
-		SubObjects: workTree.root.SubObjects(),
-		CreatedAt:  time.Now(),
-		UpdatedAt:  time.Now(),
-	}
-	newTree.SubObjects = append(newTree.SubObjects, treeEntry)
-	hash, err := newTree.GetHash()
+	subObjects := models.SortSubObjects(append(workTree.root.SubObjects(), treeEntry))
+
+	newTree, err := models.NewTreeNode(models.Property{Mode: filemode.Dir}, subObjects...)
 	if err != nil {
 		return nil, err
 	}
-	newTree.Hash = hash
 
-	obj, err := workTree.object.Insert(ctx, newTree.Object())
+	obj, err := workTree.object.Insert(ctx, newTree.FileTree())
 	if err != nil {
 		return nil, err
 	}
@@ -184,29 +169,24 @@ func (workTree *WorkTree) AppendDirectEntry(ctx context.Context, treeEntry model
 }
 
 func (workTree *WorkTree) DeleteDirectEntry(ctx context.Context, name string) (*models.TreeNode, bool, error) {
-	newTree := &models.TreeNode{
-		Type:      workTree.root.Type(),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	}
+	var subObjects []models.TreeEntry
 	for _, sub := range workTree.root.SubObjects() {
 		if sub.Name != name { //filter tree entry by name
-			newTree.SubObjects = append(newTree.SubObjects, sub)
+			subObjects = append(subObjects, sub)
 		}
 	}
 
-	if len(newTree.SubObjects) == 0 {
+	if len(subObjects) == 0 {
 		//this node has no element return nothing
 		return nil, true, nil
 	}
 
-	hash, err := newTree.GetHash()
+	newTree, err := models.NewTreeNode(workTree.root.Properties(), subObjects...)
 	if err != nil {
 		return nil, false, err
 	}
-	newTree.Hash = hash
 
-	obj, err := workTree.object.Insert(ctx, newTree.Object())
+	obj, err := workTree.object.Insert(ctx, newTree.FileTree())
 	if err != nil {
 		return nil, false, err
 	}
@@ -225,22 +205,16 @@ func (workTree *WorkTree) ReplaceSubTreeEntry(ctx context.Context, treeEntry mod
 		return nil, ErrPathNotFound
 	}
 
-	newTree := &models.TreeNode{
-		Type:       workTree.root.Type(),
-		SubObjects: make([]models.TreeEntry, len(workTree.root.SubObjects())),
-		CreatedAt:  time.Now(),
-		UpdatedAt:  time.Now(),
-	}
-	copy(newTree.SubObjects, workTree.root.SubObjects())
-	newTree.SubObjects[index] = treeEntry
+	subObjects := make([]models.TreeEntry, len(workTree.root.SubObjects()))
+	copy(subObjects, workTree.root.SubObjects())
+	subObjects[index] = treeEntry
 
-	hash, err := newTree.GetHash()
+	newTree, err := models.NewTreeNode(workTree.Root().Properties(), subObjects...)
 	if err != nil {
 		return nil, err
 	}
-	newTree.Hash = hash
 
-	obj, err := workTree.object.Insert(ctx, newTree.Object())
+	obj, err := workTree.object.Insert(ctx, newTree.FileTree())
 	if err != nil {
 		return nil, err
 	}
@@ -263,13 +237,13 @@ func (workTree *WorkTree) MatchPath(ctx context.Context, path string) ([]FullObj
 			return existNodes, missingPath, nil
 		}
 
-		if entry.Mode == filemode.Dir {
+		if entry.IsDir {
 			curNode, err = curNode.SubDir(ctx, entry.Name)
 			if err != nil {
 				return nil, nil, err
 			}
 			existNodes = append(existNodes, FullObject{
-				node:  curNode.TreeNode().Object(),
+				node:  curNode.TreeNode().FileTree(),
 				entry: entry,
 			})
 		} else {
@@ -279,7 +253,7 @@ func (workTree *WorkTree) MatchPath(ctx context.Context, path string) ([]FullObj
 				return nil, nil, err
 			}
 			existNodes = append(existNodes, FullObject{
-				node:  blob.Object(),
+				node:  blob.FileTree(),
 				entry: entry,
 			})
 
@@ -304,7 +278,7 @@ func (workTree *WorkTree) AddLeaf(ctx context.Context, fullPath string, blob *mo
 		return ErrEntryExit
 	}
 
-	_, err = workTree.object.Insert(ctx, blob.Object())
+	_, err = workTree.object.Insert(ctx, blob.FileTree())
 	if err != nil {
 		return err
 	}
@@ -313,36 +287,36 @@ func (workTree *WorkTree) AddLeaf(ctx context.Context, fullPath string, blob *mo
 	var lastEntry models.TreeEntry
 	for index, path := range missingPath {
 		if index == 0 {
-			_, err = workTree.object.Insert(ctx, blob.Object())
+			_, err = workTree.object.Insert(ctx, blob.FileTree())
 			if err != nil {
 				return err
 			}
 			lastEntry = models.TreeEntry{
-				Name: path,
-				Mode: filemode.Regular,
-				Hash: blob.Hash,
+				Name:  path,
+				IsDir: false,
+				Hash:  blob.Hash,
 			}
 			continue
 		}
 
-		newTree, err := models.NewTreeNode(lastEntry)
+		newTree, err := models.NewTreeNode(models.DefaultDirProperty(), lastEntry)
 		if err != nil {
 			return err
 		}
-		_, err = workTree.object.Insert(ctx, newTree.Object())
+		_, err = workTree.object.Insert(ctx, newTree.FileTree())
 		if err != nil {
 			return err
 		}
 		lastEntry = models.TreeEntry{
-			Name: path,
-			Mode: filemode.Dir,
-			Hash: newTree.Hash,
+			Name:  path,
+			IsDir: true,
+			Hash:  newTree.Hash,
 		}
 	}
 
 	slices.Reverse(existNode)
 	existNode = append(existNode, FullObject{
-		node:  workTree.root.TreeNode().Object(),
+		node:  workTree.root.TreeNode().FileTree(),
 		entry: models.NewRootTreeEntry(workTree.root.Hash()), //root node have no name
 	})
 
@@ -355,16 +329,15 @@ func (workTree *WorkTree) AddLeaf(ctx context.Context, fullPath string, blob *mo
 		if index == 0 { //insert new node
 			newNode, err = newWorkTree.AppendDirectEntry(ctx, lastEntry)
 		} else { //replace node
-
 			newNode, err = newWorkTree.ReplaceSubTreeEntry(ctx, lastEntry)
 		}
 		if err != nil {
 			return err
 		}
 		lastEntry = models.TreeEntry{
-			Name: node.Entry().Name, // use old name but replace with new hase
-			Mode: node.Entry().Mode,
-			Hash: newNode.Hash,
+			Name:  node.Entry().Name, // use old name but replace with new hase
+			IsDir: true,
+			Hash:  newNode.Hash,
 		}
 	}
 	workTree.root, err = NewTreeNode(ctx, lastEntry, workTree.object)
@@ -382,14 +355,14 @@ func (workTree *WorkTree) ReplaceLeaf(ctx context.Context, fullPath string, blob
 		return ErrPathNotFound
 	}
 
-	_, err = workTree.object.Insert(ctx, blob.Object())
+	_, err = workTree.object.Insert(ctx, blob.FileTree())
 	if err != nil {
 		return err
 	}
 
 	slices.Reverse(existNode)
 	existNode = append(existNode, FullObject{
-		node:  workTree.root.TreeNode().Object(),
+		node:  workTree.root.TreeNode().FileTree(),
 		entry: models.NewRootTreeEntry(workTree.root.Hash()), //root node have no name
 	})
 
@@ -398,9 +371,9 @@ func (workTree *WorkTree) ReplaceLeaf(ctx context.Context, fullPath string, blob
 	for index, node := range existNode {
 		if index == 0 {
 			lastEntry = models.TreeEntry{
-				Name: node.Entry().Name,
-				Mode: node.Entry().Mode,
-				Hash: blob.Hash,
+				Name:  node.Entry().Name,
+				IsDir: false,
+				Hash:  blob.Hash,
 			}
 			continue
 		}
@@ -414,9 +387,9 @@ func (workTree *WorkTree) ReplaceLeaf(ctx context.Context, fullPath string, blob
 			return err
 		}
 		lastEntry = models.TreeEntry{
-			Name: node.Entry().Name,
-			Mode: node.Entry().Mode,
-			Hash: newNode.Hash,
+			Name:  node.Entry().Name,
+			IsDir: true,
+			Hash:  newNode.Hash,
 		}
 	}
 	workTree.root, err = NewTreeNode(ctx, lastEntry, workTree.object)
@@ -446,7 +419,7 @@ func (workTree *WorkTree) RemoveEntry(ctx context.Context, fullPath string) erro
 
 	slices.Reverse(existNode)
 	existNode = append(existNode, FullObject{
-		node:  workTree.root.TreeNode().Object(),
+		node:  workTree.root.TreeNode().FileTree(),
 		entry: models.NewRootTreeEntry(workTree.root.Hash()), //root node have no name
 	})
 
@@ -467,8 +440,8 @@ func (workTree *WorkTree) RemoveEntry(ctx context.Context, fullPath string) erro
 			}
 
 			lastEntry = models.TreeEntry{
-				Name: node.Entry().Name,
-				Mode: node.Entry().Mode,
+				Name:  node.Entry().Name,
+				IsDir: true, //leaf node has skip before loop,exist node must be directory
 			}
 			if !isEmpty {
 				lastEntry.Hash = newNode.Hash
@@ -479,9 +452,9 @@ func (workTree *WorkTree) RemoveEntry(ctx context.Context, fullPath string) erro
 				return err
 			}
 			lastEntry = models.TreeEntry{
-				Name: node.Entry().Name,
-				Mode: node.Entry().Mode,
-				Hash: newNode.Hash,
+				Name:  node.Entry().Name,
+				IsDir: true,
+				Hash:  newNode.Hash,
 			}
 		}
 	}
@@ -574,9 +547,7 @@ func (workTree *WorkTree) Diff(ctx context.Context, rootTreeHash hash.Hash) (*Ch
 		return nil, err
 	}
 
-	changes, err := merkletrie.DiffTreeContext(ctx, workTree.Root(), toNode, func(a, b noder.Hasher) bool {
-		return bytes.Equal(a.Hash(), b.Hash())
-	})
+	changes, err := merkletrie.DiffTreeContext(ctx, workTree.Root(), toNode)
 	if err != nil {
 		return nil, err
 	}

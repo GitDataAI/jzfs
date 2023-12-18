@@ -6,7 +6,10 @@ import (
 	"github.com/jiaozifs/jiaozifs/config"
 )
 
-func NewSessionStore(authConfig *config.AuthConfig) sessions.Store {
-	sstore := crypt.NewSecretStore(authConfig.SecretKey)
-	return sessions.NewCookieStore(sstore.SharedSecret())
+func NewSessionStore(secretStrore crypt.SecretStore) sessions.Store {
+	return sessions.NewCookieStore(secretStrore.SharedSecret())
+}
+
+func NewSectetStore(authConfig *config.AuthConfig) crypt.SecretStore {
+	return crypt.NewSecretStore(authConfig.SecretKey)
 }

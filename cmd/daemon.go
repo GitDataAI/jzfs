@@ -3,6 +3,8 @@ package cmd
 import (
 	"context"
 
+	"github.com/jiaozifs/jiaozifs/auth/crypt"
+
 	"github.com/jiaozifs/jiaozifs/version"
 
 	"github.com/gorilla/sessions"
@@ -65,6 +67,7 @@ var daemonCmd = &cobra.Command{
 
 			fx_opt.Override(fx_opt.NextInvoke(), migrations.MigrateDatabase),
 			//api
+			fx_opt.Override(new(crypt.SecretStore), auth.NewSectetStore),
 			fx_opt.Override(new(sessions.Store), auth.NewSessionStore),
 			fx_opt.Override(fx_opt.NextInvoke(), apiImpl.SetupAPI),
 		)

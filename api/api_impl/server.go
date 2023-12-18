@@ -6,6 +6,8 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/jiaozifs/jiaozifs/auth/crypt"
+
 	"github.com/MadAppGang/httplog"
 	"github.com/rs/cors"
 
@@ -32,7 +34,7 @@ var log = logging.Logger("rpc")
 
 const APIV1Prefix = "/api/v1"
 
-func SetupAPI(lc fx.Lifecycle, apiConfig *config.APIConfig, sessionStore sessions.Store, repo models.IRepo, controller APIController) error {
+func SetupAPI(lc fx.Lifecycle, apiConfig *config.APIConfig, secretStore crypt.SecretStore, sessionStore sessions.Store, repo models.IRepo, controller APIController) error {
 	swagger, err := api.GetSwagger()
 	if err != nil {
 		return err
@@ -64,7 +66,7 @@ func SetupAPI(lc fx.Lifecycle, apiConfig *config.APIConfig, sessionStore session
 			},
 			SilenceServersWarning: true,
 		}),
-		auth.Middleware(swagger, nil, nil, repo.UserRepo(), sessionStore),
+		auth.Middleware(swagger, nil, secretStore, repo.UserRepo(), sessionStore),
 	)
 
 	raw, err := api.RawSpec()

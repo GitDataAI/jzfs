@@ -18,7 +18,9 @@ func IsolationLevelOption(level sql.IsolationLevel) TxOption {
 type IRepo interface {
 	Transaction(ctx context.Context, fn func(repo IRepo) error, opts ...TxOption) error
 	UserRepo() IUserRepo
-	ObjectRepo() IObjectRepo
+	FileTreeRepo() IFileTreeRepo
+	CommitRepo() ICommitRepo
+	TagRepo() ITagRepo
 	RefRepo() IRefRepo
 	RepositoryRepo() IRepositoryRepo
 	WipRepo() IWipRepo
@@ -48,8 +50,16 @@ func (repo *PgRepo) UserRepo() IUserRepo {
 	return NewUserRepo(repo.db)
 }
 
-func (repo *PgRepo) ObjectRepo() IObjectRepo {
-	return NewObjectRepo(repo.db)
+func (repo *PgRepo) FileTreeRepo() IFileTreeRepo {
+	return NewFileTree(repo.db)
+}
+
+func (repo *PgRepo) CommitRepo() ICommitRepo {
+	return NewCommitRepo(repo.db)
+}
+
+func (repo *PgRepo) TagRepo() ITagRepo {
+	return NewTagRepo(repo.db)
 }
 
 func (repo *PgRepo) RefRepo() IRefRepo {

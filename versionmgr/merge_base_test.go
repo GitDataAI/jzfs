@@ -19,7 +19,7 @@ func TestCommitNodeMergeBase(t *testing.T) {
 	postgres, _, db := testhelper.SetupDatabase(ctx, t)
 	defer postgres.Stop() //nolint
 
-	objRepo := models.NewObjectRepo(db)
+	commitRepo := models.NewCommitRepo(db)
 	//mock data
 	//     | -> c -------
 	//     |             |
@@ -37,7 +37,7 @@ f2|f1
 f|f2
 e|b
 `
-	commitMap, err := loadCommitTestData(ctx, objRepo, testData)
+	commitMap, err := loadCommitTestData(ctx, commitRepo, testData)
 	require.NoError(t, err)
 
 	t.Run("simple", func(t *testing.T) {
@@ -70,7 +70,7 @@ e|b
 	})
 }
 
-func loadCommitTestData(ctx context.Context, objRepo models.IObjectRepo, testData string) (map[string]*CommitNode, error) {
+func loadCommitTestData(ctx context.Context, commitRepo models.ICommitRepo, testData string) (map[string]*CommitNode, error) {
 	lines := strings.Split(testData, "\n")
 	commitMap := make(map[string]*CommitNode)
 	for _, line := range lines {
@@ -80,8 +80,8 @@ func loadCommitTestData(ctx context.Context, objRepo models.IObjectRepo, testDat
 		commitData := strings.Split(strings.TrimSpace(line), "|")
 		hashName := strings.TrimSpace(commitData[0])
 		commit := newCommit(hashName, strings.Split(commitData[1], ","))
-		commitMap[hashName] = NewCommitNode(ctx, commit, objRepo)
-		_, err := objRepo.Insert(ctx, commit.Object())
+		commitMap[hashName] = NewCommitNode(ctx, commit, commitRepo)
+		_, err := commitRepo.Insert(ctx, commit)
 		if err != nil {
 			return nil, err
 		}
@@ -100,14 +100,13 @@ func newCommit(hashStr string, parentHash []string) *models.Commit {
 	}
 	return &models.Commit{
 		Hash:   hash.Hash(hashStr),
-		Type:   models.CommitObject,
 		Author: models.Signature{},
 		Committer: models.Signature{
 			When: time.Now(),
 		},
 		MergeTag:     "",
 		Message:      hashStr,
-		TreeHash:     nil,
+		TreeHash:     hash.Hash{},
 		ParentHashes: p,
 		CreatedAt:    time.Time{},
 		UpdatedAt:    time.Time{},

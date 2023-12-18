@@ -1,12 +1,12 @@
 package versionmgr
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 
-	"github.com/go-git/go-git/v5/utils/merkletrie/noder"
 	"github.com/jiaozifs/jiaozifs/models"
-	"github.com/jiaozifs/jiaozifs/models/filemode"
+	"github.com/jiaozifs/jiaozifs/versionmgr/merkletrie/noder"
 )
 
 var _ noder.Noder = (*TreeNode)(nil)
@@ -15,10 +15,10 @@ type TreeNode struct {
 	ctx        context.Context
 	entry      models.TreeEntry
 	treeNode   *models.TreeNode
-	objectRepo models.IObjectRepo
+	objectRepo models.IFileTreeRepo
 }
 
-func NewTreeNode(ctx context.Context, entry models.TreeEntry, object models.IObjectRepo) (*TreeNode, error) {
+func NewTreeNode(ctx context.Context, entry models.TreeEntry, object models.IFileTreeRepo) (*TreeNode, error) {
 	treeNode := EmptyRoot
 	if !entry.Equal(EmptyDirEntry) {
 		var err error
@@ -34,6 +34,11 @@ func NewTreeNode(ctx context.Context, entry models.TreeEntry, object models.IObj
 func (n TreeNode) Type() models.ObjectType {
 	return n.treeNode.Type
 }
+
+func (n TreeNode) Properties() models.Property {
+	return n.treeNode.Properties
+}
+
 func (n TreeNode) SubObjects() []models.TreeEntry {
 	return n.treeNode.SubObjects
 }
@@ -42,10 +47,14 @@ func (n TreeNode) TreeNode() *models.TreeNode {
 	return n.treeNode
 }
 
+func (n TreeNode) Equal(other noder.Noder) bool {
+	return bytes.Equal(n.Hash(), other.Hash())
+}
+
 func (n TreeNode) SubDir(ctx context.Context, name string) (*TreeNode, error) {
 	for _, node := range n.treeNode.SubObjects {
 		if node.Name == name {
-			if node.Mode == filemode.Dir {
+			if node.IsDir {
 				return NewTreeNode(ctx, node, n.objectRepo)
 			}
 			return nil, fmt.Errorf("node is not directory")
@@ -57,7 +66,7 @@ func (n TreeNode) SubDir(ctx context.Context, name string) (*TreeNode, error) {
 func (n TreeNode) SubFile(ctx context.Context, name string) (*models.Blob, error) {
 	for _, node := range n.treeNode.SubObjects {
 		if node.Name == name {
-			if node.Mode == filemode.Regular || node.Mode == filemode.Executable {
+			if !node.IsDir {
 				return n.objectRepo.Blob(ctx, node.Hash)
 			}
 			return nil, fmt.Errorf("node is not blob")
@@ -88,7 +97,7 @@ func (n TreeNode) Name() string {
 }
 
 func (n TreeNode) IsDir() bool {
-	return n.entry.Mode == filemode.Dir
+	return n.entry.IsDir
 }
 
 func (n TreeNode) Children() ([]noder.Noder, error) {
