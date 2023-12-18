@@ -196,7 +196,7 @@ func (s *WipRepo) Get(ctx context.Context, params *GetWipParams) (*WorkingInProc
 
 func (s *WipRepo) List(ctx context.Context, params *ListWipParams) ([]*WorkingInProcess, error) {
 	var resp []*WorkingInProcess
-	query := s.db.NewSelect().Model((*WorkingInProcess)(nil))
+	query := s.db.NewSelect().Model(&resp)
 
 	if uuid.Nil != params.CreatorID {
 		query = query.Where("creator_id = ?", params.CreatorID)
@@ -210,7 +210,7 @@ func (s *WipRepo) List(ctx context.Context, params *ListWipParams) ([]*WorkingIn
 		query = query.Where("ref_id = ?", params.RefID)
 	}
 
-	return resp, query.Scan(ctx, &resp)
+	return resp, query.Scan(ctx)
 }
 
 // Delete remove wip in table by id

@@ -75,5 +75,5 @@ func (m MergeRequestRepo) Get(ctx context.Context, params *GetMergeRequestParams
 		query = query.Where("id = ?", params.ID)
 	}
 
-	return mergeRequest, query.Limit(1).Scan(ctx, mergeRequest)
+	return mergeRequest, query.Limit(1).Scan(ctx)
 }

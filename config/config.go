@@ -52,32 +52,29 @@ type AuthConfig struct {
 	} `mapstructure:"ui_config"`
 }
 
-func InitConfig() error {
-	// Find home directory.
-	home, err := os.UserHomeDir()
-	cobra.CheckErr(err)
-	jiaoziHome := path.Join(home, ".jiaozifs")
-	defaultPath := path.Join(jiaoziHome, "config.toml")
+func InitConfig(cfgPath string) error {
 	// Search config in home directory with name ".jiaozifs" (without extension).
-	viper.AddConfigPath(path.Join(home, ".jiaozifs"))
+	viper.AddConfigPath(cfgPath)
 	viper.SetConfigType("toml")
 	viper.SetConfigName("config")
 	if len(viper.ConfigFileUsed()) == 0 {
 		data := make(map[string]interface{})
-		err = ms.Decode(defaultCfg, &data)
+		err := ms.Decode(defaultCfg, &data)
 		if err != nil {
 			return err
 		}
 		for k, v := range data {
 			viper.SetDefault(k, v)
 		}
-		err = os.MkdirAll(jiaoziHome, 0755)
+
+		basePath := path.Dir(cfgPath)
+		err = os.MkdirAll(basePath, 0755)
 		if err != nil {
 			return err
 		}
-		return viper.WriteConfigAs(defaultPath)
+		return viper.WriteConfigAs(cfgPath)
 	}
-	return fmt.Errorf("config already exit in %s", defaultPath)
+	return fmt.Errorf("config already exit in %s", cfgPath)
 }
 
 // LoadConfig reads in config file and ENV variables if set.

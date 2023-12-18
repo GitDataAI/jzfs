@@ -11,9 +11,10 @@ import (
 type Repository struct {
 	bun.BaseModel `bun:"table:repositories"`
 	ID            uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
-	Name          string    `bun:"name,notnull"`
-	Description   *string   `bun:"description"`
+	Name          string    `bun:"name,unique,notnull"`
+	OwnerID       uuid.UUID `bun:"owner_id,unique,type:uuid,notnull"`
 	HEAD          string    `bun:"head,notnull"`
+	Description   *string   `bun:"description"`
 	CreatorID     uuid.UUID `bun:"creator_id,type:uuid,notnull"`
 
 	CreatedAt time.Time `bun:"created_at"`
@@ -23,6 +24,7 @@ type Repository struct {
 type GetRepoParams struct {
 	ID        uuid.UUID
 	CreatorID uuid.UUID
+	OwnerID   uuid.UUID
 	Name      *string
 }
 
@@ -32,6 +34,11 @@ func NewGetRepoParams() *GetRepoParams {
 
 func (gup *GetRepoParams) SetID(id uuid.UUID) *GetRepoParams {
 	gup.ID = id
+	return gup
+}
+
+func (gup *GetRepoParams) SetOwnerID(id uuid.UUID) *GetRepoParams {
+	gup.OwnerID = id
 	return gup
 }
 
@@ -48,6 +55,7 @@ func (gup *GetRepoParams) SetName(name string) *GetRepoParams {
 type ListRepoParams struct {
 	ID        uuid.UUID
 	CreatorID uuid.UUID
+	OwnerID   uuid.UUID
 }
 
 func NewListRepoParams() *ListRepoParams {
@@ -58,7 +66,10 @@ func (lrp *ListRepoParams) SetID(id uuid.UUID) *ListRepoParams {
 	lrp.ID = id
 	return lrp
 }
-
+func (lrp *ListRepoParams) SetOwnerID(ownerID uuid.UUID) *ListRepoParams {
+	lrp.OwnerID = ownerID
+	return lrp
+}
 func (lrp *ListRepoParams) SetCreatorID(creatorID uuid.UUID) *ListRepoParams {
 	lrp.CreatorID = creatorID
 	return lrp
@@ -97,6 +108,7 @@ func (up *UpdateRepoParams) SetDescription(description string) *UpdateRepoParams
 type IRepositoryRepo interface {
 	Insert(ctx context.Context, repo *Repository) (*Repository, error)
 	Get(ctx context.Context, params *GetRepoParams) (*Repository, error)
+
 	List(ctx context.Context, params *ListRepoParams) ([]*Repository, error)
 	Delete(ctx context.Context, params *DeleteRepoParams) error
 	UpdateByID(ctx context.Context, updateModel *UpdateRepoParams) error
@@ -132,22 +144,29 @@ func (r *RepositoryRepo) Get(ctx context.Context, params *GetRepoParams) (*Repos
 		query = query.Where("creator_id = ?", params.CreatorID)
 	}
 
+	if uuid.Nil != params.OwnerID {
+		query = query.Where("owner_id = ?", params.OwnerID)
+	}
+
 	if params.Name != nil {
 		query = query.Where("name = ?", *params.Name)
 	}
 
-	return repo, query.Limit(1).Scan(ctx, repo)
+	return repo, query.Limit(1).Scan(ctx)
 }
 
 func (r *RepositoryRepo) List(ctx context.Context, params *ListRepoParams) ([]*Repository, error) {
 	repos := []*Repository{}
-	query := r.db.NewSelect().Model((*Repository)(nil))
+	query := r.db.NewSelect().Model(&repos)
 
 	if uuid.Nil != params.CreatorID {
 		query = query.Where("creator_id = ?", params.CreatorID)
 	}
 
-	return repos, query.Scan(ctx, &repos)
+	if uuid.Nil != params.OwnerID {
+		query = query.Where("owner_id = ?", params.OwnerID)
+	}
+	return repos, query.Scan(ctx)
 }
 
 func (r *RepositoryRepo) Delete(ctx context.Context, params *DeleteRepoParams) error {

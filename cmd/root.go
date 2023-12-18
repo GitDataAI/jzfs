@@ -3,6 +3,7 @@ package cmd
 import (
 	"os"
 
+	"github.com/jiaozifs/jiaozifs/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -25,7 +26,12 @@ func Execute() {
 	}
 }
 
+func RootCmd() *cobra.Command {
+	return rootCmd
+}
 func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.jiaozifs/config.yaml)")
-	_ = viper.BindPFlag("config", rootCmd.Flags().Lookup("config"))
+	rootCmd.PersistentFlags().String("listen", config.DefaultLocalBSPath, "config blockstore path")
+	_ = viper.BindPFlag("api.listen", rootCmd.PersistentFlags().Lookup("listen"))
+	_ = viper.BindPFlag("config", rootCmd.PersistentFlags().Lookup("config"))
 }

@@ -45,4 +45,15 @@ func TestRefRepoInsert(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Equal(t, mockHash, refAfterUpdated.CommitHash)
+
+	list, err := repo.List(ctx, models.NewListRefParams().SetRepositoryID(ref.RepositoryID))
+	require.NoError(t, err)
+	require.Len(t, list, 1)
+
+	err = repo.Delete(ctx, models.NewDeleteRefParams().SetID(list[0].ID).SetRepositoryID(list[0].RepositoryID).SetName(list[0].Name))
+	require.NoError(t, err)
+
+	list, err = repo.List(ctx, models.NewListRefParams().SetRepositoryID(ref.RepositoryID))
+	require.NoError(t, err)
+	require.Len(t, list, 0)
 }

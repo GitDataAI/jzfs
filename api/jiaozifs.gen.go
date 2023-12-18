@@ -148,8 +148,14 @@ type Pagination struct {
 
 // Ref defines model for Ref.
 type Ref struct {
-	CommitHash string `json:"CommitHash"`
-	Name       string `json:"Name"`
+	CommitHash   string             `json:"CommitHash"`
+	CreatedAt    time.Time          `json:"CreatedAt"`
+	CreatorID    openapi_types.UUID `json:"CreatorID"`
+	Description  *string            `json:"Description,omitempty"`
+	ID           openapi_types.UUID `json:"ID"`
+	Name         string             `json:"Name"`
+	RepositoryID openapi_types.UUID `json:"RepositoryID"`
+	UpdatedAt    time.Time          `json:"UpdatedAt"`
 }
 
 // RefList defines model for RefList.
@@ -305,6 +311,16 @@ type UploadObjectParams struct {
 	IfNoneMatch *string `json:"If-None-Match,omitempty"`
 }
 
+// DeleteBranchParams defines parameters for DeleteBranch.
+type DeleteBranchParams struct {
+	RefName string `form:"refName" json:"refName"`
+}
+
+// GetBranchParams defines parameters for GetBranch.
+type GetBranchParams struct {
+	RefName string `form:"refName" json:"refName"`
+}
+
 // GetCommitsInRepositoryParams defines parameters for GetCommitsInRepository.
 type GetCommitsInRepositoryParams struct {
 	// RefName ref(branch/tag) name
@@ -317,12 +333,12 @@ type GetCommitDiffParams struct {
 	Path *string `form:"path,omitempty" json:"path,omitempty"`
 }
 
-// GetEntriesInCommitParams defines parameters for GetEntriesInCommit.
-type GetEntriesInCommitParams struct {
+// GetEntriesInRefParams defines parameters for GetEntriesInRef.
+type GetEntriesInRefParams struct {
 	// Path specific path, if not specific return entries in root
 	Path *string `form:"path,omitempty" json:"path,omitempty"`
 
-	// Ref specific ref
+	// Ref specific ref default to main branch
 	Ref *string `form:"ref,omitempty" json:"ref,omitempty"`
 }
 
@@ -374,14 +390,14 @@ type UploadObjectMultipartRequestBody UploadObjectMultipartBody
 // UpdateRepositoryJSONRequestBody defines body for UpdateRepository for application/json ContentType.
 type UpdateRepositoryJSONRequestBody = UpdateRepository
 
+// CreateBranchJSONRequestBody defines body for CreateBranch for application/json ContentType.
+type CreateBranchJSONRequestBody = BranchCreation
+
 // RegisterJSONRequestBody defines body for Register for application/json ContentType.
 type RegisterJSONRequestBody = UserRegisterInfo
 
 // CreateRepositoryJSONRequestBody defines body for CreateRepository for application/json ContentType.
 type CreateRepositoryJSONRequestBody = CreateRepository
-
-// CreateBranchJSONRequestBody defines body for CreateBranch for application/json ContentType.
-type CreateBranchJSONRequestBody = BranchCreation
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -465,36 +481,50 @@ type ClientInterface interface {
 	Logout(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteObject request
-	DeleteObject(ctx context.Context, user string, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteObject(ctx context.Context, owner string, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetObject request
-	GetObject(ctx context.Context, user string, repository string, params *GetObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetObject(ctx context.Context, owner string, repository string, params *GetObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// HeadObject request
-	HeadObject(ctx context.Context, user string, repository string, params *HeadObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	HeadObject(ctx context.Context, owner string, repository string, params *HeadObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UploadObjectWithBody request with any body
-	UploadObjectWithBody(ctx context.Context, user string, repository string, params *UploadObjectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UploadObjectWithBody(ctx context.Context, owner string, repository string, params *UploadObjectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteRepository request
-	DeleteRepository(ctx context.Context, user string, repository string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteRepository(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetRepository request
-	GetRepository(ctx context.Context, user string, repository string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetRepository(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateRepositoryWithBody request with any body
-	UpdateRepositoryWithBody(ctx context.Context, user string, repository string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateRepositoryWithBody(ctx context.Context, owner string, repository string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateRepository(ctx context.Context, user string, repository string, body UpdateRepositoryJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateRepository(ctx context.Context, owner string, repository string, body UpdateRepositoryJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteBranch request
+	DeleteBranch(ctx context.Context, owner string, repository string, params *DeleteBranchParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetBranch request
+	GetBranch(ctx context.Context, owner string, repository string, params *GetBranchParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateBranchWithBody request with any body
+	CreateBranchWithBody(ctx context.Context, owner string, repository string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateBranch(ctx context.Context, owner string, repository string, body CreateBranchJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListBranches request
+	ListBranches(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetCommitsInRepository request
-	GetCommitsInRepository(ctx context.Context, user string, repository string, params *GetCommitsInRepositoryParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetCommitsInRepository(ctx context.Context, owner string, repository string, params *GetCommitsInRepositoryParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetCommitDiff request
-	GetCommitDiff(ctx context.Context, user string, repository string, basehead string, params *GetCommitDiffParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetCommitDiff(ctx context.Context, owner string, repository string, basehead string, params *GetCommitDiffParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetEntriesInCommit request
-	GetEntriesInCommit(ctx context.Context, user string, repository string, params *GetEntriesInCommitParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetEntriesInRef request
+	GetEntriesInRef(ctx context.Context, owner string, repository string, params *GetEntriesInRefParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetSetupState request
 	GetSetupState(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -504,8 +534,8 @@ type ClientInterface interface {
 
 	Register(ctx context.Context, body RegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ListRepository request
-	ListRepository(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// ListRepositoryOfAuthenticatedUser request
+	ListRepositoryOfAuthenticatedUser(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CreateRepositoryWithBody request with any body
 	CreateRepositoryWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -515,40 +545,29 @@ type ClientInterface interface {
 	// GetUserInfo request
 	GetUserInfo(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListRepository request
+	ListRepository(ctx context.Context, owner string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetVersion request
 	GetVersion(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteWip request
-	DeleteWip(ctx context.Context, repository string, params *DeleteWipParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteWip(ctx context.Context, owner string, repository string, params *DeleteWipParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetWip request
-	GetWip(ctx context.Context, repository string, params *GetWipParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetWip(ctx context.Context, owner string, repository string, params *GetWipParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CreateWip request
-	CreateWip(ctx context.Context, repository string, params *CreateWipParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreateWip(ctx context.Context, owner string, repository string, params *CreateWipParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetWipChanges request
-	GetWipChanges(ctx context.Context, repository string, params *GetWipChangesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	GetWipChanges(ctx context.Context, owner string, repository string, params *GetWipChangesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CommitWip request
-	CommitWip(ctx context.Context, repository string, params *CommitWipParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CommitWip(ctx context.Context, owner string, repository string, params *CommitWipParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListWip request
-	ListWip(ctx context.Context, repository string, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// ListBranches request
-	ListBranches(ctx context.Context, user string, reopsitory string, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// CreateBranchWithBody request with any body
-	CreateBranchWithBody(ctx context.Context, user string, reopsitory string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	CreateBranch(ctx context.Context, user string, reopsitory string, body CreateBranchJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// DeleteBranch request
-	DeleteBranch(ctx context.Context, user string, repository string, branch string, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// GetBranch request
-	GetBranch(ctx context.Context, user string, repository string, branch string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ListWip(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) LoginWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -587,8 +606,8 @@ func (c *Client) Logout(ctx context.Context, reqEditors ...RequestEditorFn) (*ht
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteObject(ctx context.Context, user string, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteObjectRequest(c.Server, user, repository, params)
+func (c *Client) DeleteObject(ctx context.Context, owner string, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteObjectRequest(c.Server, owner, repository, params)
 	if err != nil {
 		return nil, err
 	}
@@ -599,8 +618,8 @@ func (c *Client) DeleteObject(ctx context.Context, user string, repository strin
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetObject(ctx context.Context, user string, repository string, params *GetObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetObjectRequest(c.Server, user, repository, params)
+func (c *Client) GetObject(ctx context.Context, owner string, repository string, params *GetObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetObjectRequest(c.Server, owner, repository, params)
 	if err != nil {
 		return nil, err
 	}
@@ -611,8 +630,8 @@ func (c *Client) GetObject(ctx context.Context, user string, repository string, 
 	return c.Client.Do(req)
 }
 
-func (c *Client) HeadObject(ctx context.Context, user string, repository string, params *HeadObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewHeadObjectRequest(c.Server, user, repository, params)
+func (c *Client) HeadObject(ctx context.Context, owner string, repository string, params *HeadObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewHeadObjectRequest(c.Server, owner, repository, params)
 	if err != nil {
 		return nil, err
 	}
@@ -623,8 +642,8 @@ func (c *Client) HeadObject(ctx context.Context, user string, repository string,
 	return c.Client.Do(req)
 }
 
-func (c *Client) UploadObjectWithBody(ctx context.Context, user string, repository string, params *UploadObjectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUploadObjectRequestWithBody(c.Server, user, repository, params, contentType, body)
+func (c *Client) UploadObjectWithBody(ctx context.Context, owner string, repository string, params *UploadObjectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUploadObjectRequestWithBody(c.Server, owner, repository, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -635,8 +654,8 @@ func (c *Client) UploadObjectWithBody(ctx context.Context, user string, reposito
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteRepository(ctx context.Context, user string, repository string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteRepositoryRequest(c.Server, user, repository)
+func (c *Client) DeleteRepository(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteRepositoryRequest(c.Server, owner, repository)
 	if err != nil {
 		return nil, err
 	}
@@ -647,8 +666,8 @@ func (c *Client) DeleteRepository(ctx context.Context, user string, repository s
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetRepository(ctx context.Context, user string, repository string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetRepositoryRequest(c.Server, user, repository)
+func (c *Client) GetRepository(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetRepositoryRequest(c.Server, owner, repository)
 	if err != nil {
 		return nil, err
 	}
@@ -659,8 +678,8 @@ func (c *Client) GetRepository(ctx context.Context, user string, repository stri
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateRepositoryWithBody(ctx context.Context, user string, repository string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateRepositoryRequestWithBody(c.Server, user, repository, contentType, body)
+func (c *Client) UpdateRepositoryWithBody(ctx context.Context, owner string, repository string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateRepositoryRequestWithBody(c.Server, owner, repository, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -671,8 +690,8 @@ func (c *Client) UpdateRepositoryWithBody(ctx context.Context, user string, repo
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateRepository(ctx context.Context, user string, repository string, body UpdateRepositoryJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateRepositoryRequest(c.Server, user, repository, body)
+func (c *Client) UpdateRepository(ctx context.Context, owner string, repository string, body UpdateRepositoryJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateRepositoryRequest(c.Server, owner, repository, body)
 	if err != nil {
 		return nil, err
 	}
@@ -683,8 +702,8 @@ func (c *Client) UpdateRepository(ctx context.Context, user string, repository s
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetCommitsInRepository(ctx context.Context, user string, repository string, params *GetCommitsInRepositoryParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetCommitsInRepositoryRequest(c.Server, user, repository, params)
+func (c *Client) DeleteBranch(ctx context.Context, owner string, repository string, params *DeleteBranchParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteBranchRequest(c.Server, owner, repository, params)
 	if err != nil {
 		return nil, err
 	}
@@ -695,8 +714,8 @@ func (c *Client) GetCommitsInRepository(ctx context.Context, user string, reposi
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetCommitDiff(ctx context.Context, user string, repository string, basehead string, params *GetCommitDiffParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetCommitDiffRequest(c.Server, user, repository, basehead, params)
+func (c *Client) GetBranch(ctx context.Context, owner string, repository string, params *GetBranchParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetBranchRequest(c.Server, owner, repository, params)
 	if err != nil {
 		return nil, err
 	}
@@ -707,8 +726,68 @@ func (c *Client) GetCommitDiff(ctx context.Context, user string, repository stri
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetEntriesInCommit(ctx context.Context, user string, repository string, params *GetEntriesInCommitParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetEntriesInCommitRequest(c.Server, user, repository, params)
+func (c *Client) CreateBranchWithBody(ctx context.Context, owner string, repository string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateBranchRequestWithBody(c.Server, owner, repository, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateBranch(ctx context.Context, owner string, repository string, body CreateBranchJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateBranchRequest(c.Server, owner, repository, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListBranches(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListBranchesRequest(c.Server, owner, repository)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetCommitsInRepository(ctx context.Context, owner string, repository string, params *GetCommitsInRepositoryParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetCommitsInRepositoryRequest(c.Server, owner, repository, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetCommitDiff(ctx context.Context, owner string, repository string, basehead string, params *GetCommitDiffParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetCommitDiffRequest(c.Server, owner, repository, basehead, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetEntriesInRef(ctx context.Context, owner string, repository string, params *GetEntriesInRefParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetEntriesInRefRequest(c.Server, owner, repository, params)
 	if err != nil {
 		return nil, err
 	}
@@ -755,8 +834,8 @@ func (c *Client) Register(ctx context.Context, body RegisterJSONRequestBody, req
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListRepository(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListRepositoryRequest(c.Server)
+func (c *Client) ListRepositoryOfAuthenticatedUser(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListRepositoryOfAuthenticatedUserRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -803,6 +882,18 @@ func (c *Client) GetUserInfo(ctx context.Context, reqEditors ...RequestEditorFn)
 	return c.Client.Do(req)
 }
 
+func (c *Client) ListRepository(ctx context.Context, owner string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListRepositoryRequest(c.Server, owner)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) GetVersion(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetVersionRequest(c.Server)
 	if err != nil {
@@ -815,8 +906,8 @@ func (c *Client) GetVersion(ctx context.Context, reqEditors ...RequestEditorFn) 
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteWip(ctx context.Context, repository string, params *DeleteWipParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteWipRequest(c.Server, repository, params)
+func (c *Client) DeleteWip(ctx context.Context, owner string, repository string, params *DeleteWipParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteWipRequest(c.Server, owner, repository, params)
 	if err != nil {
 		return nil, err
 	}
@@ -827,8 +918,8 @@ func (c *Client) DeleteWip(ctx context.Context, repository string, params *Delet
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetWip(ctx context.Context, repository string, params *GetWipParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetWipRequest(c.Server, repository, params)
+func (c *Client) GetWip(ctx context.Context, owner string, repository string, params *GetWipParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetWipRequest(c.Server, owner, repository, params)
 	if err != nil {
 		return nil, err
 	}
@@ -839,8 +930,8 @@ func (c *Client) GetWip(ctx context.Context, repository string, params *GetWipPa
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateWip(ctx context.Context, repository string, params *CreateWipParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateWipRequest(c.Server, repository, params)
+func (c *Client) CreateWip(ctx context.Context, owner string, repository string, params *CreateWipParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateWipRequest(c.Server, owner, repository, params)
 	if err != nil {
 		return nil, err
 	}
@@ -851,8 +942,8 @@ func (c *Client) CreateWip(ctx context.Context, repository string, params *Creat
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetWipChanges(ctx context.Context, repository string, params *GetWipChangesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetWipChangesRequest(c.Server, repository, params)
+func (c *Client) GetWipChanges(ctx context.Context, owner string, repository string, params *GetWipChangesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetWipChangesRequest(c.Server, owner, repository, params)
 	if err != nil {
 		return nil, err
 	}
@@ -863,8 +954,8 @@ func (c *Client) GetWipChanges(ctx context.Context, repository string, params *G
 	return c.Client.Do(req)
 }
 
-func (c *Client) CommitWip(ctx context.Context, repository string, params *CommitWipParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCommitWipRequest(c.Server, repository, params)
+func (c *Client) CommitWip(ctx context.Context, owner string, repository string, params *CommitWipParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCommitWipRequest(c.Server, owner, repository, params)
 	if err != nil {
 		return nil, err
 	}
@@ -875,68 +966,8 @@ func (c *Client) CommitWip(ctx context.Context, repository string, params *Commi
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListWip(ctx context.Context, repository string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListWipRequest(c.Server, repository)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) ListBranches(ctx context.Context, user string, reopsitory string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListBranchesRequest(c.Server, user, reopsitory)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) CreateBranchWithBody(ctx context.Context, user string, reopsitory string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateBranchRequestWithBody(c.Server, user, reopsitory, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) CreateBranch(ctx context.Context, user string, reopsitory string, body CreateBranchJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateBranchRequest(c.Server, user, reopsitory, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) DeleteBranch(ctx context.Context, user string, repository string, branch string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteBranchRequest(c.Server, user, repository, branch)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) GetBranch(ctx context.Context, user string, repository string, branch string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetBranchRequest(c.Server, user, repository, branch)
+func (c *Client) ListWip(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListWipRequest(c.Server, owner, repository)
 	if err != nil {
 		return nil, err
 	}
@@ -1015,12 +1046,12 @@ func NewLogoutRequest(server string) (*http.Request, error) {
 }
 
 // NewDeleteObjectRequest generates requests for DeleteObject
-func NewDeleteObjectRequest(server string, user string, repository string, params *DeleteObjectParams) (*http.Request, error) {
+func NewDeleteObjectRequest(server string, owner string, repository string, params *DeleteObjectParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "user", runtime.ParamLocationPath, user)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
 	if err != nil {
 		return nil, err
 	}
@@ -1098,12 +1129,12 @@ func NewDeleteObjectRequest(server string, user string, repository string, param
 }
 
 // NewGetObjectRequest generates requests for GetObject
-func NewGetObjectRequest(server string, user string, repository string, params *GetObjectParams) (*http.Request, error) {
+func NewGetObjectRequest(server string, owner string, repository string, params *GetObjectParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "user", runtime.ParamLocationPath, user)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
 	if err != nil {
 		return nil, err
 	}
@@ -1184,12 +1215,12 @@ func NewGetObjectRequest(server string, user string, repository string, params *
 }
 
 // NewHeadObjectRequest generates requests for HeadObject
-func NewHeadObjectRequest(server string, user string, repository string, params *HeadObjectParams) (*http.Request, error) {
+func NewHeadObjectRequest(server string, owner string, repository string, params *HeadObjectParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "user", runtime.ParamLocationPath, user)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
 	if err != nil {
 		return nil, err
 	}
@@ -1270,12 +1301,12 @@ func NewHeadObjectRequest(server string, user string, repository string, params 
 }
 
 // NewUploadObjectRequestWithBody generates requests for UploadObject with any type of body
-func NewUploadObjectRequestWithBody(server string, user string, repository string, params *UploadObjectParams, contentType string, body io.Reader) (*http.Request, error) {
+func NewUploadObjectRequestWithBody(server string, owner string, repository string, params *UploadObjectParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "user", runtime.ParamLocationPath, user)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
 	if err != nil {
 		return nil, err
 	}
@@ -1370,12 +1401,12 @@ func NewUploadObjectRequestWithBody(server string, user string, repository strin
 }
 
 // NewDeleteRepositoryRequest generates requests for DeleteRepository
-func NewDeleteRepositoryRequest(server string, user string, repository string) (*http.Request, error) {
+func NewDeleteRepositoryRequest(server string, owner string, repository string) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "user", runtime.ParamLocationPath, user)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
 	if err != nil {
 		return nil, err
 	}
@@ -1411,12 +1442,12 @@ func NewDeleteRepositoryRequest(server string, user string, repository string) (
 }
 
 // NewGetRepositoryRequest generates requests for GetRepository
-func NewGetRepositoryRequest(server string, user string, repository string) (*http.Request, error) {
+func NewGetRepositoryRequest(server string, owner string, repository string) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "user", runtime.ParamLocationPath, user)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
 	if err != nil {
 		return nil, err
 	}
@@ -1452,23 +1483,23 @@ func NewGetRepositoryRequest(server string, user string, repository string) (*ht
 }
 
 // NewUpdateRepositoryRequest calls the generic UpdateRepository builder with application/json body
-func NewUpdateRepositoryRequest(server string, user string, repository string, body UpdateRepositoryJSONRequestBody) (*http.Request, error) {
+func NewUpdateRepositoryRequest(server string, owner string, repository string, body UpdateRepositoryJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpdateRepositoryRequestWithBody(server, user, repository, "application/json", bodyReader)
+	return NewUpdateRepositoryRequestWithBody(server, owner, repository, "application/json", bodyReader)
 }
 
 // NewUpdateRepositoryRequestWithBody generates requests for UpdateRepository with any type of body
-func NewUpdateRepositoryRequestWithBody(server string, user string, repository string, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdateRepositoryRequestWithBody(server string, owner string, repository string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "user", runtime.ParamLocationPath, user)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
 	if err != nil {
 		return nil, err
 	}
@@ -1505,13 +1536,226 @@ func NewUpdateRepositoryRequestWithBody(server string, user string, repository s
 	return req, nil
 }
 
-// NewGetCommitsInRepositoryRequest generates requests for GetCommitsInRepository
-func NewGetCommitsInRepositoryRequest(server string, user string, repository string, params *GetCommitsInRepositoryParams) (*http.Request, error) {
+// NewDeleteBranchRequest generates requests for DeleteBranch
+func NewDeleteBranchRequest(server string, owner string, repository string, params *DeleteBranchParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "user", runtime.ParamLocationPath, user)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/repos/%s/%s/branch", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "refName", runtime.ParamLocationQuery, params.RefName); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetBranchRequest generates requests for GetBranch
+func NewGetBranchRequest(server string, owner string, repository string, params *GetBranchParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/repos/%s/%s/branch", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "refName", runtime.ParamLocationQuery, params.RefName); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateBranchRequest calls the generic CreateBranch builder with application/json body
+func NewCreateBranchRequest(server string, owner string, repository string, body CreateBranchJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateBranchRequestWithBody(server, owner, repository, "application/json", bodyReader)
+}
+
+// NewCreateBranchRequestWithBody generates requests for CreateBranch with any type of body
+func NewCreateBranchRequestWithBody(server string, owner string, repository string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/repos/%s/%s/branch", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewListBranchesRequest generates requests for ListBranches
+func NewListBranchesRequest(server string, owner string, repository string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/repos/%s/%s/branches", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetCommitsInRepositoryRequest generates requests for GetCommitsInRepository
+func NewGetCommitsInRepositoryRequest(server string, owner string, repository string, params *GetCommitsInRepositoryParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
 	if err != nil {
 		return nil, err
 	}
@@ -1569,12 +1813,12 @@ func NewGetCommitsInRepositoryRequest(server string, user string, repository str
 }
 
 // NewGetCommitDiffRequest generates requests for GetCommitDiff
-func NewGetCommitDiffRequest(server string, user string, repository string, basehead string, params *GetCommitDiffParams) (*http.Request, error) {
+func NewGetCommitDiffRequest(server string, owner string, repository string, basehead string, params *GetCommitDiffParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "user", runtime.ParamLocationPath, user)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
 	if err != nil {
 		return nil, err
 	}
@@ -1638,13 +1882,13 @@ func NewGetCommitDiffRequest(server string, user string, repository string, base
 	return req, nil
 }
 
-// NewGetEntriesInCommitRequest generates requests for GetEntriesInCommit
-func NewGetEntriesInCommitRequest(server string, user string, repository string, params *GetEntriesInCommitParams) (*http.Request, error) {
+// NewGetEntriesInRefRequest generates requests for GetEntriesInRef
+func NewGetEntriesInRefRequest(server string, owner string, repository string, params *GetEntriesInRefParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "user", runtime.ParamLocationPath, user)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
 	if err != nil {
 		return nil, err
 	}
@@ -1784,8 +2028,8 @@ func NewRegisterRequestWithBody(server string, contentType string, body io.Reade
 	return req, nil
 }
 
-// NewListRepositoryRequest generates requests for ListRepository
-func NewListRepositoryRequest(server string) (*http.Request, error) {
+// NewListRepositoryOfAuthenticatedUserRequest generates requests for ListRepositoryOfAuthenticatedUser
+func NewListRepositoryOfAuthenticatedUserRequest(server string) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -1878,6 +2122,40 @@ func NewGetUserInfoRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewListRepositoryRequest generates requests for ListRepository
+func NewListRepositoryRequest(server string, owner string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/users/%s/repos", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGetVersionRequest generates requests for GetVersion
 func NewGetVersionRequest(server string) (*http.Request, error) {
 	var err error
@@ -1906,12 +2184,19 @@ func NewGetVersionRequest(server string) (*http.Request, error) {
 }
 
 // NewDeleteWipRequest generates requests for DeleteWip
-func NewDeleteWipRequest(server string, repository string, params *DeleteWipParams) (*http.Request, error) {
+func NewDeleteWipRequest(server string, owner string, repository string, params *DeleteWipParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
 	if err != nil {
 		return nil, err
 	}
@@ -1921,7 +2206,7 @@ func NewDeleteWipRequest(server string, repository string, params *DeleteWipPara
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/wip/%s", pathParam0)
+	operationPath := fmt.Sprintf("/wip/%s/%s", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -1958,12 +2243,19 @@ func NewDeleteWipRequest(server string, repository string, params *DeleteWipPara
 }
 
 // NewGetWipRequest generates requests for GetWip
-func NewGetWipRequest(server string, repository string, params *GetWipParams) (*http.Request, error) {
+func NewGetWipRequest(server string, owner string, repository string, params *GetWipParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
 	if err != nil {
 		return nil, err
 	}
@@ -1973,7 +2265,7 @@ func NewGetWipRequest(server string, repository string, params *GetWipParams) (*
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/wip/%s", pathParam0)
+	operationPath := fmt.Sprintf("/wip/%s/%s", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -2010,12 +2302,19 @@ func NewGetWipRequest(server string, repository string, params *GetWipParams) (*
 }
 
 // NewCreateWipRequest generates requests for CreateWip
-func NewCreateWipRequest(server string, repository string, params *CreateWipParams) (*http.Request, error) {
+func NewCreateWipRequest(server string, owner string, repository string, params *CreateWipParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
 	if err != nil {
 		return nil, err
 	}
@@ -2025,7 +2324,7 @@ func NewCreateWipRequest(server string, repository string, params *CreateWipPara
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/wip/%s", pathParam0)
+	operationPath := fmt.Sprintf("/wip/%s/%s", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -2074,12 +2373,19 @@ func NewCreateWipRequest(server string, repository string, params *CreateWipPara
 }
 
 // NewGetWipChangesRequest generates requests for GetWipChanges
-func NewGetWipChangesRequest(server string, repository string, params *GetWipChangesParams) (*http.Request, error) {
+func NewGetWipChangesRequest(server string, owner string, repository string, params *GetWipChangesParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
 	if err != nil {
 		return nil, err
 	}
@@ -2089,7 +2395,7 @@ func NewGetWipChangesRequest(server string, repository string, params *GetWipCha
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/wip/%s/changes", pathParam0)
+	operationPath := fmt.Sprintf("/wip/%s/%s/changes", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -2142,12 +2448,19 @@ func NewGetWipChangesRequest(server string, repository string, params *GetWipCha
 }
 
 // NewCommitWipRequest generates requests for CommitWip
-func NewCommitWipRequest(server string, repository string, params *CommitWipParams) (*http.Request, error) {
+func NewCommitWipRequest(server string, owner string, repository string, params *CommitWipParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
 	if err != nil {
 		return nil, err
 	}
@@ -2157,7 +2470,7 @@ func NewCommitWipRequest(server string, repository string, params *CommitWipPara
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/wip/%s/commit", pathParam0)
+	operationPath := fmt.Sprintf("/wip/%s/%s/commit", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -2210,141 +2523,12 @@ func NewCommitWipRequest(server string, repository string, params *CommitWipPara
 }
 
 // NewListWipRequest generates requests for ListWip
-func NewListWipRequest(server string, repository string) (*http.Request, error) {
+func NewListWipRequest(server string, owner string, repository string) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
 
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/wip/%s/list", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewListBranchesRequest generates requests for ListBranches
-func NewListBranchesRequest(server string, user string, reopsitory string) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "user", runtime.ParamLocationPath, user)
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam1 string
-
-	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "reopsitory", runtime.ParamLocationPath, reopsitory)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/%s/%s/branches", pathParam0, pathParam1)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewCreateBranchRequest calls the generic CreateBranch builder with application/json body
-func NewCreateBranchRequest(server string, user string, reopsitory string, body CreateBranchJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewCreateBranchRequestWithBody(server, user, reopsitory, "application/json", bodyReader)
-}
-
-// NewCreateBranchRequestWithBody generates requests for CreateBranch with any type of body
-func NewCreateBranchRequestWithBody(server string, user string, reopsitory string, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "user", runtime.ParamLocationPath, user)
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam1 string
-
-	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "reopsitory", runtime.ParamLocationPath, reopsitory)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/%s/%s/branches", pathParam0, pathParam1)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewDeleteBranchRequest generates requests for DeleteBranch
-func NewDeleteBranchRequest(server string, user string, repository string, branch string) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "user", runtime.ParamLocationPath, user)
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
 	if err != nil {
 		return nil, err
 	}
@@ -2356,67 +2540,12 @@ func NewDeleteBranchRequest(server string, user string, repository string, branc
 		return nil, err
 	}
 
-	var pathParam2 string
-
-	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "branch", runtime.ParamLocationPath, branch)
-	if err != nil {
-		return nil, err
-	}
-
 	serverURL, err := url.Parse(server)
 	if err != nil {
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/%s/%s/branches/%s", pathParam0, pathParam1, pathParam2)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewGetBranchRequest generates requests for GetBranch
-func NewGetBranchRequest(server string, user string, repository string, branch string) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "user", runtime.ParamLocationPath, user)
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam1 string
-
-	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam2 string
-
-	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "branch", runtime.ParamLocationPath, branch)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/%s/%s/branches/%s", pathParam0, pathParam1, pathParam2)
+	operationPath := fmt.Sprintf("/wip/%s/%s/list", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -2486,36 +2615,50 @@ type ClientWithResponsesInterface interface {
 	LogoutWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*LogoutResponse, error)
 
 	// DeleteObjectWithResponse request
-	DeleteObjectWithResponse(ctx context.Context, user string, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*DeleteObjectResponse, error)
+	DeleteObjectWithResponse(ctx context.Context, owner string, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*DeleteObjectResponse, error)
 
 	// GetObjectWithResponse request
-	GetObjectWithResponse(ctx context.Context, user string, repository string, params *GetObjectParams, reqEditors ...RequestEditorFn) (*GetObjectResponse, error)
+	GetObjectWithResponse(ctx context.Context, owner string, repository string, params *GetObjectParams, reqEditors ...RequestEditorFn) (*GetObjectResponse, error)
 
 	// HeadObjectWithResponse request
-	HeadObjectWithResponse(ctx context.Context, user string, repository string, params *HeadObjectParams, reqEditors ...RequestEditorFn) (*HeadObjectResponse, error)
+	HeadObjectWithResponse(ctx context.Context, owner string, repository string, params *HeadObjectParams, reqEditors ...RequestEditorFn) (*HeadObjectResponse, error)
 
 	// UploadObjectWithBodyWithResponse request with any body
-	UploadObjectWithBodyWithResponse(ctx context.Context, user string, repository string, params *UploadObjectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadObjectResponse, error)
+	UploadObjectWithBodyWithResponse(ctx context.Context, owner string, repository string, params *UploadObjectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadObjectResponse, error)
 
 	// DeleteRepositoryWithResponse request
-	DeleteRepositoryWithResponse(ctx context.Context, user string, repository string, reqEditors ...RequestEditorFn) (*DeleteRepositoryResponse, error)
+	DeleteRepositoryWithResponse(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*DeleteRepositoryResponse, error)
 
 	// GetRepositoryWithResponse request
-	GetRepositoryWithResponse(ctx context.Context, user string, repository string, reqEditors ...RequestEditorFn) (*GetRepositoryResponse, error)
+	GetRepositoryWithResponse(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*GetRepositoryResponse, error)
 
 	// UpdateRepositoryWithBodyWithResponse request with any body
-	UpdateRepositoryWithBodyWithResponse(ctx context.Context, user string, repository string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRepositoryResponse, error)
+	UpdateRepositoryWithBodyWithResponse(ctx context.Context, owner string, repository string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRepositoryResponse, error)
 
-	UpdateRepositoryWithResponse(ctx context.Context, user string, repository string, body UpdateRepositoryJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRepositoryResponse, error)
+	UpdateRepositoryWithResponse(ctx context.Context, owner string, repository string, body UpdateRepositoryJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRepositoryResponse, error)
+
+	// DeleteBranchWithResponse request
+	DeleteBranchWithResponse(ctx context.Context, owner string, repository string, params *DeleteBranchParams, reqEditors ...RequestEditorFn) (*DeleteBranchResponse, error)
+
+	// GetBranchWithResponse request
+	GetBranchWithResponse(ctx context.Context, owner string, repository string, params *GetBranchParams, reqEditors ...RequestEditorFn) (*GetBranchResponse, error)
+
+	// CreateBranchWithBodyWithResponse request with any body
+	CreateBranchWithBodyWithResponse(ctx context.Context, owner string, repository string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateBranchResponse, error)
+
+	CreateBranchWithResponse(ctx context.Context, owner string, repository string, body CreateBranchJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateBranchResponse, error)
+
+	// ListBranchesWithResponse request
+	ListBranchesWithResponse(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*ListBranchesResponse, error)
 
 	// GetCommitsInRepositoryWithResponse request
-	GetCommitsInRepositoryWithResponse(ctx context.Context, user string, repository string, params *GetCommitsInRepositoryParams, reqEditors ...RequestEditorFn) (*GetCommitsInRepositoryResponse, error)
+	GetCommitsInRepositoryWithResponse(ctx context.Context, owner string, repository string, params *GetCommitsInRepositoryParams, reqEditors ...RequestEditorFn) (*GetCommitsInRepositoryResponse, error)
 
 	// GetCommitDiffWithResponse request
-	GetCommitDiffWithResponse(ctx context.Context, user string, repository string, basehead string, params *GetCommitDiffParams, reqEditors ...RequestEditorFn) (*GetCommitDiffResponse, error)
+	GetCommitDiffWithResponse(ctx context.Context, owner string, repository string, basehead string, params *GetCommitDiffParams, reqEditors ...RequestEditorFn) (*GetCommitDiffResponse, error)
 
-	// GetEntriesInCommitWithResponse request
-	GetEntriesInCommitWithResponse(ctx context.Context, user string, repository string, params *GetEntriesInCommitParams, reqEditors ...RequestEditorFn) (*GetEntriesInCommitResponse, error)
+	// GetEntriesInRefWithResponse request
+	GetEntriesInRefWithResponse(ctx context.Context, owner string, repository string, params *GetEntriesInRefParams, reqEditors ...RequestEditorFn) (*GetEntriesInRefResponse, error)
 
 	// GetSetupStateWithResponse request
 	GetSetupStateWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetSetupStateResponse, error)
@@ -2525,8 +2668,8 @@ type ClientWithResponsesInterface interface {
 
 	RegisterWithResponse(ctx context.Context, body RegisterJSONRequestBody, reqEditors ...RequestEditorFn) (*RegisterResponse, error)
 
-	// ListRepositoryWithResponse request
-	ListRepositoryWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListRepositoryResponse, error)
+	// ListRepositoryOfAuthenticatedUserWithResponse request
+	ListRepositoryOfAuthenticatedUserWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListRepositoryOfAuthenticatedUserResponse, error)
 
 	// CreateRepositoryWithBodyWithResponse request with any body
 	CreateRepositoryWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRepositoryResponse, error)
@@ -2536,40 +2679,29 @@ type ClientWithResponsesInterface interface {
 	// GetUserInfoWithResponse request
 	GetUserInfoWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetUserInfoResponse, error)
 
+	// ListRepositoryWithResponse request
+	ListRepositoryWithResponse(ctx context.Context, owner string, reqEditors ...RequestEditorFn) (*ListRepositoryResponse, error)
+
 	// GetVersionWithResponse request
 	GetVersionWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetVersionResponse, error)
 
 	// DeleteWipWithResponse request
-	DeleteWipWithResponse(ctx context.Context, repository string, params *DeleteWipParams, reqEditors ...RequestEditorFn) (*DeleteWipResponse, error)
+	DeleteWipWithResponse(ctx context.Context, owner string, repository string, params *DeleteWipParams, reqEditors ...RequestEditorFn) (*DeleteWipResponse, error)
 
 	// GetWipWithResponse request
-	GetWipWithResponse(ctx context.Context, repository string, params *GetWipParams, reqEditors ...RequestEditorFn) (*GetWipResponse, error)
+	GetWipWithResponse(ctx context.Context, owner string, repository string, params *GetWipParams, reqEditors ...RequestEditorFn) (*GetWipResponse, error)
 
 	// CreateWipWithResponse request
-	CreateWipWithResponse(ctx context.Context, repository string, params *CreateWipParams, reqEditors ...RequestEditorFn) (*CreateWipResponse, error)
+	CreateWipWithResponse(ctx context.Context, owner string, repository string, params *CreateWipParams, reqEditors ...RequestEditorFn) (*CreateWipResponse, error)
 
 	// GetWipChangesWithResponse request
-	GetWipChangesWithResponse(ctx context.Context, repository string, params *GetWipChangesParams, reqEditors ...RequestEditorFn) (*GetWipChangesResponse, error)
+	GetWipChangesWithResponse(ctx context.Context, owner string, repository string, params *GetWipChangesParams, reqEditors ...RequestEditorFn) (*GetWipChangesResponse, error)
 
 	// CommitWipWithResponse request
-	CommitWipWithResponse(ctx context.Context, repository string, params *CommitWipParams, reqEditors ...RequestEditorFn) (*CommitWipResponse, error)
+	CommitWipWithResponse(ctx context.Context, owner string, repository string, params *CommitWipParams, reqEditors ...RequestEditorFn) (*CommitWipResponse, error)
 
 	// ListWipWithResponse request
-	ListWipWithResponse(ctx context.Context, repository string, reqEditors ...RequestEditorFn) (*ListWipResponse, error)
-
-	// ListBranchesWithResponse request
-	ListBranchesWithResponse(ctx context.Context, user string, reopsitory string, reqEditors ...RequestEditorFn) (*ListBranchesResponse, error)
-
-	// CreateBranchWithBodyWithResponse request with any body
-	CreateBranchWithBodyWithResponse(ctx context.Context, user string, reopsitory string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateBranchResponse, error)
-
-	CreateBranchWithResponse(ctx context.Context, user string, reopsitory string, body CreateBranchJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateBranchResponse, error)
-
-	// DeleteBranchWithResponse request
-	DeleteBranchWithResponse(ctx context.Context, user string, repository string, branch string, reqEditors ...RequestEditorFn) (*DeleteBranchResponse, error)
-
-	// GetBranchWithResponse request
-	GetBranchWithResponse(ctx context.Context, user string, repository string, branch string, reqEditors ...RequestEditorFn) (*GetBranchResponse, error)
+	ListWipWithResponse(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*ListWipResponse, error)
 }
 
 type LoginResponse struct {
@@ -2764,6 +2896,93 @@ func (r UpdateRepositoryResponse) StatusCode() int {
 	return 0
 }
 
+type DeleteBranchResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteBranchResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteBranchResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetBranchResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Ref
+}
+
+// Status returns HTTPResponse.Status
+func (r GetBranchResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetBranchResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateBranchResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *BranchCreation
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateBranchResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateBranchResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListBranchesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *RefList
+}
+
+// Status returns HTTPResponse.Status
+func (r ListBranchesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListBranchesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetCommitsInRepositoryResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -2808,14 +3027,14 @@ func (r GetCommitDiffResponse) StatusCode() int {
 	return 0
 }
 
-type GetEntriesInCommitResponse struct {
+type GetEntriesInRefResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *[]TreeEntry
 }
 
 // Status returns HTTPResponse.Status
-func (r GetEntriesInCommitResponse) Status() string {
+func (r GetEntriesInRefResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -2823,7 +3042,7 @@ func (r GetEntriesInCommitResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetEntriesInCommitResponse) StatusCode() int {
+func (r GetEntriesInRefResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -2873,14 +3092,14 @@ func (r RegisterResponse) StatusCode() int {
 	return 0
 }
 
-type ListRepositoryResponse struct {
+type ListRepositoryOfAuthenticatedUserResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *[]Repository
 }
 
 // Status returns HTTPResponse.Status
-func (r ListRepositoryResponse) Status() string {
+func (r ListRepositoryOfAuthenticatedUserResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -2888,7 +3107,7 @@ func (r ListRepositoryResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r ListRepositoryResponse) StatusCode() int {
+func (r ListRepositoryOfAuthenticatedUserResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -2933,6 +3152,28 @@ func (r GetUserInfoResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetUserInfoResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListRepositoryResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]Repository
+}
+
+// Status returns HTTPResponse.Status
+func (r ListRepositoryResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListRepositoryResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -3092,92 +3333,6 @@ func (r ListWipResponse) StatusCode() int {
 	return 0
 }
 
-type ListBranchesResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *RefList
-}
-
-// Status returns HTTPResponse.Status
-func (r ListBranchesResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r ListBranchesResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type CreateBranchResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r CreateBranchResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r CreateBranchResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type DeleteBranchResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-}
-
-// Status returns HTTPResponse.Status
-func (r DeleteBranchResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r DeleteBranchResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type GetBranchResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *Ref
-}
-
-// Status returns HTTPResponse.Status
-func (r GetBranchResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r GetBranchResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
 // LoginWithBodyWithResponse request with arbitrary body returning *LoginResponse
 func (c *ClientWithResponses) LoginWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*LoginResponse, error) {
 	rsp, err := c.LoginWithBody(ctx, contentType, body, reqEditors...)
@@ -3205,8 +3360,8 @@ func (c *ClientWithResponses) LogoutWithResponse(ctx context.Context, reqEditors
 }
 
 // DeleteObjectWithResponse request returning *DeleteObjectResponse
-func (c *ClientWithResponses) DeleteObjectWithResponse(ctx context.Context, user string, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*DeleteObjectResponse, error) {
-	rsp, err := c.DeleteObject(ctx, user, repository, params, reqEditors...)
+func (c *ClientWithResponses) DeleteObjectWithResponse(ctx context.Context, owner string, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*DeleteObjectResponse, error) {
+	rsp, err := c.DeleteObject(ctx, owner, repository, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -3214,8 +3369,8 @@ func (c *ClientWithResponses) DeleteObjectWithResponse(ctx context.Context, user
 }
 
 // GetObjectWithResponse request returning *GetObjectResponse
-func (c *ClientWithResponses) GetObjectWithResponse(ctx context.Context, user string, repository string, params *GetObjectParams, reqEditors ...RequestEditorFn) (*GetObjectResponse, error) {
-	rsp, err := c.GetObject(ctx, user, repository, params, reqEditors...)
+func (c *ClientWithResponses) GetObjectWithResponse(ctx context.Context, owner string, repository string, params *GetObjectParams, reqEditors ...RequestEditorFn) (*GetObjectResponse, error) {
+	rsp, err := c.GetObject(ctx, owner, repository, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -3223,8 +3378,8 @@ func (c *ClientWithResponses) GetObjectWithResponse(ctx context.Context, user st
 }
 
 // HeadObjectWithResponse request returning *HeadObjectResponse
-func (c *ClientWithResponses) HeadObjectWithResponse(ctx context.Context, user string, repository string, params *HeadObjectParams, reqEditors ...RequestEditorFn) (*HeadObjectResponse, error) {
-	rsp, err := c.HeadObject(ctx, user, repository, params, reqEditors...)
+func (c *ClientWithResponses) HeadObjectWithResponse(ctx context.Context, owner string, repository string, params *HeadObjectParams, reqEditors ...RequestEditorFn) (*HeadObjectResponse, error) {
+	rsp, err := c.HeadObject(ctx, owner, repository, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -3232,8 +3387,8 @@ func (c *ClientWithResponses) HeadObjectWithResponse(ctx context.Context, user s
 }
 
 // UploadObjectWithBodyWithResponse request with arbitrary body returning *UploadObjectResponse
-func (c *ClientWithResponses) UploadObjectWithBodyWithResponse(ctx context.Context, user string, repository string, params *UploadObjectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadObjectResponse, error) {
-	rsp, err := c.UploadObjectWithBody(ctx, user, repository, params, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UploadObjectWithBodyWithResponse(ctx context.Context, owner string, repository string, params *UploadObjectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadObjectResponse, error) {
+	rsp, err := c.UploadObjectWithBody(ctx, owner, repository, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -3241,8 +3396,8 @@ func (c *ClientWithResponses) UploadObjectWithBodyWithResponse(ctx context.Conte
 }
 
 // DeleteRepositoryWithResponse request returning *DeleteRepositoryResponse
-func (c *ClientWithResponses) DeleteRepositoryWithResponse(ctx context.Context, user string, repository string, reqEditors ...RequestEditorFn) (*DeleteRepositoryResponse, error) {
-	rsp, err := c.DeleteRepository(ctx, user, repository, reqEditors...)
+func (c *ClientWithResponses) DeleteRepositoryWithResponse(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*DeleteRepositoryResponse, error) {
+	rsp, err := c.DeleteRepository(ctx, owner, repository, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -3250,8 +3405,8 @@ func (c *ClientWithResponses) DeleteRepositoryWithResponse(ctx context.Context, 
 }
 
 // GetRepositoryWithResponse request returning *GetRepositoryResponse
-func (c *ClientWithResponses) GetRepositoryWithResponse(ctx context.Context, user string, repository string, reqEditors ...RequestEditorFn) (*GetRepositoryResponse, error) {
-	rsp, err := c.GetRepository(ctx, user, repository, reqEditors...)
+func (c *ClientWithResponses) GetRepositoryWithResponse(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*GetRepositoryResponse, error) {
+	rsp, err := c.GetRepository(ctx, owner, repository, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -3259,25 +3414,69 @@ func (c *ClientWithResponses) GetRepositoryWithResponse(ctx context.Context, use
 }
 
 // UpdateRepositoryWithBodyWithResponse request with arbitrary body returning *UpdateRepositoryResponse
-func (c *ClientWithResponses) UpdateRepositoryWithBodyWithResponse(ctx context.Context, user string, repository string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRepositoryResponse, error) {
-	rsp, err := c.UpdateRepositoryWithBody(ctx, user, repository, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpdateRepositoryWithBodyWithResponse(ctx context.Context, owner string, repository string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRepositoryResponse, error) {
+	rsp, err := c.UpdateRepositoryWithBody(ctx, owner, repository, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateRepositoryResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateRepositoryWithResponse(ctx context.Context, user string, repository string, body UpdateRepositoryJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRepositoryResponse, error) {
-	rsp, err := c.UpdateRepository(ctx, user, repository, body, reqEditors...)
+func (c *ClientWithResponses) UpdateRepositoryWithResponse(ctx context.Context, owner string, repository string, body UpdateRepositoryJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRepositoryResponse, error) {
+	rsp, err := c.UpdateRepository(ctx, owner, repository, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateRepositoryResponse(rsp)
+}
+
+// DeleteBranchWithResponse request returning *DeleteBranchResponse
+func (c *ClientWithResponses) DeleteBranchWithResponse(ctx context.Context, owner string, repository string, params *DeleteBranchParams, reqEditors ...RequestEditorFn) (*DeleteBranchResponse, error) {
+	rsp, err := c.DeleteBranch(ctx, owner, repository, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteBranchResponse(rsp)
+}
+
+// GetBranchWithResponse request returning *GetBranchResponse
+func (c *ClientWithResponses) GetBranchWithResponse(ctx context.Context, owner string, repository string, params *GetBranchParams, reqEditors ...RequestEditorFn) (*GetBranchResponse, error) {
+	rsp, err := c.GetBranch(ctx, owner, repository, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetBranchResponse(rsp)
+}
+
+// CreateBranchWithBodyWithResponse request with arbitrary body returning *CreateBranchResponse
+func (c *ClientWithResponses) CreateBranchWithBodyWithResponse(ctx context.Context, owner string, repository string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateBranchResponse, error) {
+	rsp, err := c.CreateBranchWithBody(ctx, owner, repository, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateBranchResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateBranchWithResponse(ctx context.Context, owner string, repository string, body CreateBranchJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateBranchResponse, error) {
+	rsp, err := c.CreateBranch(ctx, owner, repository, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateBranchResponse(rsp)
+}
+
+// ListBranchesWithResponse request returning *ListBranchesResponse
+func (c *ClientWithResponses) ListBranchesWithResponse(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*ListBranchesResponse, error) {
+	rsp, err := c.ListBranches(ctx, owner, repository, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListBranchesResponse(rsp)
 }
 
 // GetCommitsInRepositoryWithResponse request returning *GetCommitsInRepositoryResponse
-func (c *ClientWithResponses) GetCommitsInRepositoryWithResponse(ctx context.Context, user string, repository string, params *GetCommitsInRepositoryParams, reqEditors ...RequestEditorFn) (*GetCommitsInRepositoryResponse, error) {
-	rsp, err := c.GetCommitsInRepository(ctx, user, repository, params, reqEditors...)
+func (c *ClientWithResponses) GetCommitsInRepositoryWithResponse(ctx context.Context, owner string, repository string, params *GetCommitsInRepositoryParams, reqEditors ...RequestEditorFn) (*GetCommitsInRepositoryResponse, error) {
+	rsp, err := c.GetCommitsInRepository(ctx, owner, repository, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -3285,21 +3484,21 @@ func (c *ClientWithResponses) GetCommitsInRepositoryWithResponse(ctx context.Con
 }
 
 // GetCommitDiffWithResponse request returning *GetCommitDiffResponse
-func (c *ClientWithResponses) GetCommitDiffWithResponse(ctx context.Context, user string, repository string, basehead string, params *GetCommitDiffParams, reqEditors ...RequestEditorFn) (*GetCommitDiffResponse, error) {
-	rsp, err := c.GetCommitDiff(ctx, user, repository, basehead, params, reqEditors...)
+func (c *ClientWithResponses) GetCommitDiffWithResponse(ctx context.Context, owner string, repository string, basehead string, params *GetCommitDiffParams, reqEditors ...RequestEditorFn) (*GetCommitDiffResponse, error) {
+	rsp, err := c.GetCommitDiff(ctx, owner, repository, basehead, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseGetCommitDiffResponse(rsp)
 }
 
-// GetEntriesInCommitWithResponse request returning *GetEntriesInCommitResponse
-func (c *ClientWithResponses) GetEntriesInCommitWithResponse(ctx context.Context, user string, repository string, params *GetEntriesInCommitParams, reqEditors ...RequestEditorFn) (*GetEntriesInCommitResponse, error) {
-	rsp, err := c.GetEntriesInCommit(ctx, user, repository, params, reqEditors...)
+// GetEntriesInRefWithResponse request returning *GetEntriesInRefResponse
+func (c *ClientWithResponses) GetEntriesInRefWithResponse(ctx context.Context, owner string, repository string, params *GetEntriesInRefParams, reqEditors ...RequestEditorFn) (*GetEntriesInRefResponse, error) {
+	rsp, err := c.GetEntriesInRef(ctx, owner, repository, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetEntriesInCommitResponse(rsp)
+	return ParseGetEntriesInRefResponse(rsp)
 }
 
 // GetSetupStateWithResponse request returning *GetSetupStateResponse
@@ -3328,13 +3527,13 @@ func (c *ClientWithResponses) RegisterWithResponse(ctx context.Context, body Reg
 	return ParseRegisterResponse(rsp)
 }
 
-// ListRepositoryWithResponse request returning *ListRepositoryResponse
-func (c *ClientWithResponses) ListRepositoryWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListRepositoryResponse, error) {
-	rsp, err := c.ListRepository(ctx, reqEditors...)
+// ListRepositoryOfAuthenticatedUserWithResponse request returning *ListRepositoryOfAuthenticatedUserResponse
+func (c *ClientWithResponses) ListRepositoryOfAuthenticatedUserWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListRepositoryOfAuthenticatedUserResponse, error) {
+	rsp, err := c.ListRepositoryOfAuthenticatedUser(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseListRepositoryResponse(rsp)
+	return ParseListRepositoryOfAuthenticatedUserResponse(rsp)
 }
 
 // CreateRepositoryWithBodyWithResponse request with arbitrary body returning *CreateRepositoryResponse
@@ -3363,6 +3562,15 @@ func (c *ClientWithResponses) GetUserInfoWithResponse(ctx context.Context, reqEd
 	return ParseGetUserInfoResponse(rsp)
 }
 
+// ListRepositoryWithResponse request returning *ListRepositoryResponse
+func (c *ClientWithResponses) ListRepositoryWithResponse(ctx context.Context, owner string, reqEditors ...RequestEditorFn) (*ListRepositoryResponse, error) {
+	rsp, err := c.ListRepository(ctx, owner, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListRepositoryResponse(rsp)
+}
+
 // GetVersionWithResponse request returning *GetVersionResponse
 func (c *ClientWithResponses) GetVersionWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetVersionResponse, error) {
 	rsp, err := c.GetVersion(ctx, reqEditors...)
@@ -3373,8 +3581,8 @@ func (c *ClientWithResponses) GetVersionWithResponse(ctx context.Context, reqEdi
 }
 
 // DeleteWipWithResponse request returning *DeleteWipResponse
-func (c *ClientWithResponses) DeleteWipWithResponse(ctx context.Context, repository string, params *DeleteWipParams, reqEditors ...RequestEditorFn) (*DeleteWipResponse, error) {
-	rsp, err := c.DeleteWip(ctx, repository, params, reqEditors...)
+func (c *ClientWithResponses) DeleteWipWithResponse(ctx context.Context, owner string, repository string, params *DeleteWipParams, reqEditors ...RequestEditorFn) (*DeleteWipResponse, error) {
+	rsp, err := c.DeleteWip(ctx, owner, repository, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -3382,8 +3590,8 @@ func (c *ClientWithResponses) DeleteWipWithResponse(ctx context.Context, reposit
 }
 
 // GetWipWithResponse request returning *GetWipResponse
-func (c *ClientWithResponses) GetWipWithResponse(ctx context.Context, repository string, params *GetWipParams, reqEditors ...RequestEditorFn) (*GetWipResponse, error) {
-	rsp, err := c.GetWip(ctx, repository, params, reqEditors...)
+func (c *ClientWithResponses) GetWipWithResponse(ctx context.Context, owner string, repository string, params *GetWipParams, reqEditors ...RequestEditorFn) (*GetWipResponse, error) {
+	rsp, err := c.GetWip(ctx, owner, repository, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -3391,8 +3599,8 @@ func (c *ClientWithResponses) GetWipWithResponse(ctx context.Context, repository
 }
 
 // CreateWipWithResponse request returning *CreateWipResponse
-func (c *ClientWithResponses) CreateWipWithResponse(ctx context.Context, repository string, params *CreateWipParams, reqEditors ...RequestEditorFn) (*CreateWipResponse, error) {
-	rsp, err := c.CreateWip(ctx, repository, params, reqEditors...)
+func (c *ClientWithResponses) CreateWipWithResponse(ctx context.Context, owner string, repository string, params *CreateWipParams, reqEditors ...RequestEditorFn) (*CreateWipResponse, error) {
+	rsp, err := c.CreateWip(ctx, owner, repository, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -3400,8 +3608,8 @@ func (c *ClientWithResponses) CreateWipWithResponse(ctx context.Context, reposit
 }
 
 // GetWipChangesWithResponse request returning *GetWipChangesResponse
-func (c *ClientWithResponses) GetWipChangesWithResponse(ctx context.Context, repository string, params *GetWipChangesParams, reqEditors ...RequestEditorFn) (*GetWipChangesResponse, error) {
-	rsp, err := c.GetWipChanges(ctx, repository, params, reqEditors...)
+func (c *ClientWithResponses) GetWipChangesWithResponse(ctx context.Context, owner string, repository string, params *GetWipChangesParams, reqEditors ...RequestEditorFn) (*GetWipChangesResponse, error) {
+	rsp, err := c.GetWipChanges(ctx, owner, repository, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -3409,8 +3617,8 @@ func (c *ClientWithResponses) GetWipChangesWithResponse(ctx context.Context, rep
 }
 
 // CommitWipWithResponse request returning *CommitWipResponse
-func (c *ClientWithResponses) CommitWipWithResponse(ctx context.Context, repository string, params *CommitWipParams, reqEditors ...RequestEditorFn) (*CommitWipResponse, error) {
-	rsp, err := c.CommitWip(ctx, repository, params, reqEditors...)
+func (c *ClientWithResponses) CommitWipWithResponse(ctx context.Context, owner string, repository string, params *CommitWipParams, reqEditors ...RequestEditorFn) (*CommitWipResponse, error) {
+	rsp, err := c.CommitWip(ctx, owner, repository, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -3418,56 +3626,12 @@ func (c *ClientWithResponses) CommitWipWithResponse(ctx context.Context, reposit
 }
 
 // ListWipWithResponse request returning *ListWipResponse
-func (c *ClientWithResponses) ListWipWithResponse(ctx context.Context, repository string, reqEditors ...RequestEditorFn) (*ListWipResponse, error) {
-	rsp, err := c.ListWip(ctx, repository, reqEditors...)
+func (c *ClientWithResponses) ListWipWithResponse(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*ListWipResponse, error) {
+	rsp, err := c.ListWip(ctx, owner, repository, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseListWipResponse(rsp)
-}
-
-// ListBranchesWithResponse request returning *ListBranchesResponse
-func (c *ClientWithResponses) ListBranchesWithResponse(ctx context.Context, user string, reopsitory string, reqEditors ...RequestEditorFn) (*ListBranchesResponse, error) {
-	rsp, err := c.ListBranches(ctx, user, reopsitory, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseListBranchesResponse(rsp)
-}
-
-// CreateBranchWithBodyWithResponse request with arbitrary body returning *CreateBranchResponse
-func (c *ClientWithResponses) CreateBranchWithBodyWithResponse(ctx context.Context, user string, reopsitory string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateBranchResponse, error) {
-	rsp, err := c.CreateBranchWithBody(ctx, user, reopsitory, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseCreateBranchResponse(rsp)
-}
-
-func (c *ClientWithResponses) CreateBranchWithResponse(ctx context.Context, user string, reopsitory string, body CreateBranchJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateBranchResponse, error) {
-	rsp, err := c.CreateBranch(ctx, user, reopsitory, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseCreateBranchResponse(rsp)
-}
-
-// DeleteBranchWithResponse request returning *DeleteBranchResponse
-func (c *ClientWithResponses) DeleteBranchWithResponse(ctx context.Context, user string, repository string, branch string, reqEditors ...RequestEditorFn) (*DeleteBranchResponse, error) {
-	rsp, err := c.DeleteBranch(ctx, user, repository, branch, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseDeleteBranchResponse(rsp)
-}
-
-// GetBranchWithResponse request returning *GetBranchResponse
-func (c *ClientWithResponses) GetBranchWithResponse(ctx context.Context, user string, repository string, branch string, reqEditors ...RequestEditorFn) (*GetBranchResponse, error) {
-	rsp, err := c.GetBranch(ctx, user, repository, branch, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseGetBranchResponse(rsp)
 }
 
 // ParseLoginResponse parses an HTTP response from a LoginWithResponse call
@@ -3644,6 +3808,100 @@ func ParseUpdateRepositoryResponse(rsp *http.Response) (*UpdateRepositoryRespons
 	return response, nil
 }
 
+// ParseDeleteBranchResponse parses an HTTP response from a DeleteBranchWithResponse call
+func ParseDeleteBranchResponse(rsp *http.Response) (*DeleteBranchResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteBranchResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseGetBranchResponse parses an HTTP response from a GetBranchWithResponse call
+func ParseGetBranchResponse(rsp *http.Response) (*GetBranchResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetBranchResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Ref
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateBranchResponse parses an HTTP response from a CreateBranchWithResponse call
+func ParseCreateBranchResponse(rsp *http.Response) (*CreateBranchResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateBranchResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest BranchCreation
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListBranchesResponse parses an HTTP response from a ListBranchesWithResponse call
+func ParseListBranchesResponse(rsp *http.Response) (*ListBranchesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListBranchesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest RefList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseGetCommitsInRepositoryResponse parses an HTTP response from a GetCommitsInRepositoryWithResponse call
 func ParseGetCommitsInRepositoryResponse(rsp *http.Response) (*GetCommitsInRepositoryResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -3696,15 +3954,15 @@ func ParseGetCommitDiffResponse(rsp *http.Response) (*GetCommitDiffResponse, err
 	return response, nil
 }
 
-// ParseGetEntriesInCommitResponse parses an HTTP response from a GetEntriesInCommitWithResponse call
-func ParseGetEntriesInCommitResponse(rsp *http.Response) (*GetEntriesInCommitResponse, error) {
+// ParseGetEntriesInRefResponse parses an HTTP response from a GetEntriesInRefWithResponse call
+func ParseGetEntriesInRefResponse(rsp *http.Response) (*GetEntriesInRefResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetEntriesInCommitResponse{
+	response := &GetEntriesInRefResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -3764,15 +4022,15 @@ func ParseRegisterResponse(rsp *http.Response) (*RegisterResponse, error) {
 	return response, nil
 }
 
-// ParseListRepositoryResponse parses an HTTP response from a ListRepositoryWithResponse call
-func ParseListRepositoryResponse(rsp *http.Response) (*ListRepositoryResponse, error) {
+// ParseListRepositoryOfAuthenticatedUserResponse parses an HTTP response from a ListRepositoryOfAuthenticatedUserWithResponse call
+func ParseListRepositoryOfAuthenticatedUserResponse(rsp *http.Response) (*ListRepositoryOfAuthenticatedUserResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &ListRepositoryResponse{
+	response := &ListRepositoryOfAuthenticatedUserResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -3832,6 +4090,32 @@ func ParseGetUserInfoResponse(rsp *http.Response) (*GetUserInfoResponse, error) 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest UserInfo
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListRepositoryResponse parses an HTTP response from a ListRepositoryWithResponse call
+func ParseListRepositoryResponse(rsp *http.Response) (*ListRepositoryResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListRepositoryResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []Repository
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -4014,90 +4298,6 @@ func ParseListWipResponse(rsp *http.Response) (*ListWipResponse, error) {
 	return response, nil
 }
 
-// ParseListBranchesResponse parses an HTTP response from a ListBranchesWithResponse call
-func ParseListBranchesResponse(rsp *http.Response) (*ListBranchesResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &ListBranchesResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest RefList
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseCreateBranchResponse parses an HTTP response from a CreateBranchWithResponse call
-func ParseCreateBranchResponse(rsp *http.Response) (*CreateBranchResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &CreateBranchResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
-// ParseDeleteBranchResponse parses an HTTP response from a DeleteBranchWithResponse call
-func ParseDeleteBranchResponse(rsp *http.Response) (*DeleteBranchResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &DeleteBranchResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	return response, nil
-}
-
-// ParseGetBranchResponse parses an HTTP response from a GetBranchWithResponse call
-func ParseGetBranchResponse(rsp *http.Response) (*GetBranchResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &GetBranchResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Ref
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// perform a login
@@ -4107,35 +4307,47 @@ type ServerInterface interface {
 	// (POST /auth/logout)
 	Logout(ctx context.Context, w *JiaozifsResponse, r *http.Request)
 	// delete object. Missing objects will not return a NotFound error.
-	// (DELETE /object/{user}/{repository})
-	DeleteObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params DeleteObjectParams)
+	// (DELETE /object/{owner}/{repository})
+	DeleteObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params DeleteObjectParams)
 	// get object content
-	// (GET /object/{user}/{repository})
-	GetObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params GetObjectParams)
+	// (GET /object/{owner}/{repository})
+	GetObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params GetObjectParams)
 	// check if object exists
-	// (HEAD /object/{user}/{repository})
-	HeadObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params HeadObjectParams)
+	// (HEAD /object/{owner}/{repository})
+	HeadObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params HeadObjectParams)
 
-	// (POST /object/{user}/{repository})
-	UploadObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params UploadObjectParams)
+	// (POST /object/{owner}/{repository})
+	UploadObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params UploadObjectParams)
 	// delete repository
-	// (DELETE /repos/{user}/{repository})
-	DeleteRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string)
+	// (DELETE /repos/{owner}/{repository})
+	DeleteRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string)
 	// get repository
-	// (GET /repos/{user}/{repository})
-	GetRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string)
+	// (GET /repos/{owner}/{repository})
+	GetRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string)
 	// update repository
-	// (POST /repos/{user}/{repository})
-	UpdateRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, body UpdateRepositoryJSONRequestBody, user string, repository string)
+	// (POST /repos/{owner}/{repository})
+	UpdateRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, body UpdateRepositoryJSONRequestBody, owner string, repository string)
+	// delete branch
+	// (DELETE /repos/{owner}/{repository}/branch)
+	DeleteBranch(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params DeleteBranchParams)
+	// get branch
+	// (GET /repos/{owner}/{repository}/branch)
+	GetBranch(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params GetBranchParams)
+	// create branch
+	// (POST /repos/{owner}/{repository}/branch)
+	CreateBranch(ctx context.Context, w *JiaozifsResponse, r *http.Request, body CreateBranchJSONRequestBody, owner string, repository string)
+	// list branches
+	// (GET /repos/{owner}/{repository}/branches)
+	ListBranches(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string)
 	// get commits in repository
-	// (GET /repos/{user}/{repository}/commits)
-	GetCommitsInRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params GetCommitsInRepositoryParams)
+	// (GET /repos/{owner}/{repository}/commits)
+	GetCommitsInRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params GetCommitsInRepositoryParams)
 	// get commit differences
-	// (GET /repos/{user}/{repository}/compare/{basehead})
-	GetCommitDiff(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, basehead string, params GetCommitDiffParams)
-	// list entries in commit
-	// (GET /repos/{user}/{repository}/contents/)
-	GetEntriesInCommit(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params GetEntriesInCommitParams)
+	// (GET /repos/{owner}/{repository}/compare/{basehead})
+	GetCommitDiff(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, basehead string, params GetCommitDiffParams)
+	// list entries in ref
+	// (GET /repos/{owner}/{repository}/contents/)
+	GetEntriesInRef(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params GetEntriesInRefParams)
 	// check if jiaozifs setup
 	// (GET /setup)
 	GetSetupState(ctx context.Context, w *JiaozifsResponse, r *http.Request)
@@ -4144,46 +4356,37 @@ type ServerInterface interface {
 	Register(ctx context.Context, w *JiaozifsResponse, r *http.Request, body RegisterJSONRequestBody)
 	// list repository
 	// (GET /users/repos)
-	ListRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request)
+	ListRepositoryOfAuthenticatedUser(ctx context.Context, w *JiaozifsResponse, r *http.Request)
 	// create repository
 	// (POST /users/repos)
 	CreateRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, body CreateRepositoryJSONRequestBody)
 	// get information of the currently logged-in user
 	// (GET /users/user)
 	GetUserInfo(ctx context.Context, w *JiaozifsResponse, r *http.Request)
+	// list repository in specific owner
+	// (GET /users/{owner}/repos)
+	ListRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string)
 	// return program and runtime version
 	// (GET /version)
 	GetVersion(ctx context.Context, w *JiaozifsResponse, r *http.Request)
 	// remove working in process
-	// (DELETE /wip/{repository})
-	DeleteWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, repository string, params DeleteWipParams)
+	// (DELETE /wip/{owner}/{repository})
+	DeleteWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params DeleteWipParams)
 	// get working in process
-	// (GET /wip/{repository})
-	GetWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, repository string, params GetWipParams)
+	// (GET /wip/{owner}/{repository})
+	GetWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params GetWipParams)
 	// create working in process
-	// (POST /wip/{repository})
-	CreateWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, repository string, params CreateWipParams)
+	// (POST /wip/{owner}/{repository})
+	CreateWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params CreateWipParams)
 	// get working in process changes
-	// (GET /wip/{repository}/changes)
-	GetWipChanges(ctx context.Context, w *JiaozifsResponse, r *http.Request, repository string, params GetWipChangesParams)
+	// (GET /wip/{owner}/{repository}/changes)
+	GetWipChanges(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params GetWipChangesParams)
 	// commit working in process to branch
-	// (POST /wip/{repository}/commit)
-	CommitWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, repository string, params CommitWipParams)
+	// (POST /wip/{owner}/{repository}/commit)
+	CommitWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params CommitWipParams)
 	// list wip in specific project and user
-	// (GET /wip/{repository}/list)
-	ListWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, repository string)
-	// list branches
-	// (GET /{user}/{reopsitory}/branches)
-	ListBranches(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, reopsitory string)
-	// create branch
-	// (POST /{user}/{reopsitory}/branches)
-	CreateBranch(ctx context.Context, w *JiaozifsResponse, r *http.Request, body CreateBranchJSONRequestBody, user string, reopsitory string)
-	// delete branch
-	// (DELETE /{user}/{repository}/branches/{branch})
-	DeleteBranch(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, branch string)
-	// get branch
-	// (GET /{user}/{repository}/branches/{branch})
-	GetBranch(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, branch string)
+	// (GET /wip/{owner}/{repository}/list)
+	ListWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -4203,61 +4406,85 @@ func (_ Unimplemented) Logout(ctx context.Context, w *JiaozifsResponse, r *http.
 }
 
 // delete object. Missing objects will not return a NotFound error.
-// (DELETE /object/{user}/{repository})
-func (_ Unimplemented) DeleteObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params DeleteObjectParams) {
+// (DELETE /object/{owner}/{repository})
+func (_ Unimplemented) DeleteObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params DeleteObjectParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // get object content
-// (GET /object/{user}/{repository})
-func (_ Unimplemented) GetObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params GetObjectParams) {
+// (GET /object/{owner}/{repository})
+func (_ Unimplemented) GetObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params GetObjectParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // check if object exists
-// (HEAD /object/{user}/{repository})
-func (_ Unimplemented) HeadObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params HeadObjectParams) {
+// (HEAD /object/{owner}/{repository})
+func (_ Unimplemented) HeadObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params HeadObjectParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// (POST /object/{user}/{repository})
-func (_ Unimplemented) UploadObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params UploadObjectParams) {
+// (POST /object/{owner}/{repository})
+func (_ Unimplemented) UploadObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params UploadObjectParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // delete repository
-// (DELETE /repos/{user}/{repository})
-func (_ Unimplemented) DeleteRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string) {
+// (DELETE /repos/{owner}/{repository})
+func (_ Unimplemented) DeleteRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // get repository
-// (GET /repos/{user}/{repository})
-func (_ Unimplemented) GetRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string) {
+// (GET /repos/{owner}/{repository})
+func (_ Unimplemented) GetRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // update repository
-// (POST /repos/{user}/{repository})
-func (_ Unimplemented) UpdateRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, body UpdateRepositoryJSONRequestBody, user string, repository string) {
+// (POST /repos/{owner}/{repository})
+func (_ Unimplemented) UpdateRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, body UpdateRepositoryJSONRequestBody, owner string, repository string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// delete branch
+// (DELETE /repos/{owner}/{repository}/branch)
+func (_ Unimplemented) DeleteBranch(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params DeleteBranchParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// get branch
+// (GET /repos/{owner}/{repository}/branch)
+func (_ Unimplemented) GetBranch(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params GetBranchParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// create branch
+// (POST /repos/{owner}/{repository}/branch)
+func (_ Unimplemented) CreateBranch(ctx context.Context, w *JiaozifsResponse, r *http.Request, body CreateBranchJSONRequestBody, owner string, repository string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// list branches
+// (GET /repos/{owner}/{repository}/branches)
+func (_ Unimplemented) ListBranches(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // get commits in repository
-// (GET /repos/{user}/{repository}/commits)
-func (_ Unimplemented) GetCommitsInRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params GetCommitsInRepositoryParams) {
+// (GET /repos/{owner}/{repository}/commits)
+func (_ Unimplemented) GetCommitsInRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params GetCommitsInRepositoryParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // get commit differences
-// (GET /repos/{user}/{repository}/compare/{basehead})
-func (_ Unimplemented) GetCommitDiff(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, basehead string, params GetCommitDiffParams) {
+// (GET /repos/{owner}/{repository}/compare/{basehead})
+func (_ Unimplemented) GetCommitDiff(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, basehead string, params GetCommitDiffParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// list entries in commit
-// (GET /repos/{user}/{repository}/contents/)
-func (_ Unimplemented) GetEntriesInCommit(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, params GetEntriesInCommitParams) {
+// list entries in ref
+// (GET /repos/{owner}/{repository}/contents/)
+func (_ Unimplemented) GetEntriesInRef(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params GetEntriesInRefParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -4275,7 +4502,7 @@ func (_ Unimplemented) Register(ctx context.Context, w *JiaozifsResponse, r *htt
 
 // list repository
 // (GET /users/repos)
-func (_ Unimplemented) ListRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request) {
+func (_ Unimplemented) ListRepositoryOfAuthenticatedUser(ctx context.Context, w *JiaozifsResponse, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -4291,6 +4518,12 @@ func (_ Unimplemented) GetUserInfo(ctx context.Context, w *JiaozifsResponse, r *
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// list repository in specific owner
+// (GET /users/{owner}/repos)
+func (_ Unimplemented) ListRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // return program and runtime version
 // (GET /version)
 func (_ Unimplemented) GetVersion(ctx context.Context, w *JiaozifsResponse, r *http.Request) {
@@ -4298,62 +4531,38 @@ func (_ Unimplemented) GetVersion(ctx context.Context, w *JiaozifsResponse, r *h
 }
 
 // remove working in process
-// (DELETE /wip/{repository})
-func (_ Unimplemented) DeleteWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, repository string, params DeleteWipParams) {
+// (DELETE /wip/{owner}/{repository})
+func (_ Unimplemented) DeleteWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params DeleteWipParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // get working in process
-// (GET /wip/{repository})
-func (_ Unimplemented) GetWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, repository string, params GetWipParams) {
+// (GET /wip/{owner}/{repository})
+func (_ Unimplemented) GetWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params GetWipParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // create working in process
-// (POST /wip/{repository})
-func (_ Unimplemented) CreateWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, repository string, params CreateWipParams) {
+// (POST /wip/{owner}/{repository})
+func (_ Unimplemented) CreateWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params CreateWipParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // get working in process changes
-// (GET /wip/{repository}/changes)
-func (_ Unimplemented) GetWipChanges(ctx context.Context, w *JiaozifsResponse, r *http.Request, repository string, params GetWipChangesParams) {
+// (GET /wip/{owner}/{repository}/changes)
+func (_ Unimplemented) GetWipChanges(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params GetWipChangesParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // commit working in process to branch
-// (POST /wip/{repository}/commit)
-func (_ Unimplemented) CommitWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, repository string, params CommitWipParams) {
+// (POST /wip/{owner}/{repository}/commit)
+func (_ Unimplemented) CommitWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params CommitWipParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // list wip in specific project and user
-// (GET /wip/{repository}/list)
-func (_ Unimplemented) ListWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, repository string) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// list branches
-// (GET /{user}/{reopsitory}/branches)
-func (_ Unimplemented) ListBranches(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, reopsitory string) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// create branch
-// (POST /{user}/{reopsitory}/branches)
-func (_ Unimplemented) CreateBranch(ctx context.Context, w *JiaozifsResponse, r *http.Request, body CreateBranchJSONRequestBody, user string, reopsitory string) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// delete branch
-// (DELETE /{user}/{repository}/branches/{branch})
-func (_ Unimplemented) DeleteBranch(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, branch string) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// get branch
-// (GET /{user}/{repository}/branches/{branch})
-func (_ Unimplemented) GetBranch(ctx context.Context, w *JiaozifsResponse, r *http.Request, user string, repository string, branch string) {
+// (GET /wip/{owner}/{repository}/list)
+func (_ Unimplemented) ListWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -4418,12 +4627,12 @@ func (siw *ServerInterfaceWrapper) DeleteObject(w http.ResponseWriter, r *http.R
 
 	var err error
 
-	// ------------- Path parameter "user" -------------
-	var user string
+	// ------------- Path parameter "owner" -------------
+	var owner string
 
-	err = runtime.BindStyledParameterWithOptions("simple", "user", chi.URLParam(r, "user"), &user, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
 		return
 	}
 
@@ -4491,7 +4700,7 @@ func (siw *ServerInterfaceWrapper) DeleteObject(w http.ResponseWriter, r *http.R
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteObject(r.Context(), &JiaozifsResponse{w}, r, user, repository, params)
+		siw.Handler.DeleteObject(r.Context(), &JiaozifsResponse{w}, r, owner, repository, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -4507,12 +4716,12 @@ func (siw *ServerInterfaceWrapper) GetObject(w http.ResponseWriter, r *http.Requ
 
 	var err error
 
-	// ------------- Path parameter "user" -------------
-	var user string
+	// ------------- Path parameter "owner" -------------
+	var owner string
 
-	err = runtime.BindStyledParameterWithOptions("simple", "user", chi.URLParam(r, "user"), &user, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
 		return
 	}
 
@@ -4586,7 +4795,7 @@ func (siw *ServerInterfaceWrapper) GetObject(w http.ResponseWriter, r *http.Requ
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetObject(r.Context(), &JiaozifsResponse{w}, r, user, repository, params)
+		siw.Handler.GetObject(r.Context(), &JiaozifsResponse{w}, r, owner, repository, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -4602,12 +4811,12 @@ func (siw *ServerInterfaceWrapper) HeadObject(w http.ResponseWriter, r *http.Req
 
 	var err error
 
-	// ------------- Path parameter "user" -------------
-	var user string
+	// ------------- Path parameter "owner" -------------
+	var owner string
 
-	err = runtime.BindStyledParameterWithOptions("simple", "user", chi.URLParam(r, "user"), &user, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
 		return
 	}
 
@@ -4681,7 +4890,7 @@ func (siw *ServerInterfaceWrapper) HeadObject(w http.ResponseWriter, r *http.Req
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.HeadObject(r.Context(), &JiaozifsResponse{w}, r, user, repository, params)
+		siw.Handler.HeadObject(r.Context(), &JiaozifsResponse{w}, r, owner, repository, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -4697,12 +4906,12 @@ func (siw *ServerInterfaceWrapper) UploadObject(w http.ResponseWriter, r *http.R
 
 	var err error
 
-	// ------------- Path parameter "user" -------------
-	var user string
+	// ------------- Path parameter "owner" -------------
+	var owner string
 
-	err = runtime.BindStyledParameterWithOptions("simple", "user", chi.URLParam(r, "user"), &user, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
 		return
 	}
 
@@ -4791,7 +5000,7 @@ func (siw *ServerInterfaceWrapper) UploadObject(w http.ResponseWriter, r *http.R
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UploadObject(r.Context(), &JiaozifsResponse{w}, r, user, repository, params)
+		siw.Handler.UploadObject(r.Context(), &JiaozifsResponse{w}, r, owner, repository, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -4807,12 +5016,12 @@ func (siw *ServerInterfaceWrapper) DeleteRepository(w http.ResponseWriter, r *ht
 
 	var err error
 
-	// ------------- Path parameter "user" -------------
-	var user string
+	// ------------- Path parameter "owner" -------------
+	var owner string
 
-	err = runtime.BindStyledParameterWithOptions("simple", "user", chi.URLParam(r, "user"), &user, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
 		return
 	}
 
@@ -4832,7 +5041,7 @@ func (siw *ServerInterfaceWrapper) DeleteRepository(w http.ResponseWriter, r *ht
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteRepository(r.Context(), &JiaozifsResponse{w}, r, user, repository)
+		siw.Handler.DeleteRepository(r.Context(), &JiaozifsResponse{w}, r, owner, repository)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -4848,12 +5057,12 @@ func (siw *ServerInterfaceWrapper) GetRepository(w http.ResponseWriter, r *http.
 
 	var err error
 
-	// ------------- Path parameter "user" -------------
-	var user string
+	// ------------- Path parameter "owner" -------------
+	var owner string
 
-	err = runtime.BindStyledParameterWithOptions("simple", "user", chi.URLParam(r, "user"), &user, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
 		return
 	}
 
@@ -4873,7 +5082,7 @@ func (siw *ServerInterfaceWrapper) GetRepository(w http.ResponseWriter, r *http.
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetRepository(r.Context(), &JiaozifsResponse{w}, r, user, repository)
+		siw.Handler.GetRepository(r.Context(), &JiaozifsResponse{w}, r, owner, repository)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -4899,12 +5108,12 @@ func (siw *ServerInterfaceWrapper) UpdateRepository(w http.ResponseWriter, r *ht
 		}
 	}
 
-	// ------------- Path parameter "user" -------------
-	var user string
+	// ------------- Path parameter "owner" -------------
+	var owner string
 
-	err = runtime.BindStyledParameterWithOptions("simple", "user", chi.URLParam(r, "user"), &user, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
 		return
 	}
 
@@ -4924,7 +5133,217 @@ func (siw *ServerInterfaceWrapper) UpdateRepository(w http.ResponseWriter, r *ht
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateRepository(r.Context(), &JiaozifsResponse{w}, r, body, user, repository)
+		siw.Handler.UpdateRepository(r.Context(), &JiaozifsResponse{w}, r, body, owner, repository)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// DeleteBranch operation middleware
+func (siw *ServerInterfaceWrapper) DeleteBranch(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteBranchParams
+
+	// ------------- Required query parameter "refName" -------------
+
+	if paramValue := r.URL.Query().Get("refName"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "refName"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "refName", r.URL.Query(), &params.RefName)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "refName", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteBranch(r.Context(), &JiaozifsResponse{w}, r, owner, repository, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// GetBranch operation middleware
+func (siw *ServerInterfaceWrapper) GetBranch(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetBranchParams
+
+	// ------------- Required query parameter "refName" -------------
+
+	if paramValue := r.URL.Query().Get("refName"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "refName"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "refName", r.URL.Query(), &params.RefName)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "refName", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetBranch(r.Context(), &JiaozifsResponse{w}, r, owner, repository, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// CreateBranch operation middleware
+func (siw *ServerInterfaceWrapper) CreateBranch(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Body parse -------------
+	var body CreateBranchJSONRequestBody
+	parseBody := true
+	if parseBody {
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, "Error unmarshalling body 'CreateBranch' as JSON", http.StatusBadRequest)
+			return
+		}
+	}
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateBranch(r.Context(), &JiaozifsResponse{w}, r, body, owner, repository)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// ListBranches operation middleware
+func (siw *ServerInterfaceWrapper) ListBranches(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListBranches(r.Context(), &JiaozifsResponse{w}, r, owner, repository)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -4940,12 +5359,12 @@ func (siw *ServerInterfaceWrapper) GetCommitsInRepository(w http.ResponseWriter,
 
 	var err error
 
-	// ------------- Path parameter "user" -------------
-	var user string
+	// ------------- Path parameter "owner" -------------
+	var owner string
 
-	err = runtime.BindStyledParameterWithOptions("simple", "user", chi.URLParam(r, "user"), &user, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
 		return
 	}
 
@@ -4976,7 +5395,7 @@ func (siw *ServerInterfaceWrapper) GetCommitsInRepository(w http.ResponseWriter,
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetCommitsInRepository(r.Context(), &JiaozifsResponse{w}, r, user, repository, params)
+		siw.Handler.GetCommitsInRepository(r.Context(), &JiaozifsResponse{w}, r, owner, repository, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -4992,12 +5411,12 @@ func (siw *ServerInterfaceWrapper) GetCommitDiff(w http.ResponseWriter, r *http.
 
 	var err error
 
-	// ------------- Path parameter "user" -------------
-	var user string
+	// ------------- Path parameter "owner" -------------
+	var owner string
 
-	err = runtime.BindStyledParameterWithOptions("simple", "user", chi.URLParam(r, "user"), &user, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
 		return
 	}
 
@@ -5037,7 +5456,7 @@ func (siw *ServerInterfaceWrapper) GetCommitDiff(w http.ResponseWriter, r *http.
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetCommitDiff(r.Context(), &JiaozifsResponse{w}, r, user, repository, basehead, params)
+		siw.Handler.GetCommitDiff(r.Context(), &JiaozifsResponse{w}, r, owner, repository, basehead, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -5047,18 +5466,18 @@ func (siw *ServerInterfaceWrapper) GetCommitDiff(w http.ResponseWriter, r *http.
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
-// GetEntriesInCommit operation middleware
-func (siw *ServerInterfaceWrapper) GetEntriesInCommit(w http.ResponseWriter, r *http.Request) {
+// GetEntriesInRef operation middleware
+func (siw *ServerInterfaceWrapper) GetEntriesInRef(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var err error
 
-	// ------------- Path parameter "user" -------------
-	var user string
+	// ------------- Path parameter "owner" -------------
+	var owner string
 
-	err = runtime.BindStyledParameterWithOptions("simple", "user", chi.URLParam(r, "user"), &user, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
 		return
 	}
 
@@ -5078,7 +5497,7 @@ func (siw *ServerInterfaceWrapper) GetEntriesInCommit(w http.ResponseWriter, r *
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
-	var params GetEntriesInCommitParams
+	var params GetEntriesInRefParams
 
 	// ------------- Optional query parameter "path" -------------
 
@@ -5097,7 +5516,7 @@ func (siw *ServerInterfaceWrapper) GetEntriesInCommit(w http.ResponseWriter, r *
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetEntriesInCommit(r.Context(), &JiaozifsResponse{w}, r, user, repository, params)
+		siw.Handler.GetEntriesInRef(r.Context(), &JiaozifsResponse{w}, r, owner, repository, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -5147,8 +5566,8 @@ func (siw *ServerInterfaceWrapper) Register(w http.ResponseWriter, r *http.Reque
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
-// ListRepository operation middleware
-func (siw *ServerInterfaceWrapper) ListRepository(w http.ResponseWriter, r *http.Request) {
+// ListRepositoryOfAuthenticatedUser operation middleware
+func (siw *ServerInterfaceWrapper) ListRepositoryOfAuthenticatedUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
@@ -5158,7 +5577,7 @@ func (siw *ServerInterfaceWrapper) ListRepository(w http.ResponseWriter, r *http
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListRepository(r.Context(), &JiaozifsResponse{w}, r)
+		siw.Handler.ListRepositoryOfAuthenticatedUser(r.Context(), &JiaozifsResponse{w}, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -5220,6 +5639,38 @@ func (siw *ServerInterfaceWrapper) GetUserInfo(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
+// ListRepository operation middleware
+func (siw *ServerInterfaceWrapper) ListRepository(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListRepository(r.Context(), &JiaozifsResponse{w}, r, owner)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
 // GetVersion operation middleware
 func (siw *ServerInterfaceWrapper) GetVersion(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -5240,6 +5691,15 @@ func (siw *ServerInterfaceWrapper) DeleteWip(w http.ResponseWriter, r *http.Requ
 	ctx := r.Context()
 
 	var err error
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
 
 	// ------------- Path parameter "repository" -------------
 	var repository string
@@ -5275,7 +5735,7 @@ func (siw *ServerInterfaceWrapper) DeleteWip(w http.ResponseWriter, r *http.Requ
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteWip(r.Context(), &JiaozifsResponse{w}, r, repository, params)
+		siw.Handler.DeleteWip(r.Context(), &JiaozifsResponse{w}, r, owner, repository, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -5290,6 +5750,15 @@ func (siw *ServerInterfaceWrapper) GetWip(w http.ResponseWriter, r *http.Request
 	ctx := r.Context()
 
 	var err error
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
 
 	// ------------- Path parameter "repository" -------------
 	var repository string
@@ -5325,7 +5794,7 @@ func (siw *ServerInterfaceWrapper) GetWip(w http.ResponseWriter, r *http.Request
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetWip(r.Context(), &JiaozifsResponse{w}, r, repository, params)
+		siw.Handler.GetWip(r.Context(), &JiaozifsResponse{w}, r, owner, repository, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -5340,6 +5809,15 @@ func (siw *ServerInterfaceWrapper) CreateWip(w http.ResponseWriter, r *http.Requ
 	ctx := r.Context()
 
 	var err error
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
 
 	// ------------- Path parameter "repository" -------------
 	var repository string
@@ -5390,7 +5868,7 @@ func (siw *ServerInterfaceWrapper) CreateWip(w http.ResponseWriter, r *http.Requ
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateWip(r.Context(), &JiaozifsResponse{w}, r, repository, params)
+		siw.Handler.CreateWip(r.Context(), &JiaozifsResponse{w}, r, owner, repository, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -5405,6 +5883,15 @@ func (siw *ServerInterfaceWrapper) GetWipChanges(w http.ResponseWriter, r *http.
 	ctx := r.Context()
 
 	var err error
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
 
 	// ------------- Path parameter "repository" -------------
 	var repository string
@@ -5448,7 +5935,7 @@ func (siw *ServerInterfaceWrapper) GetWipChanges(w http.ResponseWriter, r *http.
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetWipChanges(r.Context(), &JiaozifsResponse{w}, r, repository, params)
+		siw.Handler.GetWipChanges(r.Context(), &JiaozifsResponse{w}, r, owner, repository, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -5463,6 +5950,15 @@ func (siw *ServerInterfaceWrapper) CommitWip(w http.ResponseWriter, r *http.Requ
 	ctx := r.Context()
 
 	var err error
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
 
 	// ------------- Path parameter "repository" -------------
 	var repository string
@@ -5506,7 +6002,7 @@ func (siw *ServerInterfaceWrapper) CommitWip(w http.ResponseWriter, r *http.Requ
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CommitWip(r.Context(), &JiaozifsResponse{w}, r, repository, params)
+		siw.Handler.CommitWip(r.Context(), &JiaozifsResponse{w}, r, owner, repository, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -5522,136 +6018,12 @@ func (siw *ServerInterfaceWrapper) ListWip(w http.ResponseWriter, r *http.Reques
 
 	var err error
 
-	// ------------- Path parameter "repository" -------------
-	var repository string
+	// ------------- Path parameter "owner" -------------
+	var owner string
 
-	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
-		return
-	}
-
-	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
-
-	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
-
-	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListWip(r.Context(), &JiaozifsResponse{w}, r, repository)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r.WithContext(ctx))
-}
-
-// ListBranches operation middleware
-func (siw *ServerInterfaceWrapper) ListBranches(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	var err error
-
-	// ------------- Path parameter "user" -------------
-	var user string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "user", chi.URLParam(r, "user"), &user, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
-		return
-	}
-
-	// ------------- Path parameter "reopsitory" -------------
-	var reopsitory string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "reopsitory", chi.URLParam(r, "reopsitory"), &reopsitory, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "reopsitory", Err: err})
-		return
-	}
-
-	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
-
-	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
-
-	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListBranches(r.Context(), &JiaozifsResponse{w}, r, user, reopsitory)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r.WithContext(ctx))
-}
-
-// CreateBranch operation middleware
-func (siw *ServerInterfaceWrapper) CreateBranch(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	var err error
-
-	// ------------- Body parse -------------
-	var body CreateBranchJSONRequestBody
-	parseBody := true
-	if parseBody {
-		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			http.Error(w, "Error unmarshalling body 'CreateBranch' as JSON", http.StatusBadRequest)
-			return
-		}
-	}
-
-	// ------------- Path parameter "user" -------------
-	var user string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "user", chi.URLParam(r, "user"), &user, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
-		return
-	}
-
-	// ------------- Path parameter "reopsitory" -------------
-	var reopsitory string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "reopsitory", chi.URLParam(r, "reopsitory"), &reopsitory, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "reopsitory", Err: err})
-		return
-	}
-
-	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
-
-	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
-
-	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateBranch(r.Context(), &JiaozifsResponse{w}, r, body, user, reopsitory)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r.WithContext(ctx))
-}
-
-// DeleteBranch operation middleware
-func (siw *ServerInterfaceWrapper) DeleteBranch(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	var err error
-
-	// ------------- Path parameter "user" -------------
-	var user string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "user", chi.URLParam(r, "user"), &user, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
 		return
 	}
 
@@ -5664,15 +6036,6 @@ func (siw *ServerInterfaceWrapper) DeleteBranch(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// ------------- Path parameter "branch" -------------
-	var branch string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "branch", chi.URLParam(r, "branch"), &branch, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "branch", Err: err})
-		return
-	}
-
 	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
 
 	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
@@ -5680,57 +6043,7 @@ func (siw *ServerInterfaceWrapper) DeleteBranch(w http.ResponseWriter, r *http.R
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteBranch(r.Context(), &JiaozifsResponse{w}, r, user, repository, branch)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r.WithContext(ctx))
-}
-
-// GetBranch operation middleware
-func (siw *ServerInterfaceWrapper) GetBranch(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	var err error
-
-	// ------------- Path parameter "user" -------------
-	var user string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "user", chi.URLParam(r, "user"), &user, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user", Err: err})
-		return
-	}
-
-	// ------------- Path parameter "repository" -------------
-	var repository string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
-		return
-	}
-
-	// ------------- Path parameter "branch" -------------
-	var branch string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "branch", chi.URLParam(r, "branch"), &branch, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "branch", Err: err})
-		return
-	}
-
-	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
-
-	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
-
-	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetBranch(r.Context(), &JiaozifsResponse{w}, r, user, repository, branch)
+		siw.Handler.ListWip(r.Context(), &JiaozifsResponse{w}, r, owner, repository)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -5865,34 +6178,46 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/auth/logout", wrapper.Logout)
 	})
 	r.Group(func(r chi.Router) {
-		r.Delete(options.BaseURL+"/object/{user}/{repository}", wrapper.DeleteObject)
+		r.Delete(options.BaseURL+"/object/{owner}/{repository}", wrapper.DeleteObject)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/object/{user}/{repository}", wrapper.GetObject)
+		r.Get(options.BaseURL+"/object/{owner}/{repository}", wrapper.GetObject)
 	})
 	r.Group(func(r chi.Router) {
-		r.Head(options.BaseURL+"/object/{user}/{repository}", wrapper.HeadObject)
+		r.Head(options.BaseURL+"/object/{owner}/{repository}", wrapper.HeadObject)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/object/{user}/{repository}", wrapper.UploadObject)
+		r.Post(options.BaseURL+"/object/{owner}/{repository}", wrapper.UploadObject)
 	})
 	r.Group(func(r chi.Router) {
-		r.Delete(options.BaseURL+"/repos/{user}/{repository}", wrapper.DeleteRepository)
+		r.Delete(options.BaseURL+"/repos/{owner}/{repository}", wrapper.DeleteRepository)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/repos/{user}/{repository}", wrapper.GetRepository)
+		r.Get(options.BaseURL+"/repos/{owner}/{repository}", wrapper.GetRepository)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/repos/{user}/{repository}", wrapper.UpdateRepository)
+		r.Post(options.BaseURL+"/repos/{owner}/{repository}", wrapper.UpdateRepository)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/repos/{user}/{repository}/commits", wrapper.GetCommitsInRepository)
+		r.Delete(options.BaseURL+"/repos/{owner}/{repository}/branch", wrapper.DeleteBranch)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/repos/{user}/{repository}/compare/{basehead}", wrapper.GetCommitDiff)
+		r.Get(options.BaseURL+"/repos/{owner}/{repository}/branch", wrapper.GetBranch)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/repos/{user}/{repository}/contents/", wrapper.GetEntriesInCommit)
+		r.Post(options.BaseURL+"/repos/{owner}/{repository}/branch", wrapper.CreateBranch)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/repos/{owner}/{repository}/branches", wrapper.ListBranches)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/repos/{owner}/{repository}/commits", wrapper.GetCommitsInRepository)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/repos/{owner}/{repository}/compare/{basehead}", wrapper.GetCommitDiff)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/repos/{owner}/{repository}/contents/", wrapper.GetEntriesInRef)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/setup", wrapper.GetSetupState)
@@ -5901,7 +6226,7 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/users/register", wrapper.Register)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/users/repos", wrapper.ListRepository)
+		r.Get(options.BaseURL+"/users/repos", wrapper.ListRepositoryOfAuthenticatedUser)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/users/repos", wrapper.CreateRepository)
@@ -5910,37 +6235,28 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/users/user", wrapper.GetUserInfo)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/users/{owner}/repos", wrapper.ListRepository)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/version", wrapper.GetVersion)
 	})
 	r.Group(func(r chi.Router) {
-		r.Delete(options.BaseURL+"/wip/{repository}", wrapper.DeleteWip)
+		r.Delete(options.BaseURL+"/wip/{owner}/{repository}", wrapper.DeleteWip)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/wip/{repository}", wrapper.GetWip)
+		r.Get(options.BaseURL+"/wip/{owner}/{repository}", wrapper.GetWip)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/wip/{repository}", wrapper.CreateWip)
+		r.Post(options.BaseURL+"/wip/{owner}/{repository}", wrapper.CreateWip)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/wip/{repository}/changes", wrapper.GetWipChanges)
+		r.Get(options.BaseURL+"/wip/{owner}/{repository}/changes", wrapper.GetWipChanges)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/wip/{repository}/commit", wrapper.CommitWip)
+		r.Post(options.BaseURL+"/wip/{owner}/{repository}/commit", wrapper.CommitWip)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/wip/{repository}/list", wrapper.ListWip)
-	})
-	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/{user}/{reopsitory}/branches", wrapper.ListBranches)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/{user}/{reopsitory}/branches", wrapper.CreateBranch)
-	})
-	r.Group(func(r chi.Router) {
-		r.Delete(options.BaseURL+"/{user}/{repository}/branches/{branch}", wrapper.DeleteBranch)
-	})
-	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/{user}/{repository}/branches/{branch}", wrapper.GetBranch)
+		r.Get(options.BaseURL+"/wip/{owner}/{repository}/list", wrapper.ListWip)
 	})
 
 	return r
@@ -5949,70 +6265,71 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"cUSGNztOHT2XLphNvb7/bwAAAP//vlkOhcNeAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

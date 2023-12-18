@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/jiaozifs/jiaozifs/auth"
+
 	"github.com/jiaozifs/jiaozifs/utils"
 
 	"github.com/jiaozifs/jiaozifs/versionmgr"
@@ -21,13 +23,36 @@ type CommitController struct {
 	Repo models.IRepo
 }
 
-func (commitCtl CommitController) GetEntriesInCommit(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, _ string, _ string, params api.GetEntriesInCommitParams) {
+func (commitCtl CommitController) GetEntriesInRef(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, params api.GetEntriesInRefParams) {
+	operator, err := auth.GetOperator(ctx)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	owner, err := commitCtl.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(ownerName))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	repository, err := commitCtl.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetName(repositoryName).SetOwnerID(owner.ID))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	if operator.Name == ownerName { //todo check permission
+		w.Forbidden()
+		return
+	}
+
 	refName := "main"
 	if params.Path != nil {
 		refName = *params.Ref
 	}
 
-	ref, err := commitCtl.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetName(refName))
+	ref, err := commitCtl.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetRepositoryID(repository.ID).SetName(refName))
 	if err != nil {
 		w.Error(err)
 		return
@@ -57,7 +82,18 @@ func (commitCtl CommitController) GetEntriesInCommit(ctx context.Context, w *api
 	w.JSON(treeEntry)
 }
 
-func (commitCtl CommitController) GetCommitDiff(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, _ string, _ string, basehead string, params api.GetCommitDiffParams) {
+func (commitCtl CommitController) GetCommitDiff(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, _ string, basehead string, params api.GetCommitDiffParams) {
+	operator, err := auth.GetOperator(ctx)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	if operator.Name == ownerName { //todo check permission
+		w.Forbidden()
+		return
+	}
+
 	baseHead := strings.Split(basehead, "...")
 	if len(baseHead) != 2 {
 		w.BadRequest("invalid basehead must be base...head")
