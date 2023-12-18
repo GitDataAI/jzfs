@@ -3,6 +3,7 @@ package apiimpl
 import (
 	"context"
 	"errors"
+	"github.com/jiaozifs/jiaozifs/auth"
 	"net"
 	"net/http"
 
@@ -16,8 +17,6 @@ import (
 	"github.com/gorilla/sessions"
 
 	"github.com/jiaozifs/jiaozifs/models"
-
-	"github.com/jiaozifs/jiaozifs/auth"
 
 	"net/url"
 

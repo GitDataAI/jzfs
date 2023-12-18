@@ -14,10 +14,42 @@ servers:
   - url: "/api/v1"
     description: jiaozifs server endpoint
 security:
-  - jwt_token: []
+  - jwt_token: [] # Default security for the entire API
   - basic_auth: []
   - cookie_auth: []
 components:
+  parameters:
+    PaginationPrefix:
+      in: query
+      name: prefix
+      description: return items prefixed with this value
+      schema:
+        type: string
+
+    PaginationAfter:
+      in: query
+      name: after
+      description: return items after this value
+      schema:
+        type: string
+
+    PaginationAmount:
+      in: query
+      name: amount
+      description: how many items to return
+      schema:
+        type: integer
+        minimum: -1
+        maximum: 1000
+        default: 100
+
+    PaginationDelimiter:
+      in: query
+      name: delimiter
+      description: delimiter used to group common prefixes by
+      schema:
+        type: string
+
   securitySchemes:
     basic_auth:
       type: http
@@ -488,6 +520,7 @@ paths:
         - common
       operationId: getVersion
       summary: return program and runtime version
+      security: [] # No authentication
       responses:
         200:
           description: program version
@@ -1344,6 +1377,7 @@ paths:
         - auth
       operationId: register
       summary: perform user registration
+      security: [] # No authentication
       requestBody:
         content:
           application/json:
