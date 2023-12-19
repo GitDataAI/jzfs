@@ -3,8 +3,13 @@ package controller
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
+	"regexp"
+	"strings"
 	"time"
+
+	"github.com/jiaozifs/jiaozifs/utils/hash"
 
 	"github.com/jiaozifs/jiaozifs/auth"
 
@@ -12,6 +17,31 @@ import (
 	"github.com/jiaozifs/jiaozifs/models"
 	"go.uber.org/fx"
 )
+
+var maxBranchNameLength = 20
+var branchNameRegex = regexp.MustCompile("^[a-zA-Z0-9_]*$")
+
+func CheckBranchName(name string) error {
+	for _, blackName := range RepoNameBlackList {
+		if name == blackName {
+			return errors.New("repository name is black list")
+		}
+	}
+
+	if len(name) > maxBranchNameLength {
+		return fmt.Errorf("branch name is too long")
+	}
+
+	seg := strings.Split(name, "/")
+	if len(seg) > 2 {
+		return fmt.Errorf("ref format must be <name> or <name>/<name>")
+	}
+
+	if !branchNameRegex.Match([]byte(seg[0])) || !branchNameRegex.Match([]byte(seg[1])) {
+		return fmt.Errorf("branch name must be combination of number and letter or combine with '/'")
+	}
+	return nil
+}
 
 type BranchController struct {
 	fx.In
@@ -60,6 +90,11 @@ func (bct BranchController) ListBranches(ctx context.Context, w *api.JiaozifsRes
 }
 
 func (bct BranchController) CreateBranch(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, body api.CreateBranchJSONRequestBody, ownerName string, repositoryName string) {
+	if err := CheckBranchName(body.Name); err != nil {
+		w.BadRequest(err.Error())
+		return
+	}
+
 	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
@@ -84,18 +119,33 @@ func (bct BranchController) CreateBranch(ctx context.Context, w *api.JiaozifsRes
 		return
 	}
 
-	// Get source ref
-	ref, err := bct.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetName(body.Name).SetRepositoryID(repository.ID))
+	//check exit
+	_, err = bct.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetName(body.Name).SetRepositoryID(repository.ID))
+	if err == nil {
+		w.BadRequest(fmt.Sprintf("%s already exit", body.Name))
+		return
+	}
 	if err != nil && !errors.Is(err, models.ErrNotFound) {
 		w.Error(err)
 		return
 	}
+	//get source ref
+	sourceRef, err := bct.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetName(body.Source).SetRepositoryID(repository.ID))
+	if err != nil && !errors.Is(err, models.ErrNotFound) {
+		w.Error(err)
+		return
+	}
+
+	commitHash := hash.EmptyHash
+	if sourceRef != nil {
+		commitHash = sourceRef.CommitHash
+	}
+
 	// Create branch
 	newRef := &models.Ref{
 		RepositoryID: repository.ID,
-		CommitHash:   ref.CommitHash,
+		CommitHash:   commitHash,
 		Name:         body.Name,
-		Description:  ref.Description,
 		CreatorID:    operator.ID,
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
@@ -137,6 +187,12 @@ func (bct BranchController) DeleteBranch(ctx context.Context, w *api.JiaozifsRes
 
 	// Get repo
 	repository, err := bct.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	_, err = bct.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetName(params.RefName).SetRepositoryID(repository.ID))
 	if err != nil {
 		w.Error(err)
 		return

@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/jiaozifs/jiaozifs/config"
@@ -38,7 +37,7 @@ var initCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		fmt.Println(cfg.API.Listen)
+
 		if cfg.Blockstore.Type == "local" {
 			_, err = os.Stat(cfg.Blockstore.Local.Path)
 			if os.IsNotExist(err) {

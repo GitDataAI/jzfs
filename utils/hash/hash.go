@@ -12,6 +12,8 @@ import (
 var _ json.Marshaler = (*Hash)(nil)
 var _ json.Unmarshaler = (*Hash)(nil)
 
+var EmptyHash = Hash{}
+
 type Hash []byte
 
 func (hash Hash) Hex() string {

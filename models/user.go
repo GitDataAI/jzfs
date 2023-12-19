@@ -86,7 +86,11 @@ func (userRepo *UserRepo) Get(ctx context.Context, params *GetUserParams) (*User
 		query = query.Where("email = ?", *params.Email)
 	}
 
-	return user, query.Limit(1).Scan(ctx)
+	err := query.Limit(1).Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
 func (userRepo *UserRepo) Count(ctx context.Context, params *GetUserParams) (int, error) {

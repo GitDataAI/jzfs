@@ -19,6 +19,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 	client, _ := api.NewClient(urlStr + apiimpl.APIV1Prefix)
 	return func(c convey.C) {
 		userName := "jimmy"
+		repoName := "happyrun"
 		createUser(ctx, c, client, userName)
 		loginAndSwitch(ctx, c, client, userName)
 
@@ -35,7 +36,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			c.Convey("success create repo name", func() {
 				resp, err := client.CreateRepository(ctx, api.CreateRepository{
 					Description: utils.String("test resp"),
-					Name:        "happyrun",
+					Name:        repoName,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
@@ -66,7 +67,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			c.Convey("duplicate repo name", func() {
 				resp, err := client.CreateRepository(ctx, api.CreateRepository{
 					Description: utils.String("test resp"),
-					Name:        "happyrun",
+					Name:        repoName,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusInternalServerError)
@@ -159,20 +160,20 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			c.Convey("no auth", func() {
 				re := client.RequestEditors
 				client.RequestEditors = nil
-				resp, err := client.GetRepository(ctx, userName, "happyrun")
+				resp, err := client.GetRepository(ctx, userName, repoName)
 				client.RequestEditors = re
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 
 			c.Convey("get repository", func() {
-				resp, err := client.GetRepository(ctx, userName, "happyrun")
+				resp, err := client.GetRepository(ctx, userName, repoName)
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
 
 				getResult, err := api.ParseGetRepositoryResponse(resp)
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(getResult.JSON200.Name, convey.ShouldEqual, "happyrun")
+				convey.So(getResult.JSON200.Name, convey.ShouldEqual, repoName)
 			})
 
 			c.Convey("get not exit repo", func() {
@@ -182,13 +183,13 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 
 			c.Convey("get from non exit user", func() {
-				resp, err := client.GetRepository(ctx, "telo", "happyrun")
+				resp, err := client.GetRepository(ctx, "telo", repoName)
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
 			})
 
 			c.Convey("get other's repo", func() {
-				resp, err := client.GetRepository(ctx, "admin", "happyrun")
+				resp, err := client.GetRepository(ctx, "admin", repoName)
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
 			})
@@ -198,7 +199,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			c.Convey("no auth", func() {
 				re := client.RequestEditors
 				client.RequestEditors = nil
-				resp, err := client.UpdateRepository(ctx, userName, "happyrun", api.UpdateRepositoryJSONRequestBody{
+				resp, err := client.UpdateRepository(ctx, userName, repoName, api.UpdateRepositoryJSONRequestBody{
 					Description: utils.String(""),
 				})
 				client.RequestEditors = re
@@ -208,13 +209,13 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 			c.Convey("success update repository", func() {
 				description := "mock description"
-				resp, err := client.UpdateRepository(ctx, userName, "happyrun", api.UpdateRepositoryJSONRequestBody{
+				resp, err := client.UpdateRepository(ctx, userName, repoName, api.UpdateRepositoryJSONRequestBody{
 					Description: utils.String(description),
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
 
-				getResp, err := client.GetRepository(ctx, userName, "happyrun")
+				getResp, err := client.GetRepository(ctx, userName, repoName)
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(getResp.StatusCode, convey.ShouldEqual, http.StatusOK)
 
@@ -234,7 +235,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 			c.Convey("update repository in non exit user", func() {
 				description := ""
-				resp, err := client.UpdateRepository(ctx, "telo", "happyrun", api.UpdateRepositoryJSONRequestBody{
+				resp, err := client.UpdateRepository(ctx, "telo", repoName, api.UpdateRepositoryJSONRequestBody{
 					Description: utils.String(description),
 				})
 				convey.So(err, convey.ShouldBeNil)
@@ -243,7 +244,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 			c.Convey("update repository in other's repo", func() {
 				description := ""
-				resp, err := client.UpdateRepository(ctx, "admin", "happyrun", api.UpdateRepositoryJSONRequestBody{
+				resp, err := client.UpdateRepository(ctx, "admin", repoName, api.UpdateRepositoryJSONRequestBody{
 					Description: utils.String(description),
 				})
 				convey.So(err, convey.ShouldBeNil)
@@ -255,7 +256,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			c.Convey("no auth", func() {
 				re := client.RequestEditors
 				client.RequestEditors = nil
-				resp, err := client.GetCommitsInRepository(ctx, userName, "happyrun", &api.GetCommitsInRepositoryParams{
+				resp, err := client.GetCommitsInRepository(ctx, userName, repoName, &api.GetCommitsInRepositoryParams{
 					RefName: utils.String(controller.DefaultBranchName),
 				})
 				client.RequestEditors = re
@@ -264,7 +265,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 
 			c.Convey("success get commits", func() {
-				resp, err := client.GetCommitsInRepository(ctx, userName, "happyrun", &api.GetCommitsInRepositoryParams{
+				resp, err := client.GetCommitsInRepository(ctx, userName, repoName, &api.GetCommitsInRepositoryParams{
 					RefName: utils.String(controller.DefaultBranchName),
 				})
 				convey.So(err, convey.ShouldBeNil)
@@ -285,7 +286,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 
 			c.Convey("update repository in non exit user", func() {
-				resp, err := client.GetCommitsInRepository(ctx, "telo", "happyrun", &api.GetCommitsInRepositoryParams{
+				resp, err := client.GetCommitsInRepository(ctx, "telo", repoName, &api.GetCommitsInRepositoryParams{
 					RefName: utils.String(controller.DefaultBranchName),
 				})
 				convey.So(err, convey.ShouldBeNil)
@@ -293,7 +294,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 
 			c.Convey("update repository in other's repo", func() {
-				resp, err := client.GetCommitsInRepository(ctx, "admin", "happyrun", &api.GetCommitsInRepositoryParams{
+				resp, err := client.GetCommitsInRepository(ctx, "admin", repoName, &api.GetCommitsInRepositoryParams{
 					RefName: utils.String(controller.DefaultBranchName),
 				})
 				convey.So(err, convey.ShouldBeNil)
@@ -305,7 +306,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			c.Convey("no auth", func() {
 				re := client.RequestEditors
 				client.RequestEditors = nil
-				resp, err := client.DeleteRepository(ctx, userName, "happyrun")
+				resp, err := client.DeleteRepository(ctx, userName, repoName)
 				client.RequestEditors = re
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
@@ -317,23 +318,23 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 
 			c.Convey("delete repository in non exit user", func() {
-				resp, err := client.DeleteRepository(ctx, "telo", "happyrun")
+				resp, err := client.DeleteRepository(ctx, "telo", repoName)
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
 			})
 
 			c.Convey("delete repository in other's repo", func() {
-				resp, err := client.DeleteRepository(ctx, "admin", "happyrun")
+				resp, err := client.DeleteRepository(ctx, "admin", repoName)
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
 			})
 
 			c.Convey("delete repository successful", func() {
-				resp, err := client.DeleteRepository(ctx, userName, "happyrun")
+				resp, err := client.DeleteRepository(ctx, userName, repoName)
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
 
-				getResp, err := client.GetRepository(ctx, userName, "happyrun")
+				getResp, err := client.GetRepository(ctx, userName, repoName)
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(getResp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
 			})

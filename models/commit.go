@@ -120,7 +120,11 @@ func NewCommitRepo(db bun.IDB) ICommitRepo {
 
 func (cr CommitRepo) Commit(ctx context.Context, hash hash.Hash) (*Commit, error) {
 	commit := &Commit{}
-	return commit, cr.db.NewSelect().Model(commit).Where("hash = ?", hash).Scan(ctx)
+	err := cr.db.NewSelect().Model(commit).Where("hash = ?", hash).Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return commit, nil
 }
 
 func (cr CommitRepo) Insert(ctx context.Context, commit *Commit) (*Commit, error) {
