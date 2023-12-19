@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"reflect"
 	"regexp"
 	"strings"
 	"time"
@@ -20,6 +21,28 @@ import (
 
 var maxBranchNameLength = 20
 var branchNameRegex = regexp.MustCompile("^[a-zA-Z0-9_]*$")
+
+func paginationForRefs(hasMore bool, results interface{}, fieldName string) api.Pagination {
+	pagination := api.Pagination{
+		HasMore:    hasMore,
+		MaxPerPage: DefaultMaxPerPage,
+	}
+	if results == nil {
+		return pagination
+	}
+	if reflect.TypeOf(results).Kind() != reflect.Slice {
+		panic("results is not a slice")
+	}
+	s := reflect.ValueOf(results)
+	pagination.Results = s.Len()
+	if !hasMore || pagination.Results == 0 {
+		return pagination
+	}
+	v := s.Index(pagination.Results - 1)
+	token := v.FieldByName(fieldName)
+	pagination.NextOffset = token.String()
+	return pagination
+}
 
 func CheckBranchName(name string) error {
 	for _, blackName := range RepoNameBlackList {
@@ -49,7 +72,7 @@ type BranchController struct {
 	Repo models.IRepo
 }
 
-func (bct BranchController) ListBranches(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string) {
+func (bct BranchController) ListBranches(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, params api.ListBranchesParams) {
 	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
@@ -73,20 +96,47 @@ func (bct BranchController) ListBranches(ctx context.Context, w *api.JiaozifsRes
 		return
 	}
 
-	branches, err := bct.Repo.RefRepo().List(ctx, models.NewListRefParams().SetRepositoryID(repository.ID))
+	listRefParams := models.NewListRefParams()
+	if params.Prefix != nil && len(*params.Prefix) > 0 {
+		listRefParams.SetName(*params.Prefix, models.PrefixMatch)
+	}
+	if params.After != nil {
+		listRefParams.SetAfter(*params.After)
+	}
+	if params.Amount != nil {
+		i := int(*params.Amount)
+		if i > DefaultMaxPerPage || i <= 0 {
+			listRefParams.SetAmount(DefaultMaxPerPage)
+		} else {
+			listRefParams.SetAmount(i)
+		}
+	} else {
+		listRefParams.SetAmount(DefaultMaxPerPage)
+	}
+
+	refs, has_more, err := bct.Repo.RefRepo().List(ctx, listRefParams.SetRepositoryID(repository.ID))
 	if err != nil {
 		w.Error(err)
 		return
 	}
-	var refs []api.Ref
-	for _, branch := range branches {
-		ref := api.Ref{
-			CommitHash: branch.Name,
-			Name:       branch.CommitHash.Hex(),
+	results := make([]api.Ref, 0, len(refs))
+	for _, ref := range refs {
+		r := api.Ref{
+			CommitHash:   ref.CommitHash.Hex(),
+			CreatedAt:    ref.CreatedAt,
+			CreatorID:    ref.CreatorID,
+			Description:  ref.Description,
+			ID:           ref.ID,
+			Name:         ref.Name,
+			RepositoryID: ref.RepositoryID,
+			UpdatedAt:    ref.UpdatedAt,
 		}
-		refs = append(refs, ref)
+		results = append(results, r)
 	}
-	w.JSON(api.RefList{Results: refs})
+	w.JSON(api.RefList{
+		Pagination: paginationForRefs(has_more, results, "Name"),
+		Results:    results,
+	})
 }
 
 func (bct BranchController) CreateBranch(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, body api.CreateBranchJSONRequestBody, ownerName string, repositoryName string) {

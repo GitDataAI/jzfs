@@ -36,7 +36,7 @@ var alphanumeric = regexp.MustCompile("^[a-zA-Z0-9_]*$")
 // RepoNameBlackList forbid repo name, reserve for routes
 var RepoNameBlackList = []string{"repository", "repositories", "wip", "wips", "object", "objects", "commit", "commits", "ref", "refs", "repo", "repos", "user", "users"}
 
-func paginationFor(hasMore bool, results interface{}, fieldName string) api.Pagination {
+func paginationForRepos(hasMore bool, results interface{}, fieldName string) api.Pagination {
 	pagination := api.Pagination{
 		HasMore:    hasMore,
 		MaxPerPage: DefaultMaxPerPage,
@@ -126,7 +126,7 @@ func (repositoryCtl RepositoryController) ListRepositoryOfAuthenticatedUser(ctx 
 		results = append(results, r)
 	}
 	w.JSON(api.RepositoryList{
-		Pagination: paginationFor(has_more, results, "UpdatedAt"),
+		Pagination: paginationForRepos(has_more, results, "UpdatedAt"),
 		Results:    results,
 	})
 }
@@ -185,7 +185,7 @@ func (repositoryCtl RepositoryController) ListRepository(ctx context.Context, w 
 		results = append(results, r)
 	}
 	w.JSON(api.RepositoryList{
-		Pagination: paginationFor(has_more, results, "UpdatedAt"),
+		Pagination: paginationForRepos(has_more, results, "UpdatedAt"),
 		Results:    results,
 	})
 }

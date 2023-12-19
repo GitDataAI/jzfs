@@ -151,14 +151,14 @@ func BranchSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			c.Convey("no auth", func() {
 				re := client.RequestEditors
 				client.RequestEditors = nil
-				resp, err := client.ListBranches(ctx, userName, repoName)
+				resp, err := client.ListBranches(ctx, userName, repoName, &api.ListBranchesParams{})
 				client.RequestEditors = re
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 
 			c.Convey("success list branch", func() {
-				resp, err := client.ListBranches(ctx, userName, repoName)
+				resp, err := client.ListBranches(ctx, userName, repoName, &api.ListBranchesParams{})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
 
@@ -168,19 +168,19 @@ func BranchSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 
 			c.Convey("fail to list ref from non exit user", func() {
-				resp, err := client.ListBranches(ctx, "mock_owner", repoName)
+				resp, err := client.ListBranches(ctx, "mock_owner", repoName, &api.ListBranchesParams{})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
 			})
 
 			c.Convey("fail to get non exit branch", func() {
-				resp, err := client.ListBranches(ctx, userName, "mockrepo")
+				resp, err := client.ListBranches(ctx, userName, "mockrepo", &api.ListBranchesParams{})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
 			})
 
 			c.Convey("fail to others ref", func() {
-				resp, err := client.ListBranches(ctx, "jimmy", "happygo")
+				resp, err := client.ListBranches(ctx, "jimmy", "happygo", &api.ListBranchesParams{})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
 			})

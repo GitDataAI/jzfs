@@ -93,6 +93,10 @@ func (up *UpdateRefParams) SetCommitHash(commitHash hash.Hash) *UpdateRefParams 
 
 type ListRefParams struct {
 	RepositoryID uuid.UUID
+	Name         *string
+	NameMatch    MatchMode
+	After        *string
+	Amount       int
 }
 
 func NewListRefParams() *ListRefParams {
@@ -104,12 +108,28 @@ func (gup *ListRefParams) SetRepositoryID(repositoryID uuid.UUID) *ListRefParams
 	return gup
 }
 
+func (gup *ListRefParams) SetName(name string, match MatchMode) *ListRefParams {
+	gup.Name = &name
+	gup.NameMatch = match
+	return gup
+}
+
+func (gup *ListRefParams) SetAfter(after string) *ListRefParams {
+	gup.After = &after
+	return gup
+}
+
+func (gup *ListRefParams) SetAmount(amount int) *ListRefParams {
+	gup.Amount = amount
+	return gup
+}
+
 type IRefRepo interface {
 	Insert(ctx context.Context, repo *Ref) (*Ref, error)
 	UpdateByID(ctx context.Context, params *UpdateRefParams) error
 	Get(ctx context.Context, id *GetRefParams) (*Ref, error)
 
-	List(ctx context.Context, params *ListRefParams) ([]*Ref, error)
+	List(ctx context.Context, params *ListRefParams) ([]*Ref, bool, error)
 	Delete(ctx context.Context, params *DeleteRefParams) error
 }
 
@@ -154,7 +174,7 @@ func (r RefRepo) Get(ctx context.Context, params *GetRefParams) (*Ref, error) {
 	return repo, nil
 }
 
-func (r RefRepo) List(ctx context.Context, params *ListRefParams) ([]*Ref, error) {
+func (r RefRepo) List(ctx context.Context, params *ListRefParams) ([]*Ref, bool, error) {
 	var refs []*Ref
 	query := r.db.NewSelect().Model(&refs)
 
@@ -162,11 +182,26 @@ func (r RefRepo) List(ctx context.Context, params *ListRefParams) ([]*Ref, error
 		query = query.Where("repository_id = ?", params.RepositoryID)
 	}
 
-	err := query.Scan(ctx)
-	if err != nil {
-		return nil, err
+	if params.Name != nil {
+		switch params.NameMatch {
+		case ExactMatch:
+			query = query.Where("name = ?", *params.Name)
+		case PrefixMatch:
+			query = query.Where("name LIKE ?", *params.Name+"%")
+		case SuffixMatch:
+			query = query.Where("name LIKE ?", "%"+*params.Name)
+		case LikeMatch:
+			query = query.Where("name LIKE ?", "%"+*params.Name+"%")
+		}
 	}
-	return refs, nil
+
+	query = query.Order("name ASC")
+	if params.After != nil {
+		query = query.Where("name > ?", *params.After)
+	}
+
+	err := query.Limit(params.Amount).Scan(ctx)
+	return refs, len(refs) == params.Amount, err
 }
 
 func (r RefRepo) Delete(ctx context.Context, params *DeleteRefParams) error {
