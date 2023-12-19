@@ -6,10 +6,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/jiaozifs/jiaozifs/api"
+	"github.com/smartystreets/goconvey/convey"
 
 	"github.com/jiaozifs/jiaozifs/testhelper"
 
@@ -84,4 +88,56 @@ func SetupDaemon(t *testing.T, ctx context.Context) (string, Closer) { //nolint
 			return "", nil
 		}
 	}
+}
+
+func createUser(ctx context.Context, c convey.C, client *api.Client, userName string) {
+	c.Convey("register "+userName, func() {
+		resp, err := client.Register(ctx, api.RegisterJSONRequestBody{
+			Username: userName,
+			Password: "12345678",
+			Email:    "mock@gmail.com",
+		})
+		convey.So(err, convey.ShouldBeNil)
+		convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+	})
+}
+
+func loginAndSwitch(ctx context.Context, c convey.C, client *api.Client, userName string) {
+	c.Convey("login "+userName, func() {
+		resp, err := client.Login(ctx, api.LoginJSONRequestBody{
+			Username: userName,
+			Password: "12345678",
+		})
+		convey.So(err, convey.ShouldBeNil)
+		convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+		client.RequestEditors = nil
+		client.RequestEditors = append(client.RequestEditors, func(ctx context.Context, req *http.Request) error {
+			for _, cookie := range resp.Cookies() {
+				req.AddCookie(cookie)
+			}
+			return nil
+		})
+	})
+}
+
+func createBranch(ctx context.Context, c convey.C, client *api.Client, user string, repoName string, source, refName string) {
+	c.Convey("create branch "+refName, func() {
+		resp, err := client.CreateBranch(ctx, user, repoName, api.CreateBranchJSONRequestBody{
+			Source: source,
+			Name:   refName,
+		})
+		convey.So(err, convey.ShouldBeNil)
+		convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
+	})
+}
+
+func createRepo(ctx context.Context, c convey.C, client *api.Client, repoName string) {
+	c.Convey("create repo "+repoName, func() {
+		resp, err := client.CreateRepository(ctx, api.CreateRepositoryJSONRequestBody{
+			Name: repoName,
+		})
+		convey.So(err, convey.ShouldBeNil)
+		convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+	})
 }

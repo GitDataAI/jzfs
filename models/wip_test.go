@@ -41,15 +41,13 @@ func TestWipRepo(t *testing.T) {
 		require.NoError(t, gofakeit.Struct(secWipModel))
 		secWipModel.CreatorID = newWipModel.CreatorID
 		secWipModel.RepositoryID = newWipModel.RepositoryID
-		secWipModel.RefID = newWipModel.RefID
 		secNewWipModel, err := repo.Insert(ctx, secWipModel)
 		require.NoError(t, err)
 		require.NotEqual(t, uuid.Nil, secNewWipModel.ID)
 
 		listParams := models.NewListWipParams().
 			SetCreatorID(secNewWipModel.CreatorID).
-			SetRepositoryID(secNewWipModel.RepositoryID).
-			SetRefID(secNewWipModel.RefID)
+			SetRepositoryID(secNewWipModel.RepositoryID)
 
 		list, err := repo.List(ctx, listParams)
 		require.NoError(t, err)
@@ -60,7 +58,12 @@ func TestWipRepo(t *testing.T) {
 			SetCreatorID(secWipModel.CreatorID).
 			SetRepositoryID(secWipModel.RepositoryID).
 			SetRefID(secWipModel.RefID)
-		err = repo.Delete(ctx, deleteParams)
+		affectedRow, err := repo.Delete(ctx, deleteParams)
+		require.Equal(t, int64(1), affectedRow)
+		require.NoError(t, err)
+
+		affectedRow, err = repo.Delete(ctx, deleteParams)
+		require.Equal(t, int64(0), affectedRow)
 		require.NoError(t, err)
 
 		_, err = repo.Get(ctx, models.NewGetWipParams().SetID(secWipModel.ID))

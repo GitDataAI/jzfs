@@ -85,7 +85,9 @@ func (lrp *ListRepoParams) SetCreatorID(creatorID uuid.UUID) *ListRepoParams {
 }
 
 type DeleteRepoParams struct {
-	ID uuid.UUID
+	ID      uuid.UUID
+	OwnerID uuid.UUID
+	Name    *string
 }
 
 func NewDeleteRepoParams() *DeleteRepoParams {
@@ -94,6 +96,16 @@ func NewDeleteRepoParams() *DeleteRepoParams {
 
 func (drp *DeleteRepoParams) SetID(id uuid.UUID) *DeleteRepoParams {
 	drp.ID = id
+	return drp
+}
+
+func (drp *DeleteRepoParams) SetOwnerID(ownerID uuid.UUID) *DeleteRepoParams {
+	drp.OwnerID = ownerID
+	return drp
+}
+
+func (drp *DeleteRepoParams) SetName(name string) *DeleteRepoParams {
+	drp.Name = &name
 	return drp
 }
 
@@ -119,7 +131,7 @@ type IRepositoryRepo interface {
 	Get(ctx context.Context, params *GetRepoParams) (*Repository, error)
 
 	List(ctx context.Context, params *ListRepoParams) ([]*Repository, error)
-	Delete(ctx context.Context, params *DeleteRepoParams) error
+	Delete(ctx context.Context, params *DeleteRepoParams) (int64, error)
 	UpdateByID(ctx context.Context, updateModel *UpdateRepoParams) error
 }
 
@@ -200,14 +212,29 @@ func (r *RepositoryRepo) List(ctx context.Context, params *ListRepoParams) ([]*R
 	return repos, nil
 }
 
-func (r *RepositoryRepo) Delete(ctx context.Context, params *DeleteRepoParams) error {
+func (r *RepositoryRepo) Delete(ctx context.Context, params *DeleteRepoParams) (int64, error) {
 	query := r.db.NewDelete().Model((*Repository)(nil))
 	if uuid.Nil != params.ID {
 		query = query.Where("id = ?", params.ID)
 	}
 
-	_, err := query.Exec(ctx)
-	return err
+	if params.Name != nil {
+		query = query.Where("name = ?", params.Name)
+	}
+
+	if uuid.Nil != params.OwnerID {
+		query = query.Where("owner_id = ?", params.OwnerID)
+	}
+
+	sqlResult, err := query.Exec(ctx)
+	if err != nil {
+		return 0, err
+	}
+	affectedRows, err := sqlResult.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	return affectedRows, err
 }
 
 func (r *RepositoryRepo) UpdateByID(ctx context.Context, updateModel *UpdateRepoParams) error {

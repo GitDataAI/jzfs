@@ -855,13 +855,6 @@ paths:
         - wip
       operationId: createWip
       summary: create working in process
-      parameters:
-        - in: query
-          name: name
-          description: wip name
-          required: true
-          schema:
-            type: string
       responses:
         201:
           description: working in process created
