@@ -179,6 +179,18 @@ components:
       properties:
         Description:
           type: string
+    RepositoryList:
+      type: object
+      required:
+        - pagination
+        - results
+      properties:
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/Repository"
     Repository:
       type: object
       required:
@@ -1206,11 +1218,9 @@ paths:
       operationId: listRepository
       summary: list repository in specific owner
       parameters:
-        - in: query
-          name: repoPrefix
-          required: false
-          schema:
-            type: string
+        - $ref: "#/components/parameters/PaginationPrefix"
+        - $ref: "#/components/parameters/PaginationAfter"
+        - $ref: "#/components/parameters/PaginationAmount"
       responses:
         200:
           description: repository list
@@ -1219,7 +1229,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Repository"
+                  $ref: "#/components/schemas/RepositoryList"
         400:
           description: ValidationError
         401:
@@ -1233,6 +1243,10 @@ paths:
         - repo
       operationId: listRepositoryOfAuthenticatedUser"
       summary: list repository
+      parameters:
+        - $ref: "#/components/parameters/PaginationPrefix"
+        - $ref: "#/components/parameters/PaginationAfter"
+        - $ref: "#/components/parameters/PaginationAmount"
       responses:
         200:
           description: list repository
@@ -1241,7 +1255,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Repository"
+                  $ref: "#/components/schemas/RepositoryList"
         400:
           description: ValidationError
         401:

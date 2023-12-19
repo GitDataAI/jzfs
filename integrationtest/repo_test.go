@@ -99,14 +99,14 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			c.Convey("no auth", func() {
 				re := client.RequestEditors
 				client.RequestEditors = nil
-				resp, err := client.ListRepositoryOfAuthenticatedUser(ctx)
+				resp, err := client.ListRepositoryOfAuthenticatedUser(ctx, &api.ListRepositoryOfAuthenticatedUserParams{})
 				client.RequestEditors = re
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 
 			c.Convey("list repository in authenticated user", func() {
-				resp, err := client.ListRepositoryOfAuthenticatedUser(ctx)
+				resp, err := client.ListRepositoryOfAuthenticatedUser(ctx, &api.ListRepositoryOfAuthenticatedUserParams{})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
 
@@ -128,7 +128,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 
 			c.Convey("list repository by prefix", func() {
-				resp, err := client.ListRepository(ctx, userName, &api.ListRepositoryParams{RepoPrefix: utils.String("happy")})
+				resp, err := client.ListRepository(ctx, userName, &api.ListRepositoryParams{Prefix: utils.String("happy")})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
 
@@ -139,7 +139,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 
 			c.Convey("list repository by prefix but found nothing", func() {
-				resp, err := client.ListRepository(ctx, userName, &api.ListRepositoryParams{RepoPrefix: utils.String("bad")})
+				resp, err := client.ListRepository(ctx, userName, &api.ListRepositoryParams{Prefix: utils.String("bad")})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
 
@@ -150,7 +150,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 
 			c.Convey("list others repository", func() {
-				resp, err := client.ListRepository(ctx, "admin", &api.ListRepositoryParams{RepoPrefix: utils.String("bad")})
+				resp, err := client.ListRepository(ctx, "admin", &api.ListRepositoryParams{Prefix: utils.String("bad")})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
 			})

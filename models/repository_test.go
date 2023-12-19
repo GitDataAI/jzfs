@@ -46,41 +46,63 @@ func TestRepositoryRepo_Insert(t *testing.T) {
 	require.NotEqual(t, uuid.Nil, secRepo.ID)
 
 	//list
-	repos, err := repo.List(ctx, models.NewListRepoParams())
+	repos, _, err := repo.List(ctx, models.NewListRepoParams())
 	require.NoError(t, err)
 	require.Len(t, repos, 2)
 
 	{
 		//exact adabbeb
-		repos, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetName("adabbeb", models.PrefixMatch))
+		repos, _, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetName("adabbeb", models.PrefixMatch))
 		require.NoError(t, err)
 		require.Len(t, repos, 1)
 	}
 	{
 		//prefix a
-		repos, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetName("a", models.PrefixMatch))
+		repos, _, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetName("a", models.PrefixMatch))
 		require.NoError(t, err)
 		require.Len(t, repos, 2)
 	}
 
 	{
 		//subfix b
-		repos, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetName("b", models.SuffixMatch))
+		repos, _, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetName("b", models.SuffixMatch))
 		require.NoError(t, err)
 		require.Len(t, repos, 2)
 	}
 	{
 		//like ab
-		repos, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetName("ab", models.LikeMatch))
+		repos, _, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetName("ab", models.LikeMatch))
 		require.NoError(t, err)
 		require.Len(t, repos, 2)
 	}
 	{
 		//like ab
-		repos, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetName("adabbeb", models.LikeMatch))
+		repos, _, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetName("adabbeb", models.LikeMatch))
 		require.NoError(t, err)
 		require.Len(t, repos, 1)
 	}
+	{
+		//amount 1
+		repos, has_more, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetAmount(1))
+		require.NoError(t, err)
+		require.True(t, has_more)
+		require.Len(t, repos, 1)
+	}
+	{
+		//amount 2
+		repos, has_more, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetAmount(2))
+		require.NoError(t, err)
+		require.True(t, has_more)
+		require.Len(t, repos, 2)
+	}
+	{
+		//amount 3
+		repos, has_more, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetAmount(3))
+		require.NoError(t, err)
+		require.False(t, has_more)
+		require.Len(t, repos, 2)
+	}
+
 	//delete
 	err = repo.Delete(ctx, models.NewDeleteRepoParams().SetID(secRepo.ID))
 	require.NoError(t, err)

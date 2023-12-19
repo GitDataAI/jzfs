@@ -2,17 +2,16 @@ package models
 
 import (
 	"context"
-	"time"
-
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
+	"time"
 )
 
 type Repository struct {
 	bun.BaseModel `bun:"table:repositories"`
 	ID            uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
 	Name          string    `bun:"name,unique:name_owner_unique,notnull"`
-	OwnerID       uuid.UUID `bun:"owner_id,unique:name_owner_unique,type:uuid,notnull"`
+	OwnerID       uuid.UUID `bun:"owner_id,type:uuid,notnull"`
 	HEAD          string    `bun:"head,notnull"`
 	Description   *string   `bun:"description"`
 	CreatorID     uuid.UUID `bun:"creator_id,type:uuid,notnull"`
@@ -58,6 +57,8 @@ type ListRepoParams struct {
 	OwnerID   uuid.UUID
 	Name      *string
 	NameMatch MatchMode
+	After     *string
+	Amount    int
 }
 
 func NewListRepoParams() *ListRepoParams {
@@ -81,6 +82,16 @@ func (lrp *ListRepoParams) SetName(name string, match MatchMode) *ListRepoParams
 
 func (lrp *ListRepoParams) SetCreatorID(creatorID uuid.UUID) *ListRepoParams {
 	lrp.CreatorID = creatorID
+	return lrp
+}
+
+func (lrp *ListRepoParams) SetAfter(after string) *ListRepoParams {
+	lrp.After = &after
+	return lrp
+}
+
+func (lrp *ListRepoParams) SetAmount(amount int) *ListRepoParams {
+	lrp.Amount = amount
 	return lrp
 }
 
@@ -118,7 +129,7 @@ type IRepositoryRepo interface {
 	Insert(ctx context.Context, repo *Repository) (*Repository, error)
 	Get(ctx context.Context, params *GetRepoParams) (*Repository, error)
 
-	List(ctx context.Context, params *ListRepoParams) ([]*Repository, error)
+	List(ctx context.Context, params *ListRepoParams) ([]*Repository, bool, error)
 	Delete(ctx context.Context, params *DeleteRepoParams) error
 	UpdateByID(ctx context.Context, updateModel *UpdateRepoParams) error
 }
@@ -168,7 +179,7 @@ func (r *RepositoryRepo) Get(ctx context.Context, params *GetRepoParams) (*Repos
 	return repo, nil
 }
 
-func (r *RepositoryRepo) List(ctx context.Context, params *ListRepoParams) ([]*Repository, error) {
+func (r *RepositoryRepo) List(ctx context.Context, params *ListRepoParams) ([]*Repository, bool, error) {
 	repos := []*Repository{}
 	query := r.db.NewSelect().Model(&repos)
 
@@ -193,11 +204,13 @@ func (r *RepositoryRepo) List(ctx context.Context, params *ListRepoParams) ([]*R
 		}
 	}
 
-	err := query.Scan(ctx)
-	if err != nil {
-		return nil, err
+	query = query.Order("updated_at DESC")
+	if params.After != nil {
+		query = query.Where("updated_at < ?", *params.After)
 	}
-	return repos, nil
+
+	err := query.Limit(params.Amount).Scan(ctx)
+	return repos, len(repos) == params.Amount, err
 }
 
 func (r *RepositoryRepo) Delete(ctx context.Context, params *DeleteRepoParams) error {
