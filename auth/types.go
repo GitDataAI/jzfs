@@ -3,6 +3,6 @@ package auth
 import "time"
 
 const (
-	expirationDuration = time.Hour
+	ExpirationDuration = time.Hour
 	passwordCost       = 12
 )
