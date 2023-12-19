@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/google/uuid"
+
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/jiaozifs/jiaozifs/utils/hash"
@@ -22,10 +24,12 @@ import (
 	"go.uber.org/fx"
 )
 
+const DefaultBranchName = "main"
+
 var maxNameLength = 20
 var alphanumeric = regexp.MustCompile("^[a-zA-Z0-9_]*$")
 
-var RepoNameBlackList = []string{"repository"}
+var RepoNameBlackList = []string{"repository", "repo", "user", "users"}
 
 func CheckRepositoryName(name string) error {
 	for _, blackName := range RepoNameBlackList {
@@ -49,16 +53,39 @@ type RepositoryController struct {
 	Repo models.IRepo
 }
 
-func (repositoryCtl RepositoryController) ListRepository(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request) {
-	user, err := auth.GetUser(ctx)
+func (repositoryCtl RepositoryController) ListRepositoryOfAuthenticatedUser(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request) {
+	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	repositories, err := repositoryCtl.Repo.RepositoryRepo().List(ctx, &models.ListRepoParams{
-		CreatorID: user.ID,
-	})
+	repositories, err := repositoryCtl.Repo.RepositoryRepo().List(ctx, models.NewListRepoParams().SetOwnerID(operator.ID))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+	w.JSON(repositories)
+}
+
+func (repositoryCtl RepositoryController) ListRepository(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string) {
+	owner, err := repositoryCtl.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(ownerName))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	operator, err := auth.GetOperator(ctx)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+	if owner.ID != operator.ID { //todo check public or private and allow  access public repos
+		w.Forbidden()
+		return
+	}
+
+	repositories, err := repositoryCtl.Repo.RepositoryRepo().List(ctx, models.NewListRepoParams().SetOwnerID(owner.ID))
 	if err != nil {
 		w.Error(err)
 		return
@@ -73,39 +100,70 @@ func (repositoryCtl RepositoryController) CreateRepository(ctx context.Context, 
 		return
 	}
 
-	user, err := auth.GetUser(ctx)
+	operator, err := auth.GetOperator(ctx)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+	//create default ref
+	var createdRepo *models.Repository
+	err = repositoryCtl.Repo.Transaction(ctx, func(repo models.IRepo) error {
+		repoID := uuid.New()
+		defaultRef := &models.Ref{
+			RepositoryID: repoID,
+			CommitHash:   hash.Hash{},
+			Name:         DefaultBranchName,
+			CreatorID:    operator.ID,
+			CreatedAt:    time.Now(),
+			UpdatedAt:    time.Now(),
+		}
+		defaultRef, err := repositoryCtl.Repo.RefRepo().Insert(ctx, defaultRef)
+		if err != nil {
+			return err
+		}
+		repository := &models.Repository{
+			ID:          repoID,
+			Name:        body.Name,
+			Description: body.Description,
+			HEAD:        defaultRef.Name,
+			OwnerID:     operator.ID,
+			CreatorID:   operator.ID,
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+		}
+		createdRepo, err = repositoryCtl.Repo.RepositoryRepo().Insert(ctx, repository)
+		return err
+	})
+
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	repository := &models.Repository{
-		Name:        body.Name,
-		Description: body.Description,
-		HEAD:        "main",
-		CreatorID:   user.ID,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
-	}
-	repository, err = repositoryCtl.Repo.RepositoryRepo().Insert(ctx, repository)
-	if err != nil {
-		w.Error(err)
-		return
-	}
-	w.JSON(repository)
+	w.JSON(api.Repository{
+		CreatedAt:   createdRepo.CreatedAt,
+		CreatorID:   createdRepo.CreatorID,
+		Description: createdRepo.Description,
+		Head:        createdRepo.HEAD,
+		ID:          createdRepo.ID,
+		Name:        createdRepo.Name,
+		UpdatedAt:   createdRepo.UpdatedAt,
+	})
 }
 
-func (repositoryCtl RepositoryController) DeleteRepository(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, userName string, repositoryName string) {
-	user, err := repositoryCtl.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(userName))
+func (repositoryCtl RepositoryController) DeleteRepository(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string) {
+	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	repo, err := repositoryCtl.Repo.RepositoryRepo().Get(ctx, &models.GetRepoParams{
-		CreatorID: user.ID,
-		Name:      utils.String(repositoryName),
-	})
+	if operator.Name != ownerName {
+		w.Forbidden()
+		return
+	}
+
+	repo, err := repositoryCtl.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetName(repositoryName).SetOwnerID(operator.ID))
 	if err != nil {
 		w.Error(err)
 		return
@@ -119,16 +177,25 @@ func (repositoryCtl RepositoryController) DeleteRepository(ctx context.Context, 
 	w.OK()
 }
 
-func (repositoryCtl RepositoryController) GetRepository(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, userName string, repositoryName string) {
-	user, err := repositoryCtl.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(userName))
+func (repositoryCtl RepositoryController) GetRepository(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string) {
+	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
 		return
 	}
-	repo, err := repositoryCtl.Repo.RepositoryRepo().Get(ctx, &models.GetRepoParams{
-		CreatorID: user.ID,
-		Name:      utils.String(repositoryName),
-	})
+
+	owner, err := repositoryCtl.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(ownerName))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	if operator.Name != owner.Name { //todo check public or private / and permission
+		w.Forbidden()
+		return
+	}
+
+	repo, err := repositoryCtl.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetName(repositoryName).SetOwnerID(owner.ID))
 	if err != nil {
 		w.Error(err)
 		return
@@ -137,17 +204,25 @@ func (repositoryCtl RepositoryController) GetRepository(ctx context.Context, w *
 	w.JSON(repo)
 }
 
-func (repositoryCtl RepositoryController) UpdateRepository(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, body api.UpdateRepositoryJSONRequestBody, userName string, repositoryName string) {
-	user, err := repositoryCtl.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(userName))
+func (repositoryCtl RepositoryController) UpdateRepository(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, body api.UpdateRepositoryJSONRequestBody, ownerName string, repositoryName string) {
+	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	repo, err := repositoryCtl.Repo.RepositoryRepo().Get(ctx, &models.GetRepoParams{
-		CreatorID: user.ID,
-		Name:      utils.String(repositoryName),
-	})
+	owner, err := repositoryCtl.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(ownerName))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	if operator.Name != ownerName { //todo check permission to modify owner repo
+		w.Forbidden()
+		return
+	}
+
+	repo, err := repositoryCtl.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetName(repositoryName).SetOwnerID(owner.ID))
 	if err != nil {
 		w.Error(err)
 		return
@@ -160,17 +235,25 @@ func (repositoryCtl RepositoryController) UpdateRepository(ctx context.Context, 
 	}
 }
 
-func (repositoryCtl RepositoryController) GetCommitsInRepository(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, userName string, repositoryName string, params api.GetCommitsInRepositoryParams) {
-	user, err := repositoryCtl.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(userName))
+func (repositoryCtl RepositoryController) GetCommitsInRepository(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, params api.GetCommitsInRepositoryParams) {
+	user, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	repo, err := repositoryCtl.Repo.RepositoryRepo().Get(ctx, &models.GetRepoParams{
-		CreatorID: user.ID,
-		Name:      utils.String(repositoryName),
-	})
+	owner, err := repositoryCtl.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(ownerName))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	if user.Name != ownerName { //todo check public or private
+		w.Forbidden()
+		return
+	}
+
+	repo, err := repositoryCtl.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
 	if err != nil {
 		w.Error(err)
 		return
@@ -180,7 +263,7 @@ func (repositoryCtl RepositoryController) GetCommitsInRepository(ctx context.Con
 	if params.RefName != nil {
 		refName = *params.RefName
 	}
-	ref, err := repositoryCtl.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetName(refName))
+	ref, err := repositoryCtl.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetRepositoryID(repo.ID).SetName(refName))
 	if err != nil {
 		w.Error(err)
 		return
@@ -226,19 +309,4 @@ func (repositoryCtl RepositoryController) GetCommitsInRepository(ctx context.Con
 		return
 	}
 	w.JSON(commits)
-}
-
-func (repositoryCtl RepositoryController) ListRepositories(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, userName string) {
-	user, err := repositoryCtl.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(userName))
-	if err != nil {
-		w.Error(err)
-		return
-	}
-
-	repos, err := repositoryCtl.Repo.RepositoryRepo().List(ctx, models.NewListRepoParams().SetCreatorID(user.ID))
-	if err != nil {
-		w.Error(err)
-		return
-	}
-	w.JSON(repos)
 }

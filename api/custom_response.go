@@ -40,6 +40,9 @@ func (response *JiaozifsResponse) OK() {
 func (response *JiaozifsResponse) NotFound() {
 	response.WriteHeader(http.StatusNotFound)
 }
+func (response *JiaozifsResponse) Forbidden() {
+	response.WriteHeader(http.StatusForbidden)
+}
 
 // Unauthorized response with 401
 func (response *JiaozifsResponse) Unauthorized() {

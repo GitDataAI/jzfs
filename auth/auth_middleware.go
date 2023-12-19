@@ -60,7 +60,7 @@ func Middleware(swagger *openapi3.T, authenticator Authenticator, secretStore cr
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// if request already authenticated
-			if _, userNotFoundErr := GetUser(r.Context()); userNotFoundErr == nil {
+			if _, userNotFoundErr := GetOperator(r.Context()); userNotFoundErr == nil {
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -78,7 +78,7 @@ func Middleware(swagger *openapi3.T, authenticator Authenticator, secretStore cr
 				return
 			}
 			if user != nil {
-				r = r.WithContext(WithUser(r.Context(), user))
+				r = r.WithContext(WithOperator(r.Context(), user))
 			}
 			next.ServeHTTP(w, r)
 		})

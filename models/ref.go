@@ -66,6 +66,10 @@ func (gup *DeleteRefParams) SetRepositoryID(repositoryID uuid.UUID) *DeleteRefPa
 	gup.RepositoryID = repositoryID
 	return gup
 }
+func (gup *DeleteRefParams) SetID(id uuid.UUID) *DeleteRefParams {
+	gup.ID = id
+	return gup
+}
 
 func (gup *DeleteRefParams) SetName(name string) *DeleteRefParams {
 	gup.Name = &name
@@ -87,12 +91,25 @@ func (up *UpdateRefParams) SetCommitHash(commitHash hash.Hash) *UpdateRefParams 
 	return up
 }
 
+type ListRefParams struct {
+	RepositoryID uuid.UUID
+}
+
+func NewListRefParams() *ListRefParams {
+	return &ListRefParams{}
+}
+
+func (gup *ListRefParams) SetRepositoryID(repositoryID uuid.UUID) *ListRefParams {
+	gup.RepositoryID = repositoryID
+	return gup
+}
+
 type IRefRepo interface {
 	Insert(ctx context.Context, repo *Ref) (*Ref, error)
 	UpdateByID(ctx context.Context, params *UpdateRefParams) error
 	Get(ctx context.Context, id *GetRefParams) (*Ref, error)
 
-	List(ctx context.Context, id uuid.UUID) ([]Ref, error)
+	List(ctx context.Context, params *ListRefParams) ([]*Ref, error)
 	Delete(ctx context.Context, params *DeleteRefParams) error
 }
 
@@ -130,27 +147,37 @@ func (r RefRepo) Get(ctx context.Context, params *GetRefParams) (*Ref, error) {
 		query = query.Where("name = ?", *params.Name)
 	}
 
-	return repo, query.Limit(1).Scan(ctx, repo)
+	return repo, query.Limit(1).Scan(ctx)
 }
 
-func (r RefRepo) List(ctx context.Context, id uuid.UUID) ([]Ref, error) {
-	var refs []Ref
-	return refs, r.db.NewSelect().Model(&refs).Where("id = ?", id).Scan(ctx)
+func (r RefRepo) List(ctx context.Context, params *ListRefParams) ([]*Ref, error) {
+	var refs []*Ref
+	query := r.db.NewSelect().Model(&refs)
+
+	if uuid.Nil != params.RepositoryID {
+		query = query.Where("repository_id = ?", params.RepositoryID)
+	}
+
+	return refs, query.Scan(ctx)
 }
 
 func (r RefRepo) Delete(ctx context.Context, params *DeleteRefParams) error {
-	ref := &Ref{}
-	query := r.db.NewSelect().Model(ref)
+	query := r.db.NewDelete().Model((*Ref)(nil))
 
 	if uuid.Nil != params.ID {
 		query = query.Where("id = ?", params.ID)
 	}
 
-	if uuid.Nil != params.RepositoryID && params.Name != nil {
-		query = query.Where("repository_id = ? AND name = ?", params.RepositoryID, *params.Name)
+	if uuid.Nil != params.RepositoryID {
+		query = query.Where("repository_id = ?", params.RepositoryID)
 	}
 
-	return query.Limit(1).Scan(ctx, ref)
+	if params.Name != nil {
+		query = query.Where("name = ?", *params.Name)
+	}
+
+	_, err := query.Exec(ctx)
+	return err
 }
 
 func (r RefRepo) UpdateByID(ctx context.Context, updateModel *UpdateRefParams) error {

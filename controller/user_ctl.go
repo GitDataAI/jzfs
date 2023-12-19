@@ -74,9 +74,9 @@ func (userCtl UserController) Register(ctx context.Context, w *api.JiaozifsRespo
 
 func (userCtl UserController) GetUserInfo(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request) {
 	// Get token from Header
-	user, err := auth.GetUser(ctx)
+	user, err := auth.GetOperator(ctx)
 	if err != nil {
-		w.Error(err)
+		w.Code(http.StatusForbidden)
 		return
 	}
 

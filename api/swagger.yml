@@ -62,6 +62,8 @@ components:
       type: apiKey
       in: cookie
       name: internal_auth_session
+
+
   schemas:
     LoginConfig:
       type: object
@@ -98,7 +100,6 @@ components:
         - login_url
         - login_cookie_names
         - logout_url
-
     SetupState:
       type: object
       properties:
@@ -123,13 +124,35 @@ components:
     Ref:
       type: object
       required:
+        - ID
+        - RepositoryID
         - CommitHash
         - Name
+        - CreatorID
+        - CreatedAt
+        - UpdatedAt
       properties:
+        ID :
+          type: string
+          format: uuid
+        RepositoryID:
+          type: string
+          format: uuid
         CommitHash:
           type: string
-        Name:
+        Name :
           type: string
+        Description :
+          type: string
+        CreatorID:
+          type: string
+          format: uuid
+        CreatedAt:
+          type: string
+          format: date-time
+        UpdatedAt:
+          type: string
+          format: date-time
     RefList:
       type: object
       required:
@@ -215,7 +238,6 @@ components:
         UpdatedAt:
           type: string
           format: date-time
-
     Signature:
       type: object
       required:
@@ -231,7 +253,6 @@ components:
         When:
           type: string
           format: date-time
-
     Commit:
       type: object
       required:
@@ -362,7 +383,6 @@ components:
         password:
           type: string
           minLength: 8
-
     UserInfo:
       type: object
       required:
@@ -392,7 +412,6 @@ components:
         updateAt:
           type: string
           format: date-time
-
     UserRegisterInfo:
       type: object
       required:
@@ -408,7 +427,6 @@ components:
         email:
           type: string
           format: email
-
     AuthenticationToken:
       type: object
       required:
@@ -421,7 +439,6 @@ components:
           type: integer
           format: int64
           description: Unix Epoch in seconds
-
     VersionResult:
       type: object
       required:
@@ -548,10 +565,10 @@ paths:
         503:
           description: service unavailable
 
-  /object/{user}/{repository}:
+  /object/{owner}/{repository}:
     parameters:
       - in: path
-        name: user
+        name: owner
         required: true
         schema:
           type: string
@@ -783,10 +800,15 @@ paths:
         420:
           description: too many requests
 
-  /wip/{repository}:
+  /wip/{owner}/{repository}:
     parameters:
       - in: path
         name: repository
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: owner
         required: true
         schema:
           type: string
@@ -856,8 +878,13 @@ paths:
         502:
           description: internal server error
 
-  /wip/{repository}/changes:
+  /wip/{owner}/{repository}/changes:
     parameters:
+      - in: path
+        name: owner
+        required: true
+        schema:
+          type: string
       - in: path
         name: repository
         required: true
@@ -895,8 +922,13 @@ paths:
         403:
           description: Forbidden
 
-  /wip/{repository}/commit:
+  /wip/{owner}/{repository}/commit:
     parameters:
+      - in: path
+        name: owner
+        required: true
+        schema:
+          type: string
       - in: path
         name: repository
         required: true
@@ -936,8 +968,13 @@ paths:
         502:
           description: internal server error
 
-  /wip/{repository}/list:
+  /wip/{owner}/{repository}/list:
     parameters:
+      - in: path
+        name: owner
+        required: true
+        schema:
+          type: string
       - in: path
         name: repository
         required: true
@@ -964,10 +1001,10 @@ paths:
         403:
           description: Forbidden
 
-  /repos/{user}/{repository}/contents/:
+  /repos/{owner}/{repository}/contents/:
     parameters:
       - in: path
-        name: user
+        name: owner
         required: true
         schema:
           type: string
@@ -979,8 +1016,8 @@ paths:
     get:
       tags:
         - commit
-      operationId: getEntriesInCommit
-      summary: list entries in commit
+      operationId: getEntriesInRef
+      summary: list entries in ref
       parameters:
         - in: query
           name: path
@@ -990,7 +1027,7 @@ paths:
             type: string
         - in: query
           name: ref
-          description: specific ref
+          description: specific ref default to main branch
           required: false
           schema:
             type: string
@@ -1012,10 +1049,10 @@ paths:
         404:
           description: url not found
 
-  /repos/{user}/{repository}/compare/{basehead}:
+  /repos/{owner}/{repository}/compare/{basehead}:
     parameters:
       - in: path
-        name: user
+        name: owner
         required: true
         schema:
           type: string
@@ -1057,10 +1094,10 @@ paths:
         503:
           description: server internal error
 
-  /repos/{user}/{repository}/commits:
+  /repos/{owner}/{repository}/commits:
     parameters:
       - in: path
-        name: user
+        name: owner
         required: true
         schema:
           type: string
@@ -1091,10 +1128,10 @@ paths:
                 items:
                   $ref: "#/components/schemas/Commit"
 
-  /repos/{user}/{repository}:
+  /repos/{owner}/{repository}:
     parameters:
       - in: path
-        name: user
+        name: owner
         required: true
         schema:
           type: string
@@ -1156,12 +1193,39 @@ paths:
         403:
           description: Forbidden
 
-# 必须授权
-  /users/repos:
+  /users/{owner}/repos:
+    parameters:
+      - in: path
+        name: owner
+        required: true
+        schema:
+          type: string
     get:
       tags:
         - repo
       operationId: listRepository
+      summary: list repository in specific owner
+      responses:
+        200:
+          description: repository list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Repository"
+        400:
+          description: ValidationError
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden
+
+  /users/repos:       # 必须授权
+    get:
+      tags:
+        - repo
+      operationId: listRepositoryOfAuthenticatedUser"
       summary: list repository
       responses:
         200:
@@ -1205,15 +1269,15 @@ paths:
         403:
           description: Forbidden
 
-  /{user}/{reopsitory}/branches:
+  /repos/{owner}/{repository}/branches:
     parameters:
       - in: path
-        name: user
+        name: owner
         required: true
         schema:
           type: string
       - in: path
-        name: reopsitory
+        name: repository
         required: true
         schema:
           type: string
@@ -1237,35 +1301,12 @@ paths:
           description: Too many requests
         default:
           description: Internal Server Error
-    post:
-      tags:
-        - branches
-      operationId: createBranch
-      summary: create branch
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/BranchCreation"
-      responses:
-        201:
-          description: create branch success
-        400:
-          description: ValidationError
-        404:
-          description: Resource Not Found
-        409:
-          description: Resource Conflicts With Target
-        420:
-          description: Too many requests
-        default:
-          description: Internal Server Error
 
-  /{user}/{repository}/branches/{branch}:
+
+  /repos/{owner}/{repository}/branch:
     parameters:
       - in: path
-        name: user
+        name: owner
         required: true
         schema:
           type: string
@@ -1274,16 +1315,17 @@ paths:
         required: true
         schema:
           type: string
-      - in: path
-        name: branch
-        required: true
-        schema:
-          type: string
     get:
       tags:
         - branches
       operationId: getBranch
       summary: get branch
+      parameters:
+        - in: query
+          name: refName
+          required: true
+          schema:
+            type: string
       responses:
         200:
           description: branch
@@ -1304,6 +1346,12 @@ paths:
         - branches
       operationId: deleteBranch
       summary: delete branch
+      parameters:
+        - in: query
+          name: refName
+          required: true
+          schema:
+            type: string
       responses:
         204:
           description: branch delete successfully
@@ -1315,6 +1363,36 @@ paths:
           description: Too many requests
         default:
          description: Internal Server Error
+    post:
+      tags:
+        - branches
+      operationId: createBranch
+      summary: create branch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BranchCreation"
+      responses:
+        201:
+          description: create branch success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BranchCreation"
+        400:
+          description: ValidationError
+        404:
+          description: Resource Not Found
+        409:
+          description: Resource Conflicts With Target
+        420:
+          description: Too many requests
+        default:
+          description: Internal Server Error
+
+
 
   /auth/login:
     post:
@@ -1408,5 +1486,7 @@ paths:
                 $ref: "#/components/schemas/UserInfo"
         401:
           description: Unauthorized
+        403:
+          description: Forbiden
         default:
           description: Internal Server Error

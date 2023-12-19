@@ -13,6 +13,7 @@ import (
 	logging "github.com/ipfs/go-log/v2"
 
 	"github.com/go-openapi/swag"
+	"github.com/jiaozifs/jiaozifs/auth"
 	"github.com/jiaozifs/jiaozifs/models/filemode"
 	"github.com/jiaozifs/jiaozifs/versionmgr"
 
@@ -37,26 +38,31 @@ type ObjectController struct {
 	Repo models.IRepo
 }
 
-func (oct ObjectController) DeleteObject(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, userName string, repositoryName string, params api.DeleteObjectParams) { //nolint
-	user, err := oct.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(userName))
+func (oct ObjectController) DeleteObject(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, ownerName string, repositoryName string, params api.DeleteObjectParams) { //nolint
+	user, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	repository, err := oct.Repo.RepositoryRepo().Get(ctx, &models.GetRepoParams{
-		CreatorID: user.ID,
-		Name:      utils.String(repositoryName),
-	})
+	owner, err := oct.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(ownerName))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	ref, err := oct.Repo.RefRepo().Get(ctx, &models.GetRefParams{
-		RepositoryID: repository.ID,
-		Name:         utils.String(params.Branch),
-	})
+	if user.Name != ownerName { //todo check permission
+		w.Forbidden()
+		return
+	}
+
+	repository, err := oct.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	ref, err := oct.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetRepositoryID(repository.ID).SetName(params.Branch))
 	if err != nil {
 		w.Error(err)
 		return
@@ -87,30 +93,36 @@ func (oct ObjectController) DeleteObject(ctx context.Context, w *api.JiaozifsRes
 	w.OK()
 }
 
-func (oct ObjectController) GetObject(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, userName string, repositoryName string, params api.GetObjectParams) { //nolint
-	user, err := oct.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(userName))
+func (oct ObjectController) GetObject(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, ownerName string, repositoryName string, params api.GetObjectParams) { //nolint
+	user, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	repository, err := oct.Repo.RepositoryRepo().Get(ctx, &models.GetRepoParams{
-		CreatorID: user.ID,
-		Name:      utils.String(repositoryName),
-	})
+	owner, err := oct.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(ownerName))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	ref, err := oct.Repo.RefRepo().Get(ctx, &models.GetRefParams{
-		RepositoryID: repository.ID,
-		Name:         utils.String(params.Branch),
-	})
+	if user.Name != ownerName { //todo check permission
+		w.Forbidden()
+		return
+	}
+
+	repository, err := oct.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
 	if err != nil {
 		w.Error(err)
 		return
 	}
+
+	ref, err := oct.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetRepositoryID(repository.ID).SetName(params.Branch))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
 	commit, err := oct.Repo.CommitRepo().Commit(ctx, ref.CommitHash)
 	if err != nil {
 		w.Error(err)
@@ -162,7 +174,7 @@ func (oct ObjectController) GetObject(ctx context.Context, w *api.JiaozifsRespon
 	_, err = io.Copy(w, reader)
 	if err != nil {
 		objLog.With(
-			"user", userName,
+			"user", ownerName,
 			"repo", repositoryName,
 			"path", params.Path).
 			Debugf("GetObject copy content %v", err)
@@ -170,26 +182,31 @@ func (oct ObjectController) GetObject(ctx context.Context, w *api.JiaozifsRespon
 	}
 }
 
-func (oct ObjectController) HeadObject(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, userName string, repository string, params api.HeadObjectParams) { //nolint
-	user, err := oct.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(userName))
+func (oct ObjectController) HeadObject(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, ownerName string, repositoryName string, params api.HeadObjectParams) { //nolint
+	user, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	repo, err := oct.Repo.RepositoryRepo().Get(ctx, &models.GetRepoParams{
-		CreatorID: user.ID,
-		Name:      utils.String(repository),
-	})
+	owner, err := oct.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(ownerName))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	ref, err := oct.Repo.RefRepo().Get(ctx, &models.GetRefParams{
-		RepositoryID: repo.ID,
-		Name:         utils.String(params.Branch),
-	})
+	if user.Name != ownerName { //todo check permission
+		w.Forbidden()
+		return
+	}
+
+	repository, err := oct.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	ref, err := oct.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetRepositoryID(repository.ID).SetName(params.Branch))
 	if err != nil {
 		w.Error(err)
 		return
@@ -252,7 +269,7 @@ func (oct ObjectController) HeadObject(ctx context.Context, w *api.JiaozifsRespo
 	}
 }
 
-func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, userName string, repository string, params api.UploadObjectParams) { //nolint
+func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, ownerName string, repositoryName string, params api.UploadObjectParams) { //nolint
 	// read request body parse multipart for "content" and upload the data
 	contentType := r.Header.Get("Content-Type")
 	mediaType, p, err := mime.ParseMediaType(contentType)
@@ -298,15 +315,37 @@ func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsRes
 	}
 	defer reader.Close() //nolint
 
+	user, err := auth.GetOperator(ctx)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	owner, err := oct.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(ownerName))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	if user.Name != ownerName { //todo check permission
+		w.Forbidden()
+		return
+	}
+
+	_, err = oct.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	stash, err := oct.Repo.WipRepo().Get(ctx, models.NewGetWipParams().SetID(params.WipID))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
 	var response api.ObjectStats
 	err = oct.Repo.Transaction(ctx, func(dRepo models.IRepo) error {
-		stash, err := dRepo.WipRepo().Get(ctx, &models.GetWipParams{
-			ID: params.WipID,
-		})
-		if err != nil {
-			return err
-		}
-
 		workingTree, err := versionmgr.NewWorkTree(ctx, dRepo.FileTreeRepo(), models.NewRootTreeEntry(stash.CurrentTree))
 		if err != nil {
 			return err
