@@ -161,7 +161,11 @@ func (r *RepositoryRepo) Get(ctx context.Context, params *GetRepoParams) (*Repos
 		query = query.Where("name = ?", *params.Name)
 	}
 
-	return repo, query.Limit(1).Scan(ctx)
+	err := query.Limit(1).Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return repo, nil
 }
 
 func (r *RepositoryRepo) List(ctx context.Context, params *ListRepoParams) ([]*Repository, error) {
@@ -189,7 +193,11 @@ func (r *RepositoryRepo) List(ctx context.Context, params *ListRepoParams) ([]*R
 		}
 	}
 
-	return repos, query.Scan(ctx)
+	err := query.Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return repos, nil
 }
 
 func (r *RepositoryRepo) Delete(ctx context.Context, params *DeleteRepoParams) error {

@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"encoding/hex"
 	"net/http"
 	"time"
 
@@ -54,7 +55,11 @@ func (userCtl UserController) Login(ctx context.Context, w *api.JiaozifsResponse
 	// Generate user token
 	loginTime := time.Now()
 	expires := loginTime.Add(auth.ExpirationDuration)
-	secretKey := userCtl.Config.SecretKey
+	secretKey, err := hex.DecodeString(userCtl.Config.SecretKey)
+	if err != nil {
+		w.Error(err)
+		return
+	}
 
 	tokenString, err := auth.GenerateJWTLogin(secretKey, body.Username, loginTime, expires)
 	if err != nil {

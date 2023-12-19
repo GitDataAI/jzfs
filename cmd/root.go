@@ -30,7 +30,7 @@ func RootCmd() *cobra.Command {
 	return rootCmd
 }
 func init() {
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.jiaozifs/config.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "~/.jiaozifs/config.toml", "config file (default is $HOME/.jiaozifs/config.toml)")
 	rootCmd.PersistentFlags().String("listen", config.DefaultLocalBSPath, "config blockstore path")
 	_ = viper.BindPFlag("api.listen", rootCmd.PersistentFlags().Lookup("listen"))
 	_ = viper.BindPFlag("config", rootCmd.PersistentFlags().Lookup("config"))

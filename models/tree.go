@@ -290,17 +290,29 @@ func (o FileTreeRepo) Get(ctx context.Context, params *GetObjParams) (*FileTree,
 		query = query.Where("hash = ?", params.Hash)
 	}
 
-	return repo, query.Limit(1).Scan(ctx, repo)
+	err := query.Limit(1).Scan(ctx, repo)
+	if err != nil {
+		return nil, err
+	}
+	return repo, nil
 }
 
 func (o FileTreeRepo) Blob(ctx context.Context, hash hash.Hash) (*Blob, error) {
 	blob := &Blob{}
-	return blob, o.db.NewSelect().Model(blob).Limit(1).Where("hash = ?", hash).Scan(ctx)
+	err := o.db.NewSelect().Model(blob).Limit(1).Where("hash = ?", hash).Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return blob, nil
 }
 
 func (o FileTreeRepo) TreeNode(ctx context.Context, hash hash.Hash) (*TreeNode, error) {
 	tree := &TreeNode{}
-	return tree, o.db.NewSelect().Model(tree).Limit(1).Where("hash = ?", hash).Scan(ctx)
+	err := o.db.NewSelect().Model(tree).Limit(1).Where("hash = ?", hash).Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return tree, nil
 }
 
 func (o FileTreeRepo) Count(ctx context.Context) (int, error) {
@@ -309,5 +321,9 @@ func (o FileTreeRepo) Count(ctx context.Context) (int, error) {
 
 func (o FileTreeRepo) List(ctx context.Context) ([]FileTree, error) {
 	var obj []FileTree
-	return obj, o.db.NewSelect().Model(&obj).Scan(ctx)
+	err := o.db.NewSelect().Model(&obj).Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
 }

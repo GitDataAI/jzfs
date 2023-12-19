@@ -5,6 +5,8 @@ import (
 	"os"
 	"path"
 
+	"github.com/mitchellh/go-homedir"
+
 	ms "github.com/mitchellh/mapstructure"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -39,7 +41,7 @@ type DatabaseConfig struct {
 }
 
 type AuthConfig struct {
-	SecretKey []byte `mapstructure:"secretKey"`
+	SecretKey string `mapstructure:"secretKey"`
 
 	UIConfig struct {
 		RBAC               string   `mapstructure:"rbac"`
@@ -52,33 +54,47 @@ type AuthConfig struct {
 	} `mapstructure:"ui_config"`
 }
 
-func InitConfig(cfgPath string) error {
-	// Search config in home directory with name ".jiaozifs" (without extension).
-	viper.AddConfigPath(cfgPath)
-	viper.SetConfigType("toml")
-	viper.SetConfigName("config")
-	if len(viper.ConfigFileUsed()) == 0 {
-		data := make(map[string]interface{})
-		err := ms.Decode(defaultCfg, &data)
-		if err != nil {
-			return err
-		}
-		for k, v := range data {
-			viper.SetDefault(k, v)
-		}
-
-		basePath := path.Dir(cfgPath)
-		err = os.MkdirAll(basePath, 0755)
-		if err != nil {
-			return err
-		}
-		return viper.WriteConfigAs(cfgPath)
+func InitConfig(cfgFile string) error {
+	var err error
+	cfgFile, err = homedir.Expand(cfgFile)
+	if err != nil {
+		return err
 	}
-	return fmt.Errorf("config already exit in %s", cfgPath)
+
+	_, err = os.Stat(cfgFile)
+	if err == nil {
+		return fmt.Errorf("config already exit in %s", cfgFile)
+	}
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+
+	viper.SetConfigFile(cfgFile)
+
+	data := make(map[string]interface{})
+	err = ms.Decode(defaultCfg, &data)
+	if err != nil {
+		return err
+	}
+	for k, v := range data {
+		viper.SetDefault(k, v)
+	}
+
+	basePath := path.Dir(cfgFile)
+	err = os.MkdirAll(basePath, 0755)
+	if err != nil {
+		return err
+	}
+	return viper.WriteConfigAs(cfgFile)
 }
 
 // LoadConfig reads in config file and ENV variables if set.
 func LoadConfig(cfgFile string) (*Config, error) {
+	var err error
+	cfgFile, err = homedir.Expand(cfgFile)
+	if err != nil {
+		return nil, err
+	}
 	if len(cfgFile) > 0 {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
@@ -96,7 +112,7 @@ func LoadConfig(cfgFile string) (*Config, error) {
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.
-	err := viper.ReadInConfig()
+	err = viper.ReadInConfig()
 	if err != nil {
 		return nil, err
 	}

@@ -172,8 +172,8 @@ func (s *WipRepo) Insert(ctx context.Context, repo *WorkingInProcess) (*WorkingI
 
 // Get wip by a group of conditions
 func (s *WipRepo) Get(ctx context.Context, params *GetWipParams) (*WorkingInProcess, error) {
-	repo := &WorkingInProcess{}
-	query := s.db.NewSelect().Model(repo)
+	wips := &WorkingInProcess{}
+	query := s.db.NewSelect().Model(wips)
 
 	if uuid.Nil != params.ID {
 		query = query.Where("id = ?", params.ID)
@@ -191,7 +191,11 @@ func (s *WipRepo) Get(ctx context.Context, params *GetWipParams) (*WorkingInProc
 		query = query.Where("ref_id = ?", params.RefID)
 	}
 
-	return repo, query.Limit(1).Scan(ctx, repo)
+	err := query.Limit(1).Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return wips, nil
 }
 
 func (s *WipRepo) List(ctx context.Context, params *ListWipParams) ([]*WorkingInProcess, error) {
@@ -210,7 +214,11 @@ func (s *WipRepo) List(ctx context.Context, params *ListWipParams) ([]*WorkingIn
 		query = query.Where("ref_id = ?", params.RefID)
 	}
 
-	return resp, query.Scan(ctx)
+	err := query.Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
 }
 
 // Delete remove wip in table by id
