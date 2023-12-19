@@ -5,6 +5,8 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/jiaozifs/jiaozifs/auth"
+
 	"github.com/jiaozifs/jiaozifs/models"
 )
 
@@ -58,6 +60,10 @@ func (response *JiaozifsResponse) BadRequest(msg string) {
 func (response *JiaozifsResponse) Error(err error) {
 	if errors.Is(err, models.ErrNotFound) {
 		response.NotFound()
+		return
+	}
+	if errors.Is(err, auth.ErrUserNotFound) {
+		response.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 

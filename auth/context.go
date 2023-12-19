@@ -7,6 +7,8 @@ import (
 	"github.com/jiaozifs/jiaozifs/models"
 )
 
+var ErrUserNotFound = fmt.Errorf("UserNotFound")
+
 type contextKey string
 
 const (
@@ -16,7 +18,7 @@ const (
 func GetOperator(ctx context.Context) (*models.User, error) {
 	user, ok := ctx.Value(userContextKey).(*models.User)
 	if !ok {
-		return nil, fmt.Errorf("UserNotFound")
+		return nil, ErrUserNotFound
 	}
 	return user, nil
 }

@@ -3,6 +3,10 @@ package controller
 import (
 	"context"
 	"net/http"
+	"time"
+
+	"github.com/go-openapi/swag"
+	"golang.org/x/crypto/bcrypt"
 
 	openapitypes "github.com/oapi-codegen/runtime/types"
 
@@ -33,27 +37,45 @@ type UserController struct {
 }
 
 func (userCtl UserController) Login(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, body api.LoginJSONRequestBody) {
-	login := auth.Login{
-		Username: body.Username,
-		Password: body.Password,
+
+	// get user encryptedPassword by username
+	ep, err := userCtl.Repo.UserRepo().GetEPByName(ctx, body.Username)
+	if err != nil {
+		w.Code(http.StatusUnauthorized)
+		return
 	}
 
-	// perform login
-	authToken, err := login.Login(ctx, userCtl.Repo.UserRepo(), userCtl.Config)
+	// Compare ep and password
+	err = bcrypt.CompareHashAndPassword([]byte(ep), []byte(body.Password))
+	if err != nil {
+		w.Code(http.StatusUnauthorized)
+		return
+	}
+	// Generate user token
+	loginTime := time.Now()
+	expires := loginTime.Add(auth.ExpirationDuration)
+	secretKey := userCtl.Config.SecretKey
+
+	tokenString, err := auth.GenerateJWTLogin(secretKey, body.Username, loginTime, expires)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
+	userCtlLog.Infof("usert %s login successful", body.Username)
+
 	internalAuthSession, _ := userCtl.SessionStore.Get(r, auth.InternalAuthSessionName)
-	internalAuthSession.Values[auth.TokenSessionKeyName] = authToken.Token
+	internalAuthSession.Values[auth.TokenSessionKeyName] = tokenString
 	err = userCtl.SessionStore.Save(r, w, internalAuthSession)
 	if err != nil {
 		userCtlLog.Errorf("Failed to save internal auth session %v", err)
 		w.Code(http.StatusInternalServerError)
 		return
 	}
-	w.JSON(authToken)
+	w.JSON(api.AuthenticationToken{
+		Token:           tokenString,
+		TokenExpiration: swag.Int64(expires.Unix()),
+	})
 }
 
 func (userCtl UserController) Register(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, body api.RegisterJSONRequestBody) {

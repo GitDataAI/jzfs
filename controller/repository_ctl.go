@@ -29,7 +29,8 @@ const DefaultBranchName = "main"
 var maxNameLength = 20
 var alphanumeric = regexp.MustCompile("^[a-zA-Z0-9_]*$")
 
-var RepoNameBlackList = []string{"repository", "repo", "user", "users"}
+// RepoNameBlackList forbid repo name, reserve for routes
+var RepoNameBlackList = []string{"repository", "repositories", "wip", "wips", "object", "objects", "commit", "commits", "ref", "refs", "repo", "repos", "user", "users"}
 
 func CheckRepositoryName(name string) error {
 	for _, blackName := range RepoNameBlackList {
@@ -162,7 +163,13 @@ func (repositoryCtl RepositoryController) DeleteRepository(ctx context.Context, 
 		return
 	}
 
-	if operator.Name != ownerName {
+	owner, err := repositoryCtl.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(ownerName))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	if operator.Name != owner.Name {
 		w.Forbidden()
 		return
 	}
@@ -270,6 +277,11 @@ func (repositoryCtl RepositoryController) GetCommitsInRepository(ctx context.Con
 	ref, err := repositoryCtl.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetRepositoryID(repo.ID).SetName(refName))
 	if err != nil {
 		w.Error(err)
+		return
+	}
+
+	if ref.CommitHash.IsEmpty() {
+		w.JSON([]api.Commit{})
 		return
 	}
 

@@ -14,42 +14,60 @@ func UserSpec(ctx context.Context, urlStr string) func(c convey.C) {
 	client, _ := api.NewClient(urlStr + apiimpl.APIV1Prefix)
 	return func(c convey.C) {
 		userName := "admin"
-		c.Convey("register", func() {
-			resp, err := client.Register(ctx, api.RegisterJSONRequestBody{
-				Username: userName,
-				Password: "12345678",
-				Email:    "mock@gmail.com",
-			})
-			convey.So(err, convey.ShouldBeNil)
-			convey.So(http.StatusOK, convey.ShouldEqual, resp.StatusCode)
-		})
+		CreateUser(ctx, c, client, userName)
 
 		c.Convey("usr profile no cookie", func() {
 			resp, err := client.GetUserInfo(ctx)
 			convey.So(err, convey.ShouldBeNil)
-			convey.So(http.StatusForbidden, convey.ShouldEqual, resp.StatusCode)
+			convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
 		})
 
-		c.Convey("login", func() {
+		c.Convey("login fail", func() {
 			resp, err := client.Login(ctx, api.LoginJSONRequestBody{
 				Username: "admin",
-				Password: "12345678",
+				Password: " vvvvvvvv",
 			})
 			convey.So(err, convey.ShouldBeNil)
-			convey.So(http.StatusOK, convey.ShouldEqual, resp.StatusCode)
-
-			client.RequestEditors = append(client.RequestEditors, func(ctx context.Context, req *http.Request) error {
-				for _, cookie := range resp.Cookies() {
-					req.AddCookie(cookie)
-				}
-				return nil
-			})
+			convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 		})
+
+		LoginAndSwitch(ctx, c, client, userName)
 
 		c.Convey("usr profile", func() {
 			resp, err := client.GetUserInfo(ctx)
 			convey.So(err, convey.ShouldBeNil)
-			convey.So(http.StatusOK, convey.ShouldEqual, resp.StatusCode)
+			convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
 		})
 	}
+}
+
+func CreateUser(ctx context.Context, c convey.C, client *api.Client, userName string) {
+	c.Convey("register "+userName, func() {
+		resp, err := client.Register(ctx, api.RegisterJSONRequestBody{
+			Username: userName,
+			Password: "12345678",
+			Email:    "mock@gmail.com",
+		})
+		convey.So(err, convey.ShouldBeNil)
+		convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+	})
+}
+
+func LoginAndSwitch(ctx context.Context, c convey.C, client *api.Client, userName string) {
+	c.Convey("login "+userName, func() {
+		resp, err := client.Login(ctx, api.LoginJSONRequestBody{
+			Username: userName,
+			Password: "12345678",
+		})
+		convey.So(err, convey.ShouldBeNil)
+		convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+		client.RequestEditors = nil
+		client.RequestEditors = append(client.RequestEditors, func(ctx context.Context, req *http.Request) error {
+			for _, cookie := range resp.Cookies() {
+				req.AddCookie(cookie)
+			}
+			return nil
+		})
+	})
 }

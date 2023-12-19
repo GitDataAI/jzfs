@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/jiaozifs/jiaozifs/auth"
+
 	"github.com/jiaozifs/jiaozifs/models"
 
 	"go.uber.org/mock/gomock"
@@ -18,6 +20,15 @@ func TestJiaozifsResponse(t *testing.T) {
 
 		resp.EXPECT().WriteHeader(http.StatusNotFound)
 		jzResp.NotFound()
+	})
+
+	t.Run("forbidden", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		resp := NewMockResponseWriter(ctrl)
+		jzResp := JiaozifsResponse{resp}
+
+		resp.EXPECT().WriteHeader(http.StatusForbidden)
+		jzResp.Forbidden()
 	})
 
 	t.Run("not found", func(t *testing.T) {
@@ -73,6 +84,15 @@ func TestJiaozifsResponse(t *testing.T) {
 
 		resp.EXPECT().WriteHeader(http.StatusNotFound)
 		jzResp.Error(fmt.Errorf("mock %w", models.ErrNotFound))
+	})
+
+	t.Run("error no auth", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		resp := NewMockResponseWriter(ctrl)
+		jzResp := JiaozifsResponse{resp}
+
+		resp.EXPECT().WriteHeader(http.StatusUnauthorized)
+		jzResp.Error(fmt.Errorf("mock %w", auth.ErrUserNotFound))
 	})
 
 	t.Run("string", func(t *testing.T) {
