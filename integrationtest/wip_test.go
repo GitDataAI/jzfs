@@ -241,7 +241,7 @@ func WipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 }
 
 func createWip(ctx context.Context, c convey.C, client *api.Client, user string, repoName string, refName string) {
-	c.Convey("create branch "+refName, func() {
+	c.Convey("create wip "+refName, func() {
 		resp, err := client.CreateWip(ctx, user, repoName, &api.CreateWipParams{
 			RefName: refName,
 		})

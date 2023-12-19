@@ -202,22 +202,26 @@ func (wipCtl WipController) CommitWip(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
-	commit, err := wipCtl.Repo.CommitRepo().Commit(ctx, ref.CommitHash)
-	if err != nil {
-		w.Error(err)
-		return
-	}
-
 	wip, err := wipCtl.Repo.WipRepo().Get(ctx, models.NewGetWipParams().SetRefID(ref.ID).SetCreatorID(operator.ID).SetRepositoryID(repository.ID))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	if !bytes.Equal(commit.Hash, wip.BaseCommit) {
+	if !bytes.Equal(ref.CommitHash, wip.BaseCommit) {
 		w.Error(fmt.Errorf("base commit not equal with branch, please update wip"))
 		return
 	}
+
+	var commit *models.Commit
+	if !ref.CommitHash.IsEmpty() {
+		commit, err = wipCtl.Repo.CommitRepo().Commit(ctx, ref.CommitHash)
+		if err != nil {
+			w.Error(err)
+			return
+		}
+	}
+
 	var msg string
 	if params.Msg != nil {
 		msg = *params.Msg
@@ -232,7 +236,8 @@ func (wipCtl WipController) CommitWip(ctx context.Context, w *api.JiaozifsRespon
 		}
 
 		wip.BaseCommit = commit.Commit().Hash //set for response
-		err = repo.WipRepo().UpdateByID(ctx, models.NewUpdateWipParams(wip.ID).SetBaseCommit(wip.BaseCommit))
+		wip.CurrentTree = commit.Commit().TreeHash
+		err = repo.WipRepo().UpdateByID(ctx, models.NewUpdateWipParams(wip.ID).SetBaseCommit(wip.BaseCommit).SetCurrentTree(wip.CurrentTree))
 		if err != nil {
 			return err
 		}
@@ -244,7 +249,7 @@ func (wipCtl WipController) CommitWip(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
-	w.JSON(wip)
+	w.JSON(wip, http.StatusCreated)
 }
 
 // DeleteWip delete a active working in process operator only can delete himself wip

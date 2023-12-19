@@ -16,4 +16,5 @@ func TestSpec(t *testing.T) {
 	convey.Convey("repo test", t, RepoSpec(ctx, urlStr))
 	convey.Convey("branch test", t, BranchSpec(ctx, urlStr))
 	convey.Convey("branch test", t, WipSpec(ctx, urlStr))
+	convey.Convey("branch test", t, ObjectSpec(ctx, urlStr))
 }

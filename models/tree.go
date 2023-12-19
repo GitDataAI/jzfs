@@ -130,6 +130,7 @@ func (blob *Blob) FileTree() *FileTree {
 		Hash:       blob.Hash,
 		Type:       blob.Type,
 		Size:       blob.Size,
+		CheckSum:   blob.CheckSum,
 		Properties: blob.Properties,
 		CreatedAt:  blob.CreatedAt,
 		UpdatedAt:  blob.UpdatedAt,
