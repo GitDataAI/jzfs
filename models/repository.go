@@ -2,9 +2,10 @@ package models
 
 import (
 	"context"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
-	"time"
 )
 
 type Repository struct {
