@@ -1205,6 +1205,12 @@ paths:
         - repo
       operationId: listRepository
       summary: list repository in specific owner
+      parameters:
+        - in: query
+          name: repoPrefix
+          required: false
+          schema:
+            type: string
       responses:
         200:
           description: repository list

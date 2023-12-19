@@ -21,6 +21,7 @@ func TestRepositoryRepo_Insert(t *testing.T) {
 
 	repoModel := &models.Repository{}
 	require.NoError(t, gofakeit.Struct(repoModel))
+	repoModel.Name = "aaabbbb"
 	newRepo, err := repo.Insert(ctx, repoModel)
 	require.NoError(t, err)
 	require.NotEqual(t, uuid.Nil, newRepo.ID)
@@ -39,15 +40,47 @@ func TestRepositoryRepo_Insert(t *testing.T) {
 	secModel := &models.Repository{}
 	require.NoError(t, gofakeit.Struct(secModel))
 	secModel.CreatorID = repoModel.CreatorID
+	secModel.Name = "adabbeb"
 	secRepo, err := repo.Insert(ctx, secModel)
 	require.NoError(t, err)
 	require.NotEqual(t, uuid.Nil, secRepo.ID)
 
 	//list
-	repos, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID))
+	repos, err := repo.List(ctx, models.NewListRepoParams())
 	require.NoError(t, err)
 	require.Len(t, repos, 2)
 
+	{
+		//exact adabbeb
+		repos, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetName("adabbeb", models.PrefixMatch))
+		require.NoError(t, err)
+		require.Len(t, repos, 1)
+	}
+	{
+		//prefix a
+		repos, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetName("a", models.PrefixMatch))
+		require.NoError(t, err)
+		require.Len(t, repos, 2)
+	}
+
+	{
+		//subfix b
+		repos, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetName("b", models.SuffixMatch))
+		require.NoError(t, err)
+		require.Len(t, repos, 2)
+	}
+	{
+		//like ab
+		repos, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetName("ab", models.LikeMatch))
+		require.NoError(t, err)
+		require.Len(t, repos, 2)
+	}
+	{
+		//like ab
+		repos, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetName("adabbeb", models.LikeMatch))
+		require.NoError(t, err)
+		require.Len(t, repos, 1)
+	}
 	//delete
 	err = repo.Delete(ctx, models.NewDeleteRepoParams().SetID(secRepo.ID))
 	require.NoError(t, err)

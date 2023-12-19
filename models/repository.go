@@ -11,8 +11,8 @@ import (
 type Repository struct {
 	bun.BaseModel `bun:"table:repositories"`
 	ID            uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
-	Name          string    `bun:"name,unique,notnull"`
-	OwnerID       uuid.UUID `bun:"owner_id,unique,type:uuid,notnull"`
+	Name          string    `bun:"name,unique:name_owner_unique,notnull"`
+	OwnerID       uuid.UUID `bun:"owner_id,unique:name_owner_unique,type:uuid,notnull"`
 	HEAD          string    `bun:"head,notnull"`
 	Description   *string   `bun:"description"`
 	CreatorID     uuid.UUID `bun:"creator_id,type:uuid,notnull"`
@@ -56,6 +56,8 @@ type ListRepoParams struct {
 	ID        uuid.UUID
 	CreatorID uuid.UUID
 	OwnerID   uuid.UUID
+	Name      *string
+	NameMatch MatchMode
 }
 
 func NewListRepoParams() *ListRepoParams {
@@ -70,6 +72,13 @@ func (lrp *ListRepoParams) SetOwnerID(ownerID uuid.UUID) *ListRepoParams {
 	lrp.OwnerID = ownerID
 	return lrp
 }
+
+func (lrp *ListRepoParams) SetName(name string, match MatchMode) *ListRepoParams {
+	lrp.Name = &name
+	lrp.NameMatch = match
+	return lrp
+}
+
 func (lrp *ListRepoParams) SetCreatorID(creatorID uuid.UUID) *ListRepoParams {
 	lrp.CreatorID = creatorID
 	return lrp
@@ -166,6 +175,20 @@ func (r *RepositoryRepo) List(ctx context.Context, params *ListRepoParams) ([]*R
 	if uuid.Nil != params.OwnerID {
 		query = query.Where("owner_id = ?", params.OwnerID)
 	}
+
+	if params.Name != nil {
+		switch params.NameMatch {
+		case ExactMatch:
+			query = query.Where("name = ?", *params.Name)
+		case PrefixMatch:
+			query = query.Where("name LIKE ?", *params.Name+"%")
+		case SuffixMatch:
+			query = query.Where("name LIKE ?", "%"+*params.Name)
+		case LikeMatch:
+			query = query.Where("name LIKE ?", "%"+*params.Name+"%")
+		}
+	}
+
 	return repos, query.Scan(ctx)
 }
 
