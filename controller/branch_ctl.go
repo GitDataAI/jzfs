@@ -104,7 +104,7 @@ func (bct BranchController) ListBranches(ctx context.Context, w *api.JiaozifsRes
 		listRefParams.SetAfter(*params.After)
 	}
 	if params.Amount != nil {
-		i := int(*params.Amount)
+		i := *params.Amount
 		if i > DefaultMaxPerPage || i <= 0 {
 			listRefParams.SetAmount(DefaultMaxPerPage)
 		} else {
@@ -114,7 +114,7 @@ func (bct BranchController) ListBranches(ctx context.Context, w *api.JiaozifsRes
 		listRefParams.SetAmount(DefaultMaxPerPage)
 	}
 
-	refs, has_more, err := bct.Repo.RefRepo().List(ctx, listRefParams.SetRepositoryID(repository.ID))
+	refs, hasMore, err := bct.Repo.RefRepo().List(ctx, listRefParams.SetRepositoryID(repository.ID))
 	if err != nil {
 		w.Error(err)
 		return
@@ -134,7 +134,7 @@ func (bct BranchController) ListBranches(ctx context.Context, w *api.JiaozifsRes
 		results = append(results, r)
 	}
 	w.JSON(api.RefList{
-		Pagination: paginationForRefs(has_more, results, "Name"),
+		Pagination: paginationForRefs(hasMore, results, "Name"),
 		Results:    results,
 	})
 }

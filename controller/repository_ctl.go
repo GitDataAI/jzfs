@@ -96,7 +96,7 @@ func (repositoryCtl RepositoryController) ListRepositoryOfAuthenticatedUser(ctx 
 		listParams.SetAfter(*params.After)
 	}
 	if params.Amount != nil {
-		i := int(*params.Amount)
+		i := *params.Amount
 		if i > DefaultMaxPerPage || i <= 0 {
 			listParams.SetAmount(DefaultMaxPerPage)
 		} else {
@@ -106,7 +106,7 @@ func (repositoryCtl RepositoryController) ListRepositoryOfAuthenticatedUser(ctx 
 		listParams.SetAmount(DefaultMaxPerPage)
 	}
 
-	repositories, has_more, err := repositoryCtl.Repo.RepositoryRepo().List(ctx, listParams.
+	repositories, hasMore, err := repositoryCtl.Repo.RepositoryRepo().List(ctx, listParams.
 		SetOwnerID(operator.ID))
 	if err != nil {
 		w.Error(err)
@@ -126,7 +126,7 @@ func (repositoryCtl RepositoryController) ListRepositoryOfAuthenticatedUser(ctx 
 		results = append(results, r)
 	}
 	w.JSON(api.RepositoryList{
-		Pagination: paginationForRepos(has_more, results, "UpdatedAt"),
+		Pagination: paginationForRepos(hasMore, results, "UpdatedAt"),
 		Results:    results,
 	})
 }
@@ -156,7 +156,7 @@ func (repositoryCtl RepositoryController) ListRepository(ctx context.Context, w 
 		listParams.SetAfter(*params.After)
 	}
 	if params.Amount != nil {
-		i := int(*params.Amount)
+		i := *params.Amount
 		if i > DefaultMaxPerPage || i <= 0 {
 			listParams.SetAmount(DefaultMaxPerPage)
 		} else {
@@ -166,7 +166,7 @@ func (repositoryCtl RepositoryController) ListRepository(ctx context.Context, w 
 		listParams.SetAmount(DefaultMaxPerPage)
 	}
 
-	repositories, has_more, err := repositoryCtl.Repo.RepositoryRepo().List(ctx, listParams)
+	repositories, hasMore, err := repositoryCtl.Repo.RepositoryRepo().List(ctx, listParams)
 	if err != nil {
 		w.Error(err)
 		return
@@ -185,7 +185,7 @@ func (repositoryCtl RepositoryController) ListRepository(ctx context.Context, w 
 		results = append(results, r)
 	}
 	w.JSON(api.RepositoryList{
-		Pagination: paginationForRepos(has_more, results, "UpdatedAt"),
+		Pagination: paginationForRepos(hasMore, results, "UpdatedAt"),
 		Results:    results,
 	})
 }

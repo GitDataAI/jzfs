@@ -83,23 +83,23 @@ func TestRepositoryRepo_Insert(t *testing.T) {
 	}
 	{
 		//amount 1
-		repos, has_more, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetAmount(1))
+		repos, hasMore, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetAmount(1))
 		require.NoError(t, err)
-		require.True(t, has_more)
+		require.True(t, hasMore)
 		require.Len(t, repos, 1)
 	}
 	{
 		//amount 2
-		repos, has_more, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetAmount(2))
+		repos, hasMore, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetAmount(2))
 		require.NoError(t, err)
-		require.True(t, has_more)
+		require.True(t, hasMore)
 		require.Len(t, repos, 2)
 	}
 	{
 		//amount 3
-		repos, has_more, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetAmount(3))
+		repos, hasMore, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetAmount(3))
 		require.NoError(t, err)
-		require.False(t, has_more)
+		require.False(t, hasMore)
 		require.Len(t, repos, 2)
 	}
 

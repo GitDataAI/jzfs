@@ -68,10 +68,10 @@ func TestRefRepoInsert(t *testing.T) {
 	require.True(t, cmp.Equal(secModel, sRef, dbTimeCmpOpt))
 
 	// amount
-	list, has_more, err := repo.List(ctx, models.NewListRefParams().SetRepositoryID(ref.RepositoryID).SetAmount(1))
+	list, hasMore, err := repo.List(ctx, models.NewListRefParams().SetRepositoryID(ref.RepositoryID).SetAmount(1))
 	require.NoError(t, err)
 	require.Len(t, list, 1)
-	require.True(t, has_more)
+	require.True(t, hasMore)
 
 	err = repo.Delete(ctx, models.NewDeleteRefParams().SetID(list[0].ID).SetRepositoryID(list[0].RepositoryID).SetName(list[0].Name))
 	require.NoError(t, err)
