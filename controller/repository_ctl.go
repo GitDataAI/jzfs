@@ -68,7 +68,7 @@ func (repositoryCtl RepositoryController) ListRepositoryOfAuthenticatedUser(ctx 
 	w.JSON(repositories)
 }
 
-func (repositoryCtl RepositoryController) ListRepository(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string) {
+func (repositoryCtl RepositoryController) ListRepository(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, params api.ListRepositoryParams) {
 	owner, err := repositoryCtl.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(ownerName))
 	if err != nil {
 		w.Error(err)
@@ -85,7 +85,11 @@ func (repositoryCtl RepositoryController) ListRepository(ctx context.Context, w 
 		return
 	}
 
-	repositories, err := repositoryCtl.Repo.RepositoryRepo().List(ctx, models.NewListRepoParams().SetOwnerID(owner.ID))
+	listParams := models.NewListRepoParams().SetOwnerID(owner.ID)
+	if params.RepoPrefix != nil && len(*params.RepoPrefix) > 0 {
+		listParams.SetName(*params.RepoPrefix, models.PrefixMatch)
+	}
+	repositories, err := repositoryCtl.Repo.RepositoryRepo().List(ctx, listParams)
 	if err != nil {
 		w.Error(err)
 		return

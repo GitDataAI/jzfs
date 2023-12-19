@@ -7,6 +7,15 @@ import (
 	"github.com/uptrace/bun"
 )
 
+type MatchMode int
+
+const (
+	ExactMatch MatchMode = iota
+	PrefixMatch
+	SuffixMatch
+	LikeMatch
+)
+
 type TxOption func(*sql.TxOptions)
 
 func IsolationLevelOption(level sql.IsolationLevel) TxOption {
