@@ -19,8 +19,8 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 	client, _ := api.NewClient(urlStr + apiimpl.APIV1Prefix)
 	return func(c convey.C) {
 		userName := "jimmy"
-		CreateUser(ctx, c, client, userName)
-		LoginAndSwitch(ctx, c, client, userName)
+		createUser(ctx, c, client, userName)
+		loginAndSwitch(ctx, c, client, userName)
 
 		c.Convey("create repo", func(c convey.C) {
 			c.Convey("forbidden create repo name", func() {
@@ -339,4 +339,14 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 		})
 	}
+}
+
+func createRepo(ctx context.Context, c convey.C, client *api.Client, repoName string) {
+	c.Convey("create repo "+repoName, func() {
+		resp, err := client.CreateRepository(ctx, api.CreateRepositoryJSONRequestBody{
+			Name: repoName,
+		})
+		convey.So(err, convey.ShouldBeNil)
+		convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+	})
 }

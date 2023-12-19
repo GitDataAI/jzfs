@@ -14,7 +14,7 @@ func UserSpec(ctx context.Context, urlStr string) func(c convey.C) {
 	client, _ := api.NewClient(urlStr + apiimpl.APIV1Prefix)
 	return func(c convey.C) {
 		userName := "admin"
-		CreateUser(ctx, c, client, userName)
+		createUser(ctx, c, client, userName)
 
 		c.Convey("usr profile no cookie", func() {
 			resp, err := client.GetUserInfo(ctx)
@@ -31,7 +31,7 @@ func UserSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 		})
 
-		LoginAndSwitch(ctx, c, client, userName)
+		loginAndSwitch(ctx, c, client, userName)
 
 		c.Convey("usr profile", func() {
 			resp, err := client.GetUserInfo(ctx)
@@ -41,7 +41,7 @@ func UserSpec(ctx context.Context, urlStr string) func(c convey.C) {
 	}
 }
 
-func CreateUser(ctx context.Context, c convey.C, client *api.Client, userName string) {
+func createUser(ctx context.Context, c convey.C, client *api.Client, userName string) {
 	c.Convey("register "+userName, func() {
 		resp, err := client.Register(ctx, api.RegisterJSONRequestBody{
 			Username: userName,
@@ -53,7 +53,7 @@ func CreateUser(ctx context.Context, c convey.C, client *api.Client, userName st
 	})
 }
 
-func LoginAndSwitch(ctx context.Context, c convey.C, client *api.Client, userName string) {
+func loginAndSwitch(ctx context.Context, c convey.C, client *api.Client, userName string) {
 	c.Convey("login "+userName, func() {
 		resp, err := client.Login(ctx, api.LoginJSONRequestBody{
 			Username: userName,

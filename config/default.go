@@ -1,6 +1,10 @@
 package config
 
-import "github.com/jiaozifs/jiaozifs/utils"
+import (
+	"encoding/hex"
+
+	"github.com/jiaozifs/jiaozifs/utils"
+)
 
 var DefaultLocalBSPath = "~/.jiaozifs/blockstore"
 
@@ -28,7 +32,7 @@ var defaultCfg = Config{
 		}{Path: DefaultLocalBSPath, ImportEnabled: false, ImportHidden: false, AllowedExternalPrefixes: nil}),
 	},
 	Auth: AuthConfig{
-		SecretKey: []byte("THIS_MUST_BE_CHANGED_IN_PRODUCTION"),
+		SecretKey: hex.EncodeToString([]byte("THIS_MUST_BE_CHANGED_IN_PRODUCTION")),
 		UIConfig: struct {
 			RBAC               string   `mapstructure:"rbac"`
 			LoginURL           string   `mapstructure:"login_url"`
