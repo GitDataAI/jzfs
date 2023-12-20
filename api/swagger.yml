@@ -1227,9 +1227,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/RepositoryList"
+                $ref: "#/components/schemas/RepositoryList"
         400:
           description: ValidationError
         401:

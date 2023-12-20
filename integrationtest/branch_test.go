@@ -13,10 +13,12 @@ func BranchSpec(ctx context.Context, urlStr string) func(c convey.C) {
 	client, _ := api.NewClient(urlStr + apiimpl.APIV1Prefix)
 	return func(c convey.C) {
 		userName := "mike"
+		userNameTest := "jimmy"
 		repoName := "mlops"
 		refName := "feat/test"
 
 		createUser(ctx, c, client, userName)
+		createUser(ctx, c, client, userNameTest)
 		loginAndSwitch(ctx, c, client, userName)
 		createRepo(ctx, c, client, repoName)
 

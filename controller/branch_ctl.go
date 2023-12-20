@@ -85,14 +85,14 @@ func (bct BranchController) ListBranches(ctx context.Context, w *api.JiaozifsRes
 		return
 	}
 
-	repository, err := bct.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetName(repositoryName).SetOwnerID(owner.ID))
-	if err != nil {
-		w.Error(err)
+	if operator.Name != owner.Name {
+		w.Forbidden()
 		return
 	}
 
-	if operator.Name != owner.Name {
-		w.Forbidden()
+	repository, err := bct.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetName(repositoryName).SetOwnerID(owner.ID))
+	if err != nil {
+		w.Error(err)
 		return
 	}
 

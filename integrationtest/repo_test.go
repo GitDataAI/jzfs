@@ -20,7 +20,9 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 	return func(c convey.C) {
 		userName := "jimmy"
 		repoName := "happyrun"
+		userNameTest := "admin"
 		createUser(ctx, c, client, userName)
+		createUser(ctx, c, client, userNameTest)
 		loginAndSwitch(ctx, c, client, userName)
 
 		c.Convey("create repo", func(c convey.C) {
@@ -113,7 +115,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				listRepos, err := api.ParseListRepositoryResponse(resp)
 				convey.So(err, convey.ShouldBeNil)
 
-				convey.So(len(*listRepos.JSON200), convey.ShouldEqual, 2)
+				convey.So(len(listRepos.JSON200.Results), convey.ShouldEqual, 2)
 			})
 
 			c.Convey("list repository", func() {
@@ -124,7 +126,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				listRepos, err := api.ParseListRepositoryResponse(resp)
 				convey.So(err, convey.ShouldBeNil)
 
-				convey.So(len(*listRepos.JSON200), convey.ShouldEqual, 2)
+				convey.So(len(listRepos.JSON200.Results), convey.ShouldEqual, 2)
 			})
 
 			c.Convey("list repository by prefix", func() {
@@ -135,7 +137,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				listRepos, err := api.ParseListRepositoryResponse(resp)
 				convey.So(err, convey.ShouldBeNil)
 
-				convey.So(len(*listRepos.JSON200), convey.ShouldEqual, 2)
+				convey.So(len(listRepos.JSON200.Results), convey.ShouldEqual, 2)
 			})
 
 			c.Convey("list repository by prefix but found nothing", func() {
@@ -146,7 +148,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				listRepos, err := api.ParseListRepositoryResponse(resp)
 				convey.So(err, convey.ShouldBeNil)
 
-				convey.So(len(*listRepos.JSON200), convey.ShouldEqual, 0)
+				convey.So(len(listRepos.JSON200.Results), convey.ShouldEqual, 0)
 			})
 
 			c.Convey("list others repository", func() {
