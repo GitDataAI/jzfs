@@ -10,8 +10,6 @@ import (
 
 	"github.com/jiaozifs/jiaozifs/utils/hash"
 
-	"github.com/jiaozifs/jiaozifs/utils"
-
 	"github.com/jiaozifs/jiaozifs/api"
 	apiimpl "github.com/jiaozifs/jiaozifs/api/api_impl"
 	"github.com/smartystreets/goconvey/convey"
@@ -28,7 +26,7 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		loginAndSwitch(ctx, c, client, userName)
 		createRepo(ctx, c, client, repoName)
 		createBranch(ctx, c, client, userName, repoName, "main", refName)
-		createWip(ctx, c, client, userName, repoName, refName)
+		createWip(ctx, c, client, "feat get obj test", userName, repoName, refName)
 
 		c.Convey("upload object", func(c convey.C) {
 			c.Convey("no auth", func() {
@@ -119,7 +117,7 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		c.Convey("commit wip", func() {
 			resp, err := client.CommitWip(ctx, userName, repoName, &api.CommitWipParams{
 				RefName: refName,
-				Msg:     utils.String("test commit msg"),
+				Msg:     "test commit msg",
 			})
 			convey.So(err, convey.ShouldBeNil)
 			convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)

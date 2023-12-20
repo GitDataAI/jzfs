@@ -304,11 +304,13 @@ func (repositoryCtl RepositoryController) GetCommitsInRepository(ctx context.Con
 		if err == nil {
 			modelCommit := commit.Commit()
 			commits = append(commits, api.Commit{
+				RepositoryID: modelCommit.RepositoryID,
 				Author: api.Signature{
 					Email: openapi_types.Email(modelCommit.Author.Email),
 					Name:  modelCommit.Author.Name,
 					When:  modelCommit.Author.When,
 				},
+
 				Committer: api.Signature{
 					Email: openapi_types.Email(modelCommit.Committer.Email),
 					Name:  modelCommit.Committer.Name,

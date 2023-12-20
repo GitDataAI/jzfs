@@ -22,9 +22,9 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		loginAndSwitch(ctx, c, client, userName)
 		createRepo(ctx, c, client, repoName)
 		createBranch(ctx, c, client, userName, repoName, "main", refName)
-		createWip(ctx, c, client, userName, repoName, refName)
-		uploadRandomObject(ctx, c, client, userName, repoName, refName, "m.dat")
-		uploadRandomObject(ctx, c, client, userName, repoName, refName, "g/m.dat")
+		createWip(ctx, c, client, "get wip obj test", userName, repoName, refName)
+		uploadObject(ctx, c, client, "update f1 to test branch", userName, repoName, refName, "m.dat")
+		uploadObject(ctx, c, client, "update f2 to test branch", userName, repoName, refName, "g/m.dat")
 
 		c.Convey("head object", func(c convey.C) {
 			c.Convey("no auth", func() {
@@ -278,7 +278,7 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
 
-				commitWip(ctx, c, client, userName, repoName, refName)
+				commitWip(ctx, c, client, "commit delete object", userName, repoName, refName, "test")
 
 				//ensure not exit
 				resp, err = client.HeadObject(ctx, userName, repoName, &api.HeadObjectParams{
@@ -288,6 +288,81 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)
+			})
+		})
+
+		uploadObject(ctx, c, client, "update f3 to test branch", userName, repoName, refName, "a/m.dat")
+		uploadObject(ctx, c, client, "update f4 to test branch", userName, repoName, refName, "a/b.dat")
+		uploadObject(ctx, c, client, "update f5 to test branch", userName, repoName, refName, "b.dat")
+		uploadObject(ctx, c, client, "update f6 to test branch", userName, repoName, refName, "c.dat")
+
+		c.Convey("get wip changes", func(c convey.C) {
+			c.Convey("no auth", func() {
+				re := client.RequestEditors
+				client.RequestEditors = nil
+				resp, err := client.GetWipChanges(ctx, userName, repoName, &api.GetWipChangesParams{
+					RefName: refName,
+				})
+				client.RequestEditors = re
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
+			})
+
+			c.Convey("fail to get object in non exit user", func() {
+				resp, err := client.GetWipChanges(ctx, "mock user", repoName, &api.GetWipChangesParams{
+					RefName: refName,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
+			})
+
+			c.Convey("fail to get object in non exit repo", func() {
+				resp, err := client.GetWipChanges(ctx, userName, "fakerepo", &api.GetWipChangesParams{
+					RefName: refName,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
+			})
+
+			c.Convey("fail to get object in non exit branch", func() {
+				resp, err := client.GetWipChanges(ctx, userName, repoName, &api.GetWipChangesParams{
+					RefName: "mockref",
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
+			})
+
+			c.Convey("forbidden get object in others", func() {
+				resp, err := client.GetWipChanges(ctx, "jimmy", "happygo", &api.GetWipChangesParams{
+					RefName: "main",
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+			})
+
+			c.Convey("not exit path", func() {
+				resp, err := client.GetWipChanges(ctx, userName, repoName, &api.GetWipChangesParams{
+					RefName: refName,
+					Path:    utils.String("a/b/c/d"),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				result, err := api.ParseGetWipChangesResponse(resp)
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(*result.JSON200, convey.ShouldHaveLength, 0)
+			})
+
+			c.Convey("success to get object", func() {
+				resp, err := client.GetWipChanges(ctx, userName, repoName, &api.GetWipChangesParams{
+					RefName: refName,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				result, err := api.ParseGetWipChangesResponse(resp)
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(*result.JSON200, convey.ShouldHaveLength, 4)
 			})
 		})
 	}

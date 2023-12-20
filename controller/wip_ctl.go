@@ -196,7 +196,7 @@ func (wipCtl WipController) CommitWip(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
-	ref, err := wipCtl.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetName(params.RefName))
+	ref, err := wipCtl.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetName(params.RefName).SetRepositoryID(repository.ID))
 	if err != nil {
 		w.Error(err)
 		return
@@ -222,15 +222,10 @@ func (wipCtl WipController) CommitWip(ctx context.Context, w *api.JiaozifsRespon
 		}
 	}
 
-	var msg string
-	if params.Msg != nil {
-		msg = *params.Msg
-	}
-
 	//add commit
 	err = wipCtl.Repo.Transaction(ctx, func(repo models.IRepo) error {
 		commitOp := versionmgr.NewCommitOp(repo, repository.ID, commit)
-		commit, err := commitOp.AddCommit(ctx, operator, wip.ID, msg)
+		commit, err := commitOp.AddCommit(ctx, operator, wip.ID, params.Msg)
 		if err != nil {
 			return err
 		}
@@ -362,10 +357,7 @@ func (wipCtl WipController) GetWipChanges(ctx context.Context, w *api.JiaozifsRe
 		return
 	}
 
-	var path string
-	if params.Path != nil {
-		path = *params.Path
-	}
+	path := versionmgr.CleanPath(utils.StringValue(params.Path))
 
 	var changesResp []api.Change
 	err = changes.ForEach(func(change versionmgr.IChange) error {
@@ -376,7 +368,7 @@ func (wipCtl WipController) GetWipChanges(ctx context.Context, w *api.JiaozifsRe
 		fullPath := change.Path()
 		if strings.HasPrefix(fullPath, path) {
 			apiChange := api.Change{
-				Action: int(action),
+				Action: api.ChangeAction(action),
 				Path:   fullPath,
 			}
 			if change.From() != nil {
@@ -394,5 +386,5 @@ func (wipCtl WipController) GetWipChanges(ctx context.Context, w *api.JiaozifsRe
 		return
 	}
 
-	w.JSON(changes)
+	w.JSON(changesResp)
 }

@@ -213,6 +213,7 @@ components:
         - Hash
         - Type
         - CheckSum
+        - RepositoryID
         - Properties
         - Size
         - CreatedAt
@@ -220,6 +221,9 @@ components:
       properties:
         Hash:
           type: string
+        RepositoryID:
+          type: string
+          format: uuid
         CheckSum:
           type: string
         Type:
@@ -258,6 +262,7 @@ components:
       required:
         - Hash
         - Type
+        - RepositoryID
         - Author
         - Committer
         - MergeTag
@@ -273,6 +278,9 @@ components:
           $ref: "#/components/schemas/Signature"
         Committer:
           $ref: "#/components/schemas/Signature"
+        RepositoryID:
+          type: string
+          format: uuid
         MergeTag:
           type: string
         Message:
@@ -303,6 +311,7 @@ components:
       required:
         - Hash
         - Type
+        - RepositoryID
         - Properties
         - SubObjects
         - CreatedAt
@@ -313,6 +322,9 @@ components:
         Type:
           type: integer
           format: int8
+        RepositoryID:
+          type: string
+          format: uuid
         Properties:
           type: object
           additionalProperties:
@@ -364,7 +376,7 @@ components:
           type: string
         Action:
           type: integer
-          format: int
+          enum: [1,2,3]
         BaseHash:
           type: string
         ToHash:
@@ -889,7 +901,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Change"
+                type: array
+                items:
+                  $ref: "#/components/schemas/Change"
         400:
           description: ValidationError
         401:
@@ -924,7 +938,7 @@ paths:
         - in: query
           name: msg
           description: commit message
-          required: false
+          required: true
           schema:
             type: string
       responses:
@@ -1002,10 +1016,15 @@ paths:
             type: string
         - in: query
           name: ref
-          description: specific ref default to main branch
+          description: specific branch,  default to repostiory default branch(HEAD)
           required: false
           schema:
             type: string
+        - in: query
+          name: isWip
+          description: isWip indicate to retrieve from working in progress, default false
+          schema:
+            type: boolean
       responses:
         200:
           description: commit

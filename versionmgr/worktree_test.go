@@ -182,4 +182,8 @@ func TestRemoveEntry(t *testing.T) {
 	entries, err := workTree.Ls(ctx, "")
 	require.NoError(t, err)
 	require.Len(t, entries, 0)
+
+	entries, err = workTree.Ls(ctx, "/")
+	require.NoError(t, err)
+	require.Len(t, entries, 0)
 }
