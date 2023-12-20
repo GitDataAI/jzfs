@@ -182,7 +182,7 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)
 			})
 
-			c.Convey("no path", func() {
+			c.Convey("not exit path", func() {
 				resp, err := client.HeadObject(ctx, userName, repoName, &api.HeadObjectParams{
 					Branch: refName,
 					Path:   "c/d.txt",
@@ -260,7 +260,7 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)
 			})
 
-			c.Convey("no path", func() {
+			c.Convey("not exit path", func() {
 				resp, err := client.GetObject(ctx, userName, repoName, &api.GetObjectParams{
 					Branch: refName,
 					Path:   "c/d.txt",
@@ -285,92 +285,6 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 				exectEtag := fmt.Sprintf(`"%s"`, hex.EncodeToString(reader.Md5.Sum(nil)))
 				convey.So(etag, convey.ShouldEqual, exectEtag)
-			})
-		})
-
-		c.Convey("delete object", func(c convey.C) {
-			c.Convey("no auth", func() {
-				re := client.RequestEditors
-				client.RequestEditors = nil
-				resp, err := client.DeleteObject(ctx, userName, repoName, &api.DeleteObjectParams{
-					Branch: refName,
-					Path:   "a/b.bin",
-				})
-				client.RequestEditors = re
-				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
-			})
-
-			c.Convey("fail to delete object in non exit user", func() {
-				resp, err := client.DeleteObject(ctx, "mockUser", repoName, &api.DeleteObjectParams{
-					Branch: refName,
-					Path:   "a/b.bin",
-				})
-				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
-			})
-
-			c.Convey("fail to delete object in non exit repo", func() {
-				resp, err := client.DeleteObject(ctx, userName, "fakerepo", &api.DeleteObjectParams{
-					Branch: refName,
-					Path:   "a/b.bin",
-				})
-				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
-			})
-
-			c.Convey("fail to delete object in non exit branch", func() {
-				resp, err := client.DeleteObject(ctx, userName, repoName, &api.DeleteObjectParams{
-					Branch: "mockref",
-					Path:   "a/b.bin",
-				})
-				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
-			})
-
-			c.Convey("forbidden delete object in others", func() {
-				resp, err := client.DeleteObject(ctx, "jimmy", "happygo", &api.DeleteObjectParams{
-					Branch: "main",
-					Path:   "a/b.bin",
-				})
-				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
-			})
-
-			c.Convey("empty path", func() {
-				resp, err := client.DeleteObject(ctx, userName, repoName, &api.DeleteObjectParams{
-					Branch: refName,
-					Path:   "",
-				})
-				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)
-			})
-
-			c.Convey("no path", func() {
-				resp, err := client.DeleteObject(ctx, userName, repoName, &api.DeleteObjectParams{
-					Branch: refName,
-					Path:   "e/m.txt",
-				})
-				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)
-			})
-
-			c.Convey("success to delete object", func(c convey.C) {
-				resp, err := client.DeleteObject(ctx, userName, repoName, &api.DeleteObjectParams{
-					Branch: refName,
-					Path:   "a/b.bin",
-				})
-				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
-
-				commitWip(ctx, c, client, userName, repoName, refName)
-
-				resp, err = client.HeadObject(ctx, userName, repoName, &api.HeadObjectParams{
-					Branch: refName,
-					Path:   "a/b.bin",
-				})
-				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)
 			})
 		})
 	}

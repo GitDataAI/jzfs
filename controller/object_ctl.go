@@ -69,11 +69,6 @@ func (oct ObjectController) DeleteObject(ctx context.Context, w *api.JiaozifsRes
 		w.Error(err)
 		return
 	}
-	commit, err := oct.Repo.CommitRepo(repository.ID).Commit(ctx, ref.CommitHash)
-	if err != nil {
-		w.Error(err)
-		return
-	}
 
 	wip, err := oct.Repo.WipRepo().Get(ctx, models.NewGetWipParams().SetCreatorID(operator.ID).SetRepositoryID(repository.ID).SetRefID(ref.ID))
 	if err != nil {
@@ -81,7 +76,12 @@ func (oct ObjectController) DeleteObject(ctx context.Context, w *api.JiaozifsRes
 		return
 	}
 
-	workTree, err := versionmgr.NewWorkTree(ctx, oct.Repo.FileTreeRepo(repository.ID), models.NewRootTreeEntry(commit.TreeHash))
+	treeHash := hash.EmptyHash
+	if !wip.CurrentTree.IsEmpty() {
+		treeHash = wip.CurrentTree
+	}
+
+	workTree, err := versionmgr.NewWorkTree(ctx, oct.Repo.FileTreeRepo(repository.ID), models.NewRootTreeEntry(treeHash))
 	if err != nil {
 		w.Error(err)
 		return
