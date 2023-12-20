@@ -18,21 +18,17 @@ var (
 // CommitOp used to wrap some function for commit, todo not easy to use, optimize it
 type CommitOp struct {
 	commit *models.Commit
+	repoID uuid.UUID
 
-	userRepo     models.IUserRepo
-	fileTreeRepo models.IFileTreeRepo
-	commitRepo   models.ICommitRepo
-	wipRepo      models.IWipRepo
+	repo models.IRepo
 }
 
 // NewCommitOp create commit operation with repo and exit commit, if operate with new repo, set commit arguments to nil
-func NewCommitOp(repo models.IRepo, commit *models.Commit) *CommitOp {
+func NewCommitOp(repo models.IRepo, repoID uuid.UUID, commit *models.Commit) *CommitOp {
 	return &CommitOp{
-		commit:       commit,
-		userRepo:     repo.UserRepo(),
-		fileTreeRepo: repo.FileTreeRepo(),
-		commitRepo:   repo.CommitRepo(),
-		wipRepo:      repo.WipRepo(),
+		repoID: repoID,
+		commit: commit, //commit maybe nil
+		repo:   repo,
 	}
 }
 
@@ -41,15 +37,25 @@ func (commitOp *CommitOp) Commit() *models.Commit {
 	return commitOp.commit
 }
 
+// Commit return commit
+func (commitOp *CommitOp) CommitRepo() models.ICommitRepo {
+	return commitOp.repo.CommitRepo(commitOp.repoID)
+}
+
+// Commit return commit
+func (commitOp *CommitOp) FileTreeRepo() models.IFileTreeRepo {
+	return commitOp.repo.FileTreeRepo(commitOp.repoID)
+}
+
 // AddCommit append a new commit to current head, read changes from wip, than create a new commit with parent point to current head,
 // and replace tree hash with wip's currentTreeHash.
 func (commitOp *CommitOp) AddCommit(ctx context.Context, committer *models.User, wipID uuid.UUID, msg string) (*CommitOp, error) {
-	wip, err := commitOp.wipRepo.Get(ctx, models.NewGetWipParams().SetID(wipID))
+	wip, err := commitOp.repo.WipRepo().Get(ctx, models.NewGetWipParams().SetID(wipID))
 	if err != nil {
 		return nil, err
 	}
 
-	creator, err := commitOp.userRepo.Get(ctx, models.NewGetUserParams().SetID(wip.CreatorID))
+	creator, err := commitOp.repo.UserRepo().Get(ctx, models.NewGetUserParams().SetID(wip.CreatorID))
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +65,8 @@ func (commitOp *CommitOp) AddCommit(ctx context.Context, committer *models.User,
 		parentHash = []hash.Hash{commitOp.commit.Hash}
 	}
 	commit := &models.Commit{
-		Hash: nil,
+		Hash:         nil,
+		RepositoryID: commitOp.repoID,
 		Author: models.Signature{
 			Name:  creator.Name,
 			Email: creator.Email,
@@ -82,27 +89,21 @@ func (commitOp *CommitOp) AddCommit(ctx context.Context, committer *models.User,
 		return nil, err
 	}
 	commit.Hash = commitHash
-	_, err = commitOp.commitRepo.Insert(ctx, commit)
+	_, err = commitOp.CommitRepo().Insert(ctx, commit)
 	if err != nil {
 		return nil, err
 	}
 
-	return &CommitOp{
-		commit:       commit,
-		userRepo:     commitOp.userRepo,
-		fileTreeRepo: commitOp.fileTreeRepo,
-		commitRepo:   commitOp.commitRepo,
-		wipRepo:      commitOp.wipRepo,
-	}, nil
+	return NewCommitOp(commitOp.repo, commitOp.repoID, commit), nil
 }
 
 // DiffCommit find file changes in two commit
 func (commitOp *CommitOp) DiffCommit(ctx context.Context, toCommitID hash.Hash) (*Changes, error) {
-	workTree, err := NewWorkTree(ctx, commitOp.fileTreeRepo, models.NewRootTreeEntry(commitOp.Commit().TreeHash))
+	workTree, err := NewWorkTree(ctx, commitOp.FileTreeRepo(), models.NewRootTreeEntry(commitOp.Commit().TreeHash))
 	if err != nil {
 		return nil, err
 	}
-	toCommit, err := commitOp.commitRepo.Commit(ctx, toCommitID)
+	toCommit, err := commitOp.repo.CommitRepo(commitOp.repoID).Commit(ctx, toCommitID)
 	if err != nil {
 		return nil, err
 	}
@@ -112,15 +113,16 @@ func (commitOp *CommitOp) DiffCommit(ctx context.Context, toCommitID hash.Hash) 
 
 // Merge implement merge like git, docs https://en.wikipedia.org/wiki/Merge_(version_control)
 func (commitOp *CommitOp) Merge(ctx context.Context, merger *models.User, toMergeCommitHash hash.Hash, msg string, resolver ConflictResolver) (*models.Commit, error) {
+	commitRepo := commitOp.CommitRepo()
 
-	toMergeCommit, err := commitOp.commitRepo.Commit(ctx, toMergeCommitHash)
+	toMergeCommit, err := commitOp.CommitRepo().Commit(ctx, toMergeCommitHash)
 	if err != nil {
 		return nil, err
 	}
 
 	//find accesstor
-	baseCommitNode := NewCommitNode(ctx, commitOp.Commit(), commitOp.commitRepo)
-	toMergeCommitNode := NewCommitNode(ctx, toMergeCommit, commitOp.commitRepo)
+	baseCommitNode := NewCommitNode(ctx, commitOp.Commit(), commitRepo)
+	toMergeCommitNode := NewCommitNode(ctx, toMergeCommit, commitRepo)
 
 	{
 		//do nothing while merge is ancestor of base
@@ -161,29 +163,16 @@ func (commitOp *CommitOp) Merge(ctx context.Context, merger *models.User, toMerg
 	bestCommit := bestAncestor[0]
 	if len(bestAncestor) > 1 {
 		//merge cross merge create virtual commit
-		firstCommit := &CommitOp{
-			commit:       bestAncestor[0].Commit(),
-			userRepo:     commitOp.userRepo,
-			fileTreeRepo: commitOp.fileTreeRepo,
-			commitRepo:   commitOp.commitRepo,
-			wipRepo:      commitOp.wipRepo,
-		}
+		firstCommit := NewCommitOp(commitOp.repo, commitOp.repoID, bestAncestor[0].Commit())
 		virtualCommit, err := firstCommit.Merge(ctx, merger, bestAncestor[1].Commit().Hash, "", resolver)
 		if err != nil {
 			return nil, err
 		}
 
-		bestCommit = NewCommitNode(ctx, virtualCommit, commitOp.commitRepo)
+		bestCommit = NewCommitNode(ctx, virtualCommit, commitRepo)
 	}
 
-	bestCommitOp := &CommitOp{
-		commit:       bestAncestor[0].Commit(),
-		userRepo:     commitOp.userRepo,
-		fileTreeRepo: commitOp.fileTreeRepo,
-		commitRepo:   commitOp.commitRepo,
-		wipRepo:      commitOp.wipRepo,
-	}
-
+	bestCommitOp := NewCommitOp(commitOp.repo, commitOp.repoID, bestAncestor[0].Commit())
 	baseDiff, err := bestCommitOp.DiffCommit(ctx, commitOp.Commit().Hash)
 	if err != nil {
 		return nil, err
@@ -195,7 +184,7 @@ func (commitOp *CommitOp) Merge(ctx context.Context, merger *models.User, toMerg
 	}
 
 	//merge diff
-	workTree, err := NewWorkTree(ctx, commitOp.fileTreeRepo, models.NewRootTreeEntry(bestCommit.Commit().TreeHash))
+	workTree, err := NewWorkTree(ctx, commitOp.FileTreeRepo(), models.NewRootTreeEntry(bestCommit.Commit().TreeHash))
 	if err != nil {
 		return nil, err
 	}
@@ -221,6 +210,7 @@ func (commitOp *CommitOp) Merge(ctx context.Context, merger *models.User, toMerg
 
 	mergeCommit := &models.Commit{
 		Author:       author,
+		RepositoryID: commitOp.repoID,
 		Committer:    author,
 		MergeTag:     "",
 		Message:      msg,
@@ -235,7 +225,7 @@ func (commitOp *CommitOp) Merge(ctx context.Context, merger *models.User, toMerg
 	}
 	mergeCommit.Hash = hash
 
-	mergeCommitResult, err := commitOp.commitRepo.Insert(ctx, mergeCommit)
+	mergeCommitResult, err := commitRepo.Insert(ctx, mergeCommit)
 	if err != nil {
 		return nil, err
 	}

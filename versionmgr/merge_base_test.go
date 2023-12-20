@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/jiaozifs/jiaozifs/utils/hash"
 
 	"github.com/stretchr/testify/require"
@@ -19,7 +21,8 @@ func TestCommitNodeMergeBase(t *testing.T) {
 	postgres, _, db := testhelper.SetupDatabase(ctx, t)
 	defer postgres.Stop() //nolint
 
-	commitRepo := models.NewCommitRepo(db)
+	repoID := uuid.New()
+	commitRepo := models.NewCommitRepo(db, repoID)
 	//mock data
 	//     | -> c -------
 	//     |             |
@@ -79,7 +82,7 @@ func loadCommitTestData(ctx context.Context, commitRepo models.ICommitRepo, test
 		}
 		commitData := strings.Split(strings.TrimSpace(line), "|")
 		hashName := strings.TrimSpace(commitData[0])
-		commit := newCommit(hashName, strings.Split(commitData[1], ","))
+		commit := newCommit(commitRepo.RepositoryID(), hashName, strings.Split(commitData[1], ","))
 		commitMap[hashName] = NewCommitNode(ctx, commit, commitRepo)
 		_, err := commitRepo.Insert(ctx, commit)
 		if err != nil {
@@ -89,7 +92,7 @@ func loadCommitTestData(ctx context.Context, commitRepo models.ICommitRepo, test
 	return commitMap, nil
 }
 
-func newCommit(hashStr string, parentHash []string) *models.Commit {
+func newCommit(repoID uuid.UUID, hashStr string, parentHash []string) *models.Commit {
 	var p []hash.Hash
 	for _, pHashStr := range parentHash {
 		pHashStr = strings.TrimSpace(pHashStr)
@@ -99,8 +102,9 @@ func newCommit(hashStr string, parentHash []string) *models.Commit {
 		p = append(p, hash.Hash(pHashStr))
 	}
 	return &models.Commit{
-		Hash:   hash.Hash(hashStr),
-		Author: models.Signature{},
+		Hash:         hash.Hash(hashStr),
+		Author:       models.Signature{},
+		RepositoryID: repoID,
 		Committer: models.Signature{
 			When: time.Now(),
 		},
