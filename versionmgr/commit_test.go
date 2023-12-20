@@ -55,6 +55,7 @@ func TestCommitOpDiffCommit(t *testing.T) {
 
 	baseCommit, err := NewCommitOp(repo, nil).AddCommit(ctx, user, baseWip.ID, "base commit")
 	require.NoError(t, err)
+	require.NoError(t, rmWip(ctx, repo.WipRepo(), baseWip.ID))
 
 	testData2 := `
 3|a.txt	|a1
@@ -69,6 +70,7 @@ func TestCommitOpDiffCommit(t *testing.T) {
 	require.NoError(t, err)
 	secondCommit, err := NewCommitOp(repo, nil).AddCommit(ctx, user, secondWip.ID, "merge commit")
 	require.NoError(t, err)
+	require.NoError(t, rmWip(ctx, repo.WipRepo(), secondWip.ID))
 
 	changes, err := baseCommit.DiffCommit(ctx, secondCommit.Commit().Hash)
 	require.NoError(t, err)
@@ -133,7 +135,7 @@ func TestCommitOpMerge(t *testing.T) {
 
 	oriCommit, err := NewCommitOp(repo, nil).AddCommit(ctx, user, oriWip.ID, "")
 	require.NoError(t, err)
-
+	require.NoError(t, rmWip(ctx, repo.WipRepo(), oriWip.ID))
 	//modify a.txt
 	//CommitA
 	testData = `
@@ -148,6 +150,7 @@ func TestCommitOpMerge(t *testing.T) {
 
 	commitA, err := NewCommitOp(repo, oriCommit.Commit()).AddCommit(ctx, user, baseWip.ID, "commit a")
 	require.NoError(t, err)
+	require.NoError(t, rmWip(ctx, repo.WipRepo(), baseWip.ID))
 
 	//toMerge branch
 	mergeRef, err := makeRef(ctx, repo.RefRepo(), "feat/merge", project.ID, hash.Hash("a"))
@@ -165,6 +168,7 @@ func TestCommitOpMerge(t *testing.T) {
 	require.NoError(t, err)
 	commitB, err := NewCommitOp(repo, oriCommit.Commit()).AddCommit(ctx, user, mergeWip.ID, "commit b")
 	require.NoError(t, err)
+	require.NoError(t, rmWip(ctx, repo.WipRepo(), mergeWip.ID))
 
 	//CommitAB
 	commitAB, err := commitA.Merge(ctx, user, commitB.Commit().Hash, "commit ab", LeastHashResolve)
@@ -180,6 +184,7 @@ func TestCommitOpMerge(t *testing.T) {
 	require.NoError(t, err)
 	commitF, err := NewCommitOp(repo, oriCommit.Commit()).AddCommit(ctx, user, mergeWipF.ID, "commit f")
 	require.NoError(t, err)
+	require.NoError(t, rmWip(ctx, repo.WipRepo(), mergeWipF.ID))
 
 	//commitC
 	commitC, err := commitA.Merge(ctx, user, commitF.Commit().Hash, "commit c", LeastHashResolve)
@@ -197,6 +202,7 @@ func TestCommitOpMerge(t *testing.T) {
 	require.NoError(t, err)
 	commitD, err := commitB.AddCommit(ctx, user, mergeWipD.ID, "commit d")
 	require.NoError(t, err)
+	require.NoError(t, rmWip(ctx, repo.WipRepo(), mergeWipD.ID))
 	//commitE
 	testData = `
 2|a.txt	|h4
@@ -207,7 +213,7 @@ func TestCommitOpMerge(t *testing.T) {
 	require.NoError(t, err)
 	commitE, err := commitD.AddCommit(ctx, user, mergeWipE.ID, "commit e")
 	require.NoError(t, err)
-
+	require.NoError(t, rmWip(ctx, repo.WipRepo(), mergeWipE.ID))
 	//test fast-ward
 
 	fastMergeCommit, err := commitB.Merge(ctx, user, commitE.Commit().Hash, "", LeastHashResolve)
@@ -261,6 +267,7 @@ func TestCrissCrossMerge(t *testing.T) {
 
 	oriCommit, err := NewCommitOp(repo, nil).AddCommit(ctx, user, oriWip.ID, "")
 	require.NoError(t, err)
+	require.NoError(t, rmWip(ctx, repo.WipRepo(), oriWip.ID))
 
 	//CommitA
 	testData = `
@@ -275,6 +282,7 @@ func TestCrissCrossMerge(t *testing.T) {
 
 	commitA, err := NewCommitOp(repo, oriCommit.Commit()).AddCommit(ctx, user, baseWip.ID, "commit a")
 	require.NoError(t, err)
+	require.NoError(t, rmWip(ctx, repo.WipRepo(), baseWip.ID))
 
 	//toMerge branch
 	mergeRef, err := makeRef(ctx, repo.RefRepo(), "feat/merge", project.ID, hash.Hash("a"))
@@ -292,6 +300,7 @@ func TestCrissCrossMerge(t *testing.T) {
 	require.NoError(t, err)
 	commitB, err := NewCommitOp(repo, oriCommit.Commit()).AddCommit(ctx, user, mergeWip.ID, "commit b")
 	require.NoError(t, err)
+	require.NoError(t, rmWip(ctx, repo.WipRepo(), mergeWip.ID))
 
 	commitAB, err := commitA.Merge(ctx, user, commitB.Commit().Hash, "commit ab", LeastHashResolve)
 	require.NoError(t, err)
@@ -379,6 +388,11 @@ func makeWip(ctx context.Context, wipRepo models.IWipRepo, repoID, refID uuid.UU
 		UpdatedAt:    time.Time{},
 	}
 	return wipRepo.Insert(ctx, wip)
+}
+
+func rmWip(ctx context.Context, wipRepo models.IWipRepo, wipID uuid.UUID) error {
+	_, err := wipRepo.Delete(ctx, models.NewDeleteWipParams().SetID(wipID))
+	return err
 }
 
 func makeRoot(ctx context.Context, objRepo models.IFileTreeRepo, treeEntry models.TreeEntry, testData string) (*models.TreeNode, error) {

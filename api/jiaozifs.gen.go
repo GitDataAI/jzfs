@@ -270,9 +270,6 @@ type LoginJSONBody struct {
 
 // DeleteObjectParams defines parameters for DeleteObject.
 type DeleteObjectParams struct {
-	// WipID working in process
-	WipID openapi_types.UUID `form:"wipID" json:"wipID"`
-
 	// Branch branch to the ref
 	Branch string `form:"branch" json:"branch"`
 
@@ -312,18 +309,11 @@ type UploadObjectMultipartBody struct {
 
 // UploadObjectParams defines parameters for UploadObject.
 type UploadObjectParams struct {
-	// WipID working in process
-	WipID openapi_types.UUID `form:"wipID" json:"wipID"`
-
 	// Branch branch to the ref
 	Branch string `form:"branch" json:"branch"`
 
 	// Path relative to the ref
 	Path string `form:"path" json:"path"`
-
-	// IfNoneMatch Currently supports only "*" to allow uploading an object only if one doesn't exist yet.
-	// Deprecated, this capability will not be supported in future releases.
-	IfNoneMatch *string `json:"If-None-Match,omitempty"`
 }
 
 // DeleteBranchParams defines parameters for DeleteBranch.
@@ -407,9 +397,6 @@ type GetWipParams struct {
 
 // CreateWipParams defines parameters for CreateWip.
 type CreateWipParams struct {
-	// Name wip name
-	Name string `form:"name" json:"name"`
-
 	// RefName ref name
 	RefName string `form:"refName" json:"refName"`
 }
@@ -1132,18 +1119,6 @@ func NewDeleteObjectRequest(server string, owner string, repository string, para
 	if params != nil {
 		queryValues := queryURL.Query()
 
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "wipID", runtime.ParamLocationQuery, params.WipID); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
-
 		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "branch", runtime.ParamLocationQuery, params.Branch); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
@@ -1387,18 +1362,6 @@ func NewUploadObjectRequestWithBody(server string, owner string, repository stri
 	if params != nil {
 		queryValues := queryURL.Query()
 
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "wipID", runtime.ParamLocationQuery, params.WipID); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
-
 		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "branch", runtime.ParamLocationQuery, params.Branch); err != nil {
 			return nil, err
 		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
@@ -1432,21 +1395,6 @@ func NewUploadObjectRequestWithBody(server string, owner string, repository stri
 	}
 
 	req.Header.Add("Content-Type", contentType)
-
-	if params != nil {
-
-		if params.IfNoneMatch != nil {
-			var headerParam0 string
-
-			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "If-None-Match", runtime.ParamLocationHeader, *params.IfNoneMatch)
-			if err != nil {
-				return nil, err
-			}
-
-			req.Header.Set("If-None-Match", headerParam0)
-		}
-
-	}
 
 	return req, nil
 }
@@ -2549,18 +2497,6 @@ func NewCreateWipRequest(server string, owner string, repository string, params 
 
 	if params != nil {
 		queryValues := queryURL.Query()
-
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "name", runtime.ParamLocationQuery, params.Name); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
 
 		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "refName", runtime.ParamLocationQuery, params.RefName); err != nil {
 			return nil, err
@@ -4867,21 +4803,6 @@ func (siw *ServerInterfaceWrapper) DeleteObject(w http.ResponseWriter, r *http.R
 	// Parameter object where we will unmarshal all parameters from the context
 	var params DeleteObjectParams
 
-	// ------------- Required query parameter "wipID" -------------
-
-	if paramValue := r.URL.Query().Get("wipID"); paramValue != "" {
-
-	} else {
-		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "wipID"})
-		return
-	}
-
-	err = runtime.BindQueryParameter("form", true, true, "wipID", r.URL.Query(), &params.WipID)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "wipID", Err: err})
-		return
-	}
-
 	// ------------- Required query parameter "branch" -------------
 
 	if paramValue := r.URL.Query().Get("branch"); paramValue != "" {
@@ -5146,21 +5067,6 @@ func (siw *ServerInterfaceWrapper) UploadObject(w http.ResponseWriter, r *http.R
 	// Parameter object where we will unmarshal all parameters from the context
 	var params UploadObjectParams
 
-	// ------------- Required query parameter "wipID" -------------
-
-	if paramValue := r.URL.Query().Get("wipID"); paramValue != "" {
-
-	} else {
-		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "wipID"})
-		return
-	}
-
-	err = runtime.BindQueryParameter("form", true, true, "wipID", r.URL.Query(), &params.WipID)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "wipID", Err: err})
-		return
-	}
-
 	// ------------- Required query parameter "branch" -------------
 
 	if paramValue := r.URL.Query().Get("branch"); paramValue != "" {
@@ -5189,27 +5095,6 @@ func (siw *ServerInterfaceWrapper) UploadObject(w http.ResponseWriter, r *http.R
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "path", Err: err})
 		return
-	}
-
-	headers := r.Header
-
-	// ------------- Optional header parameter "If-None-Match" -------------
-	if valueList, found := headers[http.CanonicalHeaderKey("If-None-Match")]; found {
-		var IfNoneMatch string
-		n := len(valueList)
-		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "If-None-Match", Count: n})
-			return
-		}
-
-		err = runtime.BindStyledParameterWithOptions("simple", "If-None-Match", valueList[0], &IfNoneMatch, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false})
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "If-None-Match", Err: err})
-			return
-		}
-
-		params.IfNoneMatch = &IfNoneMatch
-
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -6132,21 +6017,6 @@ func (siw *ServerInterfaceWrapper) CreateWip(w http.ResponseWriter, r *http.Requ
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params CreateWipParams
-
-	// ------------- Required query parameter "name" -------------
-
-	if paramValue := r.URL.Query().Get("name"); paramValue != "" {
-
-	} else {
-		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "name"})
-		return
-	}
-
-	err = runtime.BindQueryParameter("form", true, true, "name", r.URL.Query(), &params.Name)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
-		return
-	}
 
 	// ------------- Required query parameter "refName" -------------
 

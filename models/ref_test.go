@@ -73,8 +73,9 @@ func TestRefRepoInsert(t *testing.T) {
 	require.Len(t, list, 1)
 	require.True(t, hasMore)
 
-	err = repo.Delete(ctx, models.NewDeleteRefParams().SetID(list[0].ID).SetRepositoryID(list[0].RepositoryID).SetName(list[0].Name))
+	affectedRows, err := repo.Delete(ctx, models.NewDeleteRefParams().SetID(list[0].ID).SetRepositoryID(list[0].RepositoryID).SetName(list[0].Name))
 	require.NoError(t, err)
+	require.Equal(t, int64(1), affectedRows)
 
 	list, _, err = repo.List(ctx, models.NewListRefParams().SetRepositoryID(ref.RepositoryID))
 	require.NoError(t, err)

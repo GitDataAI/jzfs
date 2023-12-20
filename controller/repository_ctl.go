@@ -223,7 +223,7 @@ func (repositoryCtl RepositoryController) CreateRepository(ctx context.Context, 
 			Name:        body.Name,
 			Description: body.Description,
 			HEAD:        defaultRef.Name,
-			OwnerID:     operator.ID,
+			OwnerID:     operator.ID, // this api only create repo for operator
 			CreatorID:   operator.ID,
 			CreatedAt:   time.Now(),
 			UpdatedAt:   time.Now(),
@@ -266,15 +266,20 @@ func (repositoryCtl RepositoryController) DeleteRepository(ctx context.Context, 
 		return
 	}
 
-	repo, err := repositoryCtl.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetName(repositoryName).SetOwnerID(operator.ID))
+	repo, err := repositoryCtl.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetName(repositoryName).SetOwnerID(owner.ID))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	err = repositoryCtl.Repo.RepositoryRepo().Delete(ctx, models.NewDeleteRepoParams().SetID(repo.ID))
+	affectRows, err := repositoryCtl.Repo.RepositoryRepo().Delete(ctx, models.NewDeleteRepoParams().SetID(repo.ID))
 	if err != nil {
 		w.Error(err)
+		return
+	}
+
+	if affectRows == 0 {
+		w.NotFound()
 		return
 	}
 	w.OK()
@@ -339,7 +344,7 @@ func (repositoryCtl RepositoryController) UpdateRepository(ctx context.Context, 
 }
 
 func (repositoryCtl RepositoryController) GetCommitsInRepository(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, params api.GetCommitsInRepositoryParams) {
-	user, err := auth.GetOperator(ctx)
+	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
 		return
@@ -351,7 +356,7 @@ func (repositoryCtl RepositoryController) GetCommitsInRepository(ctx context.Con
 		return
 	}
 
-	if user.Name != ownerName { //todo check public or private
+	if operator.Name != ownerName { //todo check public or private
 		w.Forbidden()
 		return
 	}

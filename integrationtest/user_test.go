@@ -40,34 +40,3 @@ func UserSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		})
 	}
 }
-
-func createUser(ctx context.Context, c convey.C, client *api.Client, userName string) {
-	c.Convey("register "+userName, func() {
-		resp, err := client.Register(ctx, api.RegisterJSONRequestBody{
-			Username: userName,
-			Password: "12345678",
-			Email:    "mock@gmail.com",
-		})
-		convey.So(err, convey.ShouldBeNil)
-		convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
-	})
-}
-
-func loginAndSwitch(ctx context.Context, c convey.C, client *api.Client, userName string) {
-	c.Convey("login "+userName, func() {
-		resp, err := client.Login(ctx, api.LoginJSONRequestBody{
-			Username: userName,
-			Password: "12345678",
-		})
-		convey.So(err, convey.ShouldBeNil)
-		convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
-
-		client.RequestEditors = nil
-		client.RequestEditors = append(client.RequestEditors, func(ctx context.Context, req *http.Request) error {
-			for _, cookie := range resp.Cookies() {
-				req.AddCookie(cookie)
-			}
-			return nil
-		})
-	})
-}

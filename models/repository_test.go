@@ -104,8 +104,14 @@ func TestRepositoryRepo_Insert(t *testing.T) {
 	}
 
 	//delete
-	err = repo.Delete(ctx, models.NewDeleteRepoParams().SetID(secRepo.ID))
+	deleteParams := models.NewDeleteRepoParams().
+		SetID(secRepo.ID).
+		SetOwnerID(secRepo.OwnerID).
+		SetName(secRepo.Name)
+	affectRows, err := repo.Delete(ctx, deleteParams)
 	require.NoError(t, err)
+	require.Equal(t, int64(1), affectRows)
+
 	_, err = repo.Get(ctx, models.NewGetRepoParams().SetID(secRepo.ID))
 	require.ErrorIs(t, err, models.ErrNotFound)
 }

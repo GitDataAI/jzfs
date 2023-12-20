@@ -169,19 +169,19 @@ func BranchSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(respResult.JSON200.Results, convey.ShouldHaveLength, 3)
 			})
 
-			c.Convey("fail to list ref from non exit user", func() {
+			c.Convey("fail to list branches from non exit user", func() {
 				resp, err := client.ListBranches(ctx, "mock_owner", repoName, &api.ListBranchesParams{})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
 			})
 
-			c.Convey("fail to get non exit branch", func() {
+			c.Convey("fail to list branches in non exit repo", func() {
 				resp, err := client.ListBranches(ctx, userName, "mockrepo", &api.ListBranchesParams{})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
 			})
 
-			c.Convey("fail to others ref", func() {
+			c.Convey("fail to list branches in others repo", func() {
 				resp, err := client.ListBranches(ctx, "jimmy", "happygo", &api.ListBranchesParams{})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
@@ -227,15 +227,4 @@ func BranchSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		})
 
 	}
-}
-
-func createBranch(ctx context.Context, c convey.C, client *api.Client, user string, repoName string, source, refName string) {
-	c.Convey("create branch "+refName, func() {
-		resp, err := client.CreateBranch(ctx, user, repoName, api.CreateBranchJSONRequestBody{
-			Source: source,
-			Name:   refName,
-		})
-		convey.So(err, convey.ShouldBeNil)
-		convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
-	})
 }

@@ -242,16 +242,14 @@ func (bct BranchController) DeleteBranch(ctx context.Context, w *api.JiaozifsRes
 		return
 	}
 
-	_, err = bct.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetName(params.RefName).SetRepositoryID(repository.ID))
+	// Delete branch
+	affectedRows, err := bct.Repo.RefRepo().Delete(ctx, models.NewDeleteRefParams().SetName(params.RefName).SetRepositoryID(repository.ID))
 	if err != nil {
 		w.Error(err)
 		return
 	}
-
-	// Delete branch
-	err = bct.Repo.RefRepo().Delete(ctx, models.NewDeleteRefParams().SetName(params.RefName).SetRepositoryID(repository.ID))
-	if err != nil {
-		w.Error(err)
+	if affectedRows == 0 {
+		w.NotFound()
 		return
 	}
 	w.OK()

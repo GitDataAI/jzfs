@@ -130,7 +130,7 @@ type IRefRepo interface {
 	Get(ctx context.Context, id *GetRefParams) (*Ref, error)
 
 	List(ctx context.Context, params *ListRefParams) ([]*Ref, bool, error)
-	Delete(ctx context.Context, params *DeleteRefParams) error
+	Delete(ctx context.Context, params *DeleteRefParams) (int64, error)
 }
 
 var _ IRefRepo = (*RefRepo)(nil)
@@ -204,7 +204,7 @@ func (r RefRepo) List(ctx context.Context, params *ListRefParams) ([]*Ref, bool,
 	return refs, len(refs) == params.Amount, err
 }
 
-func (r RefRepo) Delete(ctx context.Context, params *DeleteRefParams) error {
+func (r RefRepo) Delete(ctx context.Context, params *DeleteRefParams) (int64, error) {
 	query := r.db.NewDelete().Model((*Ref)(nil))
 
 	if uuid.Nil != params.ID {
@@ -219,8 +219,15 @@ func (r RefRepo) Delete(ctx context.Context, params *DeleteRefParams) error {
 		query = query.Where("name = ?", *params.Name)
 	}
 
-	_, err := query.Exec(ctx)
-	return err
+	sqlResult, err := query.Exec(ctx)
+	if err != nil {
+		return 0, err
+	}
+	affectedRows, err := sqlResult.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	return affectedRows, err
 }
 
 func (r RefRepo) UpdateByID(ctx context.Context, updateModel *UpdateRefParams) error {
