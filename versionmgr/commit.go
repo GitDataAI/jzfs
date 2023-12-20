@@ -37,12 +37,12 @@ func (commitOp *CommitOp) Commit() *models.Commit {
 	return commitOp.commit
 }
 
-// Commit return commit
+// CommitRepo return commit repo
 func (commitOp *CommitOp) CommitRepo() models.ICommitRepo {
 	return commitOp.repo.CommitRepo(commitOp.repoID)
 }
 
-// Commit return commit
+// FileTreeRepo return file tree repo
 func (commitOp *CommitOp) FileTreeRepo() models.IFileTreeRepo {
 	return commitOp.repo.FileTreeRepo(commitOp.repoID)
 }

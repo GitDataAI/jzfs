@@ -157,10 +157,10 @@ type TreeNode struct {
 	UpdatedAt time.Time `bun:"updated_at"`
 }
 
-func NewTreeNode(props Property, repoId uuid.UUID, subObjects ...TreeEntry) (*TreeNode, error) {
+func NewTreeNode(props Property, repoID uuid.UUID, subObjects ...TreeEntry) (*TreeNode, error) {
 	newTree := &TreeNode{
 		Type:         TreeObject,
-		RepositoryID: repoId,
+		RepositoryID: repoID,
 		SubObjects:   SortSubObjects(subObjects),
 		Properties:   props,
 		CreatedAt:    time.Now(),

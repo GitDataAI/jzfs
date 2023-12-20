@@ -146,7 +146,7 @@ func createRepo(ctx context.Context, c convey.C, client *api.Client, repoName st
 }
 
 func uploadRandomObject(ctx context.Context, c convey.C, client *api.Client, user string, repoName string, refName string, path string) { //nolint
-	c.Convey("upload object "+uuid.New().String(), func(c convey.C) {
+	c.Convey("upload object "+path, func(c convey.C) {
 		c.Convey("success upload object", func() {
 			resp, err := client.UploadObjectWithBody(ctx, user, repoName, &api.UploadObjectParams{
 				Branch: refName,

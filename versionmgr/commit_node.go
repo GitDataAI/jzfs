@@ -3,13 +3,12 @@ package versionmgr
 import (
 	"context"
 	"errors"
-	"github.com/google/uuid"
 	"io"
 
 	"github.com/go-git/go-git/v5/plumbing/storer"
-	"github.com/jiaozifs/jiaozifs/utils/hash"
-
+	"github.com/google/uuid"
 	"github.com/jiaozifs/jiaozifs/models"
+	"github.com/jiaozifs/jiaozifs/utils/hash"
 )
 
 var (
