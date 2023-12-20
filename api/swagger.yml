@@ -736,26 +736,6 @@ paths:
             schema:
               type: string
               format: binary
-
-      parameters:
-        - in: query
-          name: wipID
-          description: working in process
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - in: header
-          name: If-None-Match
-          description: |
-            Currently supports only "*" to allow uploading an object only if one doesn't exist yet.
-            Deprecated, this capability will not be supported in future releases.
-          example: "*"
-          required: false
-          deprecated: true
-          schema:
-            type: string
-            pattern: '^\*$' # Currently, only "*" is supported
       responses:
         201:
           description: object metadata
@@ -780,14 +760,6 @@ paths:
         - objects
       operationId: deleteObject
       summary: delete object. Missing objects will not return a NotFound error.
-      parameters:
-        - in: query
-          name: wipID
-          description: working in process
-          required: true
-          schema:
-            type: string
-            format: uuid
       responses:
         204:
           description: object deleted successfully
@@ -855,13 +827,6 @@ paths:
         - wip
       operationId: createWip
       summary: create working in process
-      parameters:
-        - in: query
-          name: name
-          description: wip name
-          required: true
-          schema:
-            type: string
       responses:
         201:
           description: working in process created

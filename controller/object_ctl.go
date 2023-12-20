@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/jiaozifs/jiaozifs/utils/hash"
+
 	logging "github.com/ipfs/go-log/v2"
 
 	"github.com/go-openapi/swag"
@@ -39,7 +41,7 @@ type ObjectController struct {
 }
 
 func (oct ObjectController) DeleteObject(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, ownerName string, repositoryName string, params api.DeleteObjectParams) { //nolint
-	user, err := auth.GetOperator(ctx)
+	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
 		return
@@ -51,7 +53,7 @@ func (oct ObjectController) DeleteObject(ctx context.Context, w *api.JiaozifsRes
 		return
 	}
 
-	if user.Name != ownerName { //todo check permission
+	if operator.Name != ownerName { //todo check permission
 		w.Forbidden()
 		return
 	}
@@ -73,6 +75,12 @@ func (oct ObjectController) DeleteObject(ctx context.Context, w *api.JiaozifsRes
 		return
 	}
 
+	wip, err := oct.Repo.WipRepo().Get(ctx, models.NewGetWipParams().SetCreatorID(operator.ID).SetRepositoryID(repository.ID).SetRefID(ref.ID))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
 	workTree, err := versionmgr.NewWorkTree(ctx, oct.Repo.FileTreeRepo(), models.NewRootTreeEntry(commit.TreeHash))
 	if err != nil {
 		w.Error(err)
@@ -81,11 +89,11 @@ func (oct ObjectController) DeleteObject(ctx context.Context, w *api.JiaozifsRes
 
 	err = workTree.RemoveEntry(ctx, params.Path)
 	if errors.Is(err, versionmgr.ErrPathNotFound) {
-		w.Code(http.StatusNotFound)
+		w.BadRequest(fmt.Sprintf("path %s not found", params.Path))
 		return
 	}
 
-	err = oct.Repo.WipRepo().UpdateByID(ctx, models.NewUpdateWipParams(params.WipID).SetCurrentTree(workTree.Root().Hash()))
+	err = oct.Repo.WipRepo().UpdateByID(ctx, models.NewUpdateWipParams(wip.ID).SetCurrentTree(workTree.Root().Hash()))
 	if err != nil {
 		w.Error(err)
 		return
@@ -123,13 +131,17 @@ func (oct ObjectController) GetObject(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
-	commit, err := oct.Repo.CommitRepo().Commit(ctx, ref.CommitHash)
-	if err != nil {
-		w.Error(err)
-		return
+	treeHash := hash.EmptyHash
+	if !ref.CommitHash.IsEmpty() {
+		commit, err := oct.Repo.CommitRepo().Commit(ctx, ref.CommitHash)
+		if err != nil {
+			w.Error(err)
+			return
+		}
+		treeHash = commit.TreeHash
 	}
 
-	workTree, err := versionmgr.NewWorkTree(ctx, oct.Repo.FileTreeRepo(), models.NewRootTreeEntry(commit.TreeHash))
+	workTree, err := versionmgr.NewWorkTree(ctx, oct.Repo.FileTreeRepo(), models.NewRootTreeEntry(treeHash))
 	if err != nil {
 		w.Error(err)
 		return
@@ -137,6 +149,10 @@ func (oct ObjectController) GetObject(ctx context.Context, w *api.JiaozifsRespon
 
 	blob, name, err := workTree.FindBlob(ctx, params.Path)
 	if err != nil {
+		if errors.Is(err, versionmgr.ErrPathNotFound) {
+			w.BadRequest(fmt.Sprintf("path %s not found", params.Path))
+			return
+		}
 		w.Error(err)
 		return
 	}
@@ -160,7 +176,7 @@ func (oct ObjectController) GetObject(ctx context.Context, w *api.JiaozifsRespon
 		w.Header().Set("Content-Length", fmt.Sprint(blob.Size))
 	}
 
-	etag := httputil.ETag(blob.Hash.Hex())
+	etag := httputil.ETag(blob.CheckSum.Hex())
 	w.Header().Set("ETag", etag)
 	lastModified := httputil.HeaderTimestamp(blob.CreatedAt)
 	w.Header().Set("Last-Modified", lastModified)
@@ -212,44 +228,40 @@ func (oct ObjectController) HeadObject(ctx context.Context, w *api.JiaozifsRespo
 		return
 	}
 
-	commit, err := oct.Repo.CommitRepo().Commit(ctx, ref.CommitHash)
-	if err != nil {
-		w.Error(err)
-		return
+	treeHash := hash.EmptyHash
+	if !ref.CommitHash.IsEmpty() {
+		commit, err := oct.Repo.CommitRepo().Commit(ctx, ref.CommitHash)
+		if err != nil {
+			w.Error(err)
+			return
+		}
+		treeHash = commit.TreeHash
 	}
 
 	fileRepo := oct.Repo.FileTreeRepo()
-	treeOp, err := versionmgr.NewWorkTree(ctx, fileRepo, models.NewRootTreeEntry(commit.TreeHash))
+	workTree, err := versionmgr.NewWorkTree(ctx, fileRepo, models.NewRootTreeEntry(treeHash))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	existNodes, missingPath, err := treeOp.MatchPath(ctx, params.Path)
+	blob, name, err := workTree.FindBlob(ctx, params.Path)
 	if err != nil {
-		w.Error(err)
-		return
-	}
-	if len(missingPath) == 0 {
-		w.Error(versionmgr.ErrPathNotFound)
-		return
-	}
-
-	objectWithName := existNodes[len(existNodes)-1]
-
-	blob, err := fileRepo.Blob(ctx, objectWithName.Node().Hash)
-	if err != nil {
+		if errors.Is(err, versionmgr.ErrPathNotFound) {
+			w.BadRequest(fmt.Sprintf("path %s not found", params.Path))
+			return
+		}
 		w.Error(err)
 		return
 	}
 
 	//lookup files
-	etag := httputil.ETag(objectWithName.Node().Hash.Hex())
+	etag := httputil.ETag(blob.CheckSum.Hex())
 	w.Header().Set("ETag", etag)
-	lastModified := httputil.HeaderTimestamp(objectWithName.Node().CreatedAt)
+	lastModified := httputil.HeaderTimestamp(blob.CreatedAt)
 	w.Header().Set("Last-Modified", lastModified)
 	w.Header().Set("Accept-Ranges", "bytes")
-	w.Header().Set("Content-Type", httputil.ExtensionsByType(objectWithName.Entry().Name))
+	w.Header().Set("Content-Type", httputil.ExtensionsByType(name))
 	// for security, make sure the browser and any proxies en route don't cache the response
 	w.Header().Set("Cache-Control", "no-store, must-revalidate")
 	w.Header().Set("Expires", "0")
@@ -315,7 +327,7 @@ func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsRes
 	}
 	defer reader.Close() //nolint
 
-	user, err := auth.GetOperator(ctx)
+	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
 		return
@@ -327,18 +339,30 @@ func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsRes
 		return
 	}
 
-	if user.Name != ownerName { //todo check permission
+	if operator.Name != ownerName { //todo check permission
 		w.Forbidden()
 		return
 	}
 
-	_, err = oct.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
+	repository, err := oct.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	stash, err := oct.Repo.WipRepo().Get(ctx, models.NewGetWipParams().SetID(params.WipID))
+	ref, err := oct.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetName(params.Branch).SetRepositoryID(repository.ID))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	wip, err := oct.Repo.WipRepo().Get(ctx, models.NewGetWipParams().SetCreatorID(operator.ID).SetRepositoryID(repository.ID).SetRefID(ref.ID))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	stash, err := oct.Repo.WipRepo().Get(ctx, models.NewGetWipParams().SetID(wip.ID))
 	if err != nil {
 		w.Error(err)
 		return
@@ -351,6 +375,7 @@ func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsRes
 			return err
 		}
 
+		// todo move write blob out of transaction
 		blob, err := workingTree.WriteBlob(ctx, oct.BlockAdapter, reader, r.ContentLength, models.DefaultLeafProperty())
 		if err != nil {
 			return err
@@ -361,7 +386,7 @@ func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsRes
 			return err
 		}
 		response = api.ObjectStats{
-			Checksum:    blob.Hash.Hex(),
+			Checksum:    blob.CheckSum.Hex(),
 			Mtime:       time.Now().Unix(),
 			Path:        params.Path,
 			PathMode:    utils.Uint32(uint32(filemode.Regular)),
@@ -377,5 +402,5 @@ func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsRes
 		return
 	}
 
-	w.JSON(response)
+	w.JSON(response, http.StatusCreated)
 }

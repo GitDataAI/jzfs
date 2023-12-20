@@ -105,11 +105,17 @@ type HashingReader struct {
 
 func (s *HashingReader) Read(p []byte) (int, error) {
 	nb, err := s.originalReader.Read(p)
-	if err != nil {
-		return nb, err
-	}
 	s.CopiedSize += int64(nb)
-	_, err = s.Hasher.Write(p[0:nb])
+	if s.Md5 != nil {
+		if _, err2 := s.Md5.Write(p[0:nb]); err2 != nil {
+			return nb, err2
+		}
+	}
+	if s.Sha256 != nil {
+		if _, err2 := s.Sha256.Write(p[0:nb]); err2 != nil {
+			return nb, err2
+		}
+	}
 	return nb, err
 }
 

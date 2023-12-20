@@ -19,13 +19,12 @@ const (
 type WorkingInProcess struct {
 	bun.BaseModel `bun:"table:wips"`
 	ID            uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
-	Name          string    `bun:"name,notnull"`
 	CurrentTree   hash.Hash `bun:"current_tree,type:bytea,notnull"`
 	BaseCommit    hash.Hash `bun:"base_commit,type:bytea,notnull"`
-	RepositoryID  uuid.UUID `bun:"repository_id,type:uuid,notnull"`
-	RefID         uuid.UUID `bun:"ref_id,type:uuid,notnull"`
+	RepositoryID  uuid.UUID `bun:"repository_id,unique:creator_id_repository_id_ref_id_unique,type:uuid,notnull"`
+	RefID         uuid.UUID `bun:"ref_id,unique:creator_id_repository_id_ref_id_unique,type:uuid,notnull"`
 	State         WipState  `bun:"state,notnull"`
-	CreatorID     uuid.UUID `bun:"creator_id,type:uuid,notnull"`
+	CreatorID     uuid.UUID `bun:"creator_id,unique:creator_id_repository_id_ref_id_unique,type:uuid,notnull"`
 	CreatedAt     time.Time `bun:"created_at"`
 	UpdatedAt     time.Time `bun:"updated_at"`
 }
@@ -148,7 +147,7 @@ type IWipRepo interface {
 	Insert(ctx context.Context, repo *WorkingInProcess) (*WorkingInProcess, error)
 	Get(ctx context.Context, params *GetWipParams) (*WorkingInProcess, error)
 	List(ctx context.Context, params *ListWipParams) ([]*WorkingInProcess, error)
-	Delete(ctx context.Context, params *DeleteWipParams) error
+	Delete(ctx context.Context, params *DeleteWipParams) (int64, error)
 	UpdateByID(ctx context.Context, params *UpdateWipParams) error
 }
 
@@ -222,7 +221,7 @@ func (s *WipRepo) List(ctx context.Context, params *ListWipParams) ([]*WorkingIn
 }
 
 // Delete remove wip in table by id
-func (s *WipRepo) Delete(ctx context.Context, params *DeleteWipParams) error {
+func (s *WipRepo) Delete(ctx context.Context, params *DeleteWipParams) (int64, error) {
 	query := s.db.NewDelete().Model((*WorkingInProcess)(nil))
 
 	if uuid.Nil != params.CreatorID {
@@ -240,8 +239,15 @@ func (s *WipRepo) Delete(ctx context.Context, params *DeleteWipParams) error {
 	if uuid.Nil != params.ID {
 		query = query.Where("id = ?", params.ID)
 	}
-	_, err := query.Exec(ctx)
-	return err
+	r, err := query.Exec(ctx)
+	if err != nil {
+		return 0, err
+	}
+	row, err := r.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	return row, nil
 }
 
 func (s *WipRepo) UpdateByID(ctx context.Context, updateModel *UpdateWipParams) error {

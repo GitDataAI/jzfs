@@ -4,10 +4,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/jiaozifs/jiaozifs/utils/hash"
 
 	"github.com/jiaozifs/jiaozifs/auth"
 	"github.com/jiaozifs/jiaozifs/versionmgr"
@@ -27,7 +30,7 @@ type WipController struct {
 
 // CreateWip create wip of branch
 func (wipCtl WipController) CreateWip(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, params api.CreateWipParams) {
-	operatorUser, err := auth.GetOperator(ctx)
+	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
 		return
@@ -45,7 +48,10 @@ func (wipCtl WipController) CreateWip(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
-	//todo check permission to operator ownerRepo
+	if operator.Name != owner.Name { //todo check permission to operator ownerRepo
+		w.Forbidden()
+		return
+	}
 
 	ref, err := wipCtl.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetRepositoryID(repository.ID).SetName(params.RefName))
 	if err != nil {
@@ -53,20 +59,33 @@ func (wipCtl WipController) CreateWip(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
-	baseCommit, err := wipCtl.Repo.CommitRepo().Commit(ctx, ref.CommitHash)
-	if err != nil {
+	_, err = wipCtl.Repo.WipRepo().Get(ctx, models.NewGetWipParams().SetCreatorID(operator.ID).SetRepositoryID(repository.ID).SetRefID(ref.ID))
+	if err == nil {
+		w.BadRequest(fmt.Sprintf("ref %s already in wip", params.RefName))
+		return
+	}
+	if err != nil && !errors.Is(err, models.ErrNotFound) {
 		w.Error(err)
 		return
 	}
 
+	currentTreeHash := hash.EmptyHash
+	if !ref.CommitHash.IsEmpty() {
+		baseCommit, err := wipCtl.Repo.CommitRepo().Commit(ctx, ref.CommitHash)
+		if err != nil {
+			w.Error(err)
+			return
+		}
+		currentTreeHash = baseCommit.TreeHash
+	}
+
 	wip := &models.WorkingInProcess{
-		CurrentTree:  baseCommit.TreeHash,
+		CurrentTree:  currentTreeHash,
 		BaseCommit:   ref.CommitHash,
 		RepositoryID: repository.ID,
 		RefID:        ref.ID,
 		State:        0,
-		Name:         params.Name,
-		CreatorID:    operatorUser.ID,
+		CreatorID:    operator.ID,
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
 	}
@@ -80,7 +99,7 @@ func (wipCtl WipController) CreateWip(ctx context.Context, w *api.JiaozifsRespon
 
 // GetWip get wip of specific repository, operator only get himself wip
 func (wipCtl WipController) GetWip(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, params api.GetWipParams) {
-	user, err := auth.GetOperator(ctx)
+	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
 		return
@@ -97,14 +116,19 @@ func (wipCtl WipController) GetWip(ctx context.Context, w *api.JiaozifsResponse,
 		w.Error(err)
 		return
 	}
-	//todo check permission to operator ownerRepo
+
+	if operator.Name != owner.Name { //todo check permission to operator ownerRepo
+		w.Forbidden()
+		return
+	}
+
 	ref, err := wipCtl.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetRepositoryID(repository.ID).SetName(params.RefName))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	wip, err := wipCtl.Repo.WipRepo().Get(ctx, models.NewGetWipParams().SetRefID(ref.ID).SetCreatorID(user.ID).SetRepositoryID(repository.ID))
+	wip, err := wipCtl.Repo.WipRepo().Get(ctx, models.NewGetWipParams().SetRefID(ref.ID).SetCreatorID(operator.ID).SetRepositoryID(repository.ID))
 	if err != nil {
 		w.Error(err)
 		return
@@ -115,7 +139,7 @@ func (wipCtl WipController) GetWip(ctx context.Context, w *api.JiaozifsResponse,
 
 // ListWip return wips of branches, operator only see himself wips in specific repository
 func (wipCtl WipController) ListWip(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string) {
-	user, err := auth.GetOperator(ctx)
+	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
 		return
@@ -133,7 +157,12 @@ func (wipCtl WipController) ListWip(ctx context.Context, w *api.JiaozifsResponse
 		return
 	}
 
-	wips, err := wipCtl.Repo.WipRepo().List(ctx, models.NewListWipParams().SetCreatorID(user.ID).SetRepositoryID(repository.ID))
+	if operator.Name != owner.Name { //todo check permission to operator ownerRepo
+		w.Forbidden()
+		return
+	}
+
+	wips, err := wipCtl.Repo.WipRepo().List(ctx, models.NewListWipParams().SetCreatorID(operator.ID).SetRepositoryID(repository.ID))
 	if err != nil {
 		w.Error(err)
 		return
@@ -144,7 +173,7 @@ func (wipCtl WipController) ListWip(ctx context.Context, w *api.JiaozifsResponse
 
 // CommitWip commit wip to branch, operator only could operator himself wip
 func (wipCtl WipController) CommitWip(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName, repositoryName string, params api.CommitWipParams) {
-	operatorUser, err := auth.GetOperator(ctx)
+	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
 		return
@@ -162,28 +191,37 @@ func (wipCtl WipController) CommitWip(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
+	if operator.Name != owner.Name { //todo check permission to operator ownerRepo
+		w.Forbidden()
+		return
+	}
+
 	ref, err := wipCtl.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetName(params.RefName))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	commit, err := wipCtl.Repo.CommitRepo().Commit(ctx, ref.CommitHash)
+	wip, err := wipCtl.Repo.WipRepo().Get(ctx, models.NewGetWipParams().SetRefID(ref.ID).SetCreatorID(operator.ID).SetRepositoryID(repository.ID))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	wip, err := wipCtl.Repo.WipRepo().Get(ctx, models.NewGetWipParams().SetRefID(ref.ID).SetCreatorID(operatorUser.ID).SetRepositoryID(repository.ID))
-	if err != nil {
-		w.Error(err)
-		return
-	}
-
-	if !bytes.Equal(commit.Hash, wip.BaseCommit) {
+	if !bytes.Equal(ref.CommitHash, wip.BaseCommit) {
 		w.Error(fmt.Errorf("base commit not equal with branch, please update wip"))
 		return
 	}
+
+	var commit *models.Commit
+	if !ref.CommitHash.IsEmpty() {
+		commit, err = wipCtl.Repo.CommitRepo().Commit(ctx, ref.CommitHash)
+		if err != nil {
+			w.Error(err)
+			return
+		}
+	}
+
 	var msg string
 	if params.Msg != nil {
 		msg = *params.Msg
@@ -192,13 +230,14 @@ func (wipCtl WipController) CommitWip(ctx context.Context, w *api.JiaozifsRespon
 	//add commit
 	err = wipCtl.Repo.Transaction(ctx, func(repo models.IRepo) error {
 		commitOp := versionmgr.NewCommitOp(repo, commit)
-		commit, err := commitOp.AddCommit(ctx, operatorUser, wip.ID, msg)
+		commit, err := commitOp.AddCommit(ctx, operator, wip.ID, msg)
 		if err != nil {
 			return err
 		}
 
 		wip.BaseCommit = commit.Commit().Hash //set for response
-		err = repo.WipRepo().UpdateByID(ctx, models.NewUpdateWipParams(wip.ID).SetBaseCommit(wip.BaseCommit))
+		wip.CurrentTree = commit.Commit().TreeHash
+		err = repo.WipRepo().UpdateByID(ctx, models.NewUpdateWipParams(wip.ID).SetBaseCommit(wip.BaseCommit).SetCurrentTree(wip.CurrentTree))
 		if err != nil {
 			return err
 		}
@@ -210,7 +249,7 @@ func (wipCtl WipController) CommitWip(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
-	w.JSON(wip)
+	w.JSON(wip, http.StatusCreated)
 }
 
 // DeleteWip delete a active working in process operator only can delete himself wip
@@ -233,6 +272,11 @@ func (wipCtl WipController) DeleteWip(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
+	if operator.Name != owner.Name { //todo check permission to operator ownerRepo
+		w.Forbidden()
+		return
+	}
+
 	ref, err := wipCtl.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetRepositoryID(repository.ID).SetName(params.RefName))
 	if err != nil {
 		w.Error(err)
@@ -244,9 +288,14 @@ func (wipCtl WipController) DeleteWip(ctx context.Context, w *api.JiaozifsRespon
 		SetRepositoryID(repository.ID).
 		SetRefID(ref.ID)
 
-	err = wipCtl.Repo.WipRepo().Delete(ctx, deleteWipParams)
+	affectedRaw, err := wipCtl.Repo.WipRepo().Delete(ctx, deleteWipParams)
 	if err != nil {
 		w.Error(err)
+		return
+	}
+
+	if affectedRaw == 0 {
+		w.NotFound()
 		return
 	}
 
@@ -255,7 +304,7 @@ func (wipCtl WipController) DeleteWip(ctx context.Context, w *api.JiaozifsRespon
 
 // GetWipChanges return wip difference, operator only see himself wip
 func (wipCtl WipController) GetWipChanges(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName, repositoryName string, params api.GetWipChangesParams) {
-	user, err := auth.GetOperator(ctx)
+	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
 		return
@@ -273,13 +322,18 @@ func (wipCtl WipController) GetWipChanges(ctx context.Context, w *api.JiaozifsRe
 		return
 	}
 
+	if operator.Name != owner.Name { //todo check permission to operator ownerRepo
+		w.Forbidden()
+		return
+	}
+
 	ref, err := wipCtl.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetRepositoryID(repository.ID).SetName(params.RefName))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	wip, err := wipCtl.Repo.WipRepo().Get(ctx, models.NewGetWipParams().SetCreatorID(user.ID).SetRepositoryID(repository.ID).SetRefID(ref.ID))
+	wip, err := wipCtl.Repo.WipRepo().Get(ctx, models.NewGetWipParams().SetCreatorID(operator.ID).SetRepositoryID(repository.ID).SetRefID(ref.ID))
 	if err != nil {
 		w.Error(err)
 		return

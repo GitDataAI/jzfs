@@ -341,13 +341,3 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		})
 	}
 }
-
-func createRepo(ctx context.Context, c convey.C, client *api.Client, repoName string) {
-	c.Convey("create repo "+repoName, func() {
-		resp, err := client.CreateRepository(ctx, api.CreateRepositoryJSONRequestBody{
-			Name: repoName,
-		})
-		convey.So(err, convey.ShouldBeNil)
-		convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
-	})
-}
