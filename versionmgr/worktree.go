@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/google/uuid"
+
 	"github.com/jiaozifs/jiaozifs/utils/httputil"
 
 	"github.com/jiaozifs/jiaozifs/versionmgr/merkletrie"
@@ -70,6 +72,9 @@ func NewWorkTree(ctx context.Context, object models.IFileTreeRepo, root models.T
 
 func (workTree *WorkTree) Root() *TreeNode {
 	return workTree.root
+}
+func (workTree *WorkTree) RepositoryID() uuid.UUID {
+	return workTree.object.RepositoryID()
 }
 
 // ReadBlob read blob content with range
@@ -140,7 +145,7 @@ func (workTree *WorkTree) WriteBlob(ctx context.Context, adapter block.Adapter, 
 		return nil, err
 	}
 
-	return models.NewBlob(properties, checkSum, hashReader.CopiedSize)
+	return models.NewBlob(properties, workTree.RepositoryID(), checkSum, hashReader.CopiedSize)
 }
 
 func (workTree *WorkTree) AppendDirectEntry(ctx context.Context, treeEntry models.TreeEntry) (*models.TreeNode, error) {
@@ -156,7 +161,7 @@ func (workTree *WorkTree) AppendDirectEntry(ctx context.Context, treeEntry model
 
 	subObjects := models.SortSubObjects(append(workTree.root.SubObjects(), treeEntry))
 
-	newTree, err := models.NewTreeNode(models.Property{Mode: filemode.Dir}, subObjects...)
+	newTree, err := models.NewTreeNode(models.Property{Mode: filemode.Dir}, workTree.RepositoryID(), subObjects...)
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +186,7 @@ func (workTree *WorkTree) DeleteDirectEntry(ctx context.Context, name string) (*
 		return nil, true, nil
 	}
 
-	newTree, err := models.NewTreeNode(workTree.root.Properties(), subObjects...)
+	newTree, err := models.NewTreeNode(workTree.root.Properties(), workTree.RepositoryID(), subObjects...)
 	if err != nil {
 		return nil, false, err
 	}
@@ -209,7 +214,7 @@ func (workTree *WorkTree) ReplaceSubTreeEntry(ctx context.Context, treeEntry mod
 	copy(subObjects, workTree.root.SubObjects())
 	subObjects[index] = treeEntry
 
-	newTree, err := models.NewTreeNode(workTree.Root().Properties(), subObjects...)
+	newTree, err := models.NewTreeNode(workTree.Root().Properties(), workTree.RepositoryID(), subObjects...)
 	if err != nil {
 		return nil, err
 	}
@@ -299,7 +304,7 @@ func (workTree *WorkTree) AddLeaf(ctx context.Context, fullPath string, blob *mo
 			continue
 		}
 
-		newTree, err := models.NewTreeNode(models.DefaultDirProperty(), lastEntry)
+		newTree, err := models.NewTreeNode(models.DefaultDirProperty(), workTree.RepositoryID(), lastEntry)
 		if err != nil {
 			return err
 		}

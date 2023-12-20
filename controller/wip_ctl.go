@@ -71,7 +71,7 @@ func (wipCtl WipController) CreateWip(ctx context.Context, w *api.JiaozifsRespon
 
 	currentTreeHash := hash.EmptyHash
 	if !ref.CommitHash.IsEmpty() {
-		baseCommit, err := wipCtl.Repo.CommitRepo().Commit(ctx, ref.CommitHash)
+		baseCommit, err := wipCtl.Repo.CommitRepo(repository.ID).Commit(ctx, ref.CommitHash)
 		if err != nil {
 			w.Error(err)
 			return
@@ -215,7 +215,7 @@ func (wipCtl WipController) CommitWip(ctx context.Context, w *api.JiaozifsRespon
 
 	var commit *models.Commit
 	if !ref.CommitHash.IsEmpty() {
-		commit, err = wipCtl.Repo.CommitRepo().Commit(ctx, ref.CommitHash)
+		commit, err = wipCtl.Repo.CommitRepo(repository.ID).Commit(ctx, ref.CommitHash)
 		if err != nil {
 			w.Error(err)
 			return
@@ -229,7 +229,7 @@ func (wipCtl WipController) CommitWip(ctx context.Context, w *api.JiaozifsRespon
 
 	//add commit
 	err = wipCtl.Repo.Transaction(ctx, func(repo models.IRepo) error {
-		commitOp := versionmgr.NewCommitOp(repo, commit)
+		commitOp := versionmgr.NewCommitOp(repo, repository.ID, commit)
 		commit, err := commitOp.AddCommit(ctx, operator, wip.ID, msg)
 		if err != nil {
 			return err
@@ -252,7 +252,7 @@ func (wipCtl WipController) CommitWip(ctx context.Context, w *api.JiaozifsRespon
 	w.JSON(wip, http.StatusCreated)
 }
 
-// DeleteWip delete a active working in process operator only can delete himself wip
+// DeleteWip delete active working in process operator only can delete himself wip
 func (wipCtl WipController) DeleteWip(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, params api.DeleteWipParams) {
 	operator, err := auth.GetOperator(ctx)
 	if err != nil {
@@ -339,13 +339,13 @@ func (wipCtl WipController) GetWipChanges(ctx context.Context, w *api.JiaozifsRe
 		return
 	}
 
-	commit, err := wipCtl.Repo.CommitRepo().Commit(ctx, wip.BaseCommit)
+	commit, err := wipCtl.Repo.CommitRepo(repository.ID).Commit(ctx, wip.BaseCommit)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	workTree, err := versionmgr.NewWorkTree(ctx, wipCtl.Repo.FileTreeRepo(), models.NewRootTreeEntry(commit.TreeHash))
+	workTree, err := versionmgr.NewWorkTree(ctx, wipCtl.Repo.FileTreeRepo(repository.ID), models.NewRootTreeEntry(commit.TreeHash))
 	if err != nil {
 		w.Error(err)
 		return

@@ -58,13 +58,13 @@ func (commitCtl CommitController) GetEntriesInRef(ctx context.Context, w *api.Ji
 		return
 	}
 
-	commit, err := commitCtl.Repo.CommitRepo().Commit(ctx, ref.CommitHash)
+	commit, err := commitCtl.Repo.CommitRepo(repository.ID).Commit(ctx, ref.CommitHash)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	workTree, err := versionmgr.NewWorkTree(ctx, commitCtl.Repo.FileTreeRepo(), models.NewRootTreeEntry(commit.TreeHash))
+	workTree, err := versionmgr.NewWorkTree(ctx, commitCtl.Repo.FileTreeRepo(repository.ID), models.NewRootTreeEntry(commit.TreeHash))
 	if err != nil {
 		w.Error(err)
 		return
@@ -82,14 +82,26 @@ func (commitCtl CommitController) GetEntriesInRef(ctx context.Context, w *api.Ji
 	w.JSON(treeEntry)
 }
 
-func (commitCtl CommitController) GetCommitDiff(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, _ string, basehead string, params api.GetCommitDiffParams) {
+func (commitCtl CommitController) GetCommitDiff(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, basehead string, params api.GetCommitDiffParams) {
 	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	if operator.Name == ownerName { //todo check permission
+	owner, err := commitCtl.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(ownerName))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	repository, err := commitCtl.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetName(repositoryName).SetOwnerID(owner.ID))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	if operator.ID == owner.ID { //todo check permission
 		w.Forbidden()
 		return
 	}
@@ -111,7 +123,7 @@ func (commitCtl CommitController) GetCommitDiff(ctx context.Context, w *api.Jiao
 		return
 	}
 
-	bashCommit, err := commitCtl.Repo.CommitRepo().Commit(ctx, bashCommitHash)
+	bashCommit, err := commitCtl.Repo.CommitRepo(repository.ID).Commit(ctx, bashCommitHash)
 	if err != nil {
 		w.Error(err)
 		return
@@ -122,7 +134,7 @@ func (commitCtl CommitController) GetCommitDiff(ctx context.Context, w *api.Jiao
 		path = *params.Path
 	}
 
-	commitOp := versionmgr.NewCommitOp(commitCtl.Repo, bashCommit)
+	commitOp := versionmgr.NewCommitOp(commitCtl.Repo, repository.ID, bashCommit)
 	changes, err := commitOp.DiffCommit(ctx, toCommitHash)
 	if err != nil {
 		w.Error(err)

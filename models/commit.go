@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jiaozifs/jiaozifs/utils/hash"
 	"github.com/uptrace/bun"
 )
@@ -21,6 +22,7 @@ type Signature struct {
 type Commit struct {
 	bun.BaseModel `bun:"table:commits"`
 	Hash          hash.Hash `bun:"hash,pk,type:bytea"`
+	RepositoryID  uuid.UUID `bun:"repository_id,pk,type:uuid,notnull"`
 	//////********commit********////////
 	// Author is the original author of the commit.
 	Author Signature `bun:"author,type:jsonb"`
@@ -107,20 +109,31 @@ func (commit *Commit) NumParents() int {
 }
 
 type ICommitRepo interface {
+	RepositoryID() uuid.UUID
 	Commit(ctx context.Context, hash hash.Hash) (*Commit, error)
 	Insert(ctx context.Context, commit *Commit) (*Commit, error)
 }
 type CommitRepo struct {
-	db bun.IDB
+	db           bun.IDB
+	repositoryID uuid.UUID
 }
 
-func NewCommitRepo(db bun.IDB) ICommitRepo {
-	return &CommitRepo{db}
+func (cr CommitRepo) RepositoryID() uuid.UUID {
+	return cr.repositoryID
+}
+
+func NewCommitRepo(db bun.IDB, repoID uuid.UUID) ICommitRepo {
+	return &CommitRepo{
+		db:           db,
+		repositoryID: repoID,
+	}
 }
 
 func (cr CommitRepo) Commit(ctx context.Context, hash hash.Hash) (*Commit, error) {
 	commit := &Commit{}
-	err := cr.db.NewSelect().Model(commit).Where("hash = ?", hash).Scan(ctx)
+	err := cr.db.NewSelect().Model(commit).
+		Where("repository_id = ?", cr.repositoryID).
+		Where("hash = ?", hash).Scan(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -128,6 +141,9 @@ func (cr CommitRepo) Commit(ctx context.Context, hash hash.Hash) (*Commit, error
 }
 
 func (cr CommitRepo) Insert(ctx context.Context, commit *Commit) (*Commit, error) {
+	if commit.RepositoryID != cr.repositoryID {
+		return nil, ErrRepoIDMisMatch
+	}
 	_, err := cr.db.NewInsert().Model(commit).Exec(ctx)
 	if err != nil {
 		return nil, err

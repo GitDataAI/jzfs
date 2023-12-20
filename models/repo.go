@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/google/uuid"
+
 	"github.com/uptrace/bun"
 )
 
@@ -27,9 +29,9 @@ func IsolationLevelOption(level sql.IsolationLevel) TxOption {
 type IRepo interface {
 	Transaction(ctx context.Context, fn func(repo IRepo) error, opts ...TxOption) error
 	UserRepo() IUserRepo
-	FileTreeRepo() IFileTreeRepo
-	CommitRepo() ICommitRepo
-	TagRepo() ITagRepo
+	FileTreeRepo(repoID uuid.UUID) IFileTreeRepo
+	CommitRepo(repoID uuid.UUID) ICommitRepo
+	TagRepo(repoID uuid.UUID) ITagRepo
 	RefRepo() IRefRepo
 	RepositoryRepo() IRepositoryRepo
 	WipRepo() IWipRepo
@@ -59,16 +61,16 @@ func (repo *PgRepo) UserRepo() IUserRepo {
 	return NewUserRepo(repo.db)
 }
 
-func (repo *PgRepo) FileTreeRepo() IFileTreeRepo {
-	return NewFileTree(repo.db)
+func (repo *PgRepo) FileTreeRepo(repoID uuid.UUID) IFileTreeRepo {
+	return NewFileTree(repo.db, repoID)
 }
 
-func (repo *PgRepo) CommitRepo() ICommitRepo {
-	return NewCommitRepo(repo.db)
+func (repo *PgRepo) CommitRepo(repoID uuid.UUID) ICommitRepo {
+	return NewCommitRepo(repo.db, repoID)
 }
 
-func (repo *PgRepo) TagRepo() ITagRepo {
-	return NewTagRepo(repo.db)
+func (repo *PgRepo) TagRepo(repoID uuid.UUID) ITagRepo {
+	return NewTagRepo(repo.db, repoID)
 }
 
 func (repo *PgRepo) RefRepo() IRefRepo {

@@ -595,6 +595,11 @@ paths:
       operationId: getObject
       summary: get object content
       parameters:
+        - in: query
+          name: isWip
+          description: isWip indicate to retrieve from working in progress, default false
+          schema:
+            type: boolean
         - in: header
           name: Range
           description: Byte range to retrieve
@@ -666,6 +671,11 @@ paths:
       operationId: headObject
       summary: check if object exists
       parameters:
+        - in: query
+          name: isWip
+          description: isWip indicate to retrieve from working in progress, default false
+          schema:
+            type: boolean
         - in: header
           name: Range
           description: Byte range to retrieve

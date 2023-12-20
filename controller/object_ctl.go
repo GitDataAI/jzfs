@@ -69,7 +69,7 @@ func (oct ObjectController) DeleteObject(ctx context.Context, w *api.JiaozifsRes
 		w.Error(err)
 		return
 	}
-	commit, err := oct.Repo.CommitRepo().Commit(ctx, ref.CommitHash)
+	commit, err := oct.Repo.CommitRepo(repository.ID).Commit(ctx, ref.CommitHash)
 	if err != nil {
 		w.Error(err)
 		return
@@ -81,7 +81,7 @@ func (oct ObjectController) DeleteObject(ctx context.Context, w *api.JiaozifsRes
 		return
 	}
 
-	workTree, err := versionmgr.NewWorkTree(ctx, oct.Repo.FileTreeRepo(), models.NewRootTreeEntry(commit.TreeHash))
+	workTree, err := versionmgr.NewWorkTree(ctx, oct.Repo.FileTreeRepo(repository.ID), models.NewRootTreeEntry(commit.TreeHash))
 	if err != nil {
 		w.Error(err)
 		return
@@ -102,7 +102,7 @@ func (oct ObjectController) DeleteObject(ctx context.Context, w *api.JiaozifsRes
 }
 
 func (oct ObjectController) GetObject(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, ownerName string, repositoryName string, params api.GetObjectParams) { //nolint
-	user, err := auth.GetOperator(ctx)
+	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
 		return
@@ -114,7 +114,7 @@ func (oct ObjectController) GetObject(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
-	if user.Name != ownerName { //todo check permission
+	if operator.Name != ownerName { //todo check permission
 		w.Forbidden()
 		return
 	}
@@ -132,16 +132,26 @@ func (oct ObjectController) GetObject(ctx context.Context, w *api.JiaozifsRespon
 	}
 
 	treeHash := hash.EmptyHash
-	if !ref.CommitHash.IsEmpty() {
-		commit, err := oct.Repo.CommitRepo().Commit(ctx, ref.CommitHash)
+	if utils.BoolValue(params.IsWip) {
+		wip, err := oct.Repo.WipRepo().Get(ctx, models.NewGetWipParams().SetCreatorID(operator.ID).SetRepositoryID(repository.ID).SetRefID(ref.ID))
 		if err != nil {
 			w.Error(err)
 			return
 		}
-		treeHash = commit.TreeHash
+		treeHash = wip.CurrentTree
+	} else {
+
+		if !ref.CommitHash.IsEmpty() {
+			commit, err := oct.Repo.CommitRepo(repository.ID).Commit(ctx, ref.CommitHash)
+			if err != nil {
+				w.Error(err)
+				return
+			}
+			treeHash = commit.TreeHash
+		}
 	}
 
-	workTree, err := versionmgr.NewWorkTree(ctx, oct.Repo.FileTreeRepo(), models.NewRootTreeEntry(treeHash))
+	workTree, err := versionmgr.NewWorkTree(ctx, oct.Repo.FileTreeRepo(repository.ID), models.NewRootTreeEntry(treeHash))
 	if err != nil {
 		w.Error(err)
 		return
@@ -199,7 +209,7 @@ func (oct ObjectController) GetObject(ctx context.Context, w *api.JiaozifsRespon
 }
 
 func (oct ObjectController) HeadObject(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, ownerName string, repositoryName string, params api.HeadObjectParams) { //nolint
-	user, err := auth.GetOperator(ctx)
+	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
 		return
@@ -211,7 +221,7 @@ func (oct ObjectController) HeadObject(ctx context.Context, w *api.JiaozifsRespo
 		return
 	}
 
-	if user.Name != ownerName { //todo check permission
+	if operator.Name != ownerName { //todo check permission
 		w.Forbidden()
 		return
 	}
@@ -221,7 +231,6 @@ func (oct ObjectController) HeadObject(ctx context.Context, w *api.JiaozifsRespo
 		w.Error(err)
 		return
 	}
-
 	ref, err := oct.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetRepositoryID(repository.ID).SetName(params.Branch))
 	if err != nil {
 		w.Error(err)
@@ -229,16 +238,26 @@ func (oct ObjectController) HeadObject(ctx context.Context, w *api.JiaozifsRespo
 	}
 
 	treeHash := hash.EmptyHash
-	if !ref.CommitHash.IsEmpty() {
-		commit, err := oct.Repo.CommitRepo().Commit(ctx, ref.CommitHash)
+	if utils.BoolValue(params.IsWip) {
+		wip, err := oct.Repo.WipRepo().Get(ctx, models.NewGetWipParams().SetCreatorID(operator.ID).SetRepositoryID(repository.ID).SetRefID(ref.ID))
 		if err != nil {
 			w.Error(err)
 			return
 		}
-		treeHash = commit.TreeHash
+		treeHash = wip.CurrentTree
+	} else {
+
+		if !ref.CommitHash.IsEmpty() {
+			commit, err := oct.Repo.CommitRepo(repository.ID).Commit(ctx, ref.CommitHash)
+			if err != nil {
+				w.Error(err)
+				return
+			}
+			treeHash = commit.TreeHash
+		}
 	}
 
-	fileRepo := oct.Repo.FileTreeRepo()
+	fileRepo := oct.Repo.FileTreeRepo(repository.ID)
 	workTree, err := versionmgr.NewWorkTree(ctx, fileRepo, models.NewRootTreeEntry(treeHash))
 	if err != nil {
 		w.Error(err)
@@ -370,7 +389,7 @@ func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsRes
 
 	var response api.ObjectStats
 	err = oct.Repo.Transaction(ctx, func(dRepo models.IRepo) error {
-		workingTree, err := versionmgr.NewWorkTree(ctx, dRepo.FileTreeRepo(), models.NewRootTreeEntry(stash.CurrentTree))
+		workingTree, err := versionmgr.NewWorkTree(ctx, dRepo.FileTreeRepo(repository.ID), models.NewRootTreeEntry(stash.CurrentTree))
 		if err != nil {
 			return err
 		}

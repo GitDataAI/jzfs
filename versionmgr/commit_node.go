@@ -3,6 +3,7 @@ package versionmgr
 import (
 	"context"
 	"errors"
+	"github.com/google/uuid"
 	"io"
 
 	"github.com/go-git/go-git/v5/plumbing/storer"
@@ -31,6 +32,10 @@ func (c *CommitNode) Ctx() context.Context {
 
 func (c *CommitNode) Commit() *models.Commit {
 	return c.commit
+}
+
+func (c *CommitNode) RepoID() uuid.UUID {
+	return c.commit.RepositoryID
 }
 
 // TreeHash returns the TreeHash in the commit.

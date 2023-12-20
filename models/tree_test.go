@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/uuid"
+
 	"github.com/jiaozifs/jiaozifs/models/filemode"
 
 	"github.com/brianvoe/gofakeit/v6"
@@ -40,10 +42,13 @@ func TestObjectRepo_Insert(t *testing.T) {
 	postgres, _, db := testhelper.SetupDatabase(ctx, t)
 	defer postgres.Stop() //nolint
 
-	repo := models.NewFileTree(db)
+	repoID := uuid.New()
+	repo := models.NewFileTree(db, repoID)
+	require.Equal(t, repo.RepositoryID(), repoID)
 
 	objModel := &models.FileTree{}
 	require.NoError(t, gofakeit.Struct(objModel))
+	objModel.RepositoryID = repoID
 	objModel.Properties.Mode = filemode.Regular
 	newObj, err := repo.Insert(ctx, objModel)
 	require.NoError(t, err)
@@ -61,4 +66,11 @@ func TestObjectRepo_Insert(t *testing.T) {
 	require.NoError(t, err)
 
 	require.True(t, cmp.Equal(newObj, ref, dbTimeCmpOpt))
+	t.Run("mis match repo id", func(t *testing.T) {
+		mistMatchModel := &models.FileTree{}
+		require.NoError(t, gofakeit.Struct(mistMatchModel))
+		mistMatchModel.Properties.Mode = filemode.Regular
+		_, err := repo.Insert(ctx, mistMatchModel)
+		require.ErrorIs(t, err, models.ErrRepoIDMisMatch)
+	})
 }
