@@ -10,8 +10,8 @@ import (
 	"github.com/uptrace/bun"
 )
 
-type Ref struct {
-	bun.BaseModel `bun:"table:refs"`
+type Branches struct {
+	bun.BaseModel `bun:"table:branches"`
 	ID            uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
 	// RepositoryId which repository this branch belong
 	RepositoryID uuid.UUID `bun:"repository_id,type:uuid,notnull"`
@@ -27,112 +27,112 @@ type Ref struct {
 	UpdatedAt time.Time `bun:"updated_at"`
 }
 
-type GetRefParams struct {
+type GetBranchParams struct {
 	ID           uuid.UUID
 	RepositoryID uuid.UUID
 	Name         *string
 }
 
-func NewGetRefParams() *GetRefParams {
-	return &GetRefParams{}
+func NewGetBranchParams() *GetBranchParams {
+	return &GetBranchParams{}
 }
 
-func (gup *GetRefParams) SetID(id uuid.UUID) *GetRefParams {
+func (gup *GetBranchParams) SetID(id uuid.UUID) *GetBranchParams {
 	gup.ID = id
 	return gup
 }
 
-func (gup *GetRefParams) SetRepositoryID(repositoryID uuid.UUID) *GetRefParams {
+func (gup *GetBranchParams) SetRepositoryID(repositoryID uuid.UUID) *GetBranchParams {
 	gup.RepositoryID = repositoryID
 	return gup
 }
 
-func (gup *GetRefParams) SetName(name string) *GetRefParams {
+func (gup *GetBranchParams) SetName(name string) *GetBranchParams {
 	gup.Name = &name
 	return gup
 }
 
-type DeleteRefParams struct {
+type DeleteBranchParams struct {
 	ID           uuid.UUID
 	RepositoryID uuid.UUID
 	Name         *string
 }
 
-func NewDeleteRefParams() *DeleteRefParams {
-	return &DeleteRefParams{}
+func NewDeleteBranchParams() *DeleteBranchParams {
+	return &DeleteBranchParams{}
 }
 
-func (gup *DeleteRefParams) SetRepositoryID(repositoryID uuid.UUID) *DeleteRefParams {
+func (gup *DeleteBranchParams) SetRepositoryID(repositoryID uuid.UUID) *DeleteBranchParams {
 	gup.RepositoryID = repositoryID
 	return gup
 }
-func (gup *DeleteRefParams) SetID(id uuid.UUID) *DeleteRefParams {
+func (gup *DeleteBranchParams) SetID(id uuid.UUID) *DeleteBranchParams {
 	gup.ID = id
 	return gup
 }
 
-func (gup *DeleteRefParams) SetName(name string) *DeleteRefParams {
+func (gup *DeleteBranchParams) SetName(name string) *DeleteBranchParams {
 	gup.Name = &name
 	return gup
 }
 
-type UpdateRefParams struct {
-	bun.BaseModel `bun:"table:refs"`
+type UpdateBranchParams struct {
+	bun.BaseModel `bun:"table:branches"`
 	ID            uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
 	CommitHash    hash.Hash `bun:"commit_hash,type:bytea,notnull"`
 }
 
-func NewUpdateRefParams(id uuid.UUID) *UpdateRefParams {
-	return &UpdateRefParams{ID: id}
+func NewUpdateBranchParams(id uuid.UUID) *UpdateBranchParams {
+	return &UpdateBranchParams{ID: id}
 }
 
-func (up *UpdateRefParams) SetCommitHash(commitHash hash.Hash) *UpdateRefParams {
+func (up *UpdateBranchParams) SetCommitHash(commitHash hash.Hash) *UpdateBranchParams {
 	up.CommitHash = commitHash
 	return up
 }
 
-type ListRefParams struct {
+type ListBranchParams struct {
 	RepositoryID uuid.UUID
 }
 
-func NewListRefParams() *ListRefParams {
-	return &ListRefParams{}
+func NewListBranchParams() *ListBranchParams {
+	return &ListBranchParams{}
 }
 
-func (gup *ListRefParams) SetRepositoryID(repositoryID uuid.UUID) *ListRefParams {
+func (gup *ListBranchParams) SetRepositoryID(repositoryID uuid.UUID) *ListBranchParams {
 	gup.RepositoryID = repositoryID
 	return gup
 }
 
-type IRefRepo interface {
-	Insert(ctx context.Context, repo *Ref) (*Ref, error)
-	UpdateByID(ctx context.Context, params *UpdateRefParams) error
-	Get(ctx context.Context, id *GetRefParams) (*Ref, error)
+type IBranchRepo interface {
+	Insert(ctx context.Context, repo *Branches) (*Branches, error)
+	UpdateByID(ctx context.Context, params *UpdateBranchParams) error
+	Get(ctx context.Context, id *GetBranchParams) (*Branches, error)
 
-	List(ctx context.Context, params *ListRefParams) ([]*Ref, error)
-	Delete(ctx context.Context, params *DeleteRefParams) (int64, error)
+	List(ctx context.Context, params *ListBranchParams) ([]*Branches, error)
+	Delete(ctx context.Context, params *DeleteBranchParams) (int64, error)
 }
 
-var _ IRefRepo = (*RefRepo)(nil)
+var _ IBranchRepo = (*BranchRepo)(nil)
 
-type RefRepo struct {
+type BranchRepo struct {
 	db bun.IDB
 }
 
-func NewRefRepo(db bun.IDB) IRefRepo {
-	return &RefRepo{db: db}
+func NewBranchRepo(db bun.IDB) IBranchRepo {
+	return &BranchRepo{db: db}
 }
 
-func (r RefRepo) Insert(ctx context.Context, ref *Ref) (*Ref, error) {
-	_, err := r.db.NewInsert().Model(ref).Exec(ctx)
+func (r BranchRepo) Insert(ctx context.Context, branch *Branches) (*Branches, error) {
+	_, err := r.db.NewInsert().Model(branch).Exec(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return ref, nil
+	return branch, nil
 }
 
-func (r RefRepo) Get(ctx context.Context, params *GetRefParams) (*Ref, error) {
-	repo := &Ref{}
+func (r BranchRepo) Get(ctx context.Context, params *GetBranchParams) (*Branches, error) {
+	repo := &Branches{}
 	query := r.db.NewSelect().Model(repo)
 
 	if uuid.Nil != params.ID {
@@ -154,9 +154,9 @@ func (r RefRepo) Get(ctx context.Context, params *GetRefParams) (*Ref, error) {
 	return repo, nil
 }
 
-func (r RefRepo) List(ctx context.Context, params *ListRefParams) ([]*Ref, error) {
-	var refs []*Ref
-	query := r.db.NewSelect().Model(&refs)
+func (r BranchRepo) List(ctx context.Context, params *ListBranchParams) ([]*Branches, error) {
+	var branches []*Branches
+	query := r.db.NewSelect().Model(&branches)
 
 	if uuid.Nil != params.RepositoryID {
 		query = query.Where("repository_id = ?", params.RepositoryID)
@@ -166,11 +166,11 @@ func (r RefRepo) List(ctx context.Context, params *ListRefParams) ([]*Ref, error
 	if err != nil {
 		return nil, err
 	}
-	return refs, nil
+	return branches, nil
 }
 
-func (r RefRepo) Delete(ctx context.Context, params *DeleteRefParams) (int64, error) {
-	query := r.db.NewDelete().Model((*Ref)(nil))
+func (r BranchRepo) Delete(ctx context.Context, params *DeleteBranchParams) (int64, error) {
+	query := r.db.NewDelete().Model((*Branches)(nil))
 
 	if uuid.Nil != params.ID {
 		query = query.Where("id = ?", params.ID)
@@ -195,7 +195,7 @@ func (r RefRepo) Delete(ctx context.Context, params *DeleteRefParams) (int64, er
 	return affectedRows, err
 }
 
-func (r RefRepo) UpdateByID(ctx context.Context, updateModel *UpdateRefParams) error {
+func (r BranchRepo) UpdateByID(ctx context.Context, updateModel *UpdateBranchParams) error {
 	_, err := r.db.NewUpdate().Model(updateModel).WherePK().Exec(ctx)
 	return err
 }

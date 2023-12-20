@@ -53,7 +53,7 @@ func (wipCtl WipController) CreateWip(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
-	ref, err := wipCtl.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetRepositoryID(repository.ID).SetName(params.RefName))
+	ref, err := wipCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.ID).SetName(params.RefName))
 	if err != nil {
 		w.Error(err)
 		return
@@ -122,7 +122,7 @@ func (wipCtl WipController) GetWip(ctx context.Context, w *api.JiaozifsResponse,
 		return
 	}
 
-	ref, err := wipCtl.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetRepositoryID(repository.ID).SetName(params.RefName))
+	ref, err := wipCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.ID).SetName(params.RefName))
 	if err != nil {
 		w.Error(err)
 		return
@@ -196,7 +196,7 @@ func (wipCtl WipController) CommitWip(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
-	ref, err := wipCtl.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetName(params.RefName).SetRepositoryID(repository.ID))
+	ref, err := wipCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetName(params.RefName).SetRepositoryID(repository.ID))
 	if err != nil {
 		w.Error(err)
 		return
@@ -237,7 +237,7 @@ func (wipCtl WipController) CommitWip(ctx context.Context, w *api.JiaozifsRespon
 			return err
 		}
 
-		return repo.RefRepo().UpdateByID(ctx, models.NewUpdateRefParams(ref.ID).SetCommitHash(commit.Commit().Hash))
+		return repo.BranchRepo().UpdateByID(ctx, models.NewUpdateBranchParams(ref.ID).SetCommitHash(commit.Commit().Hash))
 	})
 	if err != nil {
 		w.Error(err)
@@ -272,7 +272,7 @@ func (wipCtl WipController) DeleteWip(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
-	ref, err := wipCtl.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetRepositoryID(repository.ID).SetName(params.RefName))
+	ref, err := wipCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.ID).SetName(params.RefName))
 	if err != nil {
 		w.Error(err)
 		return
@@ -322,7 +322,7 @@ func (wipCtl WipController) GetWipChanges(ctx context.Context, w *api.JiaozifsRe
 		return
 	}
 
-	ref, err := wipCtl.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetRepositoryID(repository.ID).SetName(params.RefName))
+	ref, err := wipCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.ID).SetName(params.RefName))
 	if err != nil {
 		w.Error(err)
 		return

@@ -114,7 +114,7 @@ func (repositoryCtl RepositoryController) CreateRepository(ctx context.Context, 
 	var createdRepo *models.Repository
 	err = repositoryCtl.Repo.Transaction(ctx, func(repo models.IRepo) error {
 		repoID := uuid.New()
-		defaultRef := &models.Ref{
+		defaultRef := &models.Branches{
 			RepositoryID: repoID,
 			CommitHash:   hash.Hash{},
 			Name:         DefaultBranchName,
@@ -122,7 +122,7 @@ func (repositoryCtl RepositoryController) CreateRepository(ctx context.Context, 
 			CreatedAt:    time.Now(),
 			UpdatedAt:    time.Now(),
 		}
-		defaultRef, err := repositoryCtl.Repo.RefRepo().Insert(ctx, defaultRef)
+		defaultRef, err := repositoryCtl.Repo.BranchRepo().Insert(ctx, defaultRef)
 		if err != nil {
 			return err
 		}
@@ -279,7 +279,7 @@ func (repositoryCtl RepositoryController) GetCommitsInRepository(ctx context.Con
 	if params.RefName != nil {
 		refName = *params.RefName
 	}
-	ref, err := repositoryCtl.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetRepositoryID(repository.ID).SetName(refName))
+	ref, err := repositoryCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.ID).SetName(refName))
 	if err != nil {
 		w.Error(err)
 		return

@@ -17,7 +17,7 @@ func BranchSpec(ctx context.Context, urlStr string) func(c convey.C) {
 	return func(c convey.C) {
 		userName := "mike"
 		repoName := "mlops"
-		refName := "feat/test"
+		branchName := "feat/test"
 
 		createUser(ctx, c, client, userName)
 		loginAndSwitch(ctx, c, client, userName)
@@ -38,7 +38,7 @@ func BranchSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 			c.Convey("success create branch", func() {
 				resp, err := client.CreateBranch(ctx, userName, repoName, api.CreateBranchJSONRequestBody{
-					Name:   refName,
+					Name:   branchName,
 					Source: "main",
 				})
 				convey.So(err, convey.ShouldBeNil)
@@ -96,7 +96,7 @@ func BranchSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				re := client.RequestEditors
 				client.RequestEditors = nil
 				resp, err := client.GetBranch(ctx, userName, repoName, &api.GetBranchParams{
-					RefName: refName,
+					RefName: branchName,
 				})
 				client.RequestEditors = re
 				convey.So(err, convey.ShouldBeNil)
@@ -105,14 +105,14 @@ func BranchSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 			c.Convey("success get branch", func() {
 				resp, err := client.GetBranch(ctx, userName, repoName, &api.GetBranchParams{
-					RefName: refName,
+					RefName: branchName,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
 
 				respResult, err := api.ParseGetBranchResponse(resp)
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(respResult.JSON200.Name, convey.ShouldEqual, refName)
+				convey.So(respResult.JSON200.Name, convey.ShouldEqual, branchName)
 			})
 
 			c.Convey("fail to get non exit ref", func() {
@@ -139,7 +139,7 @@ func BranchSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
 			})
 
-			c.Convey("fail to others ref", func() {
+			c.Convey("fail to others branch", func() {
 				resp, err := client.GetBranch(ctx, "jimmy", "happygo", &api.GetBranchParams{
 					RefName: "main",
 				})

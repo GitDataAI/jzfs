@@ -41,7 +41,7 @@ func init() {
 
 		//ref
 		_, err = db.NewCreateTable().
-			Model((*models.Ref)(nil)).
+			Model((*models.Branches)(nil)).
 			Exec(ctx)
 		if err != nil {
 			return err

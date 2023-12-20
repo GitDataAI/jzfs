@@ -50,7 +50,7 @@ func (commitCtl CommitController) GetEntriesInRef(ctx context.Context, w *api.Ji
 		refName = *params.Ref
 	}
 
-	ref, err := commitCtl.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetRepositoryID(repository.ID).SetName(refName))
+	ref, err := commitCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.ID).SetName(refName))
 	if err != nil {
 		w.Error(err)
 		return

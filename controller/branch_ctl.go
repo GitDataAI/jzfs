@@ -34,7 +34,7 @@ func CheckBranchName(name string) error {
 
 	seg := strings.Split(name, "/")
 	if len(seg) > 2 {
-		return fmt.Errorf("ref format must be <name> or <name>/<name>")
+		return fmt.Errorf("branch format must be <name> or <name>/<name>")
 	}
 
 	if !branchNameRegex.Match([]byte(seg[0])) || !branchNameRegex.Match([]byte(seg[1])) {
@@ -73,14 +73,14 @@ func (bct BranchController) ListBranches(ctx context.Context, w *api.JiaozifsRes
 		return
 	}
 
-	branches, err := bct.Repo.RefRepo().List(ctx, models.NewListRefParams().SetRepositoryID(repository.ID))
+	branches, err := bct.Repo.BranchRepo().List(ctx, models.NewListBranchParams().SetRepositoryID(repository.ID))
 	if err != nil {
 		w.Error(err)
 		return
 	}
-	var refs []api.Ref
+	var apiBranches []api.Branch
 	for _, branch := range branches {
-		ref := api.Ref{
+		branch := api.Branch{
 			CommitHash:   branch.CommitHash.Hex(),
 			CreatedAt:    branch.CreatedAt,
 			CreatorID:    branch.CreatorID,
@@ -90,9 +90,9 @@ func (bct BranchController) ListBranches(ctx context.Context, w *api.JiaozifsRes
 			RepositoryID: branch.RepositoryID,
 			UpdatedAt:    branch.UpdatedAt,
 		}
-		refs = append(refs, ref)
+		apiBranches = append(apiBranches, branch)
 	}
-	w.JSON(api.RefList{Results: refs})
+	w.JSON(api.BranchList{Results: apiBranches})
 }
 
 func (bct BranchController) CreateBranch(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, body api.CreateBranchJSONRequestBody, ownerName string, repositoryName string) {
@@ -126,7 +126,7 @@ func (bct BranchController) CreateBranch(ctx context.Context, w *api.JiaozifsRes
 	}
 
 	//check exit
-	_, err = bct.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetName(body.Name).SetRepositoryID(repository.ID))
+	_, err = bct.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetName(body.Name).SetRepositoryID(repository.ID))
 	if err == nil {
 		w.BadRequest(fmt.Sprintf("%s already exit", body.Name))
 		return
@@ -135,20 +135,20 @@ func (bct BranchController) CreateBranch(ctx context.Context, w *api.JiaozifsRes
 		w.Error(err)
 		return
 	}
-	//get source ref
-	sourceRef, err := bct.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetName(body.Source).SetRepositoryID(repository.ID))
+	//get source branch
+	sourceBranch, err := bct.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetName(body.Source).SetRepositoryID(repository.ID))
 	if err != nil && !errors.Is(err, models.ErrNotFound) {
 		w.Error(err)
 		return
 	}
 
 	commitHash := hash.EmptyHash
-	if sourceRef != nil {
-		commitHash = sourceRef.CommitHash
+	if sourceBranch != nil {
+		commitHash = sourceBranch.CommitHash
 	}
 
 	// Create branch
-	newRef := &models.Ref{
+	newBranch := &models.Branches{
 		RepositoryID: repository.ID,
 		CommitHash:   commitHash,
 		Name:         body.Name,
@@ -156,20 +156,20 @@ func (bct BranchController) CreateBranch(ctx context.Context, w *api.JiaozifsRes
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
 	}
-	newRef, err = bct.Repo.RefRepo().Insert(ctx, newRef)
+	newBranch, err = bct.Repo.BranchRepo().Insert(ctx, newBranch)
 	if err != nil {
 		w.Error(err)
 		return
 	}
-	w.JSON(api.Ref{
-		CommitHash:   newRef.CommitHash.Hex(),
-		CreatedAt:    newRef.CreatedAt,
-		CreatorID:    newRef.CreatorID,
-		Description:  newRef.Description,
-		ID:           newRef.ID,
-		Name:         newRef.Name,
-		RepositoryID: newRef.RepositoryID,
-		UpdatedAt:    newRef.UpdatedAt,
+	w.JSON(api.Branch{
+		CommitHash:   newBranch.CommitHash.Hex(),
+		CreatedAt:    newBranch.CreatedAt,
+		CreatorID:    newBranch.CreatorID,
+		Description:  newBranch.Description,
+		ID:           newBranch.ID,
+		Name:         newBranch.Name,
+		RepositoryID: newBranch.RepositoryID,
+		UpdatedAt:    newBranch.UpdatedAt,
 	}, http.StatusCreated)
 }
 
@@ -199,7 +199,7 @@ func (bct BranchController) DeleteBranch(ctx context.Context, w *api.JiaozifsRes
 	}
 
 	// Delete branch
-	affectedRows, err := bct.Repo.RefRepo().Delete(ctx, models.NewDeleteRefParams().SetName(params.RefName).SetRepositoryID(repository.ID))
+	affectedRows, err := bct.Repo.BranchRepo().Delete(ctx, models.NewDeleteBranchParams().SetName(params.RefName).SetRepositoryID(repository.ID))
 	if err != nil {
 		w.Error(err)
 		return
@@ -237,12 +237,12 @@ func (bct BranchController) GetBranch(ctx context.Context, w *api.JiaozifsRespon
 	}
 
 	// Get branch
-	ref, err := bct.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetName(params.RefName).SetRepositoryID(repository.ID))
+	ref, err := bct.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetName(params.RefName).SetRepositoryID(repository.ID))
 	if err != nil {
 		w.Error(err)
 		return
 	}
-	w.JSON(api.Ref{
+	w.JSON(api.Branch{
 		CommitHash:   ref.CommitHash.Hex(),
 		CreatedAt:    ref.CreatedAt,
 		CreatorID:    ref.CreatorID,

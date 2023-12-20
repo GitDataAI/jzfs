@@ -14,14 +14,14 @@ func WipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 	return func(c convey.C) {
 		userName := "july"
 		repoName := "mlops"
-		refName := "feat/wip_test"
-		refNameForDelete := "feat/wip_test2"
+		branchName := "feat/wip_test"
+		branchNameForDelete := "feat/wip_test2"
 
 		createUser(ctx, c, client, userName)
 		loginAndSwitch(ctx, c, client, userName)
 		createRepo(ctx, c, client, repoName)
-		createBranch(ctx, c, client, userName, repoName, "main", refName)
-		createBranch(ctx, c, client, userName, repoName, "main", refNameForDelete)
+		createBranch(ctx, c, client, userName, repoName, "main", branchName)
+		createBranch(ctx, c, client, userName, repoName, "main", branchNameForDelete)
 		c.Convey("list non exit wip", func(c convey.C) {
 			resp, err := client.ListWip(ctx, userName, repoName)
 			convey.So(err, convey.ShouldBeNil)
@@ -37,7 +37,7 @@ func WipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				re := client.RequestEditors
 				client.RequestEditors = nil
 				resp, err := client.CreateWip(ctx, userName, repoName, &api.CreateWipParams{
-					RefName: refName,
+					RefName: branchName,
 				})
 				client.RequestEditors = re
 				convey.So(err, convey.ShouldBeNil)
@@ -46,7 +46,7 @@ func WipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 			c.Convey("fail to create branch in non exit repo", func() {
 				resp, err := client.CreateWip(ctx, userName, "fakerepo", &api.CreateWipParams{
-					RefName: refName,
+					RefName: branchName,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
@@ -54,7 +54,7 @@ func WipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 			c.Convey("fail to create branch in non exit user", func() {
 				resp, err := client.CreateWip(ctx, "mock_user", "main", &api.CreateWipParams{
-					RefName: refName,
+					RefName: branchName,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
@@ -78,7 +78,7 @@ func WipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 			c.Convey("success create branch", func() {
 				resp, err := client.CreateWip(ctx, userName, repoName, &api.CreateWipParams{
-					RefName: refName,
+					RefName: branchName,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
@@ -86,7 +86,7 @@ func WipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 			c.Convey("user only have one wip for one userName", func() {
 				resp, err := client.CreateWip(ctx, userName, repoName, &api.CreateWipParams{
-					RefName: refName,
+					RefName: branchName,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)
@@ -139,7 +139,7 @@ func WipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				re := client.RequestEditors
 				client.RequestEditors = nil
 				resp, err := client.GetWip(ctx, userName, repoName, &api.GetWipParams{
-					RefName: refName,
+					RefName: branchName,
 				})
 				client.RequestEditors = re
 				convey.So(err, convey.ShouldBeNil)
@@ -148,7 +148,7 @@ func WipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 			c.Convey("success get branch", func() {
 				resp, err := client.GetWip(ctx, userName, repoName, &api.GetWipParams{
-					RefName: refName,
+					RefName: branchName,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
@@ -167,7 +167,7 @@ func WipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 			c.Convey("fail to get wip from non exit user", func() {
 				resp, err := client.GetWip(ctx, "mock_owner", repoName, &api.GetWipParams{
-					RefName: refName,
+					RefName: branchName,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
@@ -175,7 +175,7 @@ func WipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 			c.Convey("fail to get non exit branch", func() {
 				resp, err := client.GetWip(ctx, userName, "mock_repo", &api.GetWipParams{
-					RefName: refName,
+					RefName: branchName,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
@@ -194,26 +194,26 @@ func WipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			c.Convey("no auth", func() {
 				re := client.RequestEditors
 				client.RequestEditors = nil
-				resp, err := client.DeleteWip(ctx, userName, repoName, &api.DeleteWipParams{RefName: refNameForDelete})
+				resp, err := client.DeleteWip(ctx, userName, repoName, &api.DeleteWipParams{RefName: branchNameForDelete})
 				client.RequestEditors = re
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 
 			c.Convey("delete non exit wip", func() {
-				resp, err := client.DeleteWip(ctx, userName, repoName, &api.DeleteWipParams{RefName: refNameForDelete})
+				resp, err := client.DeleteWip(ctx, userName, repoName, &api.DeleteWipParams{RefName: branchNameForDelete})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
 			})
 
 			c.Convey("delete wip in not exit repo", func() {
-				resp, err := client.DeleteWip(ctx, userName, "mock_repo", &api.DeleteWipParams{RefName: refNameForDelete})
+				resp, err := client.DeleteWip(ctx, userName, "mock_repo", &api.DeleteWipParams{RefName: branchNameForDelete})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
 			})
 
 			c.Convey("delete wip in non exit user", func() {
-				resp, err := client.DeleteWip(ctx, "telo", repoName, &api.DeleteWipParams{RefName: refNameForDelete})
+				resp, err := client.DeleteWip(ctx, "telo", repoName, &api.DeleteWipParams{RefName: branchNameForDelete})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
 			})
@@ -224,15 +224,15 @@ func WipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
 			})
 
-			createWip(ctx, c, client, "creat wip for test delete", userName, repoName, refNameForDelete)
+			createWip(ctx, c, client, "creat wip for test delete", userName, repoName, branchNameForDelete)
 			c.Convey("delete branch successful", func() {
 				//delete
-				resp, err := client.DeleteWip(ctx, userName, repoName, &api.DeleteWipParams{RefName: refNameForDelete})
+				resp, err := client.DeleteWip(ctx, userName, repoName, &api.DeleteWipParams{RefName: branchNameForDelete})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
 
 				//ensure delete work
-				getResp, err := client.GetWip(ctx, userName, repoName, &api.GetWipParams{RefName: refNameForDelete})
+				getResp, err := client.GetWip(ctx, userName, repoName, &api.GetWipParams{RefName: branchNameForDelete})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(getResp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
 			})
