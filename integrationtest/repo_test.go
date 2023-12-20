@@ -263,20 +263,6 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
-
-			c.Convey("success get commits", func() {
-				resp, err := client.GetCommitsInRepository(ctx, userName, repoName, &api.GetCommitsInRepositoryParams{
-					RefName: utils.String(controller.DefaultBranchName),
-				})
-				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
-
-				result, err := api.ParseGetCommitsInRepositoryResponse(resp)
-				convey.So(err, convey.ShouldBeNil)
-				convey.So(result.JSON200, convey.ShouldNotBeNil)
-				convey.So(len(*result.JSON200), convey.ShouldEqual, 0)
-			})
-
 			c.Convey("update repository in not exit repo", func() {
 				resp, err := client.GetCommitsInRepository(ctx, userName, "happyrunfake", &api.GetCommitsInRepositoryParams{
 					RefName: utils.String(controller.DefaultBranchName),
@@ -299,6 +285,23 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+
+			})
+
+			createWip(ctx, c, client, "add commit to random branch", userName, repoName, controller.DefaultBranchName)
+			uploadObject(ctx, c, client, "add rand object", userName, repoName, controller.DefaultBranchName, "a.txt")
+			commitWip(ctx, c, client, "commit object", userName, repoName, controller.DefaultBranchName, "first commit")
+			c.Convey("success get commits", func() {
+				resp, err := client.GetCommitsInRepository(ctx, userName, repoName, &api.GetCommitsInRepositoryParams{
+					RefName: utils.String(controller.DefaultBranchName),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				result, err := api.ParseGetCommitsInRepositoryResponse(resp)
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(*result.JSON200, convey.ShouldHaveLength, 1)
+				convey.So((*result.JSON200)[0].Message, convey.ShouldEqual, "first commit")
 			})
 		})
 

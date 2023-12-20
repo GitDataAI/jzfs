@@ -71,7 +71,7 @@ func (wipCtl WipController) CreateWip(ctx context.Context, w *api.JiaozifsRespon
 
 	currentTreeHash := hash.EmptyHash
 	if !ref.CommitHash.IsEmpty() {
-		baseCommit, err := wipCtl.Repo.CommitRepo().Commit(ctx, ref.CommitHash)
+		baseCommit, err := wipCtl.Repo.CommitRepo(repository.ID).Commit(ctx, ref.CommitHash)
 		if err != nil {
 			w.Error(err)
 			return
@@ -196,7 +196,7 @@ func (wipCtl WipController) CommitWip(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
-	ref, err := wipCtl.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetName(params.RefName))
+	ref, err := wipCtl.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetName(params.RefName).SetRepositoryID(repository.ID))
 	if err != nil {
 		w.Error(err)
 		return
@@ -215,22 +215,17 @@ func (wipCtl WipController) CommitWip(ctx context.Context, w *api.JiaozifsRespon
 
 	var commit *models.Commit
 	if !ref.CommitHash.IsEmpty() {
-		commit, err = wipCtl.Repo.CommitRepo().Commit(ctx, ref.CommitHash)
+		commit, err = wipCtl.Repo.CommitRepo(repository.ID).Commit(ctx, ref.CommitHash)
 		if err != nil {
 			w.Error(err)
 			return
 		}
 	}
 
-	var msg string
-	if params.Msg != nil {
-		msg = *params.Msg
-	}
-
 	//add commit
 	err = wipCtl.Repo.Transaction(ctx, func(repo models.IRepo) error {
-		commitOp := versionmgr.NewCommitOp(repo, commit)
-		commit, err := commitOp.AddCommit(ctx, operator, wip.ID, msg)
+		commitOp := versionmgr.NewCommitOp(repo, repository.ID, commit)
+		commit, err := commitOp.AddCommit(ctx, operator, wip.ID, params.Msg)
 		if err != nil {
 			return err
 		}
@@ -252,7 +247,7 @@ func (wipCtl WipController) CommitWip(ctx context.Context, w *api.JiaozifsRespon
 	w.JSON(wip, http.StatusCreated)
 }
 
-// DeleteWip delete a active working in process operator only can delete himself wip
+// DeleteWip delete active working in process operator only can delete himself wip
 func (wipCtl WipController) DeleteWip(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, params api.DeleteWipParams) {
 	operator, err := auth.GetOperator(ctx)
 	if err != nil {
@@ -339,13 +334,13 @@ func (wipCtl WipController) GetWipChanges(ctx context.Context, w *api.JiaozifsRe
 		return
 	}
 
-	commit, err := wipCtl.Repo.CommitRepo().Commit(ctx, wip.BaseCommit)
+	commit, err := wipCtl.Repo.CommitRepo(repository.ID).Commit(ctx, wip.BaseCommit)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	workTree, err := versionmgr.NewWorkTree(ctx, wipCtl.Repo.FileTreeRepo(), models.NewRootTreeEntry(commit.TreeHash))
+	workTree, err := versionmgr.NewWorkTree(ctx, wipCtl.Repo.FileTreeRepo(repository.ID), models.NewRootTreeEntry(commit.TreeHash))
 	if err != nil {
 		w.Error(err)
 		return
@@ -362,10 +357,7 @@ func (wipCtl WipController) GetWipChanges(ctx context.Context, w *api.JiaozifsRe
 		return
 	}
 
-	var path string
-	if params.Path != nil {
-		path = *params.Path
-	}
+	path := versionmgr.CleanPath(utils.StringValue(params.Path))
 
 	var changesResp []api.Change
 	err = changes.ForEach(func(change versionmgr.IChange) error {
@@ -376,7 +368,7 @@ func (wipCtl WipController) GetWipChanges(ctx context.Context, w *api.JiaozifsRe
 		fullPath := change.Path()
 		if strings.HasPrefix(fullPath, path) {
 			apiChange := api.Change{
-				Action: int(action),
+				Action: api.ChangeAction(action),
 				Path:   fullPath,
 			}
 			if change.From() != nil {
@@ -394,5 +386,5 @@ func (wipCtl WipController) GetWipChanges(ctx context.Context, w *api.JiaozifsRe
 		return
 	}
 
-	w.JSON(changes)
+	w.JSON(changesResp)
 }

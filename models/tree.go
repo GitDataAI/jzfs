@@ -3,13 +3,17 @@ package models
 import (
 	"bytes"
 	"context"
+	"errors"
 	"sort"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jiaozifs/jiaozifs/models/filemode"
 	"github.com/jiaozifs/jiaozifs/utils/hash"
 	"github.com/uptrace/bun"
 )
+
+var ErrRepoIDMisMatch = errors.New("repo id mismatch")
 
 // ObjectType internal object type
 // Integer values from 0 to 7 map to those exposed by git.
@@ -72,6 +76,7 @@ func (props Property) ToMap() map[string]string {
 type Blob struct {
 	bun.BaseModel `bun:"table:trees"`
 	Hash          hash.Hash  `bun:"hash,pk,type:bytea"`
+	RepositoryID  uuid.UUID  `bun:"repository_id,pk,type:uuid,notnull"`
 	CheckSum      hash.Hash  `bun:"check_sum,type:bytea"`
 	Type          ObjectType `bun:"type"`
 	Size          int64      `bun:"size"`
@@ -81,14 +86,15 @@ type Blob struct {
 	UpdatedAt time.Time `bun:"updated_at"`
 }
 
-func NewBlob(props Property, checkSum hash.Hash, size int64) (*Blob, error) {
+func NewBlob(props Property, repoID uuid.UUID, checkSum hash.Hash, size int64) (*Blob, error) {
 	blob := &Blob{
-		CheckSum:   checkSum,
-		Type:       BlobObject,
-		Size:       size,
-		Properties: props,
-		CreatedAt:  time.Now(),
-		UpdatedAt:  time.Now(),
+		CheckSum:     checkSum,
+		RepositoryID: repoID,
+		Type:         BlobObject,
+		Size:         size,
+		Properties:   props,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
 	}
 	hash, err := blob.calculateHash()
 	if err != nil {
@@ -127,34 +133,38 @@ func (blob *Blob) calculateHash() (hash.Hash, error) {
 
 func (blob *Blob) FileTree() *FileTree {
 	return &FileTree{
-		Hash:       blob.Hash,
-		Type:       blob.Type,
-		Size:       blob.Size,
-		CheckSum:   blob.CheckSum,
-		Properties: blob.Properties,
-		CreatedAt:  blob.CreatedAt,
-		UpdatedAt:  blob.UpdatedAt,
+		Hash:         blob.Hash,
+		RepositoryID: blob.RepositoryID,
+		Type:         blob.Type,
+		Size:         blob.Size,
+		CheckSum:     blob.CheckSum,
+		Properties:   blob.Properties,
+		CreatedAt:    blob.CreatedAt,
+		UpdatedAt:    blob.UpdatedAt,
 	}
 }
 
 type TreeNode struct {
 	bun.BaseModel `bun:"table:trees"`
-	Hash          hash.Hash   `bun:"hash,pk,type:bytea"`
-	Type          ObjectType  `bun:"type"`
-	SubObjects    []TreeEntry `bun:"subObjs,type:jsonb"`
-	Properties    Property    `bun:"properties,type:jsonb"`
+	Hash          hash.Hash `bun:"hash,pk,type:bytea"`
+	RepositoryID  uuid.UUID `bun:"repository_id,pk,type:uuid,notnull"`
+
+	Type       ObjectType  `bun:"type"`
+	SubObjects []TreeEntry `bun:"subObjs,type:jsonb"`
+	Properties Property    `bun:"properties,type:jsonb"`
 
 	CreatedAt time.Time `bun:"created_at"`
 	UpdatedAt time.Time `bun:"updated_at"`
 }
 
-func NewTreeNode(props Property, subObjects ...TreeEntry) (*TreeNode, error) {
+func NewTreeNode(props Property, repoID uuid.UUID, subObjects ...TreeEntry) (*TreeNode, error) {
 	newTree := &TreeNode{
-		Type:       TreeObject,
-		SubObjects: SortSubObjects(subObjects),
-		Properties: props,
-		CreatedAt:  time.Now(),
-		UpdatedAt:  time.Now(),
+		Type:         TreeObject,
+		RepositoryID: repoID,
+		SubObjects:   SortSubObjects(subObjects),
+		Properties:   props,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
 	}
 	hash, err := newTree.calculateHash()
 	if err != nil {
@@ -166,12 +176,13 @@ func NewTreeNode(props Property, subObjects ...TreeEntry) (*TreeNode, error) {
 
 func (tn *TreeNode) FileTree() *FileTree {
 	return &FileTree{
-		Hash:       tn.Hash,
-		Type:       tn.Type,
-		SubObjects: tn.SubObjects,
-		Properties: tn.Properties,
-		CreatedAt:  tn.CreatedAt,
-		UpdatedAt:  tn.UpdatedAt,
+		Hash:         tn.Hash,
+		RepositoryID: tn.RepositoryID,
+		Type:         tn.Type,
+		SubObjects:   tn.SubObjects,
+		Properties:   tn.Properties,
+		CreatedAt:    tn.CreatedAt,
+		UpdatedAt:    tn.UpdatedAt,
 	}
 }
 
@@ -209,6 +220,7 @@ func (tn *TreeNode) calculateHash() (hash.Hash, error) {
 type FileTree struct {
 	bun.BaseModel `bun:"table:trees"`
 	Hash          hash.Hash  `bun:"hash,pk,type:bytea"`
+	RepositoryID  uuid.UUID  `bun:"repository_id,pk,type:uuid,notnull"`
 	Type          ObjectType `bun:"type"`
 	Size          int64      `bun:"size"`
 	CheckSum      hash.Hash  `bun:"check_sum,type:bytea"`
@@ -222,24 +234,26 @@ type FileTree struct {
 
 func (fileTree *FileTree) Blob() *Blob {
 	return &Blob{
-		Hash:       fileTree.Hash,
-		Type:       fileTree.Type,
-		Size:       fileTree.Size,
-		Properties: fileTree.Properties,
-		CheckSum:   fileTree.CheckSum,
-		CreatedAt:  fileTree.CreatedAt,
-		UpdatedAt:  fileTree.UpdatedAt,
+		Hash:         fileTree.Hash,
+		Type:         fileTree.Type,
+		RepositoryID: fileTree.RepositoryID,
+		Size:         fileTree.Size,
+		Properties:   fileTree.Properties,
+		CheckSum:     fileTree.CheckSum,
+		CreatedAt:    fileTree.CreatedAt,
+		UpdatedAt:    fileTree.UpdatedAt,
 	}
 }
 
 func (fileTree *FileTree) TreeNode() *TreeNode {
 	return &TreeNode{
-		Hash:       fileTree.Hash,
-		Type:       fileTree.Type,
-		Properties: fileTree.Properties,
-		SubObjects: fileTree.SubObjects,
-		CreatedAt:  fileTree.CreatedAt,
-		UpdatedAt:  fileTree.UpdatedAt,
+		Hash:         fileTree.Hash,
+		Type:         fileTree.Type,
+		Properties:   fileTree.Properties,
+		RepositoryID: fileTree.RepositoryID,
+		SubObjects:   fileTree.SubObjects,
+		CreatedAt:    fileTree.CreatedAt,
+		UpdatedAt:    fileTree.UpdatedAt,
 	}
 }
 
@@ -257,6 +271,7 @@ func (gop *GetObjParams) SetHash(hash hash.Hash) *GetObjParams {
 }
 
 type IFileTreeRepo interface {
+	RepositoryID() uuid.UUID
 	Insert(ctx context.Context, repo *FileTree) (*FileTree, error)
 	Get(ctx context.Context, params *GetObjParams) (*FileTree, error)
 	Count(ctx context.Context) (int, error)
@@ -268,14 +283,25 @@ type IFileTreeRepo interface {
 var _ IFileTreeRepo = (*FileTreeRepo)(nil)
 
 type FileTreeRepo struct {
-	db bun.IDB
+	db           bun.IDB
+	repositoryID uuid.UUID
 }
 
-func NewFileTree(db bun.IDB) IFileTreeRepo {
-	return &FileTreeRepo{db: db}
+func NewFileTree(db bun.IDB, repositoryID uuid.UUID) IFileTreeRepo {
+	return &FileTreeRepo{
+		db:           db,
+		repositoryID: repositoryID,
+	}
+}
+
+func (o FileTreeRepo) RepositoryID() uuid.UUID {
+	return o.repositoryID
 }
 
 func (o FileTreeRepo) Insert(ctx context.Context, obj *FileTree) (*FileTree, error) {
+	if obj.RepositoryID != o.repositoryID {
+		return nil, ErrRepoIDMisMatch
+	}
 	_, err := o.db.NewInsert().Model(obj).Ignore().Exec(ctx)
 	if err != nil {
 		return nil, err
@@ -285,7 +311,7 @@ func (o FileTreeRepo) Insert(ctx context.Context, obj *FileTree) (*FileTree, err
 
 func (o FileTreeRepo) Get(ctx context.Context, params *GetObjParams) (*FileTree, error) {
 	repo := &FileTree{}
-	query := o.db.NewSelect().Model(repo)
+	query := o.db.NewSelect().Model(repo).Where("repository_id = ?", o.repositoryID)
 
 	if params.Hash != nil {
 		query = query.Where("hash = ?", params.Hash)
@@ -300,7 +326,11 @@ func (o FileTreeRepo) Get(ctx context.Context, params *GetObjParams) (*FileTree,
 
 func (o FileTreeRepo) Blob(ctx context.Context, hash hash.Hash) (*Blob, error) {
 	blob := &Blob{}
-	err := o.db.NewSelect().Model(blob).Limit(1).Where("hash = ?", hash).Scan(ctx)
+	err := o.db.NewSelect().
+		Model(blob).Limit(1).
+		Where("repository_id = ?", o.repositoryID).
+		Where("hash = ?", hash).
+		Scan(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -309,7 +339,11 @@ func (o FileTreeRepo) Blob(ctx context.Context, hash hash.Hash) (*Blob, error) {
 
 func (o FileTreeRepo) TreeNode(ctx context.Context, hash hash.Hash) (*TreeNode, error) {
 	tree := &TreeNode{}
-	err := o.db.NewSelect().Model(tree).Limit(1).Where("hash = ?", hash).Scan(ctx)
+	err := o.db.NewSelect().
+		Model(tree).Limit(1).
+		Where("repository_id = ?", o.repositoryID).
+		Where("hash = ?", hash).
+		Scan(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -317,12 +351,17 @@ func (o FileTreeRepo) TreeNode(ctx context.Context, hash hash.Hash) (*TreeNode, 
 }
 
 func (o FileTreeRepo) Count(ctx context.Context) (int, error) {
-	return o.db.NewSelect().Model((*FileTree)(nil)).Count(ctx)
+	return o.db.NewSelect().
+		Model((*FileTree)(nil)).
+		Where("repository_id = ?", o.repositoryID).
+		Count(ctx)
 }
 
 func (o FileTreeRepo) List(ctx context.Context) ([]FileTree, error) {
 	var obj []FileTree
-	err := o.db.NewSelect().Model(&obj).Scan(ctx)
+	err := o.db.NewSelect().Model(&obj).
+		Where("repository_id = ?", o.repositoryID).
+		Scan(ctx)
 	if err != nil {
 		return nil, err
 	}

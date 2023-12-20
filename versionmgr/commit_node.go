@@ -6,9 +6,9 @@ import (
 	"io"
 
 	"github.com/go-git/go-git/v5/plumbing/storer"
-	"github.com/jiaozifs/jiaozifs/utils/hash"
-
+	"github.com/google/uuid"
 	"github.com/jiaozifs/jiaozifs/models"
+	"github.com/jiaozifs/jiaozifs/utils/hash"
 )
 
 var (
@@ -31,6 +31,10 @@ func (c *CommitNode) Ctx() context.Context {
 
 func (c *CommitNode) Commit() *models.Commit {
 	return c.commit
+}
+
+func (c *CommitNode) RepoID() uuid.UUID {
+	return c.commit.RepositoryID
 }
 
 // TreeHash returns the TreeHash in the commit.

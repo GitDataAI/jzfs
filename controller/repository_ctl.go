@@ -269,17 +269,17 @@ func (repositoryCtl RepositoryController) GetCommitsInRepository(ctx context.Con
 		return
 	}
 
-	repo, err := repositoryCtl.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
+	repository, err := repositoryCtl.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	refName := repo.HEAD
+	refName := repository.HEAD
 	if params.RefName != nil {
 		refName = *params.RefName
 	}
-	ref, err := repositoryCtl.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetRepositoryID(repo.ID).SetName(refName))
+	ref, err := repositoryCtl.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetRepositoryID(repository.ID).SetName(refName))
 	if err != nil {
 		w.Error(err)
 		return
@@ -290,24 +290,27 @@ func (repositoryCtl RepositoryController) GetCommitsInRepository(ctx context.Con
 		return
 	}
 
-	commit, err := repositoryCtl.Repo.CommitRepo().Commit(ctx, ref.CommitHash)
+	commit, err := repositoryCtl.Repo.CommitRepo(repository.ID).Commit(ctx, ref.CommitHash)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
 	var commits []api.Commit
-	iter := versionmgr.NewCommitPreorderIter(versionmgr.NewCommitNode(ctx, commit, repositoryCtl.Repo.CommitRepo()), nil, nil)
+	commitNode := versionmgr.NewCommitNode(ctx, commit, repositoryCtl.Repo.CommitRepo(repository.ID))
+	iter := versionmgr.NewCommitPreorderIter(commitNode, nil, nil)
 	for {
 		commit, err := iter.Next()
 		if err == nil {
 			modelCommit := commit.Commit()
 			commits = append(commits, api.Commit{
+				RepositoryID: modelCommit.RepositoryID,
 				Author: api.Signature{
 					Email: openapi_types.Email(modelCommit.Author.Email),
 					Name:  modelCommit.Author.Name,
 					When:  modelCommit.Author.When,
 				},
+
 				Committer: api.Signature{
 					Email: openapi_types.Email(modelCommit.Committer.Email),
 					Name:  modelCommit.Committer.Name,

@@ -18,7 +18,7 @@ import (
 	"go.uber.org/fx"
 )
 
-var maxBranchNameLength = 20
+var MaxBranchNameLength = 40
 var branchNameRegex = regexp.MustCompile("^[a-zA-Z0-9_]*$")
 
 func CheckBranchName(name string) error {
@@ -28,7 +28,7 @@ func CheckBranchName(name string) error {
 		}
 	}
 
-	if len(name) > maxBranchNameLength {
+	if len(name) > MaxBranchNameLength {
 		return fmt.Errorf("branch name is too long")
 	}
 
@@ -81,8 +81,14 @@ func (bct BranchController) ListBranches(ctx context.Context, w *api.JiaozifsRes
 	var refs []api.Ref
 	for _, branch := range branches {
 		ref := api.Ref{
-			CommitHash: branch.Name,
-			Name:       branch.CommitHash.Hex(),
+			CommitHash:   branch.CommitHash.Hex(),
+			CreatedAt:    branch.CreatedAt,
+			CreatorID:    branch.CreatorID,
+			Description:  branch.Description,
+			ID:           branch.ID,
+			Name:         branch.Name,
+			RepositoryID: branch.RepositoryID,
+			UpdatedAt:    branch.UpdatedAt,
 		}
 		refs = append(refs, ref)
 	}
@@ -237,7 +243,13 @@ func (bct BranchController) GetBranch(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 	w.JSON(api.Ref{
-		CommitHash: ref.CommitHash.Hex(),
-		Name:       ref.Name,
+		CommitHash:   ref.CommitHash.Hex(),
+		CreatedAt:    ref.CreatedAt,
+		CreatorID:    ref.CreatorID,
+		Description:  ref.Description,
+		ID:           ref.ID,
+		Name:         ref.Name,
+		RepositoryID: ref.RepositoryID,
+		UpdatedAt:    ref.UpdatedAt,
 	})
 }

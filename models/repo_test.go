@@ -34,10 +34,12 @@ func TestRepoTransaction(t *testing.T) {
 
 	t.Run("transaction", func(t *testing.T) {
 		pgRepo := models.NewRepo(db)
+		repoID := uuid.New()
 		err := pgRepo.Transaction(ctx, func(repo models.IRepo) error {
-			object := &models.FileTree{}
-			require.NoError(t, gofakeit.Struct(object))
-			_, err := repo.FileTreeRepo().Insert(ctx, object)
+			treeNode := &models.FileTree{}
+			require.NoError(t, gofakeit.Struct(treeNode))
+			treeNode.RepositoryID = repoID
+			_, err := repo.FileTreeRepo(repoID).Insert(ctx, treeNode)
 			require.NoError(t, err)
 			return err
 		})

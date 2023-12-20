@@ -7,6 +7,8 @@ import (
 	"io"
 	"testing"
 
+	"github.com/google/uuid"
+
 	"github.com/jiaozifs/jiaozifs/utils/hash"
 
 	"github.com/stretchr/testify/assert"
@@ -23,8 +25,9 @@ func TestTreeWriteBlob(t *testing.T) {
 	postgres, _, db := testhelper.SetupDatabase(ctx, t)
 	defer postgres.Stop() //nolint
 
+	repoID := uuid.New()
 	adapter := mem.New(ctx)
-	objRepo := models.NewFileTree(db)
+	objRepo := models.NewFileTree(db, repoID)
 
 	workTree, err := NewWorkTree(ctx, objRepo, EmptyDirEntry)
 	require.NoError(t, err)
@@ -50,8 +53,9 @@ func TestWorkTreeTreeOp(t *testing.T) {
 	postgres, _, db := testhelper.SetupDatabase(ctx, t)
 	defer postgres.Stop() //nolint
 
+	repoID := uuid.New()
 	adapter := mem.New(ctx)
-	objRepo := models.NewFileTree(db)
+	objRepo := models.NewFileTree(db, repoID)
 
 	workTree, err := NewWorkTree(ctx, objRepo, EmptyDirEntry)
 	require.NoError(t, err)
@@ -143,8 +147,9 @@ func TestRemoveEntry(t *testing.T) {
 	postgres, _, db := testhelper.SetupDatabase(ctx, t)
 	defer postgres.Stop() //nolint
 
+	repoID := uuid.New()
 	adapter := mem.New(ctx)
-	objRepo := models.NewFileTree(db)
+	objRepo := models.NewFileTree(db, repoID)
 
 	workTree, err := NewWorkTree(ctx, objRepo, EmptyDirEntry)
 	require.NoError(t, err)
@@ -175,6 +180,10 @@ func TestRemoveEntry(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "", hash.Hash(workTree.Root().Hash()).Hex())
 	entries, err := workTree.Ls(ctx, "")
+	require.NoError(t, err)
+	require.Len(t, entries, 0)
+
+	entries, err = workTree.Ls(ctx, "/")
 	require.NoError(t, err)
 	require.Len(t, entries, 0)
 }
