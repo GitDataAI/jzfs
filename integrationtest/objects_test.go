@@ -28,7 +28,7 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		loginAndSwitch(ctx, c, client, userName)
 		createRepo(ctx, c, client, repoName)
 		createBranch(ctx, c, client, userName, repoName, "main", refName)
-		createWip(ctx, c, client, userName, repoName, refName)
+		createWip(ctx, c, client, "feat get obj test", userName, repoName, refName)
 
 		c.Convey("upload object", func(c convey.C) {
 			c.Convey("no auth", func() {

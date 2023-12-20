@@ -87,7 +87,7 @@ func (oct ObjectController) DeleteObject(ctx context.Context, w *api.JiaozifsRes
 		return
 	}
 
-	err = workTree.RemoveEntry(ctx, params.Path)
+	err = workTree.RemoveEntry(ctx, versionmgr.CleanPath(params.Path))
 	if errors.Is(err, versionmgr.ErrPathNotFound) {
 		w.BadRequest(fmt.Sprintf("path %s not found", params.Path))
 		return
@@ -157,7 +157,7 @@ func (oct ObjectController) GetObject(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
-	blob, name, err := workTree.FindBlob(ctx, params.Path)
+	blob, name, err := workTree.FindBlob(ctx, versionmgr.CleanPath(params.Path))
 	if err != nil {
 		if errors.Is(err, versionmgr.ErrPathNotFound) {
 			w.BadRequest(fmt.Sprintf("path %s not found", params.Path))
@@ -264,7 +264,7 @@ func (oct ObjectController) HeadObject(ctx context.Context, w *api.JiaozifsRespo
 		return
 	}
 
-	blob, name, err := workTree.FindBlob(ctx, params.Path)
+	blob, name, err := workTree.FindBlob(ctx, versionmgr.CleanPath(params.Path))
 	if err != nil {
 		if errors.Is(err, versionmgr.ErrPathNotFound) {
 			w.BadRequest(fmt.Sprintf("path %s not found", params.Path))
@@ -387,6 +387,7 @@ func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsRes
 		return
 	}
 
+	path := versionmgr.CleanPath(params.Path)
 	var response api.ObjectStats
 	err = oct.Repo.Transaction(ctx, func(dRepo models.IRepo) error {
 		workingTree, err := versionmgr.NewWorkTree(ctx, dRepo.FileTreeRepo(repository.ID), models.NewRootTreeEntry(stash.CurrentTree))
@@ -400,14 +401,14 @@ func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsRes
 			return err
 		}
 
-		err = workingTree.AddLeaf(ctx, params.Path, blob)
+		err = workingTree.AddLeaf(ctx, path, blob)
 		if err != nil {
 			return err
 		}
 		response = api.ObjectStats{
 			Checksum:    blob.CheckSum.Hex(),
 			Mtime:       time.Now().Unix(),
-			Path:        params.Path,
+			Path:        path,
 			PathMode:    utils.Uint32(uint32(filemode.Regular)),
 			SizeBytes:   swag.Int64(blob.Size),
 			ContentType: &contentType,

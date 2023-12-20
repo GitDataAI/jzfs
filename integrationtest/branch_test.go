@@ -3,6 +3,9 @@ package integrationtest
 import (
 	"context"
 	"net/http"
+	"strings"
+
+	"github.com/jiaozifs/jiaozifs/controller"
 
 	"github.com/jiaozifs/jiaozifs/api"
 	apiimpl "github.com/jiaozifs/jiaozifs/api/api_impl"
@@ -53,7 +56,7 @@ func BranchSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 			c.Convey("too long name", func() {
 				resp, err := client.CreateBranch(ctx, userName, repoName, api.CreateBranchJSONRequestBody{
-					Name:   "feat/aaaaaaaaaaaaaaaaa",
+					Name:   "feat/" + strings.Repeat("a", controller.MaxBranchNameLength),
 					Source: "main",
 				})
 				convey.So(err, convey.ShouldBeNil)

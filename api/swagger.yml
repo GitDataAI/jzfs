@@ -364,7 +364,7 @@ components:
           type: string
         Action:
           type: integer
-          format: int
+          enum: [1,2,3]
         BaseHash:
           type: string
         ToHash:
@@ -889,7 +889,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Change"
+                type: array
+                items:
+                  $ref: "#/components/schemas/Change"
         400:
           description: ValidationError
         401:
@@ -1002,10 +1004,15 @@ paths:
             type: string
         - in: query
           name: ref
-          description: specific ref default to main branch
+          description: specific branch,  default to repostiory default branch(HEAD)
           required: false
           schema:
             type: string
+        - in: query
+          name: isWip
+          description: isWip indicate to retrieve from working in progress, default false
+          schema:
+            type: boolean
       responses:
         200:
           description: commit

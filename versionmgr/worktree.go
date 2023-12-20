@@ -226,7 +226,7 @@ func (workTree *WorkTree) ReplaceSubTreeEntry(ctx context.Context, treeEntry mod
 	return obj.TreeNode(), nil
 }
 
-func (workTree *WorkTree) MatchPath(ctx context.Context, path string) ([]FullObject, []string, error) {
+func (workTree *WorkTree) matchPath(ctx context.Context, path string) ([]FullObject, []string, error) {
 	pathSegs := strings.Split(filepath.Clean(path), fmt.Sprintf("%c", os.PathSeparator))
 	var existNodes []FullObject
 	var missingPath []string
@@ -274,7 +274,8 @@ func (workTree *WorkTree) MatchPath(ctx context.Context, path string) ([]FullObj
 
 // AddLeaf insert new leaf in entry, if path not exit, create new
 func (workTree *WorkTree) AddLeaf(ctx context.Context, fullPath string, blob *models.Blob) error {
-	existNode, missingPath, err := workTree.MatchPath(ctx, fullPath)
+	fullPath = CleanPath(fullPath)
+	existNode, missingPath, err := workTree.matchPath(ctx, fullPath)
 	if err != nil {
 		return err
 	}
@@ -351,7 +352,8 @@ func (workTree *WorkTree) AddLeaf(ctx context.Context, fullPath string, blob *mo
 
 // ReplaceLeaf replace leaf with a new blob, all parent directory updated
 func (workTree *WorkTree) ReplaceLeaf(ctx context.Context, fullPath string, blob *models.Blob) error {
-	existNode, missingPath, err := workTree.MatchPath(ctx, fullPath)
+	fullPath = CleanPath(fullPath)
+	existNode, missingPath, err := workTree.matchPath(ctx, fullPath)
 	if err != nil {
 		return err
 	}
@@ -413,7 +415,8 @@ func (workTree *WorkTree) ReplaceLeaf(ctx context.Context, fullPath string, blob
 // RemoveEntry(ctx, root, "a/b/c.txt") return new root of(a/b/c.txt)
 // RemoveEntry(ctx, root, "a/b") return empty root. a b c.txt d.txt all removed
 func (workTree *WorkTree) RemoveEntry(ctx context.Context, fullPath string) error {
-	existNode, missingPath, err := workTree.MatchPath(ctx, fullPath)
+	fullPath = CleanPath(fullPath)
+	existNode, missingPath, err := workTree.matchPath(ctx, fullPath)
 	if err != nil {
 		return err
 	}
@@ -483,11 +486,12 @@ func (workTree *WorkTree) RemoveEntry(ctx context.Context, fullPath string) erro
 // Ls(ctx, root, "a") return b
 // Ls(ctx, root, "a/b" return c.txt and d.txt
 func (workTree *WorkTree) Ls(ctx context.Context, fullPath string) ([]models.TreeEntry, error) {
+	fullPath = CleanPath(fullPath)
 	if len(fullPath) == 0 {
 		return workTree.root.SubObjects(), nil
 	}
 
-	existNode, missingPath, err := workTree.MatchPath(ctx, fullPath)
+	existNode, missingPath, err := workTree.matchPath(ctx, fullPath)
 	if err != nil {
 		return nil, err
 	}
@@ -505,7 +509,8 @@ func (workTree *WorkTree) Ls(ctx context.Context, fullPath string) ([]models.Tre
 }
 
 func (workTree *WorkTree) FindBlob(ctx context.Context, fullPath string) (*models.Blob, string, error) {
-	existNode, missingPath, err := workTree.MatchPath(ctx, fullPath)
+	fullPath = CleanPath(fullPath)
+	existNode, missingPath, err := workTree.matchPath(ctx, fullPath)
 	if err != nil {
 		return nil, "", err
 	}
@@ -560,4 +565,12 @@ func (workTree *WorkTree) Diff(ctx context.Context, rootTreeHash hash.Hash) (*Ch
 		return nil, err
 	}
 	return newChanges(changes), nil
+}
+
+// CleanPath clean path
+// 1. trim space
+// 2. trim first or last /
+// 3. to slash
+func CleanPath(fullPath string) string {
+	return filepath.ToSlash(strings.Trim(strings.TrimSpace(fullPath), "/"))
 }

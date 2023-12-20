@@ -3,8 +3,11 @@ package controller
 import (
 	"context"
 	"encoding/hex"
+	"errors"
 	"net/http"
 	"strings"
+
+	"github.com/jiaozifs/jiaozifs/utils/hash"
 
 	"github.com/jiaozifs/jiaozifs/auth"
 
@@ -42,12 +45,7 @@ func (commitCtl CommitController) GetEntriesInRef(ctx context.Context, w *api.Ji
 		return
 	}
 
-	if operator.Name == ownerName { //todo check permission
-		w.Forbidden()
-		return
-	}
-
-	refName := "main"
+	refName := repository.HEAD
 	if params.Path != nil {
 		refName = *params.Ref
 	}
@@ -58,24 +56,43 @@ func (commitCtl CommitController) GetEntriesInRef(ctx context.Context, w *api.Ji
 		return
 	}
 
-	commit, err := commitCtl.Repo.CommitRepo(repository.ID).Commit(ctx, ref.CommitHash)
+	if operator.Name != ownerName { //todo check permission
+		w.Forbidden()
+		return
+	}
+
+	treeHash := hash.EmptyHash
+	if utils.BoolValue(params.IsWip) {
+		wip, err := commitCtl.Repo.WipRepo().Get(ctx, models.NewGetWipParams().SetCreatorID(operator.ID).SetRepositoryID(repository.ID).SetRefID(ref.ID))
+		if err != nil {
+			w.Error(err)
+			return
+		}
+		treeHash = wip.CurrentTree
+	} else {
+		if !ref.CommitHash.IsEmpty() {
+			commit, err := commitCtl.Repo.CommitRepo(repository.ID).Commit(ctx, ref.CommitHash)
+			if err != nil {
+				w.Error(err)
+				return
+			}
+			treeHash = commit.TreeHash
+		}
+	}
+
+	workTree, err := versionmgr.NewWorkTree(ctx, commitCtl.Repo.FileTreeRepo(repository.ID), models.NewRootTreeEntry(treeHash))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	workTree, err := versionmgr.NewWorkTree(ctx, commitCtl.Repo.FileTreeRepo(repository.ID), models.NewRootTreeEntry(commit.TreeHash))
-	if err != nil {
-		w.Error(err)
-		return
-	}
-
-	path := ""
-	if params.Path != nil {
-		path = *params.Path
-	}
+	path := versionmgr.CleanPath(utils.StringValue(params.Path))
 	treeEntry, err := workTree.Ls(ctx, path)
 	if err != nil {
+		if errors.Is(err, versionmgr.ErrPathNotFound) {
+			w.NotFound()
+			return
+		}
 		w.Error(err)
 		return
 	}
@@ -101,7 +118,7 @@ func (commitCtl CommitController) GetCommitDiff(ctx context.Context, w *api.Jiao
 		return
 	}
 
-	if operator.ID == owner.ID { //todo check permission
+	if operator.ID != owner.ID { //todo check permission
 		w.Forbidden()
 		return
 	}
@@ -129,11 +146,7 @@ func (commitCtl CommitController) GetCommitDiff(ctx context.Context, w *api.Jiao
 		return
 	}
 
-	path := ""
-	if params.Path != nil {
-		path = *params.Path
-	}
-
+	path := versionmgr.CleanPath(utils.StringValue(params.Path))
 	commitOp := versionmgr.NewCommitOp(commitCtl.Repo, repository.ID, bashCommit)
 	changes, err := commitOp.DiffCommit(ctx, toCommitHash)
 	if err != nil {
@@ -150,7 +163,7 @@ func (commitCtl CommitController) GetCommitDiff(ctx context.Context, w *api.Jiao
 		fullPath := change.Path()
 		if strings.HasPrefix(fullPath, path) {
 			apiChange := api.Change{
-				Action: int(action),
+				Action: api.ChangeAction(action),
 				Path:   fullPath,
 			}
 			if change.From() != nil {
