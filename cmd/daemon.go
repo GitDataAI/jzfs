@@ -58,6 +58,7 @@ var daemonCmd = &cobra.Command{
 			fx_opt.Override(new(*config.DatabaseConfig), &cfg.Database),
 			fx_opt.Override(new(params.AdapterConfig), &cfg.Blockstore),
 			//blockstore
+			fx_opt.Override(new(factory.BlockAdapterBuilder), factory.BuildBlockAdapter),
 			fx_opt.Override(new(block.Adapter), factory.BuildBlockAdapter),
 			//database
 			fx_opt.Override(new(*bun.DB), models.SetupDatabase),

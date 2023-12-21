@@ -78,10 +78,10 @@ func (workTree *WorkTree) RepositoryID() uuid.UUID {
 }
 
 // ReadBlob read blob content with range
-func (workTree *WorkTree) ReadBlob(ctx context.Context, adapter block.Adapter, blob *models.Blob, rangeSpec *string) (io.ReadCloser, error) {
+func (workTree *WorkTree) ReadBlob(ctx context.Context, adapter block.Adapter, storageNamespace string, blob *models.Blob, rangeSpec *string) (io.ReadCloser, error) {
 	address := pathutil.PathOfHash(blob.CheckSum)
 	pointer := block.ObjectPointer{
-		StorageNamespace: adapter.BlockstoreType() + "://",
+		StorageNamespace: storageNamespace,
 		IdentifierType:   block.IdentifierTypeRelative,
 		Identifier:       address,
 	}
@@ -111,7 +111,7 @@ func (workTree *WorkTree) ReadBlob(ctx context.Context, adapter block.Adapter, b
 }
 
 // WriteBlob write blob content to storage
-func (workTree *WorkTree) WriteBlob(ctx context.Context, adapter block.Adapter, body io.Reader, contentLength int64, properties models.Property) (*models.Blob, error) {
+func (workTree *WorkTree) WriteBlob(ctx context.Context, adapter block.Adapter, storageNamespace string, body io.Reader, contentLength int64, properties models.Property) (*models.Blob, error) {
 	// handle the upload itself
 	hashReader := hash.NewHashingReader(body, hash.Md5)
 	tempf, err := os.CreateTemp("", "*")
@@ -137,7 +137,7 @@ func (workTree *WorkTree) WriteBlob(ctx context.Context, adapter block.Adapter, 
 
 	address := pathutil.PathOfHash(checkSum)
 	err = adapter.Put(ctx, block.ObjectPointer{
-		StorageNamespace: adapter.BlockstoreType() + "://",
+		StorageNamespace: storageNamespace,
 		IdentifierType:   block.IdentifierTypeRelative,
 		Identifier:       address,
 	}, contentLength, tempf, block.PutOpts{})

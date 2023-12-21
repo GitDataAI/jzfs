@@ -2,16 +2,23 @@ package controller
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"regexp"
 	"time"
 
+	logging "github.com/ipfs/go-log/v2"
+
+	"github.com/jiaozifs/jiaozifs/config"
+
 	"github.com/google/uuid"
 
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
+	"github.com/jiaozifs/jiaozifs/block"
 	"github.com/jiaozifs/jiaozifs/utils/hash"
 
 	"github.com/jiaozifs/jiaozifs/versionmgr"
@@ -26,6 +33,7 @@ import (
 
 const DefaultBranchName = "main"
 
+var repoLog = logging.Logger("repo control")
 var maxNameLength = 20
 var alphanumeric = regexp.MustCompile("^[a-zA-Z0-9_]*$")
 
@@ -51,7 +59,8 @@ func CheckRepositoryName(name string) error {
 type RepositoryController struct {
 	fx.In
 
-	Repo models.IRepo
+	Repo             models.IRepo
+	PublicBlkAdapter block.Adapter
 }
 
 func (repositoryCtl RepositoryController) ListRepositoryOfAuthenticatedUser(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request) {
@@ -110,10 +119,34 @@ func (repositoryCtl RepositoryController) CreateRepository(ctx context.Context, 
 		w.Error(err)
 		return
 	}
+
+	var usePublicStorage = true
+	storageConfig := utils.StringValue(body.BlockStoreConfig)
+	repoID := uuid.New()
+	var storageNamespace string
+	if len(storageConfig) > 0 {
+		usePublicStorage = false
+		var cfg = config.BlockStoreConfig{}
+		err = json.Unmarshal([]byte(storageConfig), &cfg)
+		if err != nil {
+			w.BadRequest("storage config not json format")
+			return
+		}
+
+		if cfg.BlockstoreType() == "local" {
+			repoLog.Infof("custom storage cnofig can not be local")
+			w.Forbidden()
+			return
+		}
+		storageNamespace = utils.StringValue(cfg.DefaultNamespacePrefix)
+	} else {
+		storageNamespace = fmt.Sprintf("%s://%s", repositoryCtl.PublicBlkAdapter.BlockstoreType(), repoID.String())
+	}
+
 	//create default ref
 	var createdRepo *models.Repository
 	err = repositoryCtl.Repo.Transaction(ctx, func(repo models.IRepo) error {
-		repoID := uuid.New()
+
 		defaultRef := &models.Branches{
 			RepositoryID: repoID,
 			CommitHash:   hash.Hash{},
@@ -127,14 +160,17 @@ func (repositoryCtl RepositoryController) CreateRepository(ctx context.Context, 
 			return err
 		}
 		repository := &models.Repository{
-			ID:          repoID,
-			Name:        body.Name,
-			Description: body.Description,
-			HEAD:        defaultRef.Name,
-			OwnerID:     operator.ID, // this api only create repo for operator
-			CreatorID:   operator.ID,
-			CreatedAt:   time.Now(),
-			UpdatedAt:   time.Now(),
+			ID:                   repoID,
+			Name:                 body.Name,
+			UsePublicStorage:     usePublicStorage,
+			StorageAdapterParams: storageConfig,
+			StorageNamespace:     storageNamespace,
+			Description:          body.Description,
+			HEAD:                 defaultRef.Name,
+			OwnerID:              operator.ID, // this api only create repo for operator
+			CreatorID:            operator.ID,
+			CreatedAt:            time.Now(),
+			UpdatedAt:            time.Now(),
 		}
 		createdRepo, err = repositoryCtl.Repo.RepositoryRepo().Insert(ctx, repository)
 		return err

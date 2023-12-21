@@ -27,6 +27,7 @@ func TestTreeWriteBlob(t *testing.T) {
 
 	repoID := uuid.New()
 	adapter := mem.New(ctx)
+	namespace := "mem://data"
 	objRepo := models.NewFileTree(db, repoID)
 
 	workTree, err := NewWorkTree(ctx, objRepo, EmptyDirEntry)
@@ -35,13 +36,13 @@ func TestTreeWriteBlob(t *testing.T) {
 	binary := []byte("Build simple, secure, scalable systems with Go")
 	bLen := int64(len(binary))
 	r := bytes.NewReader(binary)
-	blob, err := workTree.WriteBlob(ctx, adapter, r, bLen, models.DefaultLeafProperty())
+	blob, err := workTree.WriteBlob(ctx, adapter, namespace, r, bLen, models.DefaultLeafProperty())
 	require.NoError(t, err)
 	assert.Equal(t, bLen, blob.Size)
 	assert.Equal(t, "99b91d4c517d0cded9506be9298b8d02", blob.Hash.Hex())
 	assert.Equal(t, "f3b39786b86a96372589aa1166966643", blob.CheckSum.Hex())
 
-	reader, err := workTree.ReadBlob(ctx, adapter, blob, nil)
+	reader, err := workTree.ReadBlob(ctx, adapter, namespace, blob, nil)
 	require.NoError(t, err)
 	content, err := io.ReadAll(reader)
 	require.NoError(t, err)
@@ -55,6 +56,7 @@ func TestWorkTreeTreeOp(t *testing.T) {
 
 	repoID := uuid.New()
 	adapter := mem.New(ctx)
+	namespace := "mem://data"
 	objRepo := models.NewFileTree(db, repoID)
 
 	workTree, err := NewWorkTree(ctx, objRepo, EmptyDirEntry)
@@ -63,7 +65,7 @@ func TestWorkTreeTreeOp(t *testing.T) {
 	binary := []byte("Build simple, secure, scalable systems with Go")
 	bLen := int64(len(binary))
 	r := bytes.NewReader(binary)
-	blob, err := workTree.WriteBlob(ctx, adapter, r, bLen, models.DefaultLeafProperty())
+	blob, err := workTree.WriteBlob(ctx, adapter, namespace, r, bLen, models.DefaultLeafProperty())
 	require.NoError(t, err)
 
 	err = workTree.AddLeaf(ctx, "a/b/c.txt", blob)
@@ -78,7 +80,7 @@ func TestWorkTreeTreeOp(t *testing.T) {
 	binary = []byte(`“At the time, no single team member knew Go, but within a month, everyone was writing in Go and we were building out the endpoints. ”`)
 	bLen = int64(len(binary))
 	r = bytes.NewReader(binary)
-	blob, err = workTree.WriteBlob(ctx, adapter, r, bLen, models.DefaultLeafProperty())
+	blob, err = workTree.WriteBlob(ctx, adapter, namespace, r, bLen, models.DefaultLeafProperty())
 	require.NoError(t, err)
 
 	err = workTree.ReplaceLeaf(ctx, "a/b/c.txt", blob)
@@ -149,6 +151,7 @@ func TestRemoveEntry(t *testing.T) {
 
 	repoID := uuid.New()
 	adapter := mem.New(ctx)
+	namespace := "mem://data"
 	objRepo := models.NewFileTree(db, repoID)
 
 	workTree, err := NewWorkTree(ctx, objRepo, EmptyDirEntry)
@@ -157,7 +160,7 @@ func TestRemoveEntry(t *testing.T) {
 	binary := []byte("Build simple, secure, scalable systems with Go")
 	bLen := int64(len(binary))
 	r := bytes.NewReader(binary)
-	blob, err := workTree.WriteBlob(ctx, adapter, r, bLen, models.DefaultLeafProperty())
+	blob, err := workTree.WriteBlob(ctx, adapter, namespace, r, bLen, models.DefaultLeafProperty())
 	require.NoError(t, err)
 
 	err = workTree.AddLeaf(ctx, "a/b/c.txt", blob)
@@ -168,7 +171,7 @@ func TestRemoveEntry(t *testing.T) {
 	binary = []byte(`“At the time, no single team member knew Go, but within a month, everyone was writing in Go and we were building out the endpoints. ”`)
 	bLen = int64(len(binary))
 	r = bytes.NewReader(binary)
-	blob, err = workTree.WriteBlob(ctx, adapter, r, bLen, models.DefaultLeafProperty())
+	blob, err = workTree.WriteBlob(ctx, adapter, namespace, r, bLen, models.DefaultLeafProperty())
 	require.NoError(t, err)
 
 	//add another branch

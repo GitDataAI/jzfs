@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -9,6 +10,10 @@ import (
 	"mime/multipart"
 	"net/http"
 	"time"
+
+	"github.com/jiaozifs/jiaozifs/block/factory"
+
+	"github.com/jiaozifs/jiaozifs/config"
 
 	"github.com/jiaozifs/jiaozifs/utils/hash"
 
@@ -35,12 +40,12 @@ var objLog = logging.Logger("object_ctl")
 type ObjectController struct {
 	fx.In
 
-	BlockAdapter block.Adapter
-
-	Repo models.IRepo
+	PublicBlkAdapter block.Adapter
+	AdapterBuilder   factory.BlockAdapterBuilder
+	Repo             models.IRepo
 }
 
-func (oct ObjectController) DeleteObject(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, ownerName string, repositoryName string, params api.DeleteObjectParams) { //nolint
+func (oct ObjectController) DeleteObject(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, params api.DeleteObjectParams) { //nolint
 	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
@@ -101,7 +106,7 @@ func (oct ObjectController) DeleteObject(ctx context.Context, w *api.JiaozifsRes
 	w.OK()
 }
 
-func (oct ObjectController) GetObject(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, ownerName string, repositoryName string, params api.GetObjectParams) { //nolint
+func (oct ObjectController) GetObject(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, params api.GetObjectParams) { //nolint
 	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
@@ -172,7 +177,22 @@ func (oct ObjectController) GetObject(ctx context.Context, w *api.JiaozifsRespon
 		w.Error(err)
 		return
 	}
-	reader, err := workTree.ReadBlob(ctx, oct.BlockAdapter, blob, params.Range)
+
+	adpter := oct.PublicBlkAdapter
+	if !repository.UsePublicStorage {
+		var cfg = config.BlockStoreConfig{}
+		err = json.Unmarshal([]byte(repository.StorageAdapterParams), &cfg)
+		if err != nil {
+			w.BadRequest("storage config not json format")
+			return
+		}
+		adpter, err = oct.AdapterBuilder(ctx, &cfg)
+		if err != nil {
+			w.Error(fmt.Errorf("unable to build block storage"))
+		}
+	}
+
+	reader, err := workTree.ReadBlob(ctx, adpter, repository.StorageNamespace, blob, params.Range)
 	if err != nil {
 		w.Error(err)
 		return
@@ -214,7 +234,7 @@ func (oct ObjectController) GetObject(ctx context.Context, w *api.JiaozifsRespon
 	}
 }
 
-func (oct ObjectController) HeadObject(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, ownerName string, repositoryName string, params api.HeadObjectParams) { //nolint
+func (oct ObjectController) HeadObject(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, params api.HeadObjectParams) {
 	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
@@ -401,6 +421,20 @@ func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsRes
 		return
 	}
 
+	adpter := oct.PublicBlkAdapter
+	if !repository.UsePublicStorage {
+		var cfg = config.BlockStoreConfig{}
+		err = json.Unmarshal([]byte(repository.StorageAdapterParams), &cfg)
+		if err != nil {
+			w.BadRequest("storage config not json format")
+			return
+		}
+		adpter, err = oct.AdapterBuilder(ctx, &cfg)
+		if err != nil {
+			w.Error(fmt.Errorf("unable to build block storage"))
+		}
+	}
+
 	path := versionmgr.CleanPath(params.Path)
 	var response api.ObjectStats
 	err = oct.Repo.Transaction(ctx, func(dRepo models.IRepo) error {
@@ -410,7 +444,7 @@ func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsRes
 		}
 
 		// todo move write blob out of transaction
-		blob, err := workingTree.WriteBlob(ctx, oct.BlockAdapter, reader, r.ContentLength, models.DefaultLeafProperty())
+		blob, err := workingTree.WriteBlob(ctx, adpter, repository.StorageNamespace, reader, r.ContentLength, models.DefaultLeafProperty())
 		if err != nil {
 			return err
 		}

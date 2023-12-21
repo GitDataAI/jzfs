@@ -177,6 +177,10 @@ components:
           type: string
         Name:
           type: string
+        BlockStoreConfig:
+          description: block storage config url encoded json
+          type: string
+
     UpdateRepository:
       type: object
       properties:
@@ -472,7 +476,6 @@ components:
       type: object
       additionalProperties:
         type: string
-
     ObjectStats:
       type: object
       required:
@@ -500,7 +503,6 @@ components:
         content_type:
           type: string
           description: Object media type
-
     ObjectStatsList:
       type: object
       required:
@@ -513,7 +515,93 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ObjectStats"
-
+    BlockStoreConfig:
+      type: object
+      properties:
+        Type:
+          type: string
+          description: type of support storage type
+          enum: [ "local", "gs", "azure", "s3" ]
+        DefaultNamespacePrefix:
+          type: string
+        Local:
+          type: object
+          required:
+            - Path
+          properties:
+            Path:
+              type: string
+        Azure:
+          type: object
+          required:
+            - StorageAccount
+            - StorageAccessKey
+            - TryTimeout
+          properties:
+            StorageAccessKey:
+              type: string
+            StorageAccount:
+              type: string
+            TryTimeout:
+              type: integer
+              format: int64
+        GS:
+          type: object
+          required:
+            - CredentialsJSON
+            - S3Endpoint
+          properties:
+            CredentialsJSON:
+              type: string
+            S3Endpoint:
+              type: string
+        S3:
+          type: object
+          required:
+            - Credentials
+            - DiscoverBucketRegion
+            - Region
+            - Endpoint
+          properties:
+            Credentials:
+              $ref: '#/components/schemas/Credential'
+            WebIdentity:
+              $ref: '#/components/schemas/WebIdentity'
+            DiscoverBucketRegion:
+              type: boolean
+            Endpoint:
+              type: string
+            ForcePathStyle:
+              type: boolean
+            Region:
+              type: string
+    WebIdentity:
+      properties:
+        SessionDuration:
+          type: integer
+          format: int64
+        SessionExpiryWindow:
+          type: integer
+          format: int64
+    S3AuthInfo:
+      type: object
+      description: S3AuthInfo holds S3-style authentication.
+      properties:
+        Credentials:
+          $ref: '#/components/schemas/Credential'
+        CredentialsFile:
+          type: string
+    Credential:
+      type: object
+      properties:
+        AccessKeyID:
+          $ref: '#/components/schemas/SecureString'
+        SecretAccessKey:
+          $ref: '#/components/schemas/SecureString'
+        SessionToken:
+          $ref: '#/components/schemas/SecureString'
+    SecureString:
+      type: string
     Pagination:
       type: object
       required:
@@ -536,7 +624,6 @@ components:
           type: integer
           minimum: 0
           description: Maximal number of entries per page
-
     Error:
       type: object
       required:
