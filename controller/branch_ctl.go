@@ -5,11 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"reflect"
 	"regexp"
 	"strings"
 	"time"
 
+	"github.com/jiaozifs/jiaozifs/utils"
 	"github.com/jiaozifs/jiaozifs/utils/hash"
 
 	"github.com/jiaozifs/jiaozifs/auth"
@@ -21,28 +21,6 @@ import (
 
 var MaxBranchNameLength = 40
 var branchNameRegex = regexp.MustCompile("^[a-zA-Z0-9_]*$")
-
-func paginationForBranches(hasMore bool, results interface{}, fieldName string) api.Pagination {
-	pagination := api.Pagination{
-		HasMore:    hasMore,
-		MaxPerPage: DefaultMaxPerPage,
-	}
-	if results == nil {
-		return pagination
-	}
-	if reflect.TypeOf(results).Kind() != reflect.Slice {
-		panic("results is not a slice")
-	}
-	s := reflect.ValueOf(results)
-	pagination.Results = s.Len()
-	if !hasMore || pagination.Results == 0 {
-		return pagination
-	}
-	v := s.Index(pagination.Results - 1)
-	token := v.FieldByName(fieldName)
-	pagination.NextOffset = token.String()
-	return pagination
-}
 
 func CheckBranchName(name string) error {
 	for _, blackName := range RepoNameBlackList {
@@ -85,33 +63,25 @@ func (bct BranchController) ListBranches(ctx context.Context, w *api.JiaozifsRes
 		return
 	}
 
+	if operator.Name != owner.Name {
+		w.Forbidden()
+		return
+	}
+
 	repository, err := bct.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetName(repositoryName).SetOwnerID(owner.ID))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	if operator.Name != owner.Name {
-		w.Forbidden()
-		return
-	}
-
 	listBranchParams := models.NewListBranchParams()
-	if params.Prefix != nil && len(*params.Prefix) > 0 {
-		listBranchParams.SetName(*params.Prefix, models.PrefixMatch)
-	}
-	if params.After != nil {
-		listBranchParams.SetAfter(*params.After)
-	}
-	if params.Amount != nil {
-		i := *params.Amount
-		if i > DefaultMaxPerPage || i <= 0 {
-			listBranchParams.SetAmount(DefaultMaxPerPage)
-		} else {
-			listBranchParams.SetAmount(i)
-		}
+	listBranchParams.SetName(params.Prefix, models.PrefixMatch)
+	listBranchParams.SetAfter(params.After)
+	pageAmount := utils.IntValue(params.Amount)
+	if pageAmount > utils.DefaultMaxPerPage || pageAmount <= 0 {
+		listBranchParams.SetAmount(utils.DefaultMaxPerPage)
 	} else {
-		listBranchParams.SetAmount(DefaultMaxPerPage)
+		listBranchParams.SetAmount(pageAmount)
 	}
 
 	branches, hasMore, err := bct.Repo.BranchRepo().List(ctx, listBranchParams.SetRepositoryID(repository.ID))
@@ -133,8 +103,15 @@ func (bct BranchController) ListBranches(ctx context.Context, w *api.JiaozifsRes
 		}
 		results = append(results, r)
 	}
+	pagMag := utils.PaginationFor(hasMore, results, "Name")
+	pagination := api.Pagination{
+		HasMore:    pagMag.HasMore,
+		MaxPerPage: pagMag.MaxPerPage,
+		NextOffset: pagMag.NextOffset,
+		Results:    pagMag.Results,
+	}
 	w.JSON(api.BranchList{
-		Pagination: paginationForBranches(hasMore, results, "Name"),
+		Pagination: pagination,
 		Results:    results,
 	})
 }
