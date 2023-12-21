@@ -32,7 +32,7 @@ type IRepo interface {
 	FileTreeRepo(repoID uuid.UUID) IFileTreeRepo
 	CommitRepo(repoID uuid.UUID) ICommitRepo
 	TagRepo(repoID uuid.UUID) ITagRepo
-	RefRepo() IRefRepo
+	BranchRepo() IBranchRepo
 	RepositoryRepo() IRepositoryRepo
 	WipRepo() IWipRepo
 }
@@ -73,8 +73,8 @@ func (repo *PgRepo) TagRepo(repoID uuid.UUID) ITagRepo {
 	return NewTagRepo(repo.db, repoID)
 }
 
-func (repo *PgRepo) RefRepo() IRefRepo {
-	return NewRefRepo(repo.db)
+func (repo *PgRepo) BranchRepo() IBranchRepo {
+	return NewBranchRepo(repo.db)
 }
 
 func (repo *PgRepo) RepositoryRepo() IRepositoryRepo {

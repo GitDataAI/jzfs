@@ -146,8 +146,8 @@ func createRepo(ctx context.Context, c convey.C, client *api.Client, repoName st
 func uploadObject(ctx context.Context, c convey.C, client *api.Client, title string, user string, repoName string, refName string, path string) { //nolint
 	c.Convey("upload object "+title, func(c convey.C) {
 		resp, err := client.UploadObjectWithBody(ctx, user, repoName, &api.UploadObjectParams{
-			Branch: refName,
-			Path:   path,
+			RefName: refName,
+			Path:    path,
 		}, "application/octet-stream", io.LimitReader(rand.Reader, 50))
 		convey.So(err, convey.ShouldBeNil)
 		convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
@@ -158,8 +158,8 @@ func deleteObject(ctx context.Context, c convey.C, client *api.Client, title str
 	c.Convey("upload object  "+title, func(c convey.C) {
 		c.Convey("success upload object", func() {
 			resp, err := client.UploadObjectWithBody(ctx, user, repoName, &api.UploadObjectParams{
-				Branch: refName,
-				Path:   path,
+				RefName: refName,
+				Path:    path,
 			}, "application/octet-stream", io.LimitReader(rand.Reader, 50))
 			convey.So(err, convey.ShouldBeNil)
 			convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)

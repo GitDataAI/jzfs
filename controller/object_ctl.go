@@ -64,7 +64,7 @@ func (oct ObjectController) DeleteObject(ctx context.Context, w *api.JiaozifsRes
 		return
 	}
 
-	ref, err := oct.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetRepositoryID(repository.ID).SetName(params.Branch))
+	ref, err := oct.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.ID).SetName(params.RefName))
 	if err != nil {
 		w.Error(err)
 		return
@@ -125,7 +125,7 @@ func (oct ObjectController) GetObject(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
-	ref, err := oct.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetRepositoryID(repository.ID).SetName(params.Branch))
+	ref, err := oct.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.ID).SetName(params.RefName))
 	if err != nil {
 		w.Error(err)
 		return
@@ -231,7 +231,7 @@ func (oct ObjectController) HeadObject(ctx context.Context, w *api.JiaozifsRespo
 		w.Error(err)
 		return
 	}
-	ref, err := oct.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetRepositoryID(repository.ID).SetName(params.Branch))
+	ref, err := oct.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.ID).SetName(params.RefName))
 	if err != nil {
 		w.Error(err)
 		return
@@ -369,7 +369,7 @@ func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsRes
 		return
 	}
 
-	ref, err := oct.Repo.RefRepo().Get(ctx, models.NewGetRefParams().SetName(params.Branch).SetRepositoryID(repository.ID))
+	ref, err := oct.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetName(params.RefName).SetRepositoryID(repository.ID))
 	if err != nil {
 		w.Error(err)
 		return
