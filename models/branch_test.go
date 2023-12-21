@@ -23,6 +23,7 @@ func TestRefRepoInsert(t *testing.T) {
 
 	branchModel := &models.Branches{}
 	require.NoError(t, gofakeit.Struct(branchModel))
+	branchModel.Name = "main/feat/aaa"
 	newBrance, err := repo.Insert(ctx, branchModel)
 	require.NoError(t, err)
 	require.NotEqual(t, uuid.Nil, newBrance.ID)
@@ -54,6 +55,7 @@ func TestRefRepoInsert(t *testing.T) {
 	secModel := &models.Branches{}
 	require.NoError(t, gofakeit.Struct(secModel))
 	secModel.RepositoryID = branch.RepositoryID
+	branchModel.Name = "main/feat/bbb"
 	secRef, err := repo.Insert(ctx, secModel)
 	require.NoError(t, err)
 	require.NotEqual(t, uuid.Nil, secRef.ID)
@@ -67,9 +69,14 @@ func TestRefRepoInsert(t *testing.T) {
 
 	require.True(t, cmp.Equal(secModel, sRef, dbTimeCmpOpt))
 
-	list, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetName(utils.String(secModel.Name[:3]), models.PrefixMatch).SetAfter(utils.String(branchModel.Name)).SetAmount(1))
+	list, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetName(utils.String(secModel.Name[:3]), models.PrefixMatch).SetAmount(1))
 	require.NoError(t, err)
 	require.Len(t, list, 1)
+	require.True(t, hasMore)
+
+	newList, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetAfter(utils.String(branchModel.Name)).SetAmount(1))
+	require.NoError(t, err)
+	require.Len(t, newList, 1)
 	require.True(t, hasMore)
 
 	affectedRows, err := repo.Delete(ctx, models.NewDeleteBranchParams().SetID(list[0].ID).SetRepositoryID(list[0].RepositoryID).SetName(list[0].Name))
