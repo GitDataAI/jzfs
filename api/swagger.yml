@@ -129,6 +129,9 @@ components:
           type: string
         source:
           type: string
+    RefType:
+      type: string
+      enum: ["branch", "wip","tag", "test"]
     Branch:
       type: object
       required:
@@ -628,10 +631,11 @@ paths:
       summary: get object content
       parameters:
         - in: query
-          name: isWip
-          description: isWip indicate to retrieve from working in progress, default false
+          name: type
+          description: type indicate to retrieve from wip/branch/tag, default branch
+          required: true
           schema:
-            type: boolean
+            $ref: "#/components/schemas/RefType"
         - in: header
           name: Range
           description: Byte range to retrieve
@@ -704,10 +708,11 @@ paths:
       summary: check if object exists
       parameters:
         - in: query
-          name: isWip
-          description: isWip indicate to retrieve from working in progress, default false
+          name: type
+          description: type indicate to retrieve from wip/branch/tag, default branch
+          required: true
           schema:
-            type: boolean
+            $ref: "#/components/schemas/RefType"
         - in: header
           name: Range
           description: Byte range to retrieve
@@ -1041,10 +1046,11 @@ paths:
           schema:
             type: string
         - in: query
-          name: isWip
-          description: isWip indicate to retrieve from working in progress, default false
+          name: type
+          description: type indicate to retrieve from wip/branch/tag, default branch
+          required: true
           schema:
-            type: boolean
+            $ref: "#/components/schemas/RefType"
       responses:
         200:
           description: commit

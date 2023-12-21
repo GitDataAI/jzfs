@@ -33,7 +33,7 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.HeadObject(ctx, userName, repoName, &api.HeadObjectParams{
 					RefName: branchName,
 					Path:    "m.dat",
-					IsWip:   utils.Bool(true),
+					Type:    api.RefTypeWip,
 				})
 				client.RequestEditors = re
 				convey.So(err, convey.ShouldBeNil)
@@ -44,7 +44,7 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.HeadObject(ctx, "mock user", repoName, &api.HeadObjectParams{
 					RefName: branchName,
 					Path:    "m.dat",
-					IsWip:   utils.Bool(true),
+					Type:    api.RefTypeWip,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
@@ -54,7 +54,7 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.HeadObject(ctx, userName, "fakerepo", &api.HeadObjectParams{
 					RefName: branchName,
 					Path:    "m.dat",
-					IsWip:   utils.Bool(true),
+					Type:    api.RefTypeWip,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
@@ -64,7 +64,7 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.HeadObject(ctx, userName, repoName, &api.HeadObjectParams{
 					RefName: "mockref",
 					Path:    "m.dat",
-					IsWip:   utils.Bool(true),
+					Type:    api.RefTypeWip,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
@@ -74,7 +74,7 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.HeadObject(ctx, "jimmy", "happygo", &api.HeadObjectParams{
 					RefName: branchName,
 					Path:    "m.dat",
-					IsWip:   utils.Bool(true),
+					Type:    api.RefTypeWip,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
@@ -82,8 +82,8 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 			c.Convey("empty path", func() {
 				resp, err := client.HeadObject(ctx, userName, repoName, &api.HeadObjectParams{
-					Path:  "",
-					IsWip: utils.Bool(true),
+					Path: "",
+					Type: api.RefTypeWip,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)
@@ -93,7 +93,7 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.HeadObject(ctx, userName, repoName, &api.HeadObjectParams{
 					RefName: branchName,
 					Path:    "c/d.txt",
-					IsWip:   utils.Bool(true),
+					Type:    api.RefTypeWip,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)
@@ -103,7 +103,7 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.HeadObject(ctx, userName, repoName, &api.HeadObjectParams{
 					RefName: branchName,
 					Path:    "m.dat",
-					IsWip:   utils.Bool(true),
+					Type:    api.RefTypeWip,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
@@ -117,7 +117,7 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.GetObject(ctx, userName, repoName, &api.GetObjectParams{
 					RefName: branchName,
 					Path:    "m.dat",
-					IsWip:   utils.Bool(true),
+					Type:    api.RefTypeWip,
 				})
 				client.RequestEditors = re
 				convey.So(err, convey.ShouldBeNil)
@@ -128,7 +128,7 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.GetObject(ctx, "mock user", repoName, &api.GetObjectParams{
 					RefName: branchName,
 					Path:    "m.dat",
-					IsWip:   utils.Bool(true),
+					Type:    api.RefTypeWip,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
@@ -138,7 +138,7 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.GetObject(ctx, userName, "fakerepo", &api.GetObjectParams{
 					RefName: branchName,
 					Path:    "m.dat",
-					IsWip:   utils.Bool(true),
+					Type:    api.RefTypeWip,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
@@ -148,7 +148,7 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.GetObject(ctx, userName, repoName, &api.GetObjectParams{
 					RefName: "mockref",
 					Path:    "m.dat",
-					IsWip:   utils.Bool(true),
+					Type:    api.RefTypeWip,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
@@ -158,7 +158,7 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.GetObject(ctx, "jimmy", "happygo", &api.GetObjectParams{
 					RefName: branchName,
 					Path:    "m.dat",
-					IsWip:   utils.Bool(true),
+					Type:    api.RefTypeWip,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
@@ -167,7 +167,7 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			c.Convey("empty path", func() {
 				resp, err := client.GetObject(ctx, userName, repoName, &api.GetObjectParams{
 					RefName: branchName,
-					IsWip:   utils.Bool(true),
+					Type:    api.RefTypeWip,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)
@@ -177,7 +177,7 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.GetObject(ctx, userName, repoName, &api.GetObjectParams{
 					RefName: branchName,
 					Path:    "c/d.txt",
-					IsWip:   utils.Bool(true),
+					Type:    api.RefTypeWip,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)
@@ -187,7 +187,7 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.GetObject(ctx, userName, repoName, &api.GetObjectParams{
 					RefName: branchName,
 					Path:    "m.dat",
-					IsWip:   utils.Bool(true),
+					Type:    api.RefTypeWip,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
@@ -266,7 +266,7 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.HeadObject(ctx, userName, repoName, &api.HeadObjectParams{
 					RefName: branchName,
 					Path:    "g/m.dat",
-					IsWip:   utils.Bool(true),
+					Type:    api.RefTypeWip,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
@@ -284,7 +284,7 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err = client.HeadObject(ctx, userName, repoName, &api.HeadObjectParams{
 					RefName: branchName,
 					Path:    "g/m.dat",
-					IsWip:   utils.Bool(true),
+					Type:    api.RefTypeWip,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)

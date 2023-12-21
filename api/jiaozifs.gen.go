@@ -42,6 +42,14 @@ const (
 	Simplified LoginConfigRBAC = "simplified"
 )
 
+// Defines values for RefType.
+const (
+	RefTypeBranch RefType = "branch"
+	RefTypeTag    RefType = "tag"
+	RefTypeTest   RefType = "test"
+	RefTypeWip    RefType = "wip"
+)
+
 // Defines values for SetupStateState.
 const (
 	Initialized    SetupStateState = "initialized"
@@ -175,6 +183,9 @@ type Pagination struct {
 	Results int `json:"results"`
 }
 
+// RefType defines model for RefType.
+type RefType string
+
 // Repository defines model for Repository.
 type Repository struct {
 	CreatedAt   time.Time          `json:"CreatedAt"`
@@ -293,8 +304,8 @@ type DeleteObjectParams struct {
 
 // GetObjectParams defines parameters for GetObject.
 type GetObjectParams struct {
-	// IsWip isWip indicate to retrieve from working in progress, default false
-	IsWip *bool `form:"isWip,omitempty" json:"isWip,omitempty"`
+	// Type type indicate to retrieve from wip/branch/tag, default branch
+	Type RefType `form:"type" json:"type"`
 
 	// RefName branch/tag to the ref
 	RefName string `form:"refName" json:"refName"`
@@ -308,8 +319,8 @@ type GetObjectParams struct {
 
 // HeadObjectParams defines parameters for HeadObject.
 type HeadObjectParams struct {
-	// IsWip isWip indicate to retrieve from working in progress, default false
-	IsWip *bool `form:"isWip,omitempty" json:"isWip,omitempty"`
+	// Type type indicate to retrieve from wip/branch/tag, default branch
+	Type RefType `form:"type" json:"type"`
 
 	// RefName branch/tag to the ref
 	RefName string `form:"refName" json:"refName"`
@@ -378,8 +389,8 @@ type GetEntriesInRefParams struct {
 	// Ref specific branch,  default to repostiory default branch(HEAD)
 	Ref *string `form:"ref,omitempty" json:"ref,omitempty"`
 
-	// IsWip isWip indicate to retrieve from working in progress, default false
-	IsWip *bool `form:"isWip,omitempty" json:"isWip,omitempty"`
+	// Type type indicate to retrieve from wip/branch/tag, default branch
+	Type RefType `form:"type" json:"type"`
 }
 
 // ListRepositoryOfAuthenticatedUserParams defines parameters for ListRepositoryOfAuthenticatedUser.
@@ -1213,20 +1224,16 @@ func NewGetObjectRequest(server string, owner string, repository string, params 
 	if params != nil {
 		queryValues := queryURL.Query()
 
-		if params.IsWip != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "isWip", runtime.ParamLocationQuery, *params.IsWip); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "type", runtime.ParamLocationQuery, params.Type); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
 				}
 			}
-
 		}
 
 		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "refName", runtime.ParamLocationQuery, params.RefName); err != nil {
@@ -1315,20 +1322,16 @@ func NewHeadObjectRequest(server string, owner string, repository string, params
 	if params != nil {
 		queryValues := queryURL.Query()
 
-		if params.IsWip != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "isWip", runtime.ParamLocationQuery, *params.IsWip); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "type", runtime.ParamLocationQuery, params.Type); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
 				}
 			}
-
 		}
 
 		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "refName", runtime.ParamLocationQuery, params.RefName); err != nil {
@@ -2058,20 +2061,16 @@ func NewGetEntriesInRefRequest(server string, owner string, repository string, p
 
 		}
 
-		if params.IsWip != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "isWip", runtime.ParamLocationQuery, *params.IsWip); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "type", runtime.ParamLocationQuery, params.Type); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
 				}
 			}
-
 		}
 
 		queryURL.RawQuery = queryValues.Encode()
@@ -4944,11 +4943,18 @@ func (siw *ServerInterfaceWrapper) GetObject(w http.ResponseWriter, r *http.Requ
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetObjectParams
 
-	// ------------- Optional query parameter "isWip" -------------
+	// ------------- Required query parameter "type" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "isWip", r.URL.Query(), &params.IsWip)
+	if paramValue := r.URL.Query().Get("type"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "type"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "type", r.URL.Query(), &params.Type)
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "isWip", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "type", Err: err})
 		return
 	}
 
@@ -5047,11 +5053,18 @@ func (siw *ServerInterfaceWrapper) HeadObject(w http.ResponseWriter, r *http.Req
 	// Parameter object where we will unmarshal all parameters from the context
 	var params HeadObjectParams
 
-	// ------------- Optional query parameter "isWip" -------------
+	// ------------- Required query parameter "type" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "isWip", r.URL.Query(), &params.IsWip)
+	if paramValue := r.URL.Query().Get("type"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "type"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "type", r.URL.Query(), &params.Type)
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "isWip", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "type", Err: err})
 		return
 	}
 
@@ -5723,11 +5736,18 @@ func (siw *ServerInterfaceWrapper) GetEntriesInRef(w http.ResponseWriter, r *htt
 		return
 	}
 
-	// ------------- Optional query parameter "isWip" -------------
+	// ------------- Required query parameter "type" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "isWip", r.URL.Query(), &params.IsWip)
+	if paramValue := r.URL.Query().Get("type"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "type"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "type", r.URL.Query(), &params.Type)
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "isWip", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "type", Err: err})
 		return
 	}
 

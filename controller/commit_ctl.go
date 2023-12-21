@@ -50,26 +50,31 @@ func (commitCtl CommitController) GetEntriesInRef(ctx context.Context, w *api.Ji
 		refName = *params.Ref
 	}
 
-	ref, err := commitCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.ID).SetName(refName))
-	if err != nil {
-		w.Error(err)
-		return
-	}
-
 	if operator.Name != ownerName { //todo check permission
 		w.Forbidden()
 		return
 	}
 
 	treeHash := hash.EmptyHash
-	if utils.BoolValue(params.IsWip) {
+	if params.Type == api.RefTypeWip {
+		//todo maybe from tag reference
+		ref, err := commitCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.ID).SetName(refName))
+		if err != nil {
+			w.Error(err)
+			return
+		}
 		wip, err := commitCtl.Repo.WipRepo().Get(ctx, models.NewGetWipParams().SetCreatorID(operator.ID).SetRepositoryID(repository.ID).SetRefID(ref.ID))
 		if err != nil {
 			w.Error(err)
 			return
 		}
 		treeHash = wip.CurrentTree
-	} else {
+	} else if params.Type == api.RefTypeBranch {
+		ref, err := commitCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.ID).SetName(refName))
+		if err != nil {
+			w.Error(err)
+			return
+		}
 		if !ref.CommitHash.IsEmpty() {
 			commit, err := commitCtl.Repo.CommitRepo(repository.ID).Commit(ctx, ref.CommitHash)
 			if err != nil {
@@ -78,6 +83,10 @@ func (commitCtl CommitController) GetEntriesInRef(ctx context.Context, w *api.Ji
 			}
 			treeHash = commit.TreeHash
 		}
+	} else {
+		//check in validate middleware, test cant cover here, keep this check
+		w.BadRequest("not support")
+		return
 	}
 
 	workTree, err := versionmgr.NewWorkTree(ctx, commitCtl.Repo.FileTreeRepo(repository.ID), models.NewRootTreeEntry(treeHash))
