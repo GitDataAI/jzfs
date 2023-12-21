@@ -1296,6 +1296,10 @@ paths:
         - branches
       operationId: listBranches
       summary: list branches
+      parameters:
+        - $ref: "#/components/parameters/PaginationPrefix"
+        - $ref: "#/components/parameters/PaginationAfter"
+        - $ref: "#/components/parameters/PaginationAmount"
       responses:
         200:
           description: branch list

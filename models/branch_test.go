@@ -46,7 +46,7 @@ func TestRefRepoInsert(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, mockHash, branchAfterUpdated.CommitHash)
 
-	list, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID))
+	list, _, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID))
 	require.NoError(t, err)
 	require.Len(t, list, 1)
 
@@ -54,7 +54,7 @@ func TestRefRepoInsert(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int64(1), affectedRows)
 
-	list, err = repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID))
+	list, _, err = repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID))
 	require.NoError(t, err)
 	require.Len(t, list, 0)
 }
