@@ -33,107 +33,9 @@ func GetEntriesInRefSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				re := client.RequestEditors
 				client.RequestEditors = nil
 				resp, err := client.GetEntriesInRef(ctx, userName, repoName, &api.GetEntriesInRefParams{
-					Path:  utils.String("g"),
-					Ref:   utils.String(branchName),
-					IsWip: utils.Bool(true),
-				})
-				client.RequestEditors = re
-				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
-			})
-
-			c.Convey("fail to get entries in non exit user", func() {
-				resp, err := client.GetEntriesInRef(ctx, "mock user", repoName, &api.GetEntriesInRefParams{
-					Path:  utils.String("g"),
-					Ref:   utils.String(branchName),
-					IsWip: utils.Bool(true),
-				})
-				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
-			})
-
-			c.Convey("fail to get entries in non exit repo", func() {
-				resp, err := client.GetEntriesInRef(ctx, userName, "fakerepo", &api.GetEntriesInRefParams{
-					Path:  utils.String("g"),
-					Ref:   utils.String(branchName),
-					IsWip: utils.Bool(true),
-				})
-				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
-			})
-
-			c.Convey("fail to get entries in non exit branch", func() {
-				resp, err := client.GetEntriesInRef(ctx, userName, repoName, &api.GetEntriesInRefParams{
-					Path:  utils.String("g"),
-					Ref:   utils.String("feat/fake_repo"),
-					IsWip: utils.Bool(true),
-				})
-				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
-			})
-
-			c.Convey("forbidden get entries in others", func() {
-				resp, err := client.GetEntriesInRef(ctx, "jimmy", "happygo", &api.GetEntriesInRefParams{
-					Path:  utils.String("g"),
-					Ref:   utils.String("main"),
-					IsWip: utils.Bool(true),
-				})
-				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
-			})
-
-			c.Convey("not exit path", func() {
-				resp, err := client.GetEntriesInRef(ctx, userName, repoName, &api.GetEntriesInRefParams{
-					Path:  utils.String("a/b/c/d"),
-					Ref:   utils.String(branchName),
-					IsWip: utils.Bool(true),
-				})
-				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
-			})
-
-			c.Convey("success to get entries", func() {
-				resp, err := client.GetEntriesInRef(ctx, userName, repoName, &api.GetEntriesInRefParams{
-					Path:  utils.String("g"),
-					Ref:   utils.String(branchName),
-					IsWip: utils.Bool(true),
-				})
-				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
-
-				result, err := api.ParseGetEntriesInRefResponse(resp)
-				convey.So(err, convey.ShouldBeNil)
-				convey.So(*result.JSON200, convey.ShouldHaveLength, 2)
-				convey.So(*(*result.JSON200)[0].Name, convey.ShouldEqual, "m.dat")
-				convey.So(*(*result.JSON200)[1].Name, convey.ShouldEqual, "x.dat")
-			})
-
-			c.Convey("success to get entries in root", func() {
-				resp, err := client.GetEntriesInRef(ctx, userName, repoName, &api.GetEntriesInRefParams{
-					Path:  utils.String("/"),
-					Ref:   utils.String(branchName),
-					IsWip: utils.Bool(true),
-				})
-				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
-
-				result, err := api.ParseGetEntriesInRefResponse(resp)
-				convey.So(err, convey.ShouldBeNil)
-				convey.So(*result.JSON200, convey.ShouldHaveLength, 2)
-				convey.So(*(*result.JSON200)[0].Name, convey.ShouldEqual, "g")
-				convey.So(*(*result.JSON200)[1].Name, convey.ShouldEqual, "m.dat")
-			})
-		})
-
-		commitWip(ctx, c, client, "commit kitty first changes", userName, repoName, branchName, "test")
-
-		c.Convey("get branch entries", func(c convey.C) {
-			c.Convey("no auth", func() {
-				re := client.RequestEditors
-				client.RequestEditors = nil
-				resp, err := client.GetEntriesInRef(ctx, userName, repoName, &api.GetEntriesInRefParams{
 					Path: utils.String("g"),
 					Ref:  utils.String(branchName),
+					Type: api.RefTypeWip,
 				})
 				client.RequestEditors = re
 				convey.So(err, convey.ShouldBeNil)
@@ -144,6 +46,7 @@ func GetEntriesInRefSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.GetEntriesInRef(ctx, "mock user", repoName, &api.GetEntriesInRefParams{
 					Path: utils.String("g"),
 					Ref:  utils.String(branchName),
+					Type: api.RefTypeWip,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
@@ -153,6 +56,7 @@ func GetEntriesInRefSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.GetEntriesInRef(ctx, userName, "fakerepo", &api.GetEntriesInRefParams{
 					Path: utils.String("g"),
 					Ref:  utils.String(branchName),
+					Type: api.RefTypeWip,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
@@ -162,6 +66,7 @@ func GetEntriesInRefSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.GetEntriesInRef(ctx, userName, repoName, &api.GetEntriesInRefParams{
 					Path: utils.String("g"),
 					Ref:  utils.String("feat/fake_repo"),
+					Type: api.RefTypeWip,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
@@ -171,6 +76,7 @@ func GetEntriesInRefSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.GetEntriesInRef(ctx, "jimmy", "happygo", &api.GetEntriesInRefParams{
 					Path: utils.String("g"),
 					Ref:  utils.String("main"),
+					Type: api.RefTypeWip,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
@@ -180,15 +86,16 @@ func GetEntriesInRefSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.GetEntriesInRef(ctx, userName, repoName, &api.GetEntriesInRefParams{
 					Path: utils.String("a/b/c/d"),
 					Ref:  utils.String(branchName),
+					Type: api.RefTypeWip,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
 			})
-
 			c.Convey("success to get entries", func() {
 				resp, err := client.GetEntriesInRef(ctx, userName, repoName, &api.GetEntriesInRefParams{
 					Path: utils.String("g"),
 					Ref:  utils.String(branchName),
+					Type: api.RefTypeWip,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
@@ -204,6 +111,116 @@ func GetEntriesInRefSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.GetEntriesInRef(ctx, userName, repoName, &api.GetEntriesInRefParams{
 					Path: utils.String("/"),
 					Ref:  utils.String(branchName),
+					Type: api.RefTypeWip,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				result, err := api.ParseGetEntriesInRefResponse(resp)
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(*result.JSON200, convey.ShouldHaveLength, 2)
+				convey.So(*(*result.JSON200)[0].Name, convey.ShouldEqual, "g")
+				convey.So(*(*result.JSON200)[1].Name, convey.ShouldEqual, "m.dat")
+			})
+		})
+
+		commitWip(ctx, c, client, "commit kitty first changes", userName, repoName, branchName, "test")
+
+		c.Convey("get entries with no type", func() {
+			resp, err := client.GetEntriesInRef(ctx, userName, repoName, &api.GetEntriesInRefParams{
+				Path: utils.String("g"),
+				Ref:  utils.String(branchName),
+				Type: api.RefTypeTest,
+			})
+			convey.So(err, convey.ShouldBeNil)
+			convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)
+		})
+
+		c.Convey("get branch entries", func(c convey.C) {
+			c.Convey("no auth", func() {
+				re := client.RequestEditors
+				client.RequestEditors = nil
+				resp, err := client.GetEntriesInRef(ctx, userName, repoName, &api.GetEntriesInRefParams{
+					Path: utils.String("g"),
+					Ref:  utils.String(branchName),
+					Type: api.RefTypeBranch,
+				})
+				client.RequestEditors = re
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
+			})
+
+			c.Convey("fail to get entries in non exit user", func() {
+				resp, err := client.GetEntriesInRef(ctx, "mock user", repoName, &api.GetEntriesInRefParams{
+					Path: utils.String("g"),
+					Ref:  utils.String(branchName),
+					Type: api.RefTypeBranch,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
+			})
+
+			c.Convey("fail to get entries in non exit repo", func() {
+				resp, err := client.GetEntriesInRef(ctx, userName, "fakerepo", &api.GetEntriesInRefParams{
+					Path: utils.String("g"),
+					Ref:  utils.String(branchName),
+					Type: api.RefTypeBranch,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
+			})
+
+			c.Convey("fail to get entries in non exit branch", func() {
+				resp, err := client.GetEntriesInRef(ctx, userName, repoName, &api.GetEntriesInRefParams{
+					Path: utils.String("g"),
+					Ref:  utils.String("feat/fake_repo"),
+					Type: api.RefTypeBranch,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
+			})
+
+			c.Convey("forbidden get entries in others", func() {
+				resp, err := client.GetEntriesInRef(ctx, "jimmy", "happygo", &api.GetEntriesInRefParams{
+					Path: utils.String("g"),
+					Ref:  utils.String("main"),
+					Type: api.RefTypeBranch,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+			})
+
+			c.Convey("not exit path", func() {
+				resp, err := client.GetEntriesInRef(ctx, userName, repoName, &api.GetEntriesInRefParams{
+					Path: utils.String("a/b/c/d"),
+					Ref:  utils.String(branchName),
+					Type: api.RefTypeBranch,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
+			})
+
+			c.Convey("success to get entries", func() {
+				resp, err := client.GetEntriesInRef(ctx, userName, repoName, &api.GetEntriesInRefParams{
+					Path: utils.String("g"),
+					Ref:  utils.String(branchName),
+					Type: api.RefTypeBranch,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				result, err := api.ParseGetEntriesInRefResponse(resp)
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(*result.JSON200, convey.ShouldHaveLength, 2)
+				convey.So(*(*result.JSON200)[0].Name, convey.ShouldEqual, "m.dat")
+				convey.So(*(*result.JSON200)[1].Name, convey.ShouldEqual, "x.dat")
+			})
+
+			c.Convey("success to get entries in root", func() {
+				resp, err := client.GetEntriesInRef(ctx, userName, repoName, &api.GetEntriesInRefParams{
+					Path: utils.String("/"),
+					Ref:  utils.String(branchName),
+					Type: api.RefTypeBranch,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
