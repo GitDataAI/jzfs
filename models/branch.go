@@ -108,14 +108,14 @@ func (gup *ListBranchParams) SetRepositoryID(repositoryID uuid.UUID) *ListBranch
 	return gup
 }
 
-func (gup *ListBranchParams) SetName(name string, match MatchMode) *ListBranchParams {
-	gup.Name = &name
+func (gup *ListBranchParams) SetName(name *string, match MatchMode) *ListBranchParams {
+	gup.Name = name
 	gup.NameMatch = match
 	return gup
 }
 
-func (gup *ListBranchParams) SetAfter(after string) *ListBranchParams {
-	gup.After = &after
+func (gup *ListBranchParams) SetAfter(after *string) *ListBranchParams {
+	gup.After = after
 	return gup
 }
 
@@ -175,7 +175,7 @@ func (r BranchRepo) Get(ctx context.Context, params *GetBranchParams) (*Branches
 }
 
 func (r BranchRepo) List(ctx context.Context, params *ListBranchParams) ([]*Branches, bool, error) {
-	var branches []*Branches
+	branches := []*Branches{}
 	query := r.db.NewSelect().Model(&branches)
 
 	if uuid.Nil != params.RepositoryID {

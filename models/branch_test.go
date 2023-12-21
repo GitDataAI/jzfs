@@ -4,13 +4,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jiaozifs/jiaozifs/utils/hash"
-
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"github.com/jiaozifs/jiaozifs/models"
 	"github.com/jiaozifs/jiaozifs/testhelper"
+	"github.com/jiaozifs/jiaozifs/utils"
+	"github.com/jiaozifs/jiaozifs/utils/hash"
 	"github.com/stretchr/testify/require"
 )
 
@@ -67,8 +67,7 @@ func TestRefRepoInsert(t *testing.T) {
 
 	require.True(t, cmp.Equal(secModel, sRef, dbTimeCmpOpt))
 
-	// amount
-	list, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetAmount(1))
+	list, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetName(utils.String(secModel.Name[:3]), models.PrefixMatch).SetAfter(utils.String(branchModel.Name)).SetAmount(1))
 	require.NoError(t, err)
 	require.Len(t, list, 1)
 	require.True(t, hasMore)

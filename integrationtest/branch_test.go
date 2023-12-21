@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/jiaozifs/jiaozifs/controller"
+	"github.com/jiaozifs/jiaozifs/utils"
 
 	"github.com/jiaozifs/jiaozifs/api"
 	apiimpl "github.com/jiaozifs/jiaozifs/api/api_impl"
@@ -18,6 +19,9 @@ func BranchSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		userName := "mike"
 		repoName := "mlops"
 		branchName := "feat/test"
+		amount := 1
+		newAmount := 0
+		prefix := "feat/"
 
 		createUser(ctx, c, client, userName)
 		loginAndSwitch(ctx, c, client, userName)
@@ -162,6 +166,44 @@ func BranchSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 			c.Convey("success list branch", func() {
 				resp, err := client.ListBranches(ctx, userName, repoName, &api.ListBranchesParams{})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				respResult, err := api.ParseListBranchesResponse(resp)
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(respResult.JSON200.Results, convey.ShouldHaveLength, 3)
+			})
+
+			c.Convey("success list branch by prefix", func() {
+				resp, err := client.ListBranches(ctx, userName, repoName, &api.ListBranchesParams{
+					Prefix: &prefix,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				respResult, err := api.ParseListBranchesResponse(resp)
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(respResult.JSON200.Results, convey.ShouldHaveLength, 2)
+			})
+
+			c.Convey("success list branch and next page exists", func() {
+				resp, err := client.ListBranches(ctx, userName, repoName, &api.ListBranchesParams{
+					After:  utils.String(branchName),
+					Amount: utils.Int(amount),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				respResult, err := api.ParseListBranchesResponse(resp)
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(respResult.JSON200.Pagination.HasMore, convey.ShouldBeTrue)
+				convey.So(respResult.JSON200.Results, convey.ShouldHaveLength, 1)
+			})
+
+			c.Convey("success list branch, set amount 0", func() {
+				resp, err := client.ListBranches(ctx, userName, repoName, &api.ListBranchesParams{
+					Amount: utils.Int(newAmount),
+				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
 

@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jiaozifs/jiaozifs/models"
 	"github.com/jiaozifs/jiaozifs/testhelper"
+	"github.com/jiaozifs/jiaozifs/utils"
 	"github.com/stretchr/testify/require"
 )
 
@@ -52,32 +53,32 @@ func TestRepositoryRepo_Insert(t *testing.T) {
 
 	{
 		//exact adabbeb
-		repos, _, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetName("adabbeb", models.PrefixMatch))
+		repos, _, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetName(utils.String("adabbeb"), models.PrefixMatch))
 		require.NoError(t, err)
 		require.Len(t, repos, 1)
 	}
 	{
 		//prefix a
-		repos, _, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetName("a", models.PrefixMatch))
+		repos, _, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetName(utils.String("a"), models.PrefixMatch))
 		require.NoError(t, err)
 		require.Len(t, repos, 2)
 	}
 
 	{
 		//subfix b
-		repos, _, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetName("b", models.SuffixMatch))
+		repos, _, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetName(utils.String("b"), models.SuffixMatch))
 		require.NoError(t, err)
 		require.Len(t, repos, 2)
 	}
 	{
 		//like ab
-		repos, _, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetName("ab", models.LikeMatch))
+		repos, _, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetName(utils.String("ab"), models.LikeMatch))
 		require.NoError(t, err)
 		require.Len(t, repos, 2)
 	}
 	{
 		//like ab
-		repos, _, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetName("adabbeb", models.LikeMatch))
+		repos, _, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetName(utils.String("adabbeb"), models.LikeMatch))
 		require.NoError(t, err)
 		require.Len(t, repos, 1)
 	}
@@ -101,6 +102,13 @@ func TestRepositoryRepo_Insert(t *testing.T) {
 		require.NoError(t, err)
 		require.False(t, hasMore)
 		require.Len(t, repos, 2)
+	}
+	{
+		//after
+		repos, hasMore, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetAfter(utils.Time(secRepo.UpdatedAt)).SetAmount(1))
+		require.NoError(t, err)
+		require.True(t, hasMore)
+		require.Len(t, repos, 1)
 	}
 	//delete
 	deleteParams := models.NewDeleteRepoParams().

@@ -116,6 +116,42 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(len(listRepos.JSON200.Results), convey.ShouldEqual, 2)
 			})
 
+			c.Convey("success list repository of authenticatedUser and next page exists", func() {
+				resp, err := client.ListRepositoryOfAuthenticatedUser(ctx, &api.ListRepositoryOfAuthenticatedUserParams{})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				listRepos, err := api.ParseListRepositoryResponse(resp)
+				convey.So(err, convey.ShouldBeNil)
+
+				convey.So(len(listRepos.JSON200.Results), convey.ShouldEqual, 2)
+
+				newResp, err := client.ListRepositoryOfAuthenticatedUser(ctx, &api.ListRepositoryOfAuthenticatedUserParams{
+					After:  utils.Time(listRepos.JSON200.Results[0].UpdatedAt),
+					Amount: utils.Int(1),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(newResp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				newListRepos, err := api.ParseListRepositoryResponse(newResp)
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(newListRepos.JSON200.Pagination.HasMore, convey.ShouldBeTrue)
+				convey.So(len(newListRepos.JSON200.Results), convey.ShouldEqual, 1)
+			})
+
+			c.Convey("success list repository of authenticatedUser, set page amount 0", func() {
+				resp, err := client.ListRepositoryOfAuthenticatedUser(ctx, &api.ListRepositoryOfAuthenticatedUserParams{
+					Amount: utils.Int(0),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				listRepos, err := api.ParseListRepositoryResponse(resp)
+				convey.So(err, convey.ShouldBeNil)
+
+				convey.So(len(listRepos.JSON200.Results), convey.ShouldEqual, 2)
+			})
+
 			c.Convey("list repository", func() {
 				resp, err := client.ListRepository(ctx, userName, &api.ListRepositoryParams{})
 				convey.So(err, convey.ShouldBeNil)
@@ -129,6 +165,42 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 			c.Convey("list repository by prefix", func() {
 				resp, err := client.ListRepository(ctx, userName, &api.ListRepositoryParams{Prefix: utils.String("happy")})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				listRepos, err := api.ParseListRepositoryResponse(resp)
+				convey.So(err, convey.ShouldBeNil)
+
+				convey.So(len(listRepos.JSON200.Results), convey.ShouldEqual, 2)
+			})
+
+			c.Convey("success list repository and next page exists", func() {
+				resp, err := client.ListRepository(ctx, userName, &api.ListRepositoryParams{})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				listRepos, err := api.ParseListRepositoryResponse(resp)
+				convey.So(err, convey.ShouldBeNil)
+
+				convey.So(len(listRepos.JSON200.Results), convey.ShouldEqual, 2)
+
+				newResp, err := client.ListRepository(ctx, userName, &api.ListRepositoryParams{
+					After:  utils.Time(listRepos.JSON200.Results[0].UpdatedAt),
+					Amount: utils.Int(1),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(newResp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				newListRepos, err := api.ParseListRepositoryResponse(newResp)
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(newListRepos.JSON200.Pagination.HasMore, convey.ShouldBeTrue)
+				convey.So(len(newListRepos.JSON200.Results), convey.ShouldEqual, 1)
+			})
+
+			c.Convey("success list repository, set page amount 0", func() {
+				resp, err := client.ListRepository(ctx, userName, &api.ListRepositoryParams{
+					Amount: utils.Int(0),
+				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
 
