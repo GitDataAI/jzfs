@@ -114,13 +114,16 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		})
 
 		//commit object to branch
-		c.Convey("commit wip", func() {
-			resp, err := client.CommitWip(ctx, userName, repoName, &api.CommitWipParams{
+		commitWip(ctx, c, client, "commit wip", userName, repoName, branchName, "test commit msg")
+
+		c.Convey("head object with no type", func() {
+			resp, err := client.HeadObject(ctx, userName, repoName, &api.HeadObjectParams{
 				RefName: branchName,
-				Msg:     "test commit msg",
+				Path:    "a.bin",
+				Type:    api.RefTypeTest,
 			})
 			convey.So(err, convey.ShouldBeNil)
-			convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
+			convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)
 		})
 
 		c.Convey("head object", func(c convey.C) {
@@ -130,6 +133,7 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.HeadObject(ctx, userName, repoName, &api.HeadObjectParams{
 					RefName: branchName,
 					Path:    "a.bin",
+					Type:    api.RefTypeBranch,
 				})
 				client.RequestEditors = re
 				convey.So(err, convey.ShouldBeNil)
@@ -140,6 +144,7 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.HeadObject(ctx, "mock user", repoName, &api.HeadObjectParams{
 					RefName: branchName,
 					Path:    "a.bin",
+					Type:    api.RefTypeBranch,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
@@ -149,6 +154,7 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.HeadObject(ctx, userName, "fakerepo", &api.HeadObjectParams{
 					RefName: branchName,
 					Path:    "a.bin",
+					Type:    api.RefTypeBranch,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
@@ -158,6 +164,7 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.HeadObject(ctx, userName, repoName, &api.HeadObjectParams{
 					RefName: "mockref",
 					Path:    "a.bin",
+					Type:    api.RefTypeBranch,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
@@ -167,6 +174,7 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.HeadObject(ctx, "jimmy", "happygo", &api.HeadObjectParams{
 					RefName: branchName,
 					Path:    "a.bin",
+					Type:    api.RefTypeBranch,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
@@ -175,6 +183,7 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			c.Convey("empty path", func() {
 				resp, err := client.HeadObject(ctx, userName, repoName, &api.HeadObjectParams{
 					RefName: branchName,
+					Type:    api.RefTypeBranch,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)
@@ -184,6 +193,7 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.HeadObject(ctx, userName, repoName, &api.HeadObjectParams{
 					RefName: branchName,
 					Path:    "c/d.txt",
+					Type:    api.RefTypeBranch,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)
@@ -193,12 +203,23 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.HeadObject(ctx, userName, repoName, &api.HeadObjectParams{
 					RefName: branchName,
 					Path:    "a.bin",
+					Type:    api.RefTypeBranch,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
 				etag := resp.Header.Get("ETag")
 				convey.So(etag, convey.ShouldEqual, `"0ee0646c1c77d8131cc8f4ee65c7673b"`)
 			})
+		})
+
+		c.Convey("get object with no type", func() {
+			resp, err := client.GetObject(ctx, userName, repoName, &api.GetObjectParams{
+				RefName: branchName,
+				Path:    "a.bin",
+				Type:    api.RefTypeTest,
+			})
+			convey.So(err, convey.ShouldBeNil)
+			convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)
 		})
 
 		c.Convey("get object", func(c convey.C) {
@@ -208,6 +229,7 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.GetObject(ctx, userName, repoName, &api.GetObjectParams{
 					RefName: branchName,
 					Path:    "a.bin",
+					Type:    api.RefTypeBranch,
 				})
 				client.RequestEditors = re
 				convey.So(err, convey.ShouldBeNil)
@@ -218,6 +240,7 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.GetObject(ctx, "mock user", repoName, &api.GetObjectParams{
 					RefName: branchName,
 					Path:    "a.bin",
+					Type:    api.RefTypeBranch,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
@@ -227,6 +250,7 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.GetObject(ctx, userName, "fakerepo", &api.GetObjectParams{
 					RefName: branchName,
 					Path:    "a.bin",
+					Type:    api.RefTypeBranch,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
@@ -236,6 +260,7 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.GetObject(ctx, userName, repoName, &api.GetObjectParams{
 					RefName: "mockref",
 					Path:    "a.bin",
+					Type:    api.RefTypeBranch,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
@@ -245,6 +270,7 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.GetObject(ctx, "jimmy", "happygo", &api.GetObjectParams{
 					RefName: branchName,
 					Path:    "a.bin",
+					Type:    api.RefTypeBranch,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
@@ -253,6 +279,7 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			c.Convey("empty path", func() {
 				resp, err := client.GetObject(ctx, userName, repoName, &api.GetObjectParams{
 					RefName: branchName,
+					Type:    api.RefTypeBranch,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)
@@ -262,6 +289,7 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.GetObject(ctx, userName, repoName, &api.GetObjectParams{
 					RefName: branchName,
 					Path:    "c/d.txt",
+					Type:    api.RefTypeBranch,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)
@@ -271,6 +299,7 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.GetObject(ctx, userName, repoName, &api.GetObjectParams{
 					RefName: branchName,
 					Path:    "a.bin",
+					Type:    api.RefTypeBranch,
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)

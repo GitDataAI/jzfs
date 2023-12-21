@@ -125,22 +125,25 @@ func (oct ObjectController) GetObject(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
-	ref, err := oct.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.ID).SetName(params.RefName))
-	if err != nil {
-		w.Error(err)
-		return
-	}
-
 	treeHash := hash.EmptyHash
-	if utils.BoolValue(params.IsWip) {
+	if params.Type == "wip" {
+		ref, err := oct.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.ID).SetName(params.RefName))
+		if err != nil {
+			w.Error(err)
+			return
+		}
 		wip, err := oct.Repo.WipRepo().Get(ctx, models.NewGetWipParams().SetCreatorID(operator.ID).SetRepositoryID(repository.ID).SetRefID(ref.ID))
 		if err != nil {
 			w.Error(err)
 			return
 		}
 		treeHash = wip.CurrentTree
-	} else {
-
+	} else if params.Type == "branch" {
+		ref, err := oct.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.ID).SetName(params.RefName))
+		if err != nil {
+			w.Error(err)
+			return
+		}
 		if !ref.CommitHash.IsEmpty() {
 			commit, err := oct.Repo.CommitRepo(repository.ID).Commit(ctx, ref.CommitHash)
 			if err != nil {
@@ -149,6 +152,9 @@ func (oct ObjectController) GetObject(ctx context.Context, w *api.JiaozifsRespon
 			}
 			treeHash = commit.TreeHash
 		}
+	} else {
+		w.BadRequest("not support type")
+		return
 	}
 
 	workTree, err := versionmgr.NewWorkTree(ctx, oct.Repo.FileTreeRepo(repository.ID), models.NewRootTreeEntry(treeHash))
@@ -231,22 +237,27 @@ func (oct ObjectController) HeadObject(ctx context.Context, w *api.JiaozifsRespo
 		w.Error(err)
 		return
 	}
-	ref, err := oct.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.ID).SetName(params.RefName))
-	if err != nil {
-		w.Error(err)
-		return
-	}
 
 	treeHash := hash.EmptyHash
-	if utils.BoolValue(params.IsWip) {
+	if params.Type == "wip" {
+		ref, err := oct.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.ID).SetName(params.RefName))
+		if err != nil {
+			w.Error(err)
+			return
+		}
+
 		wip, err := oct.Repo.WipRepo().Get(ctx, models.NewGetWipParams().SetCreatorID(operator.ID).SetRepositoryID(repository.ID).SetRefID(ref.ID))
 		if err != nil {
 			w.Error(err)
 			return
 		}
 		treeHash = wip.CurrentTree
-	} else {
-
+	} else if params.Type == "branch" {
+		ref, err := oct.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.ID).SetName(params.RefName))
+		if err != nil {
+			w.Error(err)
+			return
+		}
 		if !ref.CommitHash.IsEmpty() {
 			commit, err := oct.Repo.CommitRepo(repository.ID).Commit(ctx, ref.CommitHash)
 			if err != nil {
@@ -255,6 +266,9 @@ func (oct ObjectController) HeadObject(ctx context.Context, w *api.JiaozifsRespo
 			}
 			treeHash = commit.TreeHash
 		}
+	} else {
+		w.BadRequest("not support type")
+		return
 	}
 
 	fileRepo := oct.Repo.FileTreeRepo(repository.ID)
