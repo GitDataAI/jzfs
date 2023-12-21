@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"reflect"
 	"regexp"
 	"time"
 
@@ -24,7 +25,10 @@ import (
 	"go.uber.org/fx"
 )
 
-const DefaultBranchName = "main"
+const (
+	DefaultBranchName     = "main"
+	DefaultMaxPerPage int = 1000
+)
 
 var maxNameLength = 20
 var alphanumeric = regexp.MustCompile("^[a-zA-Z0-9_]*$")
@@ -32,6 +36,28 @@ var alphanumeric = regexp.MustCompile("^[a-zA-Z0-9_]*$")
 // RepoNameBlackList forbid repo name, reserve for routes
 var RepoNameBlackList = []string{"repository", "repositories", "wip", "wips", "object", "objects", "commit", "commits", "ref", "refs", "repo", "repos", "user", "users"}
 
+func paginationForRepos(hasMore bool, results interface{}, fieldName string) api.Pagination {
+	pagination := api.Pagination{
+		HasMore:    hasMore,
+		MaxPerPage: DefaultMaxPerPage,
+	}
+	if results == nil {
+		return pagination
+	}
+	if reflect.TypeOf(results).Kind() != reflect.Slice {
+		panic("results is not a slice")
+	}
+	s := reflect.ValueOf(results)
+	pagination.Results = s.Len()
+	if !hasMore || pagination.Results == 0 {
+		return pagination
+	}
+	v := s.Index(pagination.Results - 1)
+	token := v.FieldByName(fieldName)
+	t := token.Interface().(time.Time)
+	pagination.NextOffset = t.String()
+	return pagination
+}
 func CheckRepositoryName(name string) error {
 	for _, blackName := range RepoNameBlackList {
 		if name == blackName {
@@ -54,19 +80,54 @@ type RepositoryController struct {
 	Repo models.IRepo
 }
 
-func (repositoryCtl RepositoryController) ListRepositoryOfAuthenticatedUser(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request) {
+func (repositoryCtl RepositoryController) ListRepositoryOfAuthenticatedUser(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, params api.ListRepositoryOfAuthenticatedUserParams) {
 	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	repositories, err := repositoryCtl.Repo.RepositoryRepo().List(ctx, models.NewListRepoParams().SetOwnerID(operator.ID)) //operator is owner
+	listParams := models.NewListRepoParams()
+	if params.Prefix != nil && len(*params.Prefix) > 0 {
+		listParams.SetName(*params.Prefix, models.PrefixMatch)
+	}
+	if params.After != nil {
+		listParams.SetAfter(*params.After)
+	}
+	if params.Amount != nil {
+		i := *params.Amount
+		if i > DefaultMaxPerPage || i <= 0 {
+			listParams.SetAmount(DefaultMaxPerPage)
+		} else {
+			listParams.SetAmount(i)
+		}
+	} else {
+		listParams.SetAmount(DefaultMaxPerPage)
+	}
+
+	repositories, hasMore, err := repositoryCtl.Repo.RepositoryRepo().List(ctx, listParams.
+		SetOwnerID(operator.ID))
 	if err != nil {
 		w.Error(err)
 		return
 	}
-	w.JSON(repositories)
+	results := make([]api.Repository, 0, len(repositories))
+	for _, repo := range repositories {
+		r := api.Repository{
+			CreatedAt:   repo.CreatedAt,
+			CreatorID:   repo.CreatorID,
+			Description: repo.Description,
+			Head:        repo.HEAD,
+			ID:          repo.ID,
+			Name:        repo.Name,
+			UpdatedAt:   repo.UpdatedAt,
+		}
+		results = append(results, r)
+	}
+	w.JSON(api.RepositoryList{
+		Pagination: paginationForRepos(hasMore, results, "UpdatedAt"),
+		Results:    results,
+	})
 }
 
 func (repositoryCtl RepositoryController) ListRepository(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, params api.ListRepositoryParams) {
@@ -87,15 +148,45 @@ func (repositoryCtl RepositoryController) ListRepository(ctx context.Context, w 
 	}
 
 	listParams := models.NewListRepoParams().SetOwnerID(owner.ID)
-	if params.RepoPrefix != nil && len(*params.RepoPrefix) > 0 {
-		listParams.SetName(*params.RepoPrefix, models.PrefixMatch)
+	if params.Prefix != nil && len(*params.Prefix) > 0 {
+		listParams.SetName(*params.Prefix, models.PrefixMatch)
 	}
-	repositories, err := repositoryCtl.Repo.RepositoryRepo().List(ctx, listParams)
+	if params.After != nil {
+		listParams.SetAfter(*params.After)
+	}
+	if params.Amount != nil {
+		i := *params.Amount
+		if i > DefaultMaxPerPage || i <= 0 {
+			listParams.SetAmount(DefaultMaxPerPage)
+		} else {
+			listParams.SetAmount(i)
+		}
+	} else {
+		listParams.SetAmount(DefaultMaxPerPage)
+	}
+
+	repositories, hasMore, err := repositoryCtl.Repo.RepositoryRepo().List(ctx, listParams)
 	if err != nil {
 		w.Error(err)
 		return
 	}
-	w.JSON(repositories)
+	results := make([]api.Repository, 0, len(repositories))
+	for _, repo := range repositories {
+		r := api.Repository{
+			CreatedAt:   repo.CreatedAt,
+			CreatorID:   repo.CreatorID,
+			Description: repo.Description,
+			Head:        repo.HEAD,
+			ID:          repo.ID,
+			Name:        repo.Name,
+			UpdatedAt:   repo.UpdatedAt,
+		}
+		results = append(results, r)
+	}
+	w.JSON(api.RepositoryList{
+		Pagination: paginationForRepos(hasMore, results, "UpdatedAt"),
+		Results:    results,
+	})
 }
 
 func (repositoryCtl RepositoryController) CreateRepository(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, body api.CreateRepositoryJSONRequestBody) {

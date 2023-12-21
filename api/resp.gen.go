@@ -5,6 +5,7 @@
 //
 //	mockgen --package=api --destination=resp.gen.go net/http ResponseWriter
 //
+
 // Package api is a generated GoMock package.
 package api
 
