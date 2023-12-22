@@ -5,10 +5,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/jiaozifs/jiaozifs/controller"
-
 	"github.com/jiaozifs/jiaozifs/api"
 	apiimpl "github.com/jiaozifs/jiaozifs/api/api_impl"
+	"github.com/jiaozifs/jiaozifs/controller"
 	"github.com/smartystreets/goconvey/convey"
 )
 

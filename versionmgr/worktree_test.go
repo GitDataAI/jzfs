@@ -1,53 +1,17 @@
 package versionmgr
 
 import (
-	"bytes"
 	"context"
 	"errors"
-	"io"
 	"testing"
 
+	"github.com/brianvoe/gofakeit/v6"
 	"github.com/google/uuid"
-
-	"github.com/jiaozifs/jiaozifs/utils/hash"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
-	"github.com/jiaozifs/jiaozifs/block/mem"
 	"github.com/jiaozifs/jiaozifs/models"
-
 	"github.com/jiaozifs/jiaozifs/testhelper"
+	"github.com/jiaozifs/jiaozifs/utils/hash"
+	"github.com/stretchr/testify/require"
 )
-
-func TestTreeWriteBlob(t *testing.T) {
-	ctx := context.Background()
-	postgres, _, db := testhelper.SetupDatabase(ctx, t)
-	defer postgres.Stop() //nolint
-
-	repoID := uuid.New()
-	adapter := mem.New(ctx)
-	namespace := "mem://data"
-	objRepo := models.NewFileTree(db, repoID)
-
-	workTree, err := NewWorkTree(ctx, objRepo, EmptyDirEntry)
-	require.NoError(t, err)
-
-	binary := []byte("Build simple, secure, scalable systems with Go")
-	bLen := int64(len(binary))
-	r := bytes.NewReader(binary)
-	blob, err := workTree.WriteBlob(ctx, adapter, namespace, r, bLen, models.DefaultLeafProperty())
-	require.NoError(t, err)
-	assert.Equal(t, bLen, blob.Size)
-	assert.Equal(t, "99b91d4c517d0cded9506be9298b8d02", blob.Hash.Hex())
-	assert.Equal(t, "f3b39786b86a96372589aa1166966643", blob.CheckSum.Hex())
-
-	reader, err := workTree.ReadBlob(ctx, adapter, namespace, blob, nil)
-	require.NoError(t, err)
-	content, err := io.ReadAll(reader)
-	require.NoError(t, err)
-	require.Equal(t, binary, content)
-}
 
 func TestWorkTreeTreeOp(t *testing.T) {
 	ctx := context.Background()
@@ -55,37 +19,30 @@ func TestWorkTreeTreeOp(t *testing.T) {
 	defer postgres.Stop() //nolint
 
 	repoID := uuid.New()
-	adapter := mem.New(ctx)
-	namespace := "mem://data"
 	objRepo := models.NewFileTree(db, repoID)
 
 	workTree, err := NewWorkTree(ctx, objRepo, EmptyDirEntry)
 	require.NoError(t, err)
 
-	binary := []byte("Build simple, secure, scalable systems with Go")
-	bLen := int64(len(binary))
-	r := bytes.NewReader(binary)
-	blob, err := workTree.WriteBlob(ctx, adapter, namespace, r, bLen, models.DefaultLeafProperty())
-	require.NoError(t, err)
+	blob := &models.Blob{}
+	require.NoError(t, gofakeit.Struct(blob))
+	blob.Type = models.BlobObject
+	blob.RepositoryID = repoID
 
 	err = workTree.AddLeaf(ctx, "a/b/c.txt", blob)
 	require.NoError(t, err)
-	require.Equal(t, "faf499deee898c13e4ae4a2e6c4230fb", hash.Hash(workTree.Root().Hash()).Hex())
 
 	//add again expect get an error
 	err = workTree.AddLeaf(ctx, "a/b/c.txt", blob)
 	require.True(t, errors.Is(err, ErrEntryExit))
 
 	//update path
-	binary = []byte(`“At the time, no single team member knew Go, but within a month, everyone was writing in Go and we were building out the endpoints. ”`)
-	bLen = int64(len(binary))
-	r = bytes.NewReader(binary)
-	blob, err = workTree.WriteBlob(ctx, adapter, namespace, r, bLen, models.DefaultLeafProperty())
-	require.NoError(t, err)
-
+	blob = &models.Blob{}
+	require.NoError(t, gofakeit.Struct(blob))
+	blob.Type = models.BlobObject
+	blob.RepositoryID = repoID
 	err = workTree.ReplaceLeaf(ctx, "a/b/c.txt", blob)
 	require.NoError(t, err)
-	require.Equal(t, "d08bf786f0b4375dd6edd880859dc47a", hash.Hash(workTree.Root().Hash()).Hex())
 
 	{
 		//find blob
@@ -98,7 +55,6 @@ func TestWorkTreeTreeOp(t *testing.T) {
 		//add another branch
 		err = workTree.AddLeaf(ctx, "a/b/d.txt", blob)
 		require.NoError(t, err)
-		require.Equal(t, "b37d803cc5431587ef6f6e4d3aa8ada4", hash.Hash(workTree.Root().Hash()).Hex())
 
 	}
 
@@ -137,7 +93,6 @@ func TestWorkTreeTreeOp(t *testing.T) {
 
 	err = workTree.RemoveEntry(ctx, "a/b/c.txt")
 	require.NoError(t, err)
-	require.Equal(t, "291af4419b76a09b60aa0cf911c72d06", hash.Hash(workTree.Root().Hash()).Hex())
 
 	err = workTree.RemoveEntry(ctx, "a/b/d.txt")
 	require.NoError(t, err)
@@ -150,34 +105,26 @@ func TestRemoveEntry(t *testing.T) {
 	defer postgres.Stop() //nolint
 
 	repoID := uuid.New()
-	adapter := mem.New(ctx)
-	namespace := "mem://data"
 	objRepo := models.NewFileTree(db, repoID)
 
 	workTree, err := NewWorkTree(ctx, objRepo, EmptyDirEntry)
 	require.NoError(t, err)
 
-	binary := []byte("Build simple, secure, scalable systems with Go")
-	bLen := int64(len(binary))
-	r := bytes.NewReader(binary)
-	blob, err := workTree.WriteBlob(ctx, adapter, namespace, r, bLen, models.DefaultLeafProperty())
-	require.NoError(t, err)
-
+	blob := &models.Blob{}
+	require.NoError(t, gofakeit.Struct(blob))
+	blob.Type = models.BlobObject
+	blob.RepositoryID = repoID
 	err = workTree.AddLeaf(ctx, "a/b/c.txt", blob)
 	require.NoError(t, err)
-	require.Equal(t, "faf499deee898c13e4ae4a2e6c4230fb", hash.Hash(workTree.Root().Hash()).Hex())
 
 	//update path
-	binary = []byte(`“At the time, no single team member knew Go, but within a month, everyone was writing in Go and we were building out the endpoints. ”`)
-	bLen = int64(len(binary))
-	r = bytes.NewReader(binary)
-	blob, err = workTree.WriteBlob(ctx, adapter, namespace, r, bLen, models.DefaultLeafProperty())
-	require.NoError(t, err)
-
+	blob = &models.Blob{}
+	require.NoError(t, gofakeit.Struct(blob))
+	blob.Type = models.BlobObject
+	blob.RepositoryID = repoID
 	//add another branch
 	err = workTree.AddLeaf(ctx, "a/b/d.txt", blob)
 	require.NoError(t, err)
-	require.Equal(t, "77e60b4b1f28022818a3b97dfe064a3e", hash.Hash(workTree.Root().Hash()).Hex())
 
 	err = workTree.RemoveEntry(ctx, "a/b")
 	require.NoError(t, err)

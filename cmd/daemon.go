@@ -3,25 +3,18 @@ package cmd
 import (
 	"context"
 
-	"github.com/jiaozifs/jiaozifs/auth/crypt"
-
-	"github.com/jiaozifs/jiaozifs/version"
-
 	"github.com/gorilla/sessions"
-	"github.com/jiaozifs/jiaozifs/auth"
-
-	"github.com/jiaozifs/jiaozifs/block/params"
-
-	"github.com/jiaozifs/jiaozifs/block"
-	"github.com/jiaozifs/jiaozifs/block/factory"
-
 	logging "github.com/ipfs/go-log/v2"
 	apiImpl "github.com/jiaozifs/jiaozifs/api/api_impl"
+	"github.com/jiaozifs/jiaozifs/auth"
+	"github.com/jiaozifs/jiaozifs/auth/crypt"
+	"github.com/jiaozifs/jiaozifs/block/params"
 	"github.com/jiaozifs/jiaozifs/config"
 	"github.com/jiaozifs/jiaozifs/fx_opt"
 	"github.com/jiaozifs/jiaozifs/models"
 	"github.com/jiaozifs/jiaozifs/models/migrations"
 	"github.com/jiaozifs/jiaozifs/utils"
+	"github.com/jiaozifs/jiaozifs/version"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/uptrace/bun"
@@ -57,9 +50,6 @@ var daemonCmd = &cobra.Command{
 			fx_opt.Override(new(*config.AuthConfig), &cfg.Auth),
 			fx_opt.Override(new(*config.DatabaseConfig), &cfg.Database),
 			fx_opt.Override(new(params.AdapterConfig), &cfg.Blockstore),
-			//blockstore
-			fx_opt.Override(new(factory.BlockAdapterBuilder), factory.BuildBlockAdapter),
-			fx_opt.Override(new(block.Adapter), factory.BuildBlockAdapter),
 			//database
 			fx_opt.Override(new(*bun.DB), models.SetupDatabase),
 			fx_opt.Override(new(models.IRepo), func(db *bun.DB) models.IRepo {

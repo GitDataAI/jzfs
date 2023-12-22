@@ -2,7 +2,6 @@ package controller
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -11,27 +10,17 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/jiaozifs/jiaozifs/block/factory"
-
-	"github.com/jiaozifs/jiaozifs/config"
-
-	"github.com/jiaozifs/jiaozifs/utils/hash"
-
-	logging "github.com/ipfs/go-log/v2"
-
 	"github.com/go-openapi/swag"
-	"github.com/jiaozifs/jiaozifs/auth"
-	"github.com/jiaozifs/jiaozifs/models/filemode"
-	"github.com/jiaozifs/jiaozifs/versionmgr"
-
-	"github.com/jiaozifs/jiaozifs/block"
-
-	"github.com/jiaozifs/jiaozifs/utils"
-	"github.com/jiaozifs/jiaozifs/utils/httputil"
-
-	"github.com/jiaozifs/jiaozifs/models"
-
+	logging "github.com/ipfs/go-log/v2"
 	"github.com/jiaozifs/jiaozifs/api"
+	"github.com/jiaozifs/jiaozifs/auth"
+	"github.com/jiaozifs/jiaozifs/block/params"
+	"github.com/jiaozifs/jiaozifs/models"
+	"github.com/jiaozifs/jiaozifs/models/filemode"
+	"github.com/jiaozifs/jiaozifs/utils"
+	"github.com/jiaozifs/jiaozifs/utils/hash"
+	"github.com/jiaozifs/jiaozifs/utils/httputil"
+	"github.com/jiaozifs/jiaozifs/versionmgr"
 	"go.uber.org/fx"
 )
 
@@ -40,9 +29,8 @@ var objLog = logging.Logger("object_ctl")
 type ObjectController struct {
 	fx.In
 
-	PublicBlkAdapter block.Adapter
-	AdapterBuilder   factory.BlockAdapterBuilder
-	Repo             models.IRepo
+	PublicStorageConfig params.AdapterConfig
+	Repo                models.IRepo
 }
 
 func (oct ObjectController) DeleteObject(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, params api.DeleteObjectParams) { //nolint
@@ -124,45 +112,25 @@ func (oct ObjectController) GetObject(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
-	repository, err := oct.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
+	repoModel, err := oct.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	treeHash := hash.EmptyHash
-	if params.Type == "wip" {
-		ref, err := oct.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.ID).SetName(params.RefName))
-		if err != nil {
-			w.Error(err)
-			return
-		}
-		wip, err := oct.Repo.WipRepo().Get(ctx, models.NewGetWipParams().SetCreatorID(operator.ID).SetRepositoryID(repository.ID).SetRefID(ref.ID))
-		if err != nil {
-			w.Error(err)
-			return
-		}
-		treeHash = wip.CurrentTree
-	} else if params.Type == "branch" {
-		ref, err := oct.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.ID).SetName(params.RefName))
-		if err != nil {
-			w.Error(err)
-			return
-		}
-		if !ref.CommitHash.IsEmpty() {
-			commit, err := oct.Repo.CommitRepo(repository.ID).Commit(ctx, ref.CommitHash)
-			if err != nil {
-				w.Error(err)
-				return
-			}
-			treeHash = commit.TreeHash
-		}
-	} else {
-		w.BadRequest("not support type")
+	workRepo, err := versionmgr.NewWorkRepositoryFromConfig(ctx, operator, repoModel, oct.Repo, oct.PublicStorageConfig)
+	if err != nil {
+		w.Error(err)
 		return
 	}
 
-	workTree, err := versionmgr.NewWorkTree(ctx, oct.Repo.FileTreeRepo(repository.ID), models.NewRootTreeEntry(treeHash))
+	err = workRepo.CheckOut(ctx, versionmgr.WorkRepoState(params.Type), params.RefName)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	workTree, err := workRepo.RootTree(ctx)
 	if err != nil {
 		w.Error(err)
 		return
@@ -178,21 +146,7 @@ func (oct ObjectController) GetObject(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
-	adpter := oct.PublicBlkAdapter
-	if !repository.UsePublicStorage {
-		var cfg = config.BlockStoreConfig{}
-		err = json.Unmarshal([]byte(repository.StorageAdapterParams), &cfg)
-		if err != nil {
-			w.BadRequest("storage config not json format")
-			return
-		}
-		adpter, err = oct.AdapterBuilder(ctx, &cfg)
-		if err != nil {
-			w.Error(fmt.Errorf("unable to build block storage"))
-		}
-	}
-
-	reader, err := workTree.ReadBlob(ctx, adpter, repository.StorageNamespace, blob, params.Range)
+	reader, err := workRepo.ReadBlob(ctx, blob, params.Range)
 	if err != nil {
 		w.Error(err)
 		return
@@ -252,47 +206,25 @@ func (oct ObjectController) HeadObject(ctx context.Context, w *api.JiaozifsRespo
 		return
 	}
 
-	repository, err := oct.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
+	repoModel, err := oct.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	treeHash := hash.EmptyHash
-	if params.Type == "wip" {
-		ref, err := oct.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.ID).SetName(params.RefName))
-		if err != nil {
-			w.Error(err)
-			return
-		}
-
-		wip, err := oct.Repo.WipRepo().Get(ctx, models.NewGetWipParams().SetCreatorID(operator.ID).SetRepositoryID(repository.ID).SetRefID(ref.ID))
-		if err != nil {
-			w.Error(err)
-			return
-		}
-		treeHash = wip.CurrentTree
-	} else if params.Type == "branch" {
-		ref, err := oct.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.ID).SetName(params.RefName))
-		if err != nil {
-			w.Error(err)
-			return
-		}
-		if !ref.CommitHash.IsEmpty() {
-			commit, err := oct.Repo.CommitRepo(repository.ID).Commit(ctx, ref.CommitHash)
-			if err != nil {
-				w.Error(err)
-				return
-			}
-			treeHash = commit.TreeHash
-		}
-	} else {
-		w.BadRequest("not support type")
+	workRepo, err := versionmgr.NewWorkRepositoryFromConfig(ctx, operator, repoModel, oct.Repo, oct.PublicStorageConfig)
+	if err != nil {
+		w.Error(err)
 		return
 	}
 
-	fileRepo := oct.Repo.FileTreeRepo(repository.ID)
-	workTree, err := versionmgr.NewWorkTree(ctx, fileRepo, models.NewRootTreeEntry(treeHash))
+	err = workRepo.CheckOut(ctx, versionmgr.WorkRepoState(params.Type), params.RefName)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	workTree, err := workRepo.RootTree(ctx)
 	if err != nil {
 		w.Error(err)
 		return
@@ -397,78 +329,56 @@ func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsRes
 		return
 	}
 
-	repository, err := oct.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
+	repoModel, err := oct.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	ref, err := oct.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetName(params.RefName).SetRepositoryID(repository.ID))
+	workRepo, err := versionmgr.NewWorkRepositoryFromConfig(ctx, operator, repoModel, oct.Repo, oct.PublicStorageConfig)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	wip, err := oct.Repo.WipRepo().Get(ctx, models.NewGetWipParams().SetCreatorID(operator.ID).SetRepositoryID(repository.ID).SetRefID(ref.ID))
+	err = workRepo.CheckOut(ctx, versionmgr.InWip, params.RefName)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	stash, err := oct.Repo.WipRepo().Get(ctx, models.NewGetWipParams().SetID(wip.ID))
+	workTree, err := workRepo.RootTree(ctx)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	adpter := oct.PublicBlkAdapter
-	if !repository.UsePublicStorage {
-		var cfg = config.BlockStoreConfig{}
-		err = json.Unmarshal([]byte(repository.StorageAdapterParams), &cfg)
-		if err != nil {
-			w.BadRequest("storage config not json format")
-			return
-		}
-		adpter, err = oct.AdapterBuilder(ctx, &cfg)
-		if err != nil {
-			w.Error(fmt.Errorf("unable to build block storage"))
-		}
+	blob, err := workRepo.WriteBlob(ctx, reader, r.ContentLength, models.DefaultLeafProperty())
+	if err != nil {
+		w.Error(err)
+		return
 	}
 
 	path := versionmgr.CleanPath(params.Path)
-	var response api.ObjectStats
 	err = oct.Repo.Transaction(ctx, func(dRepo models.IRepo) error {
-		workingTree, err := versionmgr.NewWorkTree(ctx, dRepo.FileTreeRepo(repository.ID), models.NewRootTreeEntry(stash.CurrentTree))
+		err = workTree.AddLeaf(ctx, path, blob)
 		if err != nil {
 			return err
 		}
-
-		// todo move write blob out of transaction
-		blob, err := workingTree.WriteBlob(ctx, adpter, repository.StorageNamespace, reader, r.ContentLength, models.DefaultLeafProperty())
-		if err != nil {
-			return err
-		}
-
-		err = workingTree.AddLeaf(ctx, path, blob)
-		if err != nil {
-			return err
-		}
-		response = api.ObjectStats{
-			Checksum:    blob.CheckSum.Hex(),
-			Mtime:       time.Now().Unix(),
-			Path:        path,
-			PathMode:    utils.Uint32(uint32(filemode.Regular)),
-			SizeBytes:   swag.Int64(blob.Size),
-			ContentType: &contentType,
-			Metadata:    &api.ObjectUserMetadata{},
-		}
-		return dRepo.WipRepo().UpdateByID(ctx, models.NewUpdateWipParams(stash.ID).SetCurrentTree(workingTree.Root().Hash()))
+		return dRepo.WipRepo().UpdateByID(ctx, models.NewUpdateWipParams(workRepo.CurWip().ID).SetCurrentTree(workTree.Root().Hash()))
 	})
-
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	w.JSON(response, http.StatusCreated)
+	w.JSON(api.ObjectStats{
+		Checksum:    blob.CheckSum.Hex(),
+		Mtime:       time.Now().Unix(),
+		Path:        path,
+		PathMode:    utils.Uint32(uint32(filemode.Regular)),
+		SizeBytes:   swag.Int64(blob.Size),
+		ContentType: &contentType,
+		Metadata:    &api.ObjectUserMetadata{},
+	}, http.StatusCreated)
 }

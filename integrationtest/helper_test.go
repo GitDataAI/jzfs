@@ -41,6 +41,17 @@ func Daemon(ctx context.Context, writer io.Writer, jzHome string, listen string)
 	return cmd.RootCmd().ExecuteContext(ctx)
 }
 
+func TestDoubleInit(t *testing.T) { //nolint
+	url := "http://127.0.0.1:1234"
+	ctx := context.Background()
+	tmpDir, err := os.MkdirTemp(os.TempDir(), "*")
+	require.NoError(t, err)
+	require.NoError(t, InitCmd(ctx, tmpDir, url, ""))
+	err = InitCmd(ctx, tmpDir, url, "")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "config already exit")
+}
+
 type Closer func()
 
 func SetupDaemon(t *testing.T, ctx context.Context) (string, Closer) { //nolint

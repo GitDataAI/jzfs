@@ -10,24 +10,17 @@ import (
 	"regexp"
 	"time"
 
-	logging "github.com/ipfs/go-log/v2"
-
-	"github.com/jiaozifs/jiaozifs/config"
-
 	"github.com/google/uuid"
-
-	openapi_types "github.com/oapi-codegen/runtime/types"
-
-	"github.com/jiaozifs/jiaozifs/block"
-	"github.com/jiaozifs/jiaozifs/utils/hash"
-
-	"github.com/jiaozifs/jiaozifs/versionmgr"
-
-	"github.com/jiaozifs/jiaozifs/auth"
-
+	logging "github.com/ipfs/go-log/v2"
 	"github.com/jiaozifs/jiaozifs/api"
+	"github.com/jiaozifs/jiaozifs/auth"
+	"github.com/jiaozifs/jiaozifs/block/params"
+	"github.com/jiaozifs/jiaozifs/config"
 	"github.com/jiaozifs/jiaozifs/models"
 	"github.com/jiaozifs/jiaozifs/utils"
+	"github.com/jiaozifs/jiaozifs/utils/hash"
+	"github.com/jiaozifs/jiaozifs/versionmgr"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 	"go.uber.org/fx"
 )
 
@@ -59,8 +52,8 @@ func CheckRepositoryName(name string) error {
 type RepositoryController struct {
 	fx.In
 
-	Repo             models.IRepo
-	PublicBlkAdapter block.Adapter
+	Repo                models.IRepo
+	PublicStorageConfig params.AdapterConfig
 }
 
 func (repositoryCtl RepositoryController) ListRepositoryOfAuthenticatedUser(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request) {
@@ -140,42 +133,41 @@ func (repositoryCtl RepositoryController) CreateRepository(ctx context.Context, 
 		}
 		storageNamespace = utils.StringValue(cfg.DefaultNamespacePrefix)
 	} else {
-		storageNamespace = fmt.Sprintf("%s://%s", repositoryCtl.PublicBlkAdapter.BlockstoreType(), repoID.String())
+		storageNamespace = fmt.Sprintf("%s://%s", repositoryCtl.PublicStorageConfig.BlockstoreType(), repoID.String())
+	}
+
+	defaultRef := &models.Branches{
+		RepositoryID: repoID,
+		CommitHash:   hash.Hash{},
+		Name:         DefaultBranchName,
+		CreatorID:    operator.ID,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
+	}
+	repository := &models.Repository{
+		ID:                   repoID,
+		Name:                 body.Name,
+		UsePublicStorage:     usePublicStorage,
+		StorageAdapterParams: storageConfig,
+		StorageNamespace:     storageNamespace,
+		Description:          body.Description,
+		HEAD:                 DefaultBranchName,
+		OwnerID:              operator.ID, // this api only create repo for operator
+		CreatorID:            operator.ID,
+		CreatedAt:            time.Now(),
+		UpdatedAt:            time.Now(),
 	}
 
 	//create default ref
 	var createdRepo *models.Repository
 	err = repositoryCtl.Repo.Transaction(ctx, func(repo models.IRepo) error {
-
-		defaultRef := &models.Branches{
-			RepositoryID: repoID,
-			CommitHash:   hash.Hash{},
-			Name:         DefaultBranchName,
-			CreatorID:    operator.ID,
-			CreatedAt:    time.Now(),
-			UpdatedAt:    time.Now(),
-		}
-		defaultRef, err := repositoryCtl.Repo.BranchRepo().Insert(ctx, defaultRef)
+		_, err := repositoryCtl.Repo.BranchRepo().Insert(ctx, defaultRef)
 		if err != nil {
 			return err
-		}
-		repository := &models.Repository{
-			ID:                   repoID,
-			Name:                 body.Name,
-			UsePublicStorage:     usePublicStorage,
-			StorageAdapterParams: storageConfig,
-			StorageNamespace:     storageNamespace,
-			Description:          body.Description,
-			HEAD:                 defaultRef.Name,
-			OwnerID:              operator.ID, // this api only create repo for operator
-			CreatorID:            operator.ID,
-			CreatedAt:            time.Now(),
-			UpdatedAt:            time.Now(),
 		}
 		createdRepo, err = repositoryCtl.Repo.RepositoryRepo().Insert(ctx, repository)
 		return err
 	})
-
 	if err != nil {
 		w.Error(err)
 		return
@@ -333,8 +325,8 @@ func (repositoryCtl RepositoryController) GetCommitsInRepository(ctx context.Con
 	}
 
 	var commits []api.Commit
-	commitNode := versionmgr.NewCommitNode(ctx, commit, repositoryCtl.Repo.CommitRepo(repository.ID))
-	iter := versionmgr.NewCommitPreorderIter(commitNode, nil, nil)
+	commitNode := versionmgr.NewWrapCommitNode(repositoryCtl.Repo.CommitRepo(repository.ID), commit)
+	iter := versionmgr.NewCommitPreorderIter(ctx, commitNode, nil, nil)
 	for {
 		commit, err := iter.Next()
 		if err == nil {

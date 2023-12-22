@@ -123,7 +123,7 @@ components:
           type: string
     RefType:
       type: string
-      enum: ["branch", "wip","tag", "test"]
+      enum: ["branch", "wip","tag", "commit"]
     Branch:
       type: object
       required:
@@ -1082,7 +1082,7 @@ paths:
         403:
           description: Forbidden
 
-  /repos/{owner}/{repository}/contents/:
+  /repos/{owner}/{repository}/contents:
     parameters:
       - in: path
         name: owner
