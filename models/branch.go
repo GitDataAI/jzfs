@@ -108,14 +108,14 @@ func (gup *ListBranchParams) SetRepositoryID(repositoryID uuid.UUID) *ListBranch
 	return gup
 }
 
-func (gup *ListBranchParams) SetName(name *string, match MatchMode) *ListBranchParams {
-	gup.Name = name
+func (gup *ListBranchParams) SetName(name string, match MatchMode) *ListBranchParams {
+	gup.Name = &name
 	gup.NameMatch = match
 	return gup
 }
 
-func (gup *ListBranchParams) SetAfter(after *string) *ListBranchParams {
-	gup.After = after
+func (gup *ListBranchParams) SetAfter(after string) *ListBranchParams {
+	gup.After = &after
 	return gup
 }
 

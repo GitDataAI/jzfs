@@ -75,8 +75,8 @@ func (lrp *ListRepoParams) SetOwnerID(ownerID uuid.UUID) *ListRepoParams {
 	return lrp
 }
 
-func (lrp *ListRepoParams) SetName(name *string, match MatchMode) *ListRepoParams {
-	lrp.Name = name
+func (lrp *ListRepoParams) SetName(name string, match MatchMode) *ListRepoParams {
+	lrp.Name = &name
 	lrp.NameMatch = match
 	return lrp
 }
@@ -86,8 +86,8 @@ func (lrp *ListRepoParams) SetCreatorID(creatorID uuid.UUID) *ListRepoParams {
 	return lrp
 }
 
-func (lrp *ListRepoParams) SetAfter(after *time.Time) *ListRepoParams {
-	lrp.After = after
+func (lrp *ListRepoParams) SetAfter(after time.Time) *ListRepoParams {
+	lrp.After = &after
 	return lrp
 }
 

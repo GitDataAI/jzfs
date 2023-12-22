@@ -61,17 +61,21 @@ func (repositoryCtl RepositoryController) ListRepositoryOfAuthenticatedUser(ctx 
 		return
 	}
 
-	listParams := models.NewListRepoParams()
-	listParams.SetName(params.Prefix, models.PrefixMatch)
-	listParams.SetAfter(params.After)
+	listRepoParams := models.NewListRepoParams()
+	if params.Prefix != nil && len(*params.Prefix) > 0 {
+		listRepoParams.SetName(*params.Prefix, models.PrefixMatch)
+	}
+	if params.After != nil {
+		listRepoParams.SetAfter(*params.After)
+	}
 	pageAmount := utils.IntValue(params.Amount)
 	if pageAmount > utils.DefaultMaxPerPage || pageAmount <= 0 {
-		listParams.SetAmount(utils.DefaultMaxPerPage)
+		listRepoParams.SetAmount(utils.DefaultMaxPerPage)
 	} else {
-		listParams.SetAmount(pageAmount)
+		listRepoParams.SetAmount(pageAmount)
 	}
 
-	repositories, hasMore, err := repositoryCtl.Repo.RepositoryRepo().List(ctx, listParams.
+	repositories, hasMore, err := repositoryCtl.Repo.RepositoryRepo().List(ctx, listRepoParams.
 		SetOwnerID(operator.ID))
 	if err != nil {
 		w.Error(err)
@@ -120,17 +124,21 @@ func (repositoryCtl RepositoryController) ListRepository(ctx context.Context, w 
 		return
 	}
 
-	listParams := models.NewListRepoParams().SetOwnerID(owner.ID)
-	listParams.SetName(params.Prefix, models.PrefixMatch)
-	listParams.SetAfter(params.After)
+	listRepoParams := models.NewListRepoParams().SetOwnerID(owner.ID)
+	if params.Prefix != nil && len(*params.Prefix) > 0 {
+		listRepoParams.SetName(*params.Prefix, models.PrefixMatch)
+	}
+	if params.After != nil {
+		listRepoParams.SetAfter(*params.After)
+	}
 	pageAmount := utils.IntValue(params.Amount)
 	if pageAmount > utils.DefaultMaxPerPage || pageAmount <= 0 {
-		listParams.SetAmount(utils.DefaultMaxPerPage)
+		listRepoParams.SetAmount(utils.DefaultMaxPerPage)
 	} else {
-		listParams.SetAmount(pageAmount)
+		listRepoParams.SetAmount(pageAmount)
 	}
 
-	repositories, hasMore, err := repositoryCtl.Repo.RepositoryRepo().List(ctx, listParams)
+	repositories, hasMore, err := repositoryCtl.Repo.RepositoryRepo().List(ctx, listRepoParams)
 	if err != nil {
 		w.Error(err)
 		return

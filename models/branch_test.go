@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/jiaozifs/jiaozifs/models"
 	"github.com/jiaozifs/jiaozifs/testhelper"
-	"github.com/jiaozifs/jiaozifs/utils"
 	"github.com/jiaozifs/jiaozifs/utils/hash"
 	"github.com/stretchr/testify/require"
 )
@@ -70,31 +69,31 @@ func TestRefRepoInsert(t *testing.T) {
 	require.True(t, cmp.Equal(secModel, sRef, dbTimeCmpOpt))
 
 	// ExactMatch
-	list1, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetName(utils.String(secModel.Name), models.ExactMatch).SetAmount(1))
+	list1, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetName(secModel.Name, models.ExactMatch).SetAmount(1))
 	require.NoError(t, err)
 	require.Len(t, list1, 1)
 	require.True(t, hasMore)
 
 	// PrefixMatch
-	list2, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetName(utils.String(secModel.Name[:3]), models.PrefixMatch).SetAmount(1))
+	list2, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetName(secModel.Name[:3], models.PrefixMatch).SetAmount(1))
 	require.NoError(t, err)
 	require.Len(t, list2, 1)
 	require.True(t, hasMore)
 
 	// SuffixMatch
-	list3, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetName(utils.String(secModel.Name[3:]), models.SuffixMatch).SetAmount(1))
+	list3, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetName(secModel.Name[3:], models.SuffixMatch).SetAmount(1))
 	require.NoError(t, err)
 	require.Len(t, list3, 1)
 	require.True(t, hasMore)
 
 	// LikeMatch
-	list4, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetName(utils.String(secModel.Name[2:4]), models.LikeMatch).SetAmount(1))
+	list4, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetName(secModel.Name[2:4], models.LikeMatch).SetAmount(1))
 	require.NoError(t, err)
 	require.Len(t, list4, 1)
 	require.True(t, hasMore)
 
 	// After
-	list5, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetAfter(utils.String("feat/abcd/aaa")))
+	list5, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetAfter("feat/abcd/aaa"))
 	require.NoError(t, err)
 	require.Len(t, list5, 1)
 	require.False(t, hasMore)

@@ -75,8 +75,12 @@ func (bct BranchController) ListBranches(ctx context.Context, w *api.JiaozifsRes
 	}
 
 	listBranchParams := models.NewListBranchParams()
-	listBranchParams.SetName(params.Prefix, models.PrefixMatch)
-	listBranchParams.SetAfter(params.After)
+	if params.Prefix != nil && len(*params.Prefix) > 0 {
+		listBranchParams.SetName(*params.Prefix, models.PrefixMatch)
+	}
+	if params.After != nil && len(*params.After) > 0 {
+		listBranchParams.SetAfter(*params.After)
+	}
 	pageAmount := utils.IntValue(params.Amount)
 	if pageAmount > utils.DefaultMaxPerPage || pageAmount <= 0 {
 		listBranchParams.SetAmount(utils.DefaultMaxPerPage)
