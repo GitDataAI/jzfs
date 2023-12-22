@@ -94,7 +94,6 @@ func TestRefRepoInsert(t *testing.T) {
 	require.True(t, hasMore)
 
 	// After
-	// require.Len(t, branch.Name, 3)
 	list5, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetAfter(utils.String("feat/abcd/aaa")))
 	require.NoError(t, err)
 	require.Len(t, list5, 1)
