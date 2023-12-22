@@ -23,7 +23,7 @@ func TestRefRepoInsert(t *testing.T) {
 
 	branchModel := &models.Branches{}
 	require.NoError(t, gofakeit.Struct(branchModel))
-	branchModel.Name = "main/feat/aaa"
+	branchModel.Name = "feat/abc/aaa"
 	newBrance, err := repo.Insert(ctx, branchModel)
 	require.NoError(t, err)
 	require.NotEqual(t, uuid.Nil, newBrance.ID)
@@ -55,7 +55,7 @@ func TestRefRepoInsert(t *testing.T) {
 	secModel := &models.Branches{}
 	require.NoError(t, gofakeit.Struct(secModel))
 	secModel.RepositoryID = branch.RepositoryID
-	branchModel.Name = "main/feat/bbb"
+	branchModel.Name = "feat/bba/ccc"
 	secRef, err := repo.Insert(ctx, secModel)
 	require.NoError(t, err)
 	require.NotEqual(t, uuid.Nil, secRef.ID)
@@ -70,39 +70,41 @@ func TestRefRepoInsert(t *testing.T) {
 	require.True(t, cmp.Equal(secModel, sRef, dbTimeCmpOpt))
 
 	// ExactMatch
-	list, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetName(utils.String(secModel.Name), models.ExactMatch).SetAmount(1))
-	require.NoError(t, err)
-	require.Len(t, list, 1)
-	require.True(t, hasMore)
-
-	// PrefixMatch
-	list1, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetName(utils.String(secModel.Name[:3]), models.PrefixMatch).SetAmount(1))
+	list1, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetName(utils.String(secModel.Name), models.ExactMatch).SetAmount(1))
 	require.NoError(t, err)
 	require.Len(t, list1, 1)
 	require.True(t, hasMore)
 
-	// SuffixMatch
-	list2, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetName(utils.String(secModel.Name[3:]), models.SuffixMatch).SetAmount(1))
+	// PrefixMatch
+	list2, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetName(utils.String(secModel.Name[:3]), models.PrefixMatch).SetAmount(1))
 	require.NoError(t, err)
 	require.Len(t, list2, 1)
 	require.True(t, hasMore)
 
-	// LikeMatch
-	list3, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetName(utils.String(secModel.Name[2:5]), models.LikeMatch).SetAmount(1))
+	// SuffixMatch
+	list3, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetName(utils.String(secModel.Name[3:]), models.SuffixMatch).SetAmount(1))
 	require.NoError(t, err)
 	require.Len(t, list3, 1)
 	require.True(t, hasMore)
 
-	newList, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetAfter(utils.String(branchModel.Name)).SetAmount(1))
+	// LikeMatch
+	list4, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetName(utils.String(secModel.Name[2:4]), models.LikeMatch).SetAmount(1))
 	require.NoError(t, err)
-	require.Len(t, newList, 1)
+	require.Len(t, list4, 1)
 	require.True(t, hasMore)
+
+	// After
+	// require.Len(t, branch.Name, 3)
+	list5, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetAfter(utils.String("feat/abcd/aaa")))
+	require.NoError(t, err)
+	require.Len(t, list5, 1)
+	require.False(t, hasMore)
 
 	affectedRows, err := repo.Delete(ctx, models.NewDeleteBranchParams().SetID(list[0].ID).SetRepositoryID(list[0].RepositoryID).SetName(list[0].Name))
 	require.NoError(t, err)
 	require.Equal(t, int64(1), affectedRows)
 
-	list, _, err = repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID))
+	list6, _, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID))
 	require.NoError(t, err)
-	require.Len(t, list, 1)
+	require.Len(t, list6, 1)
 }
