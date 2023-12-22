@@ -42,7 +42,7 @@ var defaultCfg = Config{
 			LoginCookieNames   []string `mapstructure:"login_cookie_names"`
 			LogoutURL          string   `mapstructure:"logout_url"`
 		}{RBAC: AuthRBACSimplified,
-			LoginURL:           "api/v1/login",
+			LoginURL:           "api/v1/auth/login",
 			LoginFailedMessage: "",
 			LoginCookieNames:   nil,
 			LogoutURL:          "auth/logout",

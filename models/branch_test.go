@@ -69,6 +69,12 @@ func TestRefRepoInsert(t *testing.T) {
 
 	require.True(t, cmp.Equal(secModel, sRef, dbTimeCmpOpt))
 
+	// ExactMatch
+	list, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetName(utils.String(secModel.Name), models.ExactMatch).SetAmount(1))
+	require.NoError(t, err)
+	require.Len(t, list, 1)
+	require.True(t, hasMore)
+
 	// PrefixMatch
 	list1, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetName(utils.String(secModel.Name[:3]), models.PrefixMatch).SetAmount(1))
 	require.NoError(t, err)
