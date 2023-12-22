@@ -26,6 +26,3 @@ coverage.out
 
 # Go workspace file
 go.work
-
-#vscode
-.vscode

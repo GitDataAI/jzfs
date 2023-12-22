@@ -3,6 +3,7 @@ package models_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/google/go-cmp/cmp"
@@ -105,7 +106,7 @@ func TestRepositoryRepo_Insert(t *testing.T) {
 	}
 	{
 		//after
-		repos, hasMore, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetAfter(utils.Time(secRepo.UpdatedAt)).SetAmount(1))
+		repos, hasMore, err := repo.List(ctx, models.NewListRepoParams().SetCreatorID(secModel.CreatorID).SetAfter(utils.Time(time.Now())).SetAmount(1))
 		require.NoError(t, err)
 		require.True(t, hasMore)
 		require.Len(t, repos, 1)
