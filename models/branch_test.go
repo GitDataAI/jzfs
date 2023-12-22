@@ -51,11 +51,11 @@ func TestRefRepoInsert(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, list, 1)
 
-	// second
+	// SecondModel
 	secModel := &models.Branches{}
 	require.NoError(t, gofakeit.Struct(secModel))
 	secModel.RepositoryID = branch.RepositoryID
-	branchModel.Name = "feat/bba/ccc"
+	secModel.Name = "feat/bba/ccc"
 	secRef, err := repo.Insert(ctx, secModel)
 	require.NoError(t, err)
 	require.NotEqual(t, uuid.Nil, secRef.ID)
