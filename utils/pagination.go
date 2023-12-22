@@ -27,10 +27,12 @@ func PaginationFor(hasMore bool, results interface{}, fieldName string) PageMana
 	}
 	v := s.Index(pagination.Results - 1)
 	token := v.FieldByName(fieldName)
-	switch fieldName {
-	case "UpdatedAt":
-		pagination.NextOffset = token.Interface().(time.Time).String()
-	case "Name":
+	switch token.Kind() {
+	case reflect.Struct:
+		if token.Type() == reflect.TypeOf(time.Time{}) {
+			pagination.NextOffset = token.Interface().(time.Time).String()
+		}
+	case reflect.String:
 		pagination.NextOffset = token.Interface().(string)
 	}
 	return pagination

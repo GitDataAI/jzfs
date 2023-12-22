@@ -69,9 +69,22 @@ func TestRefRepoInsert(t *testing.T) {
 
 	require.True(t, cmp.Equal(secModel, sRef, dbTimeCmpOpt))
 
-	list, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetName(utils.String(secModel.Name[:3]), models.PrefixMatch).SetAmount(1))
+	// PrefixMatch
+	list1, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetName(utils.String(secModel.Name[:3]), models.PrefixMatch).SetAmount(1))
 	require.NoError(t, err)
-	require.Len(t, list, 1)
+	require.Len(t, list1, 1)
+	require.True(t, hasMore)
+
+	// SuffixMatch
+	list2, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetName(utils.String(secModel.Name[3:]), models.SuffixMatch).SetAmount(1))
+	require.NoError(t, err)
+	require.Len(t, list2, 1)
+	require.True(t, hasMore)
+
+	// LikeMatch
+	list3, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetName(utils.String(secModel.Name[2:5]), models.LikeMatch).SetAmount(1))
+	require.NoError(t, err)
+	require.Len(t, list3, 1)
 	require.True(t, hasMore)
 
 	newList, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetAfter(utils.String(branchModel.Name)).SetAmount(1))
