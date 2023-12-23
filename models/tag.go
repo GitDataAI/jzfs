@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-
 	"github.com/jiaozifs/jiaozifs/utils/hash"
 	"github.com/uptrace/bun"
 )

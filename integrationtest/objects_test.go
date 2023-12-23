@@ -8,10 +8,9 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/jiaozifs/jiaozifs/utils/hash"
-
 	"github.com/jiaozifs/jiaozifs/api"
 	apiimpl "github.com/jiaozifs/jiaozifs/api/api_impl"
+	"github.com/jiaozifs/jiaozifs/utils/hash"
 	"github.com/smartystreets/goconvey/convey"
 )
 
@@ -116,16 +115,6 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		//commit object to branch
 		commitWip(ctx, c, client, "commit wip", userName, repoName, branchName, "test commit msg")
 
-		c.Convey("head object with no type", func() {
-			resp, err := client.HeadObject(ctx, userName, repoName, &api.HeadObjectParams{
-				RefName: branchName,
-				Path:    "a.bin",
-				Type:    api.RefTypeTest,
-			})
-			convey.So(err, convey.ShouldBeNil)
-			convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)
-		})
-
 		c.Convey("head object", func(c convey.C) {
 			c.Convey("no auth", func() {
 				re := client.RequestEditors
@@ -210,16 +199,6 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				etag := resp.Header.Get("ETag")
 				convey.So(etag, convey.ShouldEqual, `"0ee0646c1c77d8131cc8f4ee65c7673b"`)
 			})
-		})
-
-		c.Convey("get object with no type", func() {
-			resp, err := client.GetObject(ctx, userName, repoName, &api.GetObjectParams{
-				RefName: branchName,
-				Path:    "a.bin",
-				Type:    api.RefTypeTest,
-			})
-			convey.So(err, convey.ShouldBeNil)
-			convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)
 		})
 
 		c.Convey("get object", func(c convey.C) {

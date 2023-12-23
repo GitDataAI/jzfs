@@ -4,12 +4,11 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/uptrace/bun/extra/bundebug"
-
 	"github.com/jiaozifs/jiaozifs/config"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/driver/pgdriver"
+	"github.com/uptrace/bun/extra/bundebug"
 	"go.uber.org/fx"
 )
 

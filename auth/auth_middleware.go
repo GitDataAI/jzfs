@@ -6,14 +6,12 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/jiaozifs/jiaozifs/auth/crypt"
-
-	"github.com/gorilla/sessions"
-	"github.com/jiaozifs/jiaozifs/models"
-
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/routers"
 	"github.com/getkin/kin-openapi/routers/legacy"
+	"github.com/gorilla/sessions"
+	"github.com/jiaozifs/jiaozifs/auth/crypt"
+	"github.com/jiaozifs/jiaozifs/models"
 )
 
 const (

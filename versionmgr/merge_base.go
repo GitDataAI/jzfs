@@ -2,11 +2,10 @@ package versionmgr
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"sort"
-
-	"github.com/go-git/go-git/v5/plumbing/storer"
 )
 
 // errIsReachable is thrown when first commit is an ancestor of the second
@@ -15,39 +14,39 @@ var errIsReachable = fmt.Errorf("first is reachable from second")
 // MergeBase mimics the behavior of `git merge-base actual other`, returning the
 // best common ancestor between the actual and the passed one.
 // The best common ancestors can not be reached from other common ancestors.
-func (c *CommitNode) MergeBase(other *CommitNode) ([]*CommitNode, error) {
+func (c *WrapCommitNode) MergeBase(ctx context.Context, other *WrapCommitNode) ([]*WrapCommitNode, error) {
 	// use sortedByCommitDateDesc strategy
 	sorted := sortByCommitDateDesc(c, other)
 	newer := sorted[0]
 	older := sorted[1]
 
-	newerHistory, err := ancestorsIndex(older, newer)
+	newerHistory, err := ancestorsIndex(ctx, older, newer)
 	if errors.Is(err, errIsReachable) {
-		return []*CommitNode{older}, nil
+		return []*WrapCommitNode{older}, nil
 	}
 
 	if err != nil {
 		return nil, err
 	}
 
-	var res []*CommitNode
+	var res []*WrapCommitNode
 	inNewerHistory := isInIndexCommitFilter(newerHistory)
-	resIter := NewFilterCommitIter(older, &inNewerHistory, &inNewerHistory)
-	_ = resIter.ForEach(func(commit *CommitNode) error {
+	resIter := NewFilterCommitIter(ctx, older, &inNewerHistory, &inNewerHistory)
+	_ = resIter.ForEach(func(commit *WrapCommitNode) error {
 		res = append(res, commit)
 		return nil
 	})
 
-	return Independents(res)
+	return Independents(ctx, res)
 }
 
 // IsAncestor returns true if the actual commit is ancestor of the passed one.
 // It returns an error if the history is not transversable
 // It mimics the behavior of `git merge --is-ancestor actual other`
-func (c *CommitNode) IsAncestor(other *CommitNode) (bool, error) {
+func (c *WrapCommitNode) IsAncestor(ctx context.Context, other *WrapCommitNode) (bool, error) {
 	found := false
-	iter := NewCommitPreorderIter(other, nil, nil)
-	err := iter.ForEach(func(comm *CommitNode) error {
+	iter := NewCommitPreorderIter(ctx, other, nil, nil)
+	err := iter.ForEach(func(comm *WrapCommitNode) error {
 		if !bytes.Equal(comm.Commit().Hash, c.Commit().Hash) {
 			return nil
 		}
@@ -62,14 +61,14 @@ func (c *CommitNode) IsAncestor(other *CommitNode) (bool, error) {
 // ancestorsIndex returns a map with the ancestors of the starting commit if the
 // excluded one is not one of them. It returns errIsReachable if the excluded commit
 // is ancestor of the starting, or another error if the history is not traversable.
-func ancestorsIndex(excluded, starting *CommitNode) (map[string]struct{}, error) {
+func ancestorsIndex(ctx context.Context, excluded, starting *WrapCommitNode) (map[string]struct{}, error) {
 	if bytes.Equal(excluded.Commit().Hash, starting.Commit().Hash) {
 		return nil, errIsReachable
 	}
 
 	startingHistory := map[string]struct{}{}
-	startingIter := NewCommitIterBSF(starting, nil, nil)
-	err := startingIter.ForEach(func(commit *CommitNode) error {
+	startingIter := NewCommitIterBSF(ctx, starting, nil, nil)
+	err := startingIter.ForEach(func(commit *WrapCommitNode) error {
 		if bytes.Equal(commit.Commit().Hash, excluded.Commit().Hash) {
 			return errIsReachable
 		}
@@ -87,13 +86,13 @@ func ancestorsIndex(excluded, starting *CommitNode) (map[string]struct{}, error)
 
 // Independents returns a subset of the passed commits, that are not reachable the others
 // It mimics the behavior of `git merge-base --independent commit...`.
-func Independents(commits []*CommitNode) ([]*CommitNode, error) {
+func Independents(ctx context.Context, commits []*WrapCommitNode) ([]*WrapCommitNode, error) {
 	// use sortedByCommitDateDesc strategy
 	candidates := sortByCommitDateDesc(commits...)
 	candidates = removeDuplicated(candidates)
 
 	seen := map[string]struct{}{}
-	var isLimit CommitFilter = func(commit *CommitNode) bool {
+	var isLimit CommitFilter = func(commit *WrapCommitNode) bool {
 		_, ok := seen[commit.Commit().Hash.Hex()]
 		return ok
 	}
@@ -106,8 +105,8 @@ func Independents(commits []*CommitNode) ([]*CommitNode, error) {
 	for {
 		from := candidates[pos]
 		others := remove(candidates, from)
-		fromHistoryIter := NewFilterCommitIter(from, nil, &isLimit)
-		err := fromHistoryIter.ForEach(func(fromAncestor *CommitNode) error {
+		fromHistoryIter := NewFilterCommitIter(ctx, from, nil, &isLimit)
+		err := fromHistoryIter.ForEach(func(fromAncestor *WrapCommitNode) error {
 			for _, other := range others {
 				if bytes.Equal(fromAncestor.Commit().Hash, other.Commit().Hash) {
 					candidates = remove(candidates, other)
@@ -116,7 +115,7 @@ func Independents(commits []*CommitNode) ([]*CommitNode, error) {
 			}
 
 			if len(candidates) == 1 {
-				return storer.ErrStop
+				return ErrStop
 			}
 
 			seen[fromAncestor.Commit().Hash.Hex()] = struct{}{}
@@ -146,8 +145,8 @@ func Independents(commits []*CommitNode) ([]*CommitNode, error) {
 // That way `Independents(A^, A)` will be processed as being `Independents(A, A^)`;
 // so starting by `A` it will be reached `A^` way sooner than walking from `A^`
 // to the initial commit, and then from `A` to `A^`.
-func sortByCommitDateDesc(commits ...*CommitNode) []*CommitNode {
-	sorted := make([]*CommitNode, len(commits))
+func sortByCommitDateDesc(commits ...*WrapCommitNode) []*WrapCommitNode {
+	sorted := make([]*WrapCommitNode, len(commits))
 	copy(sorted, commits)
 	sort.Slice(sorted, func(i, j int) bool {
 		return sorted[i].Commit().Committer.When.After(sorted[j].Commit().Committer.When)
@@ -157,7 +156,7 @@ func sortByCommitDateDesc(commits ...*CommitNode) []*CommitNode {
 }
 
 // indexOf returns the first position where target was found in the passed commits
-func indexOf(commits []*CommitNode, target *CommitNode) int {
+func indexOf(commits []*WrapCommitNode, target *WrapCommitNode) int {
 	for i, commit := range commits {
 		if bytes.Equal(target.Commit().Hash, commit.Commit().Hash) {
 			return i
@@ -168,8 +167,8 @@ func indexOf(commits []*CommitNode, target *CommitNode) int {
 }
 
 // remove returns the passed commits excluding the commit toDelete
-func remove(commits []*CommitNode, toDelete *CommitNode) []*CommitNode {
-	res := make([]*CommitNode, len(commits))
+func remove(commits []*WrapCommitNode, toDelete *WrapCommitNode) []*WrapCommitNode {
+	res := make([]*WrapCommitNode, len(commits))
 	j := 0
 	for _, commit := range commits {
 		if bytes.Equal(commit.Commit().Hash, toDelete.Commit().Hash) {
@@ -184,9 +183,9 @@ func remove(commits []*CommitNode, toDelete *CommitNode) []*CommitNode {
 }
 
 // removeDuplicated removes duplicated commits from the passed slice of commits
-func removeDuplicated(commits []*CommitNode) []*CommitNode {
+func removeDuplicated(commits []*WrapCommitNode) []*WrapCommitNode {
 	seen := make(map[string]struct{}, len(commits))
-	res := make([]*CommitNode, len(commits))
+	res := make([]*WrapCommitNode, len(commits))
 	j := 0
 	for _, commit := range commits {
 		if _, ok := seen[commit.Commit().Hash.Hex()]; ok {
@@ -204,7 +203,7 @@ func removeDuplicated(commits []*CommitNode) []*CommitNode {
 // isInIndexCommitFilter returns a commitFilter that returns true
 // if the commit is in the passed index.
 func isInIndexCommitFilter(index map[string]struct{}) CommitFilter {
-	return func(c *CommitNode) bool {
+	return func(c *WrapCommitNode) bool {
 		_, ok := index[c.Commit().Hash.Hex()]
 		return ok
 	}

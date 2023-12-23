@@ -2,8 +2,6 @@ package config
 
 import (
 	"encoding/hex"
-
-	"github.com/jiaozifs/jiaozifs/utils"
 )
 
 var DefaultLocalBSPath = "~/.jiaozifs/blockstore"
@@ -17,8 +15,7 @@ var defaultCfg = Config{
 		Listen: "http://127.0.0.1:34913",
 	},
 	Blockstore: BlockStoreConfig{
-		Type:                   "local",
-		DefaultNamespacePrefix: utils.String("data"),
+		Type: "local",
 		Local: (*struct {
 			Path                    string   `mapstructure:"path"`
 			ImportEnabled           bool     `mapstructure:"import_enabled"`

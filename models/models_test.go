@@ -3,18 +3,13 @@ package models_test
 import (
 	"context"
 	"fmt"
-
 	"testing"
 
-	"github.com/jiaozifs/jiaozifs/models"
-
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
-
+	"github.com/jiaozifs/jiaozifs/config"
+	"github.com/jiaozifs/jiaozifs/models"
 	"github.com/phayes/freeport"
 	"github.com/stretchr/testify/require"
-
-	"github.com/jiaozifs/jiaozifs/config"
-
 	"go.uber.org/fx/fxtest"
 )
 

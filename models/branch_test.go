@@ -4,13 +4,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jiaozifs/jiaozifs/utils/hash"
-
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"github.com/jiaozifs/jiaozifs/models"
 	"github.com/jiaozifs/jiaozifs/testhelper"
+	"github.com/jiaozifs/jiaozifs/utils/hash"
 	"github.com/stretchr/testify/require"
 )
 
@@ -23,25 +22,25 @@ func TestRefRepoInsert(t *testing.T) {
 
 	branchModel := &models.Branches{}
 	require.NoError(t, gofakeit.Struct(branchModel))
-	newBrance, err := repo.Insert(ctx, branchModel)
+	newBranch, err := repo.Insert(ctx, branchModel)
 	require.NoError(t, err)
-	require.NotEqual(t, uuid.Nil, newBrance.ID)
+	require.NotEqual(t, uuid.Nil, newBranch.ID)
 
 	getBranchParams := models.NewGetBranchParams().
-		SetID(newBrance.ID).
-		SetRepositoryID(newBrance.RepositoryID).
-		SetName(newBrance.Name)
+		SetID(newBranch.ID).
+		SetRepositoryID(newBranch.RepositoryID).
+		SetName(newBranch.Name)
 	branch, err := repo.Get(ctx, getBranchParams)
 	require.NoError(t, err)
 
 	require.True(t, cmp.Equal(branchModel, branch, dbTimeCmpOpt))
 
 	mockHash := hash.Hash("mock hash")
-	err = repo.UpdateByID(ctx, models.NewUpdateBranchParams(newBrance.ID).SetCommitHash(mockHash))
+	err = repo.UpdateByID(ctx, models.NewUpdateBranchParams(newBranch.ID).SetCommitHash(mockHash))
 	require.NoError(t, err)
 
 	branchAfterUpdated, err := repo.Get(ctx, &models.GetBranchParams{
-		ID: newBrance.ID,
+		ID: newBranch.ID,
 	})
 	require.NoError(t, err)
 	require.Equal(t, mockHash, branchAfterUpdated.CommitHash)

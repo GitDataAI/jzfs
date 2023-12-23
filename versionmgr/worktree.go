@@ -4,25 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/google/uuid"
-
-	"github.com/jiaozifs/jiaozifs/utils/httputil"
-
-	"github.com/jiaozifs/jiaozifs/versionmgr/merkletrie"
-
-	"github.com/jiaozifs/jiaozifs/block"
-	"github.com/jiaozifs/jiaozifs/utils/hash"
-	"github.com/jiaozifs/jiaozifs/utils/pathutil"
-
-	"golang.org/x/exp/slices"
-
 	"github.com/jiaozifs/jiaozifs/models"
 	"github.com/jiaozifs/jiaozifs/models/filemode"
+	"github.com/jiaozifs/jiaozifs/utils/hash"
+	"github.com/jiaozifs/jiaozifs/versionmgr/merkletrie"
+	"golang.org/x/exp/slices"
 )
 
 var EmptyRoot = &models.TreeNode{
@@ -75,77 +66,6 @@ func (workTree *WorkTree) Root() *TreeNode {
 }
 func (workTree *WorkTree) RepositoryID() uuid.UUID {
 	return workTree.object.RepositoryID()
-}
-
-// ReadBlob read blob content with range
-func (workTree *WorkTree) ReadBlob(ctx context.Context, adapter block.Adapter, blob *models.Blob, rangeSpec *string) (io.ReadCloser, error) {
-	address := pathutil.PathOfHash(blob.CheckSum)
-	pointer := block.ObjectPointer{
-		StorageNamespace: adapter.BlockstoreType() + "://",
-		IdentifierType:   block.IdentifierTypeRelative,
-		Identifier:       address,
-	}
-
-	// setup response
-	var reader io.ReadCloser
-
-	// handle partial response if byte range supplied
-	if rangeSpec != nil {
-		rng, err := httputil.ParseRange(*rangeSpec, blob.Size)
-		if err != nil {
-			return nil, err
-		}
-		reader, err = adapter.GetRange(ctx, pointer, rng.StartOffset, rng.EndOffset)
-		if err != nil {
-			return nil, err
-		}
-
-	} else {
-		var err error
-		reader, err = adapter.Get(ctx, pointer, blob.Size)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return reader, nil
-}
-
-// WriteBlob write blob content to storage
-func (workTree *WorkTree) WriteBlob(ctx context.Context, adapter block.Adapter, body io.Reader, contentLength int64, properties models.Property) (*models.Blob, error) {
-	// handle the upload itself
-	hashReader := hash.NewHashingReader(body, hash.Md5)
-	tempf, err := os.CreateTemp("", "*")
-	if err != nil {
-		return nil, err
-	}
-	_, err = io.Copy(tempf, hashReader)
-	if err != nil {
-		return nil, err
-	}
-
-	checkSum := hash.Hash(hashReader.Md5.Sum(nil))
-	_, err = tempf.Seek(0, io.SeekStart)
-	if err != nil {
-		return nil, err
-	}
-
-	defer func() {
-		name := tempf.Name()
-		_ = tempf.Close()
-		_ = os.RemoveAll(name)
-	}()
-
-	address := pathutil.PathOfHash(checkSum)
-	err = adapter.Put(ctx, block.ObjectPointer{
-		StorageNamespace: adapter.BlockstoreType() + "://",
-		IdentifierType:   block.IdentifierTypeRelative,
-		Identifier:       address,
-	}, contentLength, tempf, block.PutOpts{})
-	if err != nil {
-		return nil, err
-	}
-
-	return models.NewBlob(properties, workTree.RepositoryID(), checkSum, hashReader.CopiedSize)
 }
 
 func (workTree *WorkTree) AppendDirectEntry(ctx context.Context, treeEntry models.TreeEntry) (*models.TreeNode, error) {

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 
-	"github.com/go-git/go-git/v5/plumbing/storer"
 	"github.com/google/uuid"
 	"github.com/jiaozifs/jiaozifs/models"
 	"github.com/jiaozifs/jiaozifs/utils/hash"
@@ -15,71 +14,68 @@ var (
 	ErrStop = errors.New("stop iter")
 )
 
-type CommitNode struct {
-	ctx        context.Context
+type WrapCommitNode struct {
 	commit     *models.Commit
 	commitRepo models.ICommitRepo
 }
 
-func NewCommitNode(ctx context.Context, commit *models.Commit, commitRepo models.ICommitRepo) *CommitNode {
-	return &CommitNode{ctx: ctx, commit: commit, commitRepo: commitRepo}
+func NewWrapCommitNode(commitRepo models.ICommitRepo, commit *models.Commit) *WrapCommitNode {
+	return &WrapCommitNode{commit: commit, commitRepo: commitRepo}
 }
 
-func (c *CommitNode) Ctx() context.Context {
-	return c.ctx
-}
-
-func (c *CommitNode) Commit() *models.Commit {
+func (c *WrapCommitNode) Commit() *models.Commit {
 	return c.commit
 }
 
-func (c *CommitNode) RepoID() uuid.UUID {
+func (c *WrapCommitNode) RepoID() uuid.UUID {
 	return c.commit.RepositoryID
 }
 
 // TreeHash returns the TreeHash in the commit.
-func (c *CommitNode) TreeHash() hash.Hash {
+func (c *WrapCommitNode) TreeHash() hash.Hash {
 	return c.commit.TreeHash
 }
 
+// Hash returns the Hash in the commit.
+func (c *WrapCommitNode) Hash() hash.Hash {
+	return c.commit.Hash
+}
+
 // Parents return a CommitIter to the parent Commits.
-func (c *CommitNode) Parents() ([]*CommitNode, error) {
-	parentNodes := make([]*CommitNode, len(c.commit.ParentHashes))
-	for _, hash := range c.commit.ParentHashes {
-		commit, err := c.commitRepo.Commit(c.ctx, hash)
+func (c *WrapCommitNode) Parents(ctx context.Context) ([]*WrapCommitNode, error) {
+	parentNodes := make([]*WrapCommitNode, len(c.commit.ParentHashes))
+	for index, hash := range c.commit.ParentHashes {
+		commit, err := c.commitRepo.Commit(ctx, hash)
 		if err != nil {
 			return nil, err
 		}
-		parentNodes = append(parentNodes, &CommitNode{
-			ctx:        c.ctx,
+		parentNodes[index] = &WrapCommitNode{
 			commit:     commit,
 			commitRepo: c.commitRepo,
-		})
+		}
 	}
 	return parentNodes, nil
 }
 
-func (c *CommitNode) GetCommit(hash hash.Hash) (*CommitNode, error) {
-	commit, err := c.commitRepo.Commit(c.ctx, hash)
+func (c *WrapCommitNode) GetCommit(ctx context.Context, hash hash.Hash) (*WrapCommitNode, error) {
+	commit, err := c.commitRepo.Commit(ctx, hash)
 	if err != nil {
 		return nil, err
 	}
-	return &CommitNode{
-		ctx:        c.ctx,
+	return &WrapCommitNode{
 		commit:     commit,
 		commitRepo: c.commitRepo,
 	}, nil
 }
 
-func (c *CommitNode) GetCommits(hashes []hash.Hash) ([]*CommitNode, error) {
-	commits := make([]*CommitNode, len(hashes))
+func (c *WrapCommitNode) GetCommits(ctx context.Context, hashes []hash.Hash) ([]*WrapCommitNode, error) {
+	commits := make([]*WrapCommitNode, len(hashes))
 	for i, hash := range hashes {
-		commit, err := c.commitRepo.Commit(c.ctx, hash)
+		commit, err := c.commitRepo.Commit(ctx, hash)
 		if err != nil {
 			return nil, err
 		}
-		commits[i] = &CommitNode{
-			ctx:        c.ctx,
+		commits[i] = &WrapCommitNode{
 			commit:     commit,
 			commitRepo: c.commitRepo,
 		}
@@ -89,25 +85,25 @@ func (c *CommitNode) GetCommits(hashes []hash.Hash) ([]*CommitNode, error) {
 
 // CommitIter is a generic closable interface for iterating over commits.
 type CommitIter interface {
-	Next() (*CommitNode, error)
-	ForEach(func(*CommitNode) error) error
+	Next() (*WrapCommitNode, error)
+	ForEach(func(*WrapCommitNode) error) error
 }
 
 var _ CommitIter = (*arraryCommitIter)(nil)
 
 type arraryCommitIter struct {
-	commits []*CommitNode
+	commits []*WrapCommitNode
 	idx     int
 }
 
-func newArrayCommitIter(commits []*CommitNode) *arraryCommitIter {
+func newArrayCommitIter(commits []*WrapCommitNode) *arraryCommitIter {
 	return &arraryCommitIter{
 		commits: commits,
 		idx:     -1,
 	}
 }
 
-func (a *arraryCommitIter) Next() (*CommitNode, error) {
+func (a *arraryCommitIter) Next() (*WrapCommitNode, error) {
 	if a.idx < len(a.commits)-1 {
 		a.idx++
 		return a.commits[a.idx], nil
@@ -115,10 +111,10 @@ func (a *arraryCommitIter) Next() (*CommitNode, error) {
 	return nil, io.EOF
 }
 
-func (a *arraryCommitIter) ForEach(f func(*CommitNode) error) error {
+func (a *arraryCommitIter) ForEach(f func(*WrapCommitNode) error) error {
 	for _, commit := range a.commits {
 		err := f(commit)
-		if errors.Is(err, storer.ErrStop) {
+		if errors.Is(err, ErrStop) {
 			break
 		}
 		if err != nil {
@@ -129,5 +125,5 @@ func (a *arraryCommitIter) ForEach(f func(*CommitNode) error) error {
 }
 
 func (a *arraryCommitIter) Has() bool {
-	return a.idx == len(a.commits)-1
+	return a.idx < len(a.commits)-1
 }

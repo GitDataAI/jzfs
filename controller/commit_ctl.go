@@ -7,23 +7,21 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/jiaozifs/jiaozifs/utils/hash"
-
-	"github.com/jiaozifs/jiaozifs/auth"
-
-	"github.com/jiaozifs/jiaozifs/utils"
-
-	"github.com/jiaozifs/jiaozifs/versionmgr"
-
 	"github.com/jiaozifs/jiaozifs/api"
+	"github.com/jiaozifs/jiaozifs/auth"
+	"github.com/jiaozifs/jiaozifs/block/params"
 	"github.com/jiaozifs/jiaozifs/models"
+	"github.com/jiaozifs/jiaozifs/utils"
+	"github.com/jiaozifs/jiaozifs/utils/hash"
+	"github.com/jiaozifs/jiaozifs/versionmgr"
 	"go.uber.org/fx"
 )
 
 type CommitController struct {
 	fx.In
 
-	Repo models.IRepo
+	Repo                models.IRepo
+	PublicStorageConfig params.AdapterConfig
 }
 
 func (commitCtl CommitController) GetEntriesInRef(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, params api.GetEntriesInRefParams) {
@@ -138,31 +136,31 @@ func (commitCtl CommitController) GetCommitDiff(ctx context.Context, w *api.Jiao
 		return
 	}
 
-	bashCommitHash, err := hex.DecodeString(baseHead[0])
-	if err != nil {
-		w.Error(err)
-		return
-	}
 	toCommitHash, err := hex.DecodeString(baseHead[1])
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	bashCommit, err := commitCtl.Repo.CommitRepo(repository.ID).Commit(ctx, bashCommitHash)
+	workRepo, err := versionmgr.NewWorkRepositoryFromConfig(ctx, operator, repository, commitCtl.Repo, commitCtl.PublicStorageConfig)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	err = workRepo.CheckOut(ctx, versionmgr.InCommit, baseHead[0])
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	changes, err := workRepo.DiffCommit(ctx, toCommitHash)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
 	path := versionmgr.CleanPath(utils.StringValue(params.Path))
-	commitOp := versionmgr.NewCommitOp(commitCtl.Repo, repository.ID, bashCommit)
-	changes, err := commitOp.DiffCommit(ctx, toCommitHash)
-	if err != nil {
-		w.Error(err)
-		return
-	}
-
 	var changesResp []api.Change
 	err = changes.ForEach(func(change versionmgr.IChange) error {
 		action, err := change.Action()

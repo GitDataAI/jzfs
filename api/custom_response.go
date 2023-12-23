@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/jiaozifs/jiaozifs/auth"
-
 	"github.com/jiaozifs/jiaozifs/models"
 )
 

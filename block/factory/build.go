@@ -26,6 +26,8 @@ const (
 	googleAuthCloudPlatform = "https://www.googleapis.com/auth/cloud-platform"
 )
 
+type BlockAdapterBuilder = func(context.Context, params.AdapterConfig) (block.Adapter, error)
+
 func BuildBlockAdapter(ctx context.Context, c params.AdapterConfig) (block.Adapter, error) {
 	blockstore := c.BlockstoreType()
 	log.With("type", blockstore).

@@ -1,19 +1,19 @@
 package versionmgr
 
 import (
+	"context"
 	"errors"
 	"io"
 
 	"github.com/jiaozifs/jiaozifs/utils/hash"
-
-	"github.com/go-git/go-git/v5/plumbing/storer"
 )
 
 type commitPreIterator struct {
+	ctx          context.Context
 	seenExternal map[string]bool
 	seen         map[string]bool
 	stack        []CommitIter
-	start        *CommitNode
+	start        *WrapCommitNode
 }
 
 // NewCommitPreorderIter returns a CommitIter that walks the commit history,
@@ -24,7 +24,8 @@ type commitPreIterator struct {
 // cannot be traversed (e.g. missing objects). Ignore allows to skip some
 // commits from being iterated.
 func NewCommitPreorderIter(
-	c *CommitNode,
+	ctx context.Context,
+	c *WrapCommitNode,
 	seenExternal map[string]bool,
 	ignore []hash.Hash,
 ) CommitIter {
@@ -34,6 +35,7 @@ func NewCommitPreorderIter(
 	}
 
 	return &commitPreIterator{
+		ctx:          ctx,
 		seenExternal: seenExternal,
 		seen:         seen,
 		stack:        make([]CommitIter, 0),
@@ -41,8 +43,8 @@ func NewCommitPreorderIter(
 	}
 }
 
-func (w *commitPreIterator) Next() (*CommitNode, error) {
-	var c *CommitNode
+func (w *commitPreIterator) Next() (*WrapCommitNode, error) {
+	var c *WrapCommitNode
 	for {
 		if w.start != nil {
 			c = w.start
@@ -72,7 +74,7 @@ func (w *commitPreIterator) Next() (*CommitNode, error) {
 		w.seen[c.Commit().Hash.Hex()] = true
 
 		if c.Commit().NumParents() > 0 {
-			commitIter, err := filteredParentIter(c, w.seen)
+			commitIter, err := filteredParentIter(w.ctx, c, w.seen)
 			if err != nil {
 				return nil, err
 			}
@@ -83,14 +85,14 @@ func (w *commitPreIterator) Next() (*CommitNode, error) {
 	}
 }
 
-func filteredParentIter(c *CommitNode, seen map[string]bool) (CommitIter, error) {
+func filteredParentIter(ctx context.Context, c *WrapCommitNode, seen map[string]bool) (CommitIter, error) {
 	var hashes []hash.Hash
 	for _, h := range c.Commit().ParentHashes {
 		if !seen[h.Hex()] {
 			hashes = append(hashes, h)
 		}
 	}
-	commits, err := c.GetCommits(hashes)
+	commits, err := c.GetCommits(ctx, hashes)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +100,7 @@ func filteredParentIter(c *CommitNode, seen map[string]bool) (CommitIter, error)
 	return newArrayCommitIter(commits), nil
 }
 
-func (w *commitPreIterator) ForEach(cb func(*CommitNode) error) error {
+func (w *commitPreIterator) ForEach(cb func(*WrapCommitNode) error) error {
 	for {
 		c, err := w.Next()
 		if err == io.EOF {
@@ -121,7 +123,8 @@ func (w *commitPreIterator) ForEach(cb func(*CommitNode) error) error {
 }
 
 type commitPostIterator struct {
-	stack []*CommitNode
+	ctx   context.Context
+	stack []*WrapCommitNode
 	seen  map[string]bool
 }
 
@@ -130,19 +133,20 @@ type commitPostIterator struct {
 // walking a merge commit, the merged commit will be walked before the base
 // it was merged on. This can be useful if you wish to see the history in
 // chronological order. Ignore allows to skip some commits from being iterated.
-func NewCommitPostorderIter(c *CommitNode, ignore []hash.Hash) CommitIter {
+func NewCommitPostorderIter(ctx context.Context, c *WrapCommitNode, ignore []hash.Hash) CommitIter {
 	seen := make(map[string]bool)
 	for _, h := range ignore {
 		seen[h.Hex()] = true
 	}
 
 	return &commitPostIterator{
-		stack: []*CommitNode{c},
+		ctx:   ctx,
+		stack: []*WrapCommitNode{c},
 		seen:  seen,
 	}
 }
 
-func (w *commitPostIterator) Next() (*CommitNode, error) {
+func (w *commitPostIterator) Next() (*WrapCommitNode, error) {
 	for {
 		if len(w.stack) == 0 {
 			return nil, io.EOF
@@ -157,18 +161,18 @@ func (w *commitPostIterator) Next() (*CommitNode, error) {
 
 		w.seen[c.Commit().Hash.Hex()] = true
 
-		parentCommits, err := c.Parents()
+		parentCommits, err := c.Parents(w.ctx)
 		if err != nil {
 			return nil, err
 		}
-		return c, newArrayCommitIter(parentCommits).ForEach(func(p *CommitNode) error {
+		return c, newArrayCommitIter(parentCommits).ForEach(func(p *WrapCommitNode) error {
 			w.stack = append(w.stack, p)
 			return nil
 		})
 	}
 }
 
-func (w *commitPostIterator) ForEach(cb func(*CommitNode) error) error {
+func (w *commitPostIterator) ForEach(cb func(*WrapCommitNode) error) error {
 	for {
 		c, err := w.Next()
 		if err == io.EOF {
@@ -179,7 +183,7 @@ func (w *commitPostIterator) ForEach(cb func(*CommitNode) error) error {
 		}
 
 		err = cb(c)
-		if errors.Is(err, storer.ErrStop) {
+		if errors.Is(err, ErrStop) {
 			break
 		}
 		if err != nil {
