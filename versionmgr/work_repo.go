@@ -10,6 +10,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/jiaozifs/jiaozifs/utils"
+
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/jiaozifs/jiaozifs/block"
 	"github.com/jiaozifs/jiaozifs/block/factory"
@@ -39,7 +41,7 @@ type WorkRepository struct {
 	//cache
 	headTree *hash.Hash
 	wip      *models.WorkingInProcess
-	branch   *models.Branches
+	branch   *models.Branch
 	commit   *models.Commit
 }
 
@@ -49,7 +51,7 @@ func NewWorkRepositoryFromConfig(ctx context.Context, operator *models.User, rep
 	if repoModel.UsePublicStorage {
 		adapter, err = factory.BuildBlockAdapter(ctx, publicAdapterConfig)
 	} else {
-		adapter, err = AdapterFromConfig(ctx, repoModel.StorageAdapterParams)
+		adapter, err = AdapterFromConfig(ctx, *repoModel.StorageAdapterParams)
 	}
 	if err != nil {
 		return nil, err
@@ -92,7 +94,7 @@ func (repository *WorkRepository) WriteBlob(ctx context.Context, body io.Reader,
 
 	address := pathutil.PathOfHash(checkSum)
 	err = repository.adapter.Put(ctx, block.ObjectPointer{
-		StorageNamespace: repository.repoModel.StorageNamespace,
+		StorageNamespace: utils.StringValue(repository.repoModel.StorageNamespace),
 		IdentifierType:   block.IdentifierTypeRelative,
 		Identifier:       address,
 	}, contentLength, tempf, block.PutOpts{})
@@ -107,7 +109,7 @@ func (repository *WorkRepository) WriteBlob(ctx context.Context, body io.Reader,
 func (repository *WorkRepository) ReadBlob(ctx context.Context, blob *models.Blob, rangeSpec *string) (io.ReadCloser, error) {
 	address := pathutil.PathOfHash(blob.CheckSum)
 	pointer := block.ObjectPointer{
-		StorageNamespace: repository.repoModel.StorageNamespace,
+		StorageNamespace: utils.StringValue(repository.repoModel.StorageNamespace),
 		IdentifierType:   block.IdentifierTypeRelative,
 		Identifier:       address,
 	}
@@ -325,7 +327,7 @@ func (repository *WorkRepository) Merge(ctx context.Context, merger *models.User
 	return newCommit, nil
 }
 
-func (repository *WorkRepository) setCurState(state WorkRepoState, wip *models.WorkingInProcess, branch *models.Branches, commit *models.Commit) {
+func (repository *WorkRepository) setCurState(state WorkRepoState, wip *models.WorkingInProcess, branch *models.Branch, commit *models.Commit) {
 	repository.state = state
 	repository.wip = wip
 	repository.branch = branch
@@ -336,7 +338,7 @@ func (repository *WorkRepository) CurWip() *models.WorkingInProcess {
 	return repository.wip
 }
 
-func (repository *WorkRepository) CurBranch() *models.Branches {
+func (repository *WorkRepository) CurBranch() *models.Branch {
 	return repository.branch
 }
 

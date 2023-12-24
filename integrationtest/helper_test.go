@@ -105,7 +105,7 @@ func SetupDaemon(t *testing.T, ctx context.Context) (string, Closer) { //nolint
 func createUser(ctx context.Context, c convey.C, client *api.Client, userName string) {
 	c.Convey("register "+userName, func() {
 		resp, err := client.Register(ctx, api.RegisterJSONRequestBody{
-			Username: userName,
+			Name:     userName,
 			Password: "12345678",
 			Email:    "mock@gmail.com",
 		})

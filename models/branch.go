@@ -9,21 +9,21 @@ import (
 	"github.com/uptrace/bun"
 )
 
-type Branches struct {
+type Branch struct {
 	bun.BaseModel `bun:"table:branches"`
-	ID            uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
+	ID            uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()" json:"id"`
 	// RepositoryId which repository this branch belong
-	RepositoryID uuid.UUID `bun:"repository_id,type:uuid,notnull"`
-	CommitHash   hash.Hash `bun:"commit_hash,type:bytea,notnull"`
+	RepositoryID uuid.UUID `bun:"repository_id,type:uuid,notnull" json:"repository_id"`
+	CommitHash   hash.Hash `bun:"commit_hash,type:bytea,notnull" json:"commit_hash"`
 	// Path name/path of branch
-	Name string `bun:"name,notnull"`
+	Name string `bun:"name,notnull" json:"name"`
 	// Description
-	Description *string `bun:"description"`
+	Description *string `bun:"description" json:"description,omitempty"`
 	// CreatorID who create this branch
-	CreatorID uuid.UUID `bun:"creator_id,type:uuid,notnull"`
+	CreatorID uuid.UUID `bun:"creator_id,type:uuid,notnull" json:"creator_id"`
 
-	CreatedAt time.Time `bun:"created_at"`
-	UpdatedAt time.Time `bun:"updated_at"`
+	CreatedAt time.Time `bun:"created_at,notnull" json:"created_at"`
+	UpdatedAt time.Time `bun:"updated_at,notnull" json:"updated_at"`
 }
 
 type GetBranchParams struct {
@@ -124,11 +124,11 @@ func (gup *ListBranchParams) SetAmount(amount int) *ListBranchParams {
 }
 
 type IBranchRepo interface {
-	Insert(ctx context.Context, repo *Branches) (*Branches, error)
+	Insert(ctx context.Context, repo *Branch) (*Branch, error)
 	UpdateByID(ctx context.Context, params *UpdateBranchParams) error
-	Get(ctx context.Context, id *GetBranchParams) (*Branches, error)
+	Get(ctx context.Context, id *GetBranchParams) (*Branch, error)
 
-	List(ctx context.Context, params *ListBranchParams) ([]*Branches, bool, error)
+	List(ctx context.Context, params *ListBranchParams) ([]*Branch, bool, error)
 	Delete(ctx context.Context, params *DeleteBranchParams) (int64, error)
 }
 
@@ -142,7 +142,7 @@ func NewBranchRepo(db bun.IDB) IBranchRepo {
 	return &BranchRepo{db: db}
 }
 
-func (r BranchRepo) Insert(ctx context.Context, branch *Branches) (*Branches, error) {
+func (r BranchRepo) Insert(ctx context.Context, branch *Branch) (*Branch, error) {
 	_, err := r.db.NewInsert().Model(branch).Exec(ctx)
 	if err != nil {
 		return nil, err
@@ -150,8 +150,8 @@ func (r BranchRepo) Insert(ctx context.Context, branch *Branches) (*Branches, er
 	return branch, nil
 }
 
-func (r BranchRepo) Get(ctx context.Context, params *GetBranchParams) (*Branches, error) {
-	repo := &Branches{}
+func (r BranchRepo) Get(ctx context.Context, params *GetBranchParams) (*Branch, error) {
+	repo := &Branch{}
 	query := r.db.NewSelect().Model(repo)
 
 	if uuid.Nil != params.ID {
@@ -173,8 +173,8 @@ func (r BranchRepo) Get(ctx context.Context, params *GetBranchParams) (*Branches
 	return repo, nil
 }
 
-func (r BranchRepo) List(ctx context.Context, params *ListBranchParams) ([]*Branches, bool, error) {
-	branches := []*Branches{}
+func (r BranchRepo) List(ctx context.Context, params *ListBranchParams) ([]*Branch, bool, error) {
+	var branches []*Branch
 	query := r.db.NewSelect().Model(&branches)
 
 	if uuid.Nil != params.RepositoryID {
@@ -204,7 +204,7 @@ func (r BranchRepo) List(ctx context.Context, params *ListBranchParams) ([]*Bran
 }
 
 func (r BranchRepo) Delete(ctx context.Context, params *DeleteBranchParams) (int64, error) {
-	query := r.db.NewDelete().Model((*Branches)(nil))
+	query := r.db.NewDelete().Model((*Branch)(nil))
 
 	if uuid.Nil != params.ID {
 		query = query.Where("id = ?", params.ID)

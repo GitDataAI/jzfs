@@ -87,10 +87,10 @@ func (repositoryCtl RepositoryController) ListRepositoryOfAuthenticatedUser(ctx 
 	for _, repo := range repositories {
 		r := api.Repository{
 			CreatedAt:   repo.CreatedAt,
-			CreatorID:   repo.CreatorID,
+			CreatorId:   repo.CreatorID,
 			Description: repo.Description,
 			Head:        repo.HEAD,
-			ID:          repo.ID,
+			Id:          repo.ID,
 			Name:        repo.Name,
 			UpdatedAt:   repo.UpdatedAt,
 		}
@@ -149,10 +149,10 @@ func (repositoryCtl RepositoryController) ListRepository(ctx context.Context, w 
 	for _, repo := range repositories {
 		r := api.Repository{
 			CreatedAt:   repo.CreatedAt,
-			CreatorID:   repo.CreatorID,
+			CreatorId:   repo.CreatorID,
 			Description: repo.Description,
 			Head:        repo.HEAD,
-			ID:          repo.ID,
+			Id:          repo.ID,
 			Name:        repo.Name,
 			UpdatedAt:   repo.UpdatedAt,
 		}
@@ -185,9 +185,9 @@ func (repositoryCtl RepositoryController) CreateRepository(ctx context.Context, 
 	}
 
 	var usePublicStorage = true
-	storageConfig := utils.StringValue(body.BlockStoreConfig)
+	storageConfig := utils.StringValue(body.BlockstoreConfig)
 	repoID := uuid.New()
-	var storageNamespace string
+	var storageNamespace *string
 	if len(storageConfig) > 0 {
 		usePublicStorage = false
 		var cfg = config.BlockStoreConfig{}
@@ -202,12 +202,12 @@ func (repositoryCtl RepositoryController) CreateRepository(ctx context.Context, 
 			w.Forbidden()
 			return
 		}
-		storageNamespace = utils.StringValue(cfg.DefaultNamespacePrefix)
+		storageNamespace = cfg.DefaultNamespacePrefix
 	} else {
-		storageNamespace = fmt.Sprintf("%s://%s", repositoryCtl.PublicStorageConfig.BlockstoreType(), repoID.String())
+		storageNamespace = utils.String(fmt.Sprintf("%s://%s", repositoryCtl.PublicStorageConfig.BlockstoreType(), repoID.String()))
 	}
 
-	defaultRef := &models.Branches{
+	defaultRef := &models.Branch{
 		RepositoryID: repoID,
 		CommitHash:   hash.Hash{},
 		Name:         DefaultBranchName,
@@ -219,7 +219,7 @@ func (repositoryCtl RepositoryController) CreateRepository(ctx context.Context, 
 		ID:                   repoID,
 		Name:                 body.Name,
 		UsePublicStorage:     usePublicStorage,
-		StorageAdapterParams: storageConfig,
+		StorageAdapterParams: &storageConfig,
 		StorageNamespace:     storageNamespace,
 		Description:          body.Description,
 		HEAD:                 DefaultBranchName,
@@ -246,10 +246,10 @@ func (repositoryCtl RepositoryController) CreateRepository(ctx context.Context, 
 
 	w.JSON(api.Repository{
 		CreatedAt:   createdRepo.CreatedAt,
-		CreatorID:   createdRepo.CreatorID,
+		CreatorId:   createdRepo.CreatorID,
 		Description: createdRepo.Description,
 		Head:        createdRepo.HEAD,
-		ID:          createdRepo.ID,
+		Id:          createdRepo.ID,
 		Name:        createdRepo.Name,
 		UpdatedAt:   createdRepo.UpdatedAt,
 	})
@@ -403,7 +403,7 @@ func (repositoryCtl RepositoryController) GetCommitsInRepository(ctx context.Con
 		if err == nil {
 			modelCommit := commit.Commit()
 			commits = append(commits, api.Commit{
-				RepositoryID: modelCommit.RepositoryID,
+				RepositoryId: modelCommit.RepositoryID,
 				Author: api.Signature{
 					Email: openapi_types.Email(modelCommit.Author.Email),
 					Name:  modelCommit.Author.Name,

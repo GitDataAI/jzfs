@@ -80,7 +80,7 @@ func (userCtl UserController) Login(ctx context.Context, w *api.JiaozifsResponse
 
 func (userCtl UserController) Register(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, body api.RegisterJSONRequestBody) {
 	register := auth.Register{
-		Username: body.Username,
+		Username: body.Name,
 		Email:    string(body.Email),
 		Password: body.Password,
 	}
@@ -104,14 +104,14 @@ func (userCtl UserController) GetUserInfo(ctx context.Context, w *api.JiaozifsRe
 
 	// perform GetUserInfo
 	userInfo := api.UserInfo{
-		CreatedAt:       &user.CreatedAt,
-		CurrentSignInAt: &user.CurrentSignInAt,
-		CurrentSignInIP: &user.CurrentSignInIP,
+		Name:            user.Name,
 		Email:           openapitypes.Email(user.Email),
+		CurrentSignInAt: &user.CurrentSignInAt,
+		CurrentSignInIp: &user.CurrentSignInIP,
 		LastSignInAt:    &user.LastSignInAt,
-		LastSignInIP:    &user.LastSignInIP,
-		UpdateAt:        &user.UpdatedAt,
-		Username:        user.Name,
+		LastSignInIp:    &user.LastSignInIP,
+		UpdatedAt:       user.UpdatedAt,
+		CreatedAt:       user.CreatedAt,
 	}
 	w.JSON(userInfo)
 }

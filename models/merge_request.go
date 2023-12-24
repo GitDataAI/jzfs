@@ -12,23 +12,23 @@ type MergeStatus int
 
 type MergeRequest struct {
 	bun.BaseModel `bun:"table:merge_requests"`
-	ID            uuid.UUID   `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
-	TargetBranch  string      `bun:"target_branch,notnull"`
-	SourceBranch  string      `bun:"source_branch,notnull"`
-	SourceRepoID  uuid.UUID   `bun:"source_repo_id,type:bytea,notnull"`
-	TargetRepoID  uuid.UUID   `bun:"target_repo_id,type:bytea,notnull"`
-	Title         string      `bun:"title,notnull"`
-	MergeStatus   MergeStatus `bun:"merge_status,notnull"`
-	Description   *string     `bun:"description"`
+	ID            uuid.UUID   `bun:"id,pk,type:uuid,default:uuid_generate_v4()" json:"id"`
+	TargetBranch  string      `bun:"target_branch,notnull" json:"target_branch"`
+	SourceBranch  string      `bun:"source_branch,notnull" json:"source_branch"`
+	SourceRepoID  uuid.UUID   `bun:"source_repo_id,type:bytea,notnull" json:"source_repo_id"`
+	TargetRepoID  uuid.UUID   `bun:"target_repo_id,type:bytea,notnull" json:"target_repo_id"`
+	Title         string      `bun:"title,notnull" json:"title"`
+	MergeStatus   MergeStatus `bun:"merge_status,notnull" json:"merge_status"`
+	Description   *string     `bun:"description" json:"description"`
 
-	AuthorID uuid.UUID `bun:"author_id,type:bytea,notnull"`
+	AuthorID uuid.UUID `bun:"author_id,type:bytea,notnull" json:"author_id"`
 
-	AssigneeID           uuid.UUID `bun:"assignee_id,type:bytea"`
-	MergeUserID          uuid.UUID `bun:"merge_user_id,type:bytea"`
-	ApprovalsBeforeMerge int       `bun:"approvals_before_merge"`
+	AssigneeID           uuid.UUID `bun:"assignee_id,type:bytea" json:"assignee_id"`
+	MergeUserID          uuid.UUID `bun:"merge_user_id,type:bytea" json:"merge_user_id"`
+	ApprovalsBeforeMerge int       `bun:"approvals_before_merge" json:"approvals_before_merge"`
 
-	CreatedAt time.Time `bun:"created_at"`
-	UpdatedAt time.Time `bun:"updated_at"`
+	CreatedAt time.Time `bun:"created_at,notnull" json:"created_at"`
+	UpdatedAt time.Time `bun:"updated_at,notnull" json:"updated_at"`
 }
 
 type GetMergeRequestParams struct {

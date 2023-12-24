@@ -135,33 +135,33 @@ components:
     Branch:
       type: object
       required:
-        - ID
-        - RepositoryID
-        - CommitHash
-        - Name
-        - CreatorID
-        - CreatedAt
-        - UpdatedAt
+        - id
+        - repository_id
+        - commit_hash
+        - name
+        - creator_id
+        - created_at
+        - updated_at
       properties:
-        ID :
+        id :
           type: string
           format: uuid
-        RepositoryID:
+        repository_id:
           type: string
           format: uuid
-        CommitHash:
+        commit_hash:
           type: string
-        Name :
+        name :
           type: string
-        Description :
+        description :
           type: string
-        CreatorID:
+        creator_id:
           type: string
           format: uuid
-        CreatedAt:
+        created_at:
           type: string
           format: date-time
-        UpdatedAt:
+        updated_at:
           type: string
           format: date-time
     BranchList:
@@ -179,20 +179,20 @@ components:
     CreateRepository:
       type: object
       required:
-        - Name
+        - name
       properties:
-        Description:
+        description:
           type: string
-        Name:
+        name:
           type: string
-        BlockStoreConfig:
+        blockstore_config:
           description: block storage config url encoded json
           type: string
 
     UpdateRepository:
       type: object
       properties:
-        Description:
+        description:
           type: string
     RepositoryList:
       type: object
@@ -209,204 +209,229 @@ components:
     Repository:
       type: object
       required:
-        - ID
-        - Name
-        - Head
-        - CreatorID
-        - CreatedAt
-        - UpdatedAt
+        - id
+        - name
+        - owner_id
+        - head
+        - use_public_storage
+        - creator_id
+        - created_at
+        - updated_at
       properties:
-        ID:
+        id:
           type: string
           format: uuid
-        Name:
+        name:
           type: string
-        Head:
-          type: string
-        Description:
-          type: string
-        CreatorID:
+        owner_id:
           type: string
           format: uuid
-        CreatedAt:
+        head:
+          type: string
+        use_public_storage:
+          type: boolean
+        storage_adapter_params:
+          type: string
+        storage_namespace:
+          type: string
+        description:
+          type: string
+        creator_id:
+          type: string
+          format: uuid
+        created_at:
           type: string
           format: date-time
-        UpdatedAt:
+        updated_at:
           type: string
           format: date-time
     Blob:
       type: object
       required:
-        - Hash
-        - Type
-        - CheckSum
-        - RepositoryID
-        - Properties
-        - Size
-        - CreatedAt
-        - UpdatedAt
+        - hash
+        - repository_id
+        - check_sum
+        - type
+        - size
+        - properties
+        - created_at
+        - updated_at
       properties:
-        Hash:
+        hash:
           type: string
-        RepositoryID:
+        repository_id:
           type: string
           format: uuid
-        CheckSum:
+        check_sum:
           type: string
-        Type:
+        type:
           type: integer
           format: int8
-        Properties:
+        size:
+          type: integer
+          format: int64
+        properties:
           type: object
           additionalProperties:
             type: string
-        Size:
-          type: integer
-          format: int64
-        CreatedAt:
+        created_at:
           type: string
           format: date-time
-        UpdatedAt:
+        updated_at:
           type: string
           format: date-time
     Signature:
       type: object
       required:
-        - Name
-        - Email
-        - When
+        - name
+        - email
+        - when
       properties:
-        Name:
+        name:
           type: string
-        Email:
+        email:
           type: string
           format: email
-        When:
+        when:
           type: string
           format: date-time
     Commit:
       type: object
       required:
-        - Hash
-        - Type
-        - RepositoryID
-        - Author
-        - Committer
-        - MergeTag
-        - Message
-        - TreeHash
-        - ParentHashes
-        - CreatedAt
-        - UpdatedAt
+        - hash
+        - repository_id
+        - author
+        - committer
+        - merge_tag
+        - message
+        - tree_hash
+        - parent_hashes
+        - created_at
+        - updated_at
       properties:
-        Hash:
+        hash:
           type: string
-        Author:
-          $ref: "#/components/schemas/Signature"
-        Committer:
-          $ref: "#/components/schemas/Signature"
-        RepositoryID:
+        repository_id:
           type: string
           format: uuid
-        MergeTag:
+        author:
+          $ref: "#/components/schemas/Signature"
+        committer:
+          $ref: "#/components/schemas/Signature"
+        merge_tag:
           type: string
-        Message:
+        message:
           type: string
-        TreeHash:
+        tree_hash:
           type: string
-        ParentHashes:
+        parent_hashes:
           type: array
           items:
             type: string
-        CreatedAt:
+        created_at:
           type: string
           format: date-time
-        UpdatedAt:
+        updated_at:
           type: string
           format: date-time
     TreeEntry:
       type: object
+      required:
+        - name
+        - hash
+        - is_dir
       properties:
-        Name:
+        name:
           type: string
-        Hash:
+        hash:
           type: string
-        IsDir:
+        is_dir:
           type: boolean
     TreeNode:
       type: object
       required:
-        - Hash
-        - Type
-        - RepositoryID
-        - Properties
-        - SubObjects
-        - CreatedAt
-        - UpdatedAt
+        - hash
+        - repository_id
+        - type
+        - properties
+        - sub_objects
+        - created_at
+        - updated_at
       properties:
-        Hash:
+        hash:
           type: string
-        Type:
-          type: integer
-          format: int8
-        RepositoryID:
+        repository_id:
           type: string
           format: uuid
-        Properties:
+        type:
+          type: integer
+          format: int8
+        properties:
           type: object
           additionalProperties:
             type: string
-        SubObjects:
+        sub_objects:
           type: array
           items:
             $ref: "#/components/schemas/TreeEntry"
-        CreatedAt:
+        created_at:
           type: string
           format: date-time
-        UpdatedAt:
+        updated_at:
           type: string
           format: date-time
     Wip:
       type: object
+      required:
+        - id
+        - current_tree
+        - base_commit
+        - repository_id
+        - ref_id
+        - state
+        - creator_id
+        - created_at
+        - updated_at
       properties:
-        ID:
+        id:
           type: string
           format: uuid
-        Name:
+        current_tree:
           type: string
-        CurrentTree:
+        base_commit:
           type: string
-        BaseCommit:
-          type: string
-        RepositoryID:
+        repository_id:
           type: string
           format: uuid
-        State:
+        ref_id:
+          type: string
+          format: uuid
+        state:
           type: integer
           format: int
-        CreatorID:
+        creator_id:
           type: string
           format: uuid
-        CreatedAt:
+        created_at:
           type: string
           format: date-time
-        UpdatedAt:
+        updated_at:
           type: string
           format: date-time
     Change:
       type: object
       required:
-        - Path
-        - Action
+        - path
+        - action
       properties:
-        Path:
+        path:
           type: string
-        Action:
+        action:
           type: integer
           enum: [1,2,3]
-        BaseHash:
+        base_hash:
           type: string
-        ToHash:
+        to_hash:
           type: string
     UserUpdate:
       type: object
@@ -425,40 +450,46 @@ components:
     UserInfo:
       type: object
       required:
-        - username
+        - id
+        - name
         - email
+        - created_at
+        - updated_at
       properties:
-        username:
+        id:
+          type: string
+          format: uuid
+        name:
           type: string
         email:
           type: string
           format: email
-        currentSignInAt:
+        current_sign_in_at:
           type: string
           format: date-time
-        lastSignInAt:
+        last_sign_in_at:
           type: string
           format: date-time
-        currentSignInIP:
+        current_sign_in_ip:
           type: string
           format: ipv4
-        lastSignInIP:
+        last_sign_in_ip:
           type: string
           format: ipv4
-        createdAt:
+        created_at:
           type: string
           format: date-time
-        updateAt:
+        updated_at:
           type: string
           format: date-time
     UserRegisterInfo:
       type: object
       required:
-        - username
+        - name
         - email
         - password
       properties:
-        username:
+        name:
           type: string
         password:
           type: string
@@ -537,88 +568,98 @@ components:
             $ref: "#/components/schemas/ObjectStats"
     BlockStoreConfig:
       type: object
+      required:
+        - type
       properties:
-        Type:
+        type:
           type: string
           description: type of support storage type
           enum: [ "local", "gs", "azure", "s3" ]
-        DefaultNamespacePrefix:
+        default_namespace_prefix:
           type: string
-        Local:
+        local:
           type: object
           required:
-            - Path
+            - path
           properties:
-            Path:
+            path:
               type: string
-        Azure:
+        azure:
           type: object
           required:
-            - StorageAccount
-            - StorageAccessKey
-            - TryTimeout
+            - storage_access_key
+            - storage_account
+            - try_timeout
           properties:
-            StorageAccessKey:
+            storage_access_key:
               type: string
-            StorageAccount:
+            storage_account:
               type: string
-            TryTimeout:
+            try_timeout:
               type: integer
               format: int64
-        GS:
+        gs:
           type: object
           required:
-            - CredentialsJSON
-            - S3Endpoint
+            - credentials_json
+            - s3_endpoint
           properties:
-            CredentialsJSON:
+            credentials_json:
               type: string
-            S3Endpoint:
+            s3_endpoint:
               type: string
-        S3:
+        s3:
           type: object
           required:
-            - Credentials
-            - DiscoverBucketRegion
+            - credentials
+            - discover_bucket_region
             - Region
-            - Endpoint
+            - endpoint
           properties:
-            Credentials:
+            credentials:
               $ref: '#/components/schemas/Credential'
-            WebIdentity:
+            web_identity:
               $ref: '#/components/schemas/WebIdentity'
-            DiscoverBucketRegion:
+            discover_bucket_region:
               type: boolean
-            Endpoint:
+            endpoint:
               type: string
-            ForcePathStyle:
+            force_path_style:
               type: boolean
-            Region:
+            region:
               type: string
     WebIdentity:
+      type: object
+      required:
+        - session_duration
+        - session_expiry_window
       properties:
-        SessionDuration:
+        session_duration:
           type: integer
           format: int64
-        SessionExpiryWindow:
+        session_expiry_window:
           type: integer
           format: int64
     S3AuthInfo:
       type: object
       description: S3AuthInfo holds S3-style authentication.
+      required:
+        - credentials
       properties:
-        Credentials:
+        credentials:
           $ref: '#/components/schemas/Credential'
-        CredentialsFile:
-          type: string
     Credential:
       type: object
+      required:
+        - access_key_id
+        - secret_access_key
+        - session_token
       properties:
-        AccessKeyID:
+        access_key_id:
           $ref: '#/components/schemas/SecureString'
-        SecretAccessKey:
+        secret_access_key:
           $ref: '#/components/schemas/SecureString'
-        SessionToken:
+        session_token:
           $ref: '#/components/schemas/SecureString'
     SecureString:
       type: string

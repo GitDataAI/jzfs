@@ -41,7 +41,7 @@ func TestTreeWriteBlob(t *testing.T) {
 	repoModel := &models.Repository{}
 	require.NoError(t, gofakeit.Struct(repoModel))
 	repoModel.CreatorID = userModel.ID
-	repoModel.StorageNamespace = "mem://data"
+	repoModel.StorageNamespace = utils.String("mem://data")
 	repoModel, err = repo.RepositoryRepo().Insert(ctx, repoModel)
 	require.NoError(t, err)
 
@@ -79,10 +79,10 @@ func TestNewWorkRepositoryFromConfig(t *testing.T) {
 		pubCfg := &config.BlockStoreConfig{
 			Type: "local",
 			Local: (*struct {
-				Path                    string   `mapstructure:"path"`
-				ImportEnabled           bool     `mapstructure:"import_enabled"`
-				ImportHidden            bool     `mapstructure:"import_hidden"`
-				AllowedExternalPrefixes []string `mapstructure:"allowed_external_prefixes"`
+				Path                    string   `mapstructure:"path" json:"path"`
+				ImportEnabled           bool     `mapstructure:"import_enabled" json:"import_enabled"`
+				ImportHidden            bool     `mapstructure:"import_hidden" json:"import_hidden"`
+				AllowedExternalPrefixes []string `mapstructure:"allowed_external_prefixes" json:"allowed_external_prefixes"`
 			})(&struct {
 				Path                    string
 				ImportEnabled           bool
@@ -99,7 +99,7 @@ func TestNewWorkRepositoryFromConfig(t *testing.T) {
 			CreatedAt:        time.Now(),
 			UpdatedAt:        time.Now(),
 			CreatorID:        user.ID,
-			StorageNamespace: "mem://data",
+			StorageNamespace: utils.String("mem://data"),
 		})
 		require.NoError(t, err)
 		newRepo, err := NewWorkRepositoryFromConfig(ctx, user, project, repo, pubCfg)
@@ -111,10 +111,10 @@ func TestNewWorkRepositoryFromConfig(t *testing.T) {
 		pubCfg := &config.BlockStoreConfig{
 			Type: "local",
 			Local: (*struct {
-				Path                    string   `mapstructure:"path"`
-				ImportEnabled           bool     `mapstructure:"import_enabled"`
-				ImportHidden            bool     `mapstructure:"import_hidden"`
-				AllowedExternalPrefixes []string `mapstructure:"allowed_external_prefixes"`
+				Path                    string   `mapstructure:"path" json:"path"`
+				ImportEnabled           bool     `mapstructure:"import_enabled" json:"import_enabled"`
+				ImportHidden            bool     `mapstructure:"import_hidden" json:"import_hidden"`
+				AllowedExternalPrefixes []string `mapstructure:"allowed_external_prefixes" json:"allowed_external_prefixes"`
 			})(&struct {
 				Path                    string
 				ImportEnabled           bool
@@ -131,7 +131,7 @@ func TestNewWorkRepositoryFromConfig(t *testing.T) {
 			CreatedAt:            time.Now(),
 			UpdatedAt:            time.Now(),
 			CreatorID:            user.ID,
-			StorageAdapterParams: storageCfg,
+			StorageAdapterParams: &storageCfg,
 		})
 		require.NoError(t, err)
 		newRepo, err := NewWorkRepositoryFromConfig(ctx, user, project, repo, pubCfg)
@@ -143,10 +143,10 @@ func TestNewWorkRepositoryFromConfig(t *testing.T) {
 		pubCfg := &config.BlockStoreConfig{
 			Type: "local",
 			Local: (*struct {
-				Path                    string   `mapstructure:"path"`
-				ImportEnabled           bool     `mapstructure:"import_enabled"`
-				ImportHidden            bool     `mapstructure:"import_hidden"`
-				AllowedExternalPrefixes []string `mapstructure:"allowed_external_prefixes"`
+				Path                    string   `mapstructure:"path" json:"path"`
+				ImportEnabled           bool     `mapstructure:"import_enabled" json:"import_enabled"`
+				ImportHidden            bool     `mapstructure:"import_hidden" json:"import_hidden"`
+				AllowedExternalPrefixes []string `mapstructure:"allowed_external_prefixes" json:"allowed_external_prefixes"`
 			})(&struct {
 				Path                    string
 				ImportEnabled           bool
@@ -163,7 +163,7 @@ func TestNewWorkRepositoryFromConfig(t *testing.T) {
 			CreatedAt:            time.Now(),
 			UpdatedAt:            time.Now(),
 			CreatorID:            user.ID,
-			StorageAdapterParams: storageCfg,
+			StorageAdapterParams: &storageCfg,
 		})
 		require.NoError(t, err)
 		_, err = NewWorkRepositoryFromConfig(ctx, user, project, repo, pubCfg)
@@ -242,7 +242,7 @@ func makeRepository(ctx context.Context, repoRepo models.IRepositoryRepo, user *
 		CreatedAt:        time.Now(),
 		UpdatedAt:        time.Now(),
 		CreatorID:        user.ID,
-		StorageNamespace: "mem://data",
+		StorageNamespace: utils.String("mem://data"),
 	})
 }
 
@@ -276,8 +276,8 @@ func makeCommit(ctx context.Context, commitRepo models.ICommitRepo, treeHash has
 	return obj, nil
 }
 
-func makeBranch(ctx context.Context, branchRepo models.IBranchRepo, user *models.User, name string, repoID uuid.UUID, commitHash hash.Hash) (*models.Branches, error) {
-	branch := &models.Branches{
+func makeBranch(ctx context.Context, branchRepo models.IBranchRepo, user *models.User, name string, repoID uuid.UUID, commitHash hash.Hash) (*models.Branch, error) {
+	branch := &models.Branch{
 		RepositoryID: repoID,
 		CommitHash:   commitHash,
 		Name:         name,

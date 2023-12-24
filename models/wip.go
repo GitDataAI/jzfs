@@ -18,15 +18,15 @@ const (
 
 type WorkingInProcess struct {
 	bun.BaseModel `bun:"table:wips"`
-	ID            uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
-	CurrentTree   hash.Hash `bun:"current_tree,type:bytea,notnull"`
-	BaseCommit    hash.Hash `bun:"base_commit,type:bytea,notnull"`
-	RepositoryID  uuid.UUID `bun:"repository_id,unique:creator_id_repository_id_ref_id_unique,type:uuid,notnull"`
-	RefID         uuid.UUID `bun:"ref_id,unique:creator_id_repository_id_ref_id_unique,type:uuid,notnull"`
-	State         WipState  `bun:"state,notnull"`
-	CreatorID     uuid.UUID `bun:"creator_id,unique:creator_id_repository_id_ref_id_unique,type:uuid,notnull"`
-	CreatedAt     time.Time `bun:"created_at"`
-	UpdatedAt     time.Time `bun:"updated_at"`
+	ID            uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()" json:"id"`
+	CurrentTree   hash.Hash `bun:"current_tree,type:bytea,notnull" json:"current_tree"`
+	BaseCommit    hash.Hash `bun:"base_commit,type:bytea,notnull" json:"base_commit"`
+	RepositoryID  uuid.UUID `bun:"repository_id,unique:creator_id_repository_id_ref_id_unique,type:uuid,notnull" json:"repository_id"`
+	RefID         uuid.UUID `bun:"ref_id,unique:creator_id_repository_id_ref_id_unique,type:uuid,notnull" json:"ref_id"`
+	State         WipState  `bun:"state,notnull" json:"state"`
+	CreatorID     uuid.UUID `bun:"creator_id,unique:creator_id_repository_id_ref_id_unique,type:uuid,notnull" json:"creator_id"`
+	CreatedAt     time.Time `bun:"created_at" json:"created_at"`
+	UpdatedAt     time.Time `bun:"updated_at" json:"updated_at"`
 }
 
 type GetWipParams struct {

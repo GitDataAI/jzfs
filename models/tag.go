@@ -11,23 +11,23 @@ import (
 
 type Tag struct {
 	bun.BaseModel `bun:"table:tags"`
-	Hash          hash.Hash  `bun:"hash,pk,type:bytea"`
-	RepositoryID  uuid.UUID  `bun:"repository_id,pk,type:uuid,notnull"`
-	Type          ObjectType `bun:"type"`
+	Hash          hash.Hash  `bun:"hash,pk,type:bytea" json:"hash"`
+	RepositoryID  uuid.UUID  `bun:"repository_id,pk,type:uuid,notnull" json:"repository_id"`
+	Type          ObjectType `bun:"type" json:"type"`
 	//////********commit********////////
 	// Name of the tag.
-	Name string `bun:"name"`
+	Name string `bun:"name" json:"name"`
 	// Tagger is the one who created the tag.
-	Tagger Signature `bun:"tagger,type:jsonb"`
+	Tagger Signature `bun:"tagger,type:jsonb" json:"tagger"`
 	// TargetType is the object type of the target.
-	TargetType ObjectType `bun:"target_type"`
+	TargetType ObjectType `bun:"target_type" json:"target_type"`
 	// Target is the hash of the target object.
-	Target hash.Hash `bun:"target,type:bytea"`
+	Target hash.Hash `bun:"target,type:bytea" json:"target"`
 	// Message is the tag message, contains arbitrary text.
-	Message string `bun:"message"`
+	Message string `bun:"message" json:"message"`
 
-	CreatedAt time.Time `bun:"created_at"`
-	UpdatedAt time.Time `bun:"updated_at"`
+	CreatedAt time.Time `bun:"created_at" json:"created_at"`
+	UpdatedAt time.Time `bun:"updated_at" json:"updated_at"`
 }
 
 type ITagRepo interface {

@@ -17,10 +17,10 @@ var defaultCfg = Config{
 	Blockstore: BlockStoreConfig{
 		Type: "local",
 		Local: (*struct {
-			Path                    string   `mapstructure:"path"`
-			ImportEnabled           bool     `mapstructure:"import_enabled"`
-			ImportHidden            bool     `mapstructure:"import_hidden"`
-			AllowedExternalPrefixes []string `mapstructure:"allowed_external_prefixes"`
+			Path                    string   `mapstructure:"path" json:"path"`
+			ImportEnabled           bool     `mapstructure:"import_enabled" json:"import_enabled"`
+			ImportHidden            bool     `mapstructure:"import_hidden" json:"import_hidden"`
+			AllowedExternalPrefixes []string `mapstructure:"allowed_external_prefixes" json:"allowed_external_prefixes"`
 		})(&struct {
 			Path                    string
 			ImportEnabled           bool

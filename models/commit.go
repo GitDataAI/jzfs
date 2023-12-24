@@ -12,35 +12,35 @@ import (
 // Signature is used to identify who and when created a commit or tag.
 type Signature struct {
 	// Name represents a person name. It is an arbitrary string.
-	Name string `bun:"name"`
+	Name string `bun:"name" json:"name"`
 	// Email is an email, but it cannot be assumed to be well-formed.
-	Email string `bun:"email"`
+	Email string `bun:"email" json:"email"`
 	// When is the timestamp of the signature.
-	When time.Time `bun:"when"`
+	When time.Time `bun:"when" json:"when"`
 }
 
 type Commit struct {
 	bun.BaseModel `bun:"table:commits"`
-	Hash          hash.Hash `bun:"hash,pk,type:bytea"`
-	RepositoryID  uuid.UUID `bun:"repository_id,pk,type:uuid,notnull"`
+	Hash          hash.Hash `bun:"hash,pk,type:bytea" json:"hash"`
+	RepositoryID  uuid.UUID `bun:"repository_id,pk,type:uuid,notnull" json:"repository_id"`
 	//////********commit********////////
 	// Author is the original author of the commit.
-	Author Signature `bun:"author,type:jsonb"`
+	Author Signature `bun:"author,notnull,type:jsonb" json:"author"`
 	// Committer is the one performing the commit, might be different from
 	// Author.
-	Committer Signature `bun:"committer,type:jsonb"`
+	Committer Signature `bun:"committer,notnull,type:jsonb" json:"committer"`
 	// MergeTag is the embedded tag object when a merge commit is created by
 	// merging a signed tag.
-	MergeTag string `bun:"merge_tag"` //todo
+	MergeTag string `bun:"merge_tag" json:"merge_tag"`
 	// Message is the commit/tag message, contains arbitrary text.
-	Message string `bun:"message"`
+	Message string `bun:"message" json:"message"`
 	// TreeHash is the hash of the root tree of the commit.
-	TreeHash hash.Hash `bun:"tree_hash,type:bytea,notnull"`
+	TreeHash hash.Hash `bun:"tree_hash,type:bytea,notnull" json:"tree_hash"`
 	// ParentHashes are the hashes of the parent commits of the commit.
-	ParentHashes []hash.Hash `bun:"parent_hashes,type:bytea[]"`
+	ParentHashes []hash.Hash `bun:"parent_hashes,type:bytea[]" json:"parent_hashes"`
 
-	CreatedAt time.Time `bun:"created_at"`
-	UpdatedAt time.Time `bun:"updated_at"`
+	CreatedAt time.Time `bun:"created_at,notnull" json:"created_at"`
+	UpdatedAt time.Time `bun:"updated_at,notnull" json:"updated_at"`
 }
 
 func (commit *Commit) GetHash() (hash.Hash, error) {

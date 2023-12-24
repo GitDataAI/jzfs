@@ -96,11 +96,11 @@ func (bct BranchController) ListBranches(ctx context.Context, w *api.JiaozifsRes
 		r := api.Branch{
 			CommitHash:   branch.CommitHash.Hex(),
 			CreatedAt:    branch.CreatedAt,
-			CreatorID:    branch.CreatorID,
+			CreatorId:    branch.CreatorID,
 			Description:  branch.Description,
-			ID:           branch.ID,
+			Id:           branch.ID,
 			Name:         branch.Name,
-			RepositoryID: branch.RepositoryID,
+			RepositoryId: branch.RepositoryID,
 			UpdatedAt:    branch.UpdatedAt,
 		}
 		results = append(results, r)
@@ -171,7 +171,7 @@ func (bct BranchController) CreateBranch(ctx context.Context, w *api.JiaozifsRes
 	}
 
 	// Create branch
-	newBranch := &models.Branches{
+	newBranch := &models.Branch{
 		RepositoryID: repository.ID,
 		CommitHash:   commitHash,
 		Name:         body.Name,
@@ -187,11 +187,11 @@ func (bct BranchController) CreateBranch(ctx context.Context, w *api.JiaozifsRes
 	w.JSON(api.Branch{
 		CommitHash:   newBranch.CommitHash.Hex(),
 		CreatedAt:    newBranch.CreatedAt,
-		CreatorID:    newBranch.CreatorID,
+		CreatorId:    newBranch.CreatorID,
 		Description:  newBranch.Description,
-		ID:           newBranch.ID,
+		Id:           newBranch.ID,
 		Name:         newBranch.Name,
-		RepositoryID: newBranch.RepositoryID,
+		RepositoryId: newBranch.RepositoryID,
 		UpdatedAt:    newBranch.UpdatedAt,
 	}, http.StatusCreated)
 }
@@ -268,11 +268,11 @@ func (bct BranchController) GetBranch(ctx context.Context, w *api.JiaozifsRespon
 	w.JSON(api.Branch{
 		CommitHash:   ref.CommitHash.Hex(),
 		CreatedAt:    ref.CreatedAt,
-		CreatorID:    ref.CreatorID,
+		CreatorId:    ref.CreatorID,
 		Description:  ref.Description,
-		ID:           ref.ID,
+		Id:           ref.ID,
 		Name:         ref.Name,
-		RepositoryID: ref.RepositoryID,
+		RepositoryId: ref.RepositoryID,
 		UpdatedAt:    ref.UpdatedAt,
 	})
 }

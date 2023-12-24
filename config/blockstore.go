@@ -9,53 +9,53 @@ import (
 )
 
 type BlockStoreConfig struct {
-	Type                   string  `mapstructure:"type" validate:"required"`
-	DefaultNamespacePrefix *string `mapstructure:"default_namespace_prefix"`
+	Type                   string  `mapstructure:"type" validate:"required" json:"type"`
+	DefaultNamespacePrefix *string `mapstructure:"default_namespace_prefix" json:"default_namespace_prefix"`
 
 	Local *struct {
-		Path                    string   `mapstructure:"path"`
-		ImportEnabled           bool     `mapstructure:"import_enabled"`
-		ImportHidden            bool     `mapstructure:"import_hidden"`
-		AllowedExternalPrefixes []string `mapstructure:"allowed_external_prefixes"`
-	} `mapstructure:"local"`
+		Path                    string   `mapstructure:"path" json:"path"`
+		ImportEnabled           bool     `mapstructure:"import_enabled" json:"import_enabled"`
+		ImportHidden            bool     `mapstructure:"import_hidden" json:"import_hidden"`
+		AllowedExternalPrefixes []string `mapstructure:"allowed_external_prefixes" json:"allowed_external_prefixes"`
+	} `mapstructure:"local" json:"local"`
 	S3 *struct {
 		S3AuthInfo                    `mapstructure:",squash"`
-		Region                        string        `mapstructure:"region"`
-		Endpoint                      string        `mapstructure:"endpoint"`
-		MaxRetries                    int           `mapstructure:"max_retries"`
-		ForcePathStyle                bool          `mapstructure:"force_path_style"`
-		DiscoverBucketRegion          bool          `mapstructure:"discover_bucket_region"`
-		SkipVerifyCertificateTestOnly bool          `mapstructure:"skip_verify_certificate_test_only"`
-		ServerSideEncryption          string        `mapstructure:"server_side_encryption"`
-		ServerSideEncryptionKmsKeyID  string        `mapstructure:"server_side_encryption_kms_key_id"`
-		PreSignedExpiry               time.Duration `mapstructure:"pre_signed_expiry"`
-		DisablePreSigned              bool          `mapstructure:"disable_pre_signed"`
-		DisablePreSignedUI            bool          `mapstructure:"disable_pre_signed_ui"`
-		ClientLogRetries              bool          `mapstructure:"client_log_retries"`
-		ClientLogRequest              bool          `mapstructure:"client_log_request"`
+		Region                        string        `mapstructure:"region" json:"region"`
+		Endpoint                      string        `mapstructure:"endpoint" json:"endpoint"`
+		MaxRetries                    int           `mapstructure:"max_retries" json:"max_retries"`
+		ForcePathStyle                bool          `mapstructure:"force_path_style" json:"force_path_style"`
+		DiscoverBucketRegion          bool          `mapstructure:"discover_bucket_region" json:"discover_bucket_region"`
+		SkipVerifyCertificateTestOnly bool          `mapstructure:"skip_verify_certificate_test_only" json:"skip_verify_certificate_test_only"`
+		ServerSideEncryption          string        `mapstructure:"server_side_encryption" json:"server_side_encryption"`
+		ServerSideEncryptionKmsKeyID  string        `mapstructure:"server_side_encryption_kms_key_id" json:"server_side_encryption_kms_key_id"`
+		PreSignedExpiry               time.Duration `mapstructure:"pre_signed_expiry" json:"pre_signed_expiry"`
+		DisablePreSigned              bool          `mapstructure:"disable_pre_signed" json:"disable_pre_signed"`
+		DisablePreSignedUI            bool          `mapstructure:"disable_pre_signed_ui" json:"disable_pre_signed_ui"`
+		ClientLogRetries              bool          `mapstructure:"client_log_retries" json:"client_log_retries"`
+		ClientLogRequest              bool          `mapstructure:"client_log_request" json:"client_log_request"`
 		WebIdentity                   *struct {
-			SessionDuration     time.Duration `mapstructure:"session_duration"`
-			SessionExpiryWindow time.Duration `mapstructure:"session_expiry_window"`
+			SessionDuration     time.Duration `mapstructure:"session_duration" json:"session_duration"`
+			SessionExpiryWindow time.Duration `mapstructure:"session_expiry_window" json:"session_expiry_window"`
 		} `mapstructure:"web_identity"`
-	} `mapstructure:"s3"`
+	} `mapstructure:"s3" json:"s3"`
 	Azure *struct {
-		TryTimeout         time.Duration `mapstructure:"try_timeout"`
-		StorageAccount     string        `mapstructure:"storage_account"`
-		StorageAccessKey   string        `mapstructure:"storage_access_key"`
-		PreSignedExpiry    time.Duration `mapstructure:"pre_signed_expiry"`
-		DisablePreSigned   bool          `mapstructure:"disable_pre_signed"`
-		DisablePreSignedUI bool          `mapstructure:"disable_pre_signed_ui"`
+		TryTimeout         time.Duration `mapstructure:"try_timeout" json:"try_timeout"`
+		StorageAccount     string        `mapstructure:"storage_account" json:"storage_account"`
+		StorageAccessKey   string        `mapstructure:"storage_access_key" json:"storage_access_key"`
+		PreSignedExpiry    time.Duration `mapstructure:"pre_signed_expiry" json:"pre_signed_expiry"`
+		DisablePreSigned   bool          `mapstructure:"disable_pre_signed" json:"disable_pre_signed"`
+		DisablePreSignedUI bool          `mapstructure:"disable_pre_signed_ui" json:"disable_pre_signed_ui"`
 		// TestEndpointURL for testing purposes
-		TestEndpointURL string `mapstructure:"test_endpoint_url"`
-	} `mapstructure:"azure"`
+		TestEndpointURL string `mapstructure:"test_endpoint_url" json:"test_endpoint_url"`
+	} `mapstructure:"azure" json:"azure"`
 	GS *struct {
-		S3Endpoint         string        `mapstructure:"s3_endpoint"`
-		CredentialsFile    string        `mapstructure:"credentials_file"`
-		CredentialsJSON    string        `mapstructure:"credentials_json"`
-		PreSignedExpiry    time.Duration `mapstructure:"pre_signed_expiry"`
-		DisablePreSigned   bool          `mapstructure:"disable_pre_signed"`
-		DisablePreSignedUI bool          `mapstructure:"disable_pre_signed_ui"`
-	} `mapstructure:"gs"`
+		S3Endpoint         string        `mapstructure:"s3_endpoint" json:"s3_endpoint"`
+		CredentialsFile    string        `mapstructure:"credentials_file" json:"credentials_file"`
+		CredentialsJSON    string        `mapstructure:"credentials_json" json:"credentials_json"`
+		PreSignedExpiry    time.Duration `mapstructure:"pre_signed_expiry" json:"pre_signed_expiry"`
+		DisablePreSigned   bool          `mapstructure:"disable_pre_signed" json:"disable_pre_signed"`
+		DisablePreSignedUI bool          `mapstructure:"disable_pre_signed_ui" json:"disable_pre_signed_ui"`
+	} `mapstructure:"gs" json:"gs"`
 }
 
 func (c *BlockStoreConfig) BlockstoreType() string {
@@ -151,11 +151,11 @@ func (s SecureString) SecureValue() string {
 
 // S3AuthInfo holds S3-style authentication.
 type S3AuthInfo struct {
-	CredentialsFile string `mapstructure:"credentials_file"`
+	CredentialsFile string `mapstructure:"credentials_file" json:"credentials_file"`
 	Profile         string
 	Credentials     *struct {
-		AccessKeyID     SecureString `mapstructure:"access_key_id"`
-		SecretAccessKey SecureString `mapstructure:"secret_access_key"`
-		SessionToken    SecureString `mapstructure:"session_token"`
+		AccessKeyID     SecureString `mapstructure:"access_key_id" json:"access_key_id"`
+		SecretAccessKey SecureString `mapstructure:"secret_access_key" json:"secret_access_key"`
+		SessionToken    SecureString `mapstructure:"session_token" json:"session_token"`
 	}
 }
