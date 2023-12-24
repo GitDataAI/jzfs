@@ -12,6 +12,7 @@ import (
 	"github.com/jiaozifs/jiaozifs/api"
 	"github.com/jiaozifs/jiaozifs/auth"
 	"github.com/jiaozifs/jiaozifs/models"
+	"github.com/jiaozifs/jiaozifs/utils"
 	"github.com/jiaozifs/jiaozifs/utils/hash"
 	"go.uber.org/fx"
 )
@@ -47,7 +48,7 @@ type BranchController struct {
 	Repo models.IRepo
 }
 
-func (bct BranchController) ListBranches(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string) {
+func (bct BranchController) ListBranches(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, params api.ListBranchesParams) {
 	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
@@ -60,25 +61,39 @@ func (bct BranchController) ListBranches(ctx context.Context, w *api.JiaozifsRes
 		return
 	}
 
+	if operator.Name != owner.Name {
+		w.Forbidden()
+		return
+	}
+
 	repository, err := bct.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetName(repositoryName).SetOwnerID(owner.ID))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	if operator.Name != owner.Name {
-		w.Forbidden()
-		return
+	listBranchParams := models.NewListBranchParams()
+	if params.Prefix != nil && len(*params.Prefix) > 0 {
+		listBranchParams.SetName(*params.Prefix, models.PrefixMatch)
+	}
+	if params.After != nil && len(*params.After) > 0 {
+		listBranchParams.SetAfter(*params.After)
+	}
+	pageAmount := utils.IntValue(params.Amount)
+	if pageAmount > utils.DefaultMaxPerPage || pageAmount <= 0 {
+		listBranchParams.SetAmount(utils.DefaultMaxPerPage)
+	} else {
+		listBranchParams.SetAmount(pageAmount)
 	}
 
-	branches, err := bct.Repo.BranchRepo().List(ctx, models.NewListBranchParams().SetRepositoryID(repository.ID))
+	branches, hasMore, err := bct.Repo.BranchRepo().List(ctx, listBranchParams.SetRepositoryID(repository.ID))
 	if err != nil {
 		w.Error(err)
 		return
 	}
-	var apiBranches []api.Branch
+	results := make([]api.Branch, 0, len(branches))
 	for _, branch := range branches {
-		branch := api.Branch{
+		r := api.Branch{
 			CommitHash:   branch.CommitHash.Hex(),
 			CreatedAt:    branch.CreatedAt,
 			CreatorID:    branch.CreatorID,
@@ -88,9 +103,19 @@ func (bct BranchController) ListBranches(ctx context.Context, w *api.JiaozifsRes
 			RepositoryID: branch.RepositoryID,
 			UpdatedAt:    branch.UpdatedAt,
 		}
-		apiBranches = append(apiBranches, branch)
+		results = append(results, r)
 	}
-	w.JSON(api.BranchList{Results: apiBranches})
+	pagMag := utils.PaginationFor(hasMore, results, "Name")
+	pagination := api.Pagination{
+		HasMore:    pagMag.HasMore,
+		MaxPerPage: pagMag.MaxPerPage,
+		NextOffset: pagMag.NextOffset,
+		Results:    pagMag.Results,
+	}
+	w.JSON(api.BranchList{
+		Pagination: pagination,
+		Results:    results,
+	})
 }
 
 func (bct BranchController) CreateBranch(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, body api.CreateBranchJSONRequestBody, ownerName string, repositoryName string) {

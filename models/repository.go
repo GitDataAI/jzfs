@@ -68,6 +68,8 @@ type ListRepoParams struct {
 	OwnerID   uuid.UUID
 	Name      *string
 	NameMatch MatchMode
+	After     *time.Time
+	Amount    int
 }
 
 func NewListRepoParams() *ListRepoParams {
@@ -91,6 +93,16 @@ func (lrp *ListRepoParams) SetName(name string, match MatchMode) *ListRepoParams
 
 func (lrp *ListRepoParams) SetCreatorID(creatorID uuid.UUID) *ListRepoParams {
 	lrp.CreatorID = creatorID
+	return lrp
+}
+
+func (lrp *ListRepoParams) SetAfter(after time.Time) *ListRepoParams {
+	lrp.After = &after
+	return lrp
+}
+
+func (lrp *ListRepoParams) SetAmount(amount int) *ListRepoParams {
+	lrp.Amount = amount
 	return lrp
 }
 
@@ -140,7 +152,7 @@ type IRepositoryRepo interface {
 	Insert(ctx context.Context, repo *Repository) (*Repository, error)
 	Get(ctx context.Context, params *GetRepoParams) (*Repository, error)
 
-	List(ctx context.Context, params *ListRepoParams) ([]*Repository, error)
+	List(ctx context.Context, params *ListRepoParams) ([]*Repository, bool, error)
 	Delete(ctx context.Context, params *DeleteRepoParams) (int64, error)
 	UpdateByID(ctx context.Context, updateModel *UpdateRepoParams) error
 }
@@ -190,7 +202,7 @@ func (r *RepositoryRepo) Get(ctx context.Context, params *GetRepoParams) (*Repos
 	return repo, nil
 }
 
-func (r *RepositoryRepo) List(ctx context.Context, params *ListRepoParams) ([]*Repository, error) {
+func (r *RepositoryRepo) List(ctx context.Context, params *ListRepoParams) ([]*Repository, bool, error) {
 	repos := []*Repository{}
 	query := r.db.NewSelect().Model(&repos)
 
@@ -215,11 +227,13 @@ func (r *RepositoryRepo) List(ctx context.Context, params *ListRepoParams) ([]*R
 		}
 	}
 
-	err := query.Scan(ctx)
-	if err != nil {
-		return nil, err
+	query = query.Order("updated_at DESC")
+	if params.After != nil {
+		query = query.Where("updated_at < ?", *params.After)
 	}
-	return repos, nil
+
+	err := query.Limit(params.Amount).Scan(ctx)
+	return repos, len(repos) == params.Amount, err
 }
 
 func (r *RepositoryRepo) Delete(ctx context.Context, params *DeleteRepoParams) (int64, error) {

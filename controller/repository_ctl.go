@@ -56,19 +56,57 @@ type RepositoryController struct {
 	PublicStorageConfig params.AdapterConfig
 }
 
-func (repositoryCtl RepositoryController) ListRepositoryOfAuthenticatedUser(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request) {
+func (repositoryCtl RepositoryController) ListRepositoryOfAuthenticatedUser(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, params api.ListRepositoryOfAuthenticatedUserParams) {
 	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	repositories, err := repositoryCtl.Repo.RepositoryRepo().List(ctx, models.NewListRepoParams().SetOwnerID(operator.ID)) //operator is owner
+	listRepoParams := models.NewListRepoParams()
+	if params.Prefix != nil && len(*params.Prefix) > 0 {
+		listRepoParams.SetName(*params.Prefix, models.PrefixMatch)
+	}
+	if params.After != nil {
+		listRepoParams.SetAfter(*params.After)
+	}
+	pageAmount := utils.IntValue(params.Amount)
+	if pageAmount > utils.DefaultMaxPerPage || pageAmount <= 0 {
+		listRepoParams.SetAmount(utils.DefaultMaxPerPage)
+	} else {
+		listRepoParams.SetAmount(pageAmount)
+	}
+
+	repositories, hasMore, err := repositoryCtl.Repo.RepositoryRepo().List(ctx, listRepoParams.
+		SetOwnerID(operator.ID))
 	if err != nil {
 		w.Error(err)
 		return
 	}
-	w.JSON(repositories)
+	results := make([]api.Repository, 0, len(repositories))
+	for _, repo := range repositories {
+		r := api.Repository{
+			CreatedAt:   repo.CreatedAt,
+			CreatorID:   repo.CreatorID,
+			Description: repo.Description,
+			Head:        repo.HEAD,
+			ID:          repo.ID,
+			Name:        repo.Name,
+			UpdatedAt:   repo.UpdatedAt,
+		}
+		results = append(results, r)
+	}
+	pagMag := utils.PaginationFor(hasMore, results, "UpdatedAt")
+	pagination := api.Pagination{
+		HasMore:    pagMag.HasMore,
+		MaxPerPage: pagMag.MaxPerPage,
+		NextOffset: pagMag.NextOffset,
+		Results:    pagMag.Results,
+	}
+	w.JSON(api.RepositoryList{
+		Pagination: pagination,
+		Results:    results,
+	})
 }
 
 func (repositoryCtl RepositoryController) ListRepository(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, params api.ListRepositoryParams) {
@@ -88,16 +126,49 @@ func (repositoryCtl RepositoryController) ListRepository(ctx context.Context, w 
 		return
 	}
 
-	listParams := models.NewListRepoParams().SetOwnerID(owner.ID)
-	if params.RepoPrefix != nil && len(*params.RepoPrefix) > 0 {
-		listParams.SetName(*params.RepoPrefix, models.PrefixMatch)
+	listRepoParams := models.NewListRepoParams().SetOwnerID(owner.ID)
+	if params.Prefix != nil && len(*params.Prefix) > 0 {
+		listRepoParams.SetName(*params.Prefix, models.PrefixMatch)
 	}
-	repositories, err := repositoryCtl.Repo.RepositoryRepo().List(ctx, listParams)
+	if params.After != nil {
+		listRepoParams.SetAfter(*params.After)
+	}
+	pageAmount := utils.IntValue(params.Amount)
+	if pageAmount > utils.DefaultMaxPerPage || pageAmount <= 0 {
+		listRepoParams.SetAmount(utils.DefaultMaxPerPage)
+	} else {
+		listRepoParams.SetAmount(pageAmount)
+	}
+
+	repositories, hasMore, err := repositoryCtl.Repo.RepositoryRepo().List(ctx, listRepoParams)
 	if err != nil {
 		w.Error(err)
 		return
 	}
-	w.JSON(repositories)
+	results := make([]api.Repository, 0, len(repositories))
+	for _, repo := range repositories {
+		r := api.Repository{
+			CreatedAt:   repo.CreatedAt,
+			CreatorID:   repo.CreatorID,
+			Description: repo.Description,
+			Head:        repo.HEAD,
+			ID:          repo.ID,
+			Name:        repo.Name,
+			UpdatedAt:   repo.UpdatedAt,
+		}
+		results = append(results, r)
+	}
+	pagMag := utils.PaginationFor(hasMore, results, "UpdatedAt")
+	pagination := api.Pagination{
+		HasMore:    pagMag.HasMore,
+		MaxPerPage: pagMag.MaxPerPage,
+		NextOffset: pagMag.NextOffset,
+		Results:    pagMag.Results,
+	}
+	w.JSON(api.RepositoryList{
+		Pagination: pagination,
+		Results:    results,
+	})
 }
 
 func (repositoryCtl RepositoryController) CreateRepository(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, body api.CreateRepositoryJSONRequestBody) {

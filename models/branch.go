@@ -92,6 +92,10 @@ func (up *UpdateBranchParams) SetCommitHash(commitHash hash.Hash) *UpdateBranchP
 
 type ListBranchParams struct {
 	RepositoryID uuid.UUID
+	Name         *string
+	NameMatch    MatchMode
+	After        *string
+	Amount       int
 }
 
 func NewListBranchParams() *ListBranchParams {
@@ -103,12 +107,28 @@ func (gup *ListBranchParams) SetRepositoryID(repositoryID uuid.UUID) *ListBranch
 	return gup
 }
 
+func (gup *ListBranchParams) SetName(name string, match MatchMode) *ListBranchParams {
+	gup.Name = &name
+	gup.NameMatch = match
+	return gup
+}
+
+func (gup *ListBranchParams) SetAfter(after string) *ListBranchParams {
+	gup.After = &after
+	return gup
+}
+
+func (gup *ListBranchParams) SetAmount(amount int) *ListBranchParams {
+	gup.Amount = amount
+	return gup
+}
+
 type IBranchRepo interface {
 	Insert(ctx context.Context, repo *Branches) (*Branches, error)
 	UpdateByID(ctx context.Context, params *UpdateBranchParams) error
 	Get(ctx context.Context, id *GetBranchParams) (*Branches, error)
 
-	List(ctx context.Context, params *ListBranchParams) ([]*Branches, error)
+	List(ctx context.Context, params *ListBranchParams) ([]*Branches, bool, error)
 	Delete(ctx context.Context, params *DeleteBranchParams) (int64, error)
 }
 
@@ -153,19 +173,34 @@ func (r BranchRepo) Get(ctx context.Context, params *GetBranchParams) (*Branches
 	return repo, nil
 }
 
-func (r BranchRepo) List(ctx context.Context, params *ListBranchParams) ([]*Branches, error) {
-	var branches []*Branches
+func (r BranchRepo) List(ctx context.Context, params *ListBranchParams) ([]*Branches, bool, error) {
+	branches := []*Branches{}
 	query := r.db.NewSelect().Model(&branches)
 
 	if uuid.Nil != params.RepositoryID {
 		query = query.Where("repository_id = ?", params.RepositoryID)
 	}
 
-	err := query.Scan(ctx)
-	if err != nil {
-		return nil, err
+	if params.Name != nil {
+		switch params.NameMatch {
+		case ExactMatch:
+			query = query.Where("name = ?", *params.Name)
+		case PrefixMatch:
+			query = query.Where("name LIKE ?", *params.Name+"%")
+		case SuffixMatch:
+			query = query.Where("name LIKE ?", "%"+*params.Name)
+		case LikeMatch:
+			query = query.Where("name LIKE ?", "%"+*params.Name+"%")
+		}
 	}
-	return branches, nil
+
+	query = query.Order("name ASC")
+	if params.After != nil {
+		query = query.Where("name > ?", *params.After)
+	}
+
+	err := query.Limit(params.Amount).Scan(ctx)
+	return branches, len(branches) == params.Amount, err
 }
 
 func (r BranchRepo) Delete(ctx context.Context, params *DeleteBranchParams) (int64, error) {

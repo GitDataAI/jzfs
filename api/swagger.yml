@@ -26,12 +26,20 @@ components:
       schema:
         type: string
 
-    PaginationAfter:
+    PaginationBranchAfter:
       in: query
       name: after
       description: return items after this value
       schema:
         type: string
+    
+    PaginationRepoAfter:
+      in: query
+      name: after
+      description: return items after this value
+      schema:
+        type: string
+        format: date-time 
 
     PaginationAmount:
       in: query
@@ -186,6 +194,18 @@ components:
       properties:
         Description:
           type: string
+    RepositoryList:
+      type: object
+      required:
+        - pagination
+        - results
+      properties:
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/Repository"
     Repository:
       type: object
       required:
@@ -1293,20 +1313,16 @@ paths:
       operationId: listRepository
       summary: list repository in specific owner
       parameters:
-        - in: query
-          name: repoPrefix
-          required: false
-          schema:
-            type: string
+        - $ref: "#/components/parameters/PaginationPrefix"
+        - $ref: "#/components/parameters/PaginationRepoAfter"
+        - $ref: "#/components/parameters/PaginationAmount"
       responses:
         200:
           description: repository list
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Repository"
+                  $ref: "#/components/schemas/RepositoryList"
         400:
           description: ValidationError
         401:
@@ -1320,15 +1336,17 @@ paths:
         - repo
       operationId: listRepositoryOfAuthenticatedUser"
       summary: list repository
+      parameters:
+        - $ref: "#/components/parameters/PaginationPrefix"
+        - $ref: "#/components/parameters/PaginationRepoAfter"
+        - $ref: "#/components/parameters/PaginationAmount"
       responses:
         200:
           description: list repository
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Repository"
+                $ref: "#/components/schemas/RepositoryList"
         400:
           description: ValidationError
         401:
@@ -1379,6 +1397,10 @@ paths:
         - branches
       operationId: listBranches
       summary: list branches
+      parameters:
+        - $ref: "#/components/parameters/PaginationPrefix"
+        - $ref: "#/components/parameters/PaginationBranchAfter"
+        - $ref: "#/components/parameters/PaginationAmount"
       responses:
         200:
           description: branch list
