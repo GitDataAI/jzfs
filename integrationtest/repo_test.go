@@ -5,13 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
-	apiimpl "github.com/jiaozifs/jiaozifs/api/api_impl"
-
-	"github.com/jiaozifs/jiaozifs/controller"
-
-	"github.com/jiaozifs/jiaozifs/utils"
-
 	"github.com/jiaozifs/jiaozifs/api"
+	apiimpl "github.com/jiaozifs/jiaozifs/api/api_impl"
+	"github.com/jiaozifs/jiaozifs/controller"
+	"github.com/jiaozifs/jiaozifs/utils"
 	"github.com/smartystreets/goconvey/convey"
 )
 
@@ -31,6 +28,28 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)
+			})
+
+			c.Convey("config error", func() {
+				cfg := `{"Type":"local",DefaultNamespacePrefix":null,"Local":{"Path":"~/.jiaozifs/blockstore","ImportEnabled":false,"ImportHidden":false,"AllowedExternalPrefixes":null},"S3":null,"Azure":null,"GS":null}`
+				resp, err := client.CreateRepository(ctx, api.CreateRepository{
+					Description:      utils.String("test resp"),
+					Name:             "happygo",
+					BlockStoreConfig: utils.String(cfg),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)
+			})
+
+			c.Convey("local not support", func() {
+				cfg := `{"Type":"local","DefaultNamespacePrefix":null,"Local":{"Path":"~/.jiaozifs/blockstore","ImportEnabled":false,"ImportHidden":false,"AllowedExternalPrefixes":null},"S3":null,"Azure":null,"GS":null}`
+				resp, err := client.CreateRepository(ctx, api.CreateRepository{
+					Description:      utils.String("test resp"),
+					Name:             "happygo",
+					BlockStoreConfig: utils.String(cfg),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
 			})
 
 			c.Convey("success create repo name", func() {

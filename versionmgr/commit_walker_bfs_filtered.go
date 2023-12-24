@@ -1,10 +1,10 @@
 package versionmgr
 
 import (
+	"context"
 	"errors"
 	"io"
 
-	"github.com/go-git/go-git/v5/plumbing/storer"
 	"github.com/jiaozifs/jiaozifs/utils/hash"
 )
 
@@ -18,13 +18,14 @@ import (
 // If no isValid is passed, all ancestors of from commit will be valid.
 // If no isLimit is limit, all ancestors of all commits will be visited.
 func NewFilterCommitIter(
-	from *CommitNode,
+	ctx context.Context,
+	from *WrapCommitNode,
 	isValid *CommitFilter,
 	isLimit *CommitFilter,
 ) CommitIter {
 	var validFilter CommitFilter
 	if isValid == nil {
-		validFilter = func(_ *CommitNode) bool {
+		validFilter = func(_ *WrapCommitNode) bool {
 			return true
 		}
 	} else {
@@ -33,7 +34,7 @@ func NewFilterCommitIter(
 
 	var limitFilter CommitFilter
 	if isLimit == nil {
-		limitFilter = func(_ *CommitNode) bool {
+		limitFilter = func(_ *WrapCommitNode) bool {
 			return false
 		}
 	} else {
@@ -41,30 +42,32 @@ func NewFilterCommitIter(
 	}
 
 	return &filterCommitIter{
+		ctx:     ctx,
 		isValid: validFilter,
 		isLimit: limitFilter,
 		visited: map[string]struct{}{},
-		queue:   []*CommitNode{from},
+		queue:   []*WrapCommitNode{from},
 	}
 }
 
 // CommitFilter returns a boolean for the passed Commit
-type CommitFilter func(*CommitNode) bool
+type CommitFilter func(*WrapCommitNode) bool
 
 // filterCommitIter implements CommitIter
 type filterCommitIter struct {
+	ctx     context.Context
 	isValid CommitFilter
 	isLimit CommitFilter
 	visited map[string]struct{}
-	queue   []*CommitNode
+	queue   []*WrapCommitNode
 	lastErr error
 }
 
 // Next returns the next commit of the CommitIter.
 // It will return io.EOF if there are no more commits to visit,
 // or an error if the history could not be traversed.
-func (w *filterCommitIter) Next() (*CommitNode, error) {
-	var commit *CommitNode
+func (w *filterCommitIter) Next() (*WrapCommitNode, error) {
+	var commit *WrapCommitNode
 	var err error
 	for {
 		commit, err = w.popNewFromQueue()
@@ -75,7 +78,7 @@ func (w *filterCommitIter) Next() (*CommitNode, error) {
 		w.visited[commit.Commit().Hash.Hex()] = struct{}{}
 
 		if !w.isLimit(commit) {
-			err = w.addToQueue(commit, commit.Commit().ParentHashes...)
+			err = w.addToQueue(w.ctx, commit, commit.Commit().ParentHashes...)
 			if err != nil {
 				return nil, w.close(err)
 			}
@@ -89,7 +92,7 @@ func (w *filterCommitIter) Next() (*CommitNode, error) {
 
 // ForEach runs the passed callback over each Commit returned by the CommitIter
 // until the callback returns an error or there is no more commits to traverse.
-func (w *filterCommitIter) ForEach(cb func(*CommitNode) error) error {
+func (w *filterCommitIter) ForEach(cb func(*WrapCommitNode) error) error {
 	for {
 		commit, err := w.Next()
 		if err == io.EOF {
@@ -101,7 +104,7 @@ func (w *filterCommitIter) ForEach(cb func(*CommitNode) error) error {
 		}
 
 		err = cb(commit)
-		if errors.Is(err, storer.ErrStop) {
+		if errors.Is(err, ErrStop) {
 			break
 		}
 
@@ -121,7 +124,7 @@ func (w *filterCommitIter) Error() error {
 // Close closes the CommitIter
 func (w *filterCommitIter) Close() {
 	w.visited = map[string]struct{}{}
-	w.queue = []*CommitNode{}
+	w.queue = []*WrapCommitNode{}
 	w.isLimit = nil
 	w.isValid = nil
 }
@@ -135,8 +138,8 @@ func (w *filterCommitIter) close(err error) error {
 
 // popNewFromQueue returns the first new commit from the internal fifo queue,
 // or an io.EOF error if the queue is empty
-func (w *filterCommitIter) popNewFromQueue() (*CommitNode, error) {
-	var first *CommitNode
+func (w *filterCommitIter) popNewFromQueue() (*WrapCommitNode, error) {
+	var first *WrapCommitNode
 	for {
 		if len(w.queue) == 0 {
 			if w.lastErr != nil {
@@ -159,7 +162,8 @@ func (w *filterCommitIter) popNewFromQueue() (*CommitNode, error) {
 // addToQueue adds the passed commits to the internal fifo queue if they weren't seen
 // or returns an error if the passed hashes could not be used to get valid commits
 func (w *filterCommitIter) addToQueue(
-	c *CommitNode,
+	ctx context.Context,
+	c *WrapCommitNode,
 	hashes ...hash.Hash,
 ) error {
 	for _, hash := range hashes {
@@ -167,7 +171,7 @@ func (w *filterCommitIter) addToQueue(
 			continue
 		}
 
-		commit, err := c.GetCommit(hash)
+		commit, err := c.GetCommit(ctx, hash)
 		if err != nil {
 			return err
 		}

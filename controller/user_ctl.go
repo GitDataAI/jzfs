@@ -7,20 +7,15 @@ import (
 	"time"
 
 	"github.com/go-openapi/swag"
-	"golang.org/x/crypto/bcrypt"
-
-	openapitypes "github.com/oapi-codegen/runtime/types"
-
-	logging "github.com/ipfs/go-log/v2"
-
 	"github.com/gorilla/sessions"
-
-	"github.com/jiaozifs/jiaozifs/config"
-	"github.com/jiaozifs/jiaozifs/models"
-
+	logging "github.com/ipfs/go-log/v2"
 	"github.com/jiaozifs/jiaozifs/api"
 	"github.com/jiaozifs/jiaozifs/auth"
+	"github.com/jiaozifs/jiaozifs/config"
+	"github.com/jiaozifs/jiaozifs/models"
+	openapitypes "github.com/oapi-codegen/runtime/types"
 	"go.uber.org/fx"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var userCtlLog = logging.Logger("user_ctl")

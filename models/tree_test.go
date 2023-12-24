@@ -4,13 +4,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/google/uuid"
-
-	"github.com/jiaozifs/jiaozifs/models/filemode"
-
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/uuid"
 	"github.com/jiaozifs/jiaozifs/models"
+	"github.com/jiaozifs/jiaozifs/models/filemode"
 	"github.com/jiaozifs/jiaozifs/testhelper"
 	"github.com/stretchr/testify/require"
 )

@@ -5,7 +5,6 @@ import (
 	"database/sql"
 
 	"github.com/google/uuid"
-
 	"github.com/uptrace/bun"
 )
 

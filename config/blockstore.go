@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/jiaozifs/jiaozifs/block/params"
-
 	"github.com/mitchellh/go-homedir"
 )
 

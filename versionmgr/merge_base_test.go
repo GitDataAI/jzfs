@@ -7,13 +7,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-
-	"github.com/jiaozifs/jiaozifs/utils/hash"
-
-	"github.com/stretchr/testify/require"
-
 	"github.com/jiaozifs/jiaozifs/models"
 	"github.com/jiaozifs/jiaozifs/testhelper"
+	"github.com/jiaozifs/jiaozifs/utils/hash"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCommitNodeMergeBase(t *testing.T) {
@@ -47,7 +44,7 @@ e|b
 		//simple
 		baseCommit := commitMap["b"]
 		mergeCommit := commitMap["c"]
-		ancestorNode, err := baseCommit.MergeBase(mergeCommit)
+		ancestorNode, err := baseCommit.MergeBase(ctx, mergeCommit)
 		require.NoError(t, err)
 		require.Len(t, ancestorNode, 1)
 		require.Equal(t, "a", string(ancestorNode[0].Commit().Hash))
@@ -57,7 +54,7 @@ e|b
 		//simple
 		baseCommit := commitMap["f"]
 		mergeCommit := commitMap["f1"]
-		ancestorNode, err := baseCommit.MergeBase(mergeCommit)
+		ancestorNode, err := baseCommit.MergeBase(ctx, mergeCommit)
 		require.NoError(t, err)
 		require.Len(t, ancestorNode, 1)
 		require.Equal(t, "f1", string(ancestorNode[0].Commit().Hash))
@@ -66,16 +63,16 @@ e|b
 	t.Run("multiple merge", func(t *testing.T) {
 		baseCommit := commitMap["f"]
 		mergeCommit := commitMap["e"]
-		ancestorNode, err := baseCommit.MergeBase(mergeCommit)
+		ancestorNode, err := baseCommit.MergeBase(ctx, mergeCommit)
 		require.NoError(t, err)
 		require.Len(t, ancestorNode, 1)
 		require.Equal(t, "b", string(ancestorNode[0].Commit().Hash))
 	})
 }
 
-func loadCommitTestData(ctx context.Context, commitRepo models.ICommitRepo, testData string) (map[string]*CommitNode, error) {
+func loadCommitTestData(ctx context.Context, commitRepo models.ICommitRepo, testData string) (map[string]*WrapCommitNode, error) {
 	lines := strings.Split(testData, "\n")
-	commitMap := make(map[string]*CommitNode)
+	commitMap := make(map[string]*WrapCommitNode)
 	for _, line := range lines {
 		if len(strings.TrimSpace(line)) == 0 {
 			continue
@@ -83,7 +80,7 @@ func loadCommitTestData(ctx context.Context, commitRepo models.ICommitRepo, test
 		commitData := strings.Split(strings.TrimSpace(line), "|")
 		hashName := strings.TrimSpace(commitData[0])
 		commit := newCommit(commitRepo.RepositoryID(), hashName, strings.Split(commitData[1], ","))
-		commitMap[hashName] = NewCommitNode(ctx, commit, commitRepo)
+		commitMap[hashName] = NewWrapCommitNode(commitRepo, commit)
 		_, err := commitRepo.Insert(ctx, commit)
 		if err != nil {
 			return nil, err

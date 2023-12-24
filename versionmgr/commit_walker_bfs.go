@@ -1,17 +1,18 @@
 package versionmgr
 
 import (
+	"context"
 	"errors"
 	"io"
 
-	"github.com/go-git/go-git/v5/plumbing/storer"
 	"github.com/jiaozifs/jiaozifs/utils/hash"
 )
 
 type bfsCommitIterator struct {
+	ctx          context.Context
 	seenExternal map[string]bool
 	seen         map[string]bool
-	queue        []*CommitNode
+	queue        []*WrapCommitNode
 }
 
 // NewCommitIterBSF returns a CommitIter that walks the commit history,
@@ -22,7 +23,8 @@ type bfsCommitIterator struct {
 // cannot be traversed (e.g. missing objects). Ignore allows to skip some
 // commits from being iterated.
 func NewCommitIterBSF(
-	c *CommitNode,
+	ctx context.Context,
+	c *WrapCommitNode,
 	seenExternal map[string]bool,
 	ignore []hash.Hash,
 ) CommitIter {
@@ -32,17 +34,18 @@ func NewCommitIterBSF(
 	}
 
 	return &bfsCommitIterator{
+		ctx:          ctx,
 		seenExternal: seenExternal,
 		seen:         seen,
-		queue:        []*CommitNode{c},
+		queue:        []*WrapCommitNode{c},
 	}
 }
 
-func (w *bfsCommitIterator) appendHash(store *CommitNode, h hash.Hash) error {
+func (w *bfsCommitIterator) appendHash(ctx context.Context, store *WrapCommitNode, h hash.Hash) error {
 	if w.seen[h.Hex()] || w.seenExternal[h.Hex()] {
 		return nil
 	}
-	c, err := store.GetCommit(h)
+	c, err := store.GetCommit(ctx, h)
 	if err != nil {
 		return err
 	}
@@ -50,8 +53,8 @@ func (w *bfsCommitIterator) appendHash(store *CommitNode, h hash.Hash) error {
 	return nil
 }
 
-func (w *bfsCommitIterator) Next() (*CommitNode, error) {
-	var c *CommitNode
+func (w *bfsCommitIterator) Next() (*WrapCommitNode, error) {
+	var c *WrapCommitNode
 	for {
 		if len(w.queue) == 0 {
 			return nil, io.EOF
@@ -66,7 +69,7 @@ func (w *bfsCommitIterator) Next() (*CommitNode, error) {
 		w.seen[c.Commit().Hash.Hex()] = true
 
 		for _, h := range c.Commit().ParentHashes {
-			err := w.appendHash(c, h)
+			err := w.appendHash(w.ctx, c, h)
 			if err != nil {
 				return nil, err
 			}
@@ -76,7 +79,7 @@ func (w *bfsCommitIterator) Next() (*CommitNode, error) {
 	}
 }
 
-func (w *bfsCommitIterator) ForEach(cb func(node *CommitNode) error) error {
+func (w *bfsCommitIterator) ForEach(cb func(node *WrapCommitNode) error) error {
 	for {
 		c, err := w.Next()
 		if err == io.EOF {
@@ -87,7 +90,7 @@ func (w *bfsCommitIterator) ForEach(cb func(node *CommitNode) error) error {
 		}
 
 		err = cb(c)
-		if errors.Is(err, storer.ErrStop) {
+		if errors.Is(err, ErrStop) {
 			break
 		}
 		if err != nil {

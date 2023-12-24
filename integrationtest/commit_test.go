@@ -4,10 +4,9 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/jiaozifs/jiaozifs/utils"
-
 	"github.com/jiaozifs/jiaozifs/api"
 	apiimpl "github.com/jiaozifs/jiaozifs/api/api_impl"
+	"github.com/jiaozifs/jiaozifs/utils"
 	"github.com/smartystreets/goconvey/convey"
 )
 
@@ -125,16 +124,6 @@ func GetEntriesInRefSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		})
 
 		commitWip(ctx, c, client, "commit kitty first changes", userName, repoName, branchName, "test")
-
-		c.Convey("get entries with no type", func() {
-			resp, err := client.GetEntriesInRef(ctx, userName, repoName, &api.GetEntriesInRefParams{
-				Path: utils.String("g"),
-				Ref:  utils.String(branchName),
-				Type: api.RefTypeTest,
-			})
-			convey.So(err, convey.ShouldBeNil)
-			convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)
-		})
 
 		c.Convey("get branch entries", func(c convey.C) {
 			c.Convey("no auth", func() {

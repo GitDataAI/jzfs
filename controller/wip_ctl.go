@@ -10,22 +10,21 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jiaozifs/jiaozifs/utils/hash"
-
-	"github.com/jiaozifs/jiaozifs/auth"
-	"github.com/jiaozifs/jiaozifs/versionmgr"
-
-	"github.com/jiaozifs/jiaozifs/utils"
-
 	"github.com/jiaozifs/jiaozifs/api"
+	"github.com/jiaozifs/jiaozifs/auth"
+	"github.com/jiaozifs/jiaozifs/block/params"
 	"github.com/jiaozifs/jiaozifs/models"
+	"github.com/jiaozifs/jiaozifs/utils"
+	"github.com/jiaozifs/jiaozifs/utils/hash"
+	"github.com/jiaozifs/jiaozifs/versionmgr"
 	"go.uber.org/fx"
 )
 
 type WipController struct {
 	fx.In
 
-	Repo models.IRepo
+	Repo                models.IRepo
+	PublicStorageConfig params.AdapterConfig
 }
 
 // CreateWip create wip of branch
@@ -196,55 +195,25 @@ func (wipCtl WipController) CommitWip(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
-	ref, err := wipCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetName(params.RefName).SetRepositoryID(repository.ID))
+	workRepo, err := versionmgr.NewWorkRepositoryFromConfig(ctx, operator, repository, wipCtl.Repo, wipCtl.PublicStorageConfig)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	wip, err := wipCtl.Repo.WipRepo().Get(ctx, models.NewGetWipParams().SetRefID(ref.ID).SetCreatorID(operator.ID).SetRepositoryID(repository.ID))
+	err = workRepo.CheckOut(ctx, versionmgr.InWip, params.RefName)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	if !bytes.Equal(ref.CommitHash, wip.BaseCommit) {
-		w.Error(fmt.Errorf("base commit not equal with branch, please update wip"))
-		return
-	}
-
-	var commit *models.Commit
-	if !ref.CommitHash.IsEmpty() {
-		commit, err = wipCtl.Repo.CommitRepo(repository.ID).Commit(ctx, ref.CommitHash)
-		if err != nil {
-			w.Error(err)
-			return
-		}
-	}
-
-	//add commit
-	err = wipCtl.Repo.Transaction(ctx, func(repo models.IRepo) error {
-		commitOp := versionmgr.NewCommitOp(repo, repository.ID, commit)
-		commit, err := commitOp.AddCommit(ctx, operator, wip.ID, params.Msg)
-		if err != nil {
-			return err
-		}
-
-		wip.BaseCommit = commit.Commit().Hash //set for response
-		wip.CurrentTree = commit.Commit().TreeHash
-		err = repo.WipRepo().UpdateByID(ctx, models.NewUpdateWipParams(wip.ID).SetBaseCommit(wip.BaseCommit).SetCurrentTree(wip.CurrentTree))
-		if err != nil {
-			return err
-		}
-
-		return repo.BranchRepo().UpdateByID(ctx, models.NewUpdateBranchParams(ref.ID).SetCommitHash(commit.Commit().Hash))
-	})
+	_, err = workRepo.CommitChanges(ctx, params.Msg)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	w.JSON(wip, http.StatusCreated)
+	w.JSON(workRepo.CurWip(), http.StatusCreated)
 }
 
 // DeleteWip delete active working in process operator only can delete himself wip
