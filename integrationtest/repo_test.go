@@ -394,6 +394,34 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(*result.JSON200, convey.ShouldHaveLength, 1)
 				convey.So((*result.JSON200)[0].Message, convey.ShouldEqual, "first commit")
 			})
+
+			uploadObject(ctx, c, client, "add sec object", userName, repoName, controller.DefaultBranchName, "b.txt")
+			commitWip(ctx, c, client, "commit sec object", userName, repoName, controller.DefaultBranchName, "second commit")
+			c.Convey("success get commits by params", func() {
+				resp, err := client.GetCommitsInRepository(ctx, userName, repoName, &api.GetCommitsInRepositoryParams{
+					RefName: utils.String(controller.DefaultBranchName),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				result, err := api.ParseGetCommitsInRepositoryResponse(resp)
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(*result.JSON200, convey.ShouldHaveLength, 2)
+				convey.So((*result.JSON200)[0].Message, convey.ShouldEqual, "second commit")
+
+				newResp, err := client.GetCommitsInRepository(ctx, userName, repoName, &api.GetCommitsInRepositoryParams{
+					After:   utils.Time((*result.JSON200)[0].CreatedAt),
+					Amount:  utils.Int(1),
+					RefName: utils.String(controller.DefaultBranchName),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				newResult, err := api.ParseGetCommitsInRepositoryResponse(newResp)
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(*newResult.JSON200, convey.ShouldHaveLength, 1)
+				convey.So((*newResult.JSON200)[0].Message, convey.ShouldEqual, "first commit")
+			})
 		})
 
 		c.Convey("delete repository", func(c convey.C) {
