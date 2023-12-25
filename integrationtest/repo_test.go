@@ -397,6 +397,8 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 			uploadObject(ctx, c, client, "add sec object", userName, repoName, controller.DefaultBranchName, "b.txt")
 			commitWip(ctx, c, client, "commit sec object", userName, repoName, controller.DefaultBranchName, "second commit")
+			uploadObject(ctx, c, client, "add third object", userName, repoName, controller.DefaultBranchName, "c.txt")
+			commitWip(ctx, c, client, "commit third object", userName, repoName, controller.DefaultBranchName, "third commit")
 			c.Convey("success get commits by params", func() {
 				resp, err := client.GetCommitsInRepository(ctx, userName, repoName, &api.GetCommitsInRepositoryParams{
 					RefName: utils.String(controller.DefaultBranchName),
@@ -406,8 +408,8 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 				result, err := api.ParseGetCommitsInRepositoryResponse(resp)
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(*result.JSON200, convey.ShouldHaveLength, 2)
-				convey.So((*result.JSON200)[0].Message, convey.ShouldEqual, "second commit")
+				convey.So(*result.JSON200, convey.ShouldHaveLength, 3)
+				convey.So((*result.JSON200)[0].Message, convey.ShouldEqual, "third commit")
 
 				newResp, err := client.GetCommitsInRepository(ctx, userName, repoName, &api.GetCommitsInRepositoryParams{
 					After:   utils.Time((*result.JSON200)[0].CreatedAt),
@@ -420,7 +422,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				newResult, err := api.ParseGetCommitsInRepositoryResponse(newResp)
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(*newResult.JSON200, convey.ShouldHaveLength, 1)
-				convey.So((*newResult.JSON200)[0].Message, convey.ShouldEqual, "first commit")
+				convey.So((*newResult.JSON200)[0].Message, convey.ShouldEqual, "second commit")
 			})
 		})
 
