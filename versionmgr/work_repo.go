@@ -167,11 +167,11 @@ func (repository *WorkRepository) CheckOut(ctx context.Context, refType WorkRepo
 	if refType == InWip {
 		ref, err := repository.repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.repoModel.ID).SetName(refName))
 		if err != nil {
-			return err
+			return fmt.Errorf("unable to get branch %s of repository %s: %w", refName, repository.repoModel.Name, err)
 		}
 		wip, err := repository.repo.WipRepo().Get(ctx, models.NewGetWipParams().SetCreatorID(repository.operator.ID).SetRepositoryID(repository.repoModel.ID).SetRefID(ref.ID))
 		if err != nil {
-			return err
+			return fmt.Errorf("unable to get wip of repository %s branch %s: %w", repository.repoModel.Name, refName, err)
 		}
 		treeHash = wip.CurrentTree
 		repository.setCurState(InWip, wip, ref, nil)
