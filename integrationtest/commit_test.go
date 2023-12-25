@@ -102,8 +102,8 @@ func GetEntriesInRefSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				result, err := api.ParseGetEntriesInRefResponse(resp)
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(*result.JSON200, convey.ShouldHaveLength, 2)
-				convey.So(*(*result.JSON200)[0].Name, convey.ShouldEqual, "m.dat")
-				convey.So(*(*result.JSON200)[1].Name, convey.ShouldEqual, "x.dat")
+				convey.So((*result.JSON200)[0].Name, convey.ShouldEqual, "m.dat")
+				convey.So((*result.JSON200)[1].Name, convey.ShouldEqual, "x.dat")
 			})
 
 			c.Convey("success to get entries in root", func() {
@@ -118,8 +118,8 @@ func GetEntriesInRefSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				result, err := api.ParseGetEntriesInRefResponse(resp)
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(*result.JSON200, convey.ShouldHaveLength, 2)
-				convey.So(*(*result.JSON200)[0].Name, convey.ShouldEqual, "g")
-				convey.So(*(*result.JSON200)[1].Name, convey.ShouldEqual, "m.dat")
+				convey.So((*result.JSON200)[0].Name, convey.ShouldEqual, "g")
+				convey.So((*result.JSON200)[1].Name, convey.ShouldEqual, "m.dat")
 			})
 		})
 
@@ -201,8 +201,8 @@ func GetEntriesInRefSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				result, err := api.ParseGetEntriesInRefResponse(resp)
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(*result.JSON200, convey.ShouldHaveLength, 2)
-				convey.So(*(*result.JSON200)[0].Name, convey.ShouldEqual, "m.dat")
-				convey.So(*(*result.JSON200)[1].Name, convey.ShouldEqual, "x.dat")
+				convey.So((*result.JSON200)[0].Name, convey.ShouldEqual, "m.dat")
+				convey.So((*result.JSON200)[1].Name, convey.ShouldEqual, "x.dat")
 			})
 
 			c.Convey("success to get entries in root", func() {
@@ -217,8 +217,8 @@ func GetEntriesInRefSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				result, err := api.ParseGetEntriesInRefResponse(resp)
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(*result.JSON200, convey.ShouldHaveLength, 2)
-				convey.So(*(*result.JSON200)[0].Name, convey.ShouldEqual, "g")
-				convey.So(*(*result.JSON200)[1].Name, convey.ShouldEqual, "m.dat")
+				convey.So((*result.JSON200)[0].Name, convey.ShouldEqual, "g")
+				convey.So((*result.JSON200)[1].Name, convey.ShouldEqual, "m.dat")
 			})
 		})
 

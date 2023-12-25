@@ -29,9 +29,9 @@ const (
 )
 
 type TreeEntry struct {
-	Name  string    `bun:"name"`
-	IsDir bool      `bun:"is_dir"`
-	Hash  hash.Hash `bun:"hash"`
+	Name  string    `bun:"name" json:"name"`
+	IsDir bool      `bun:"is_dir" json:"is_dir"`
+	Hash  hash.Hash `bun:"hash" json:"hash"`
 }
 
 func SortSubObjects(subObjects []TreeEntry) []TreeEntry {
@@ -78,12 +78,12 @@ type Blob struct {
 	Hash          hash.Hash  `bun:"hash,pk,type:bytea"`
 	RepositoryID  uuid.UUID  `bun:"repository_id,pk,type:uuid,notnull"`
 	CheckSum      hash.Hash  `bun:"check_sum,type:bytea"`
-	Type          ObjectType `bun:"type"`
+	Type          ObjectType `bun:"type,notnull"`
 	Size          int64      `bun:"size"`
-	Properties    Property   `bun:"properties,type:jsonb"`
+	Properties    Property   `bun:"properties,type:jsonb,notnull"`
 
-	CreatedAt time.Time `bun:"created_at"`
-	UpdatedAt time.Time `bun:"updated_at"`
+	CreatedAt time.Time `bun:"created_at,notnull"`
+	UpdatedAt time.Time `bun:"updated_at,notnull"`
 }
 
 func NewBlob(props Property, repoID uuid.UUID, checkSum hash.Hash, size int64) (*Blob, error) {
@@ -146,15 +146,15 @@ func (blob *Blob) FileTree() *FileTree {
 
 type TreeNode struct {
 	bun.BaseModel `bun:"table:trees"`
-	Hash          hash.Hash `bun:"hash,pk,type:bytea"`
-	RepositoryID  uuid.UUID `bun:"repository_id,pk,type:uuid,notnull"`
+	Hash          hash.Hash `bun:"hash,pk,type:bytea" json:"hash"`
+	RepositoryID  uuid.UUID `bun:"repository_id,pk,type:uuid,notnull" json:"repository_id"`
 
-	Type       ObjectType  `bun:"type"`
-	SubObjects []TreeEntry `bun:"subObjs,type:jsonb"`
-	Properties Property    `bun:"properties,type:jsonb"`
+	Type       ObjectType  `bun:"type,notnull" json:"type"`
+	SubObjects []TreeEntry `bun:"sub_objects,type:jsonb" json:"sub_objects"`
+	Properties Property    `bun:"properties,type:jsonb,notnull" json:"properties"`
 
-	CreatedAt time.Time `bun:"created_at"`
-	UpdatedAt time.Time `bun:"updated_at"`
+	CreatedAt time.Time `bun:"created_at,notnull" json:"created_at"`
+	UpdatedAt time.Time `bun:"updated_at,notnull" json:"updated_at"`
 }
 
 func NewTreeNode(props Property, repoID uuid.UUID, subObjects ...TreeEntry) (*TreeNode, error) {
@@ -221,15 +221,15 @@ type FileTree struct {
 	bun.BaseModel `bun:"table:trees"`
 	Hash          hash.Hash  `bun:"hash,pk,type:bytea"`
 	RepositoryID  uuid.UUID  `bun:"repository_id,pk,type:uuid,notnull"`
-	Type          ObjectType `bun:"type"`
-	Size          int64      `bun:"size"`
 	CheckSum      hash.Hash  `bun:"check_sum,type:bytea"`
-	Properties    Property   `bun:"properties,type:jsonb"`
+	Type          ObjectType `bun:"type,notnull"`
+	Size          int64      `bun:"size"`
+	Properties    Property   `bun:"properties,type:jsonb,notnull"`
 	//tree
-	SubObjects []TreeEntry `bun:"subObjs,type:jsonb"`
+	SubObjects []TreeEntry `bun:"sub_objects,type:jsonb" json:"sub_objects"`
 
-	CreatedAt time.Time `bun:"created_at"`
-	UpdatedAt time.Time `bun:"updated_at"`
+	CreatedAt time.Time `bun:"created_at,notnull" json:"created_at"`
+	UpdatedAt time.Time `bun:"updated_at,notnull" json:"updated_at"`
 }
 
 func (fileTree *FileTree) Blob() *Blob {

@@ -20,7 +20,7 @@ func TestRefRepoInsert(t *testing.T) {
 
 	repo := models.NewBranchRepo(db)
 
-	branchModel := &models.Branches{}
+	branchModel := &models.Branch{}
 	require.NoError(t, gofakeit.Struct(branchModel))
 	branchModel.Name = "feat/abc/aaa"
 	newBranch, err := repo.Insert(ctx, branchModel)
@@ -51,7 +51,7 @@ func TestRefRepoInsert(t *testing.T) {
 	require.Len(t, list, 1)
 
 	// SecondModel
-	secModel := &models.Branches{}
+	secModel := &models.Branch{}
 	require.NoError(t, gofakeit.Struct(secModel))
 	secModel.RepositoryID = branch.RepositoryID
 	secModel.Name = "feat/bba/ccc"

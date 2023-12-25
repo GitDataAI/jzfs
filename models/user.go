@@ -10,16 +10,16 @@ import (
 
 type User struct {
 	bun.BaseModel     `bun:"table:users"`
-	ID                uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
-	Name              string    `bun:"name,notnull"`
-	Email             string    `bun:"email,notnull"`
-	EncryptedPassword string    `bun:"encrypted_password"`
-	CurrentSignInAt   time.Time `bun:"current_sign_in_at"`
-	LastSignInAt      time.Time `bun:"last_sign_in_at"`
-	CurrentSignInIP   string    `bun:"current_sign_in_ip"`
-	LastSignInIP      string    `bun:"last_sign_in_ip"`
-	CreatedAt         time.Time `bun:"created_at"`
-	UpdatedAt         time.Time `bun:"updated_at"`
+	ID                uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()" json:"id"`
+	Name              string    `bun:"name,notnull" json:"name"`
+	Email             string    `bun:"email,notnull" json:"email"`
+	EncryptedPassword string    `bun:"encrypted_password,notnull" json:"encrypted_password"`
+	CurrentSignInAt   time.Time `bun:"current_sign_in_at" json:"current_sign_in_at"`
+	LastSignInAt      time.Time `bun:"last_sign_in_at" json:"last_sign_in_at"`
+	CurrentSignInIP   string    `bun:"current_sign_in_ip" json:"current_sign_in_ip"`
+	LastSignInIP      string    `bun:"last_sign_in_ip" json:"last_sign_in_ip"`
+	CreatedAt         time.Time `bun:"created_at,notnull" json:"created_at"`
+	UpdatedAt         time.Time `bun:"updated_at,notnull" json:"updated_at"`
 }
 
 type GetUserParams struct {

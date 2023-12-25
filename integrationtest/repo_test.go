@@ -35,7 +35,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.CreateRepository(ctx, api.CreateRepository{
 					Description:      utils.String("test resp"),
 					Name:             "happygo",
-					BlockStoreConfig: utils.String(cfg),
+					BlockstoreConfig: utils.String(cfg),
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)
@@ -46,7 +46,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				resp, err := client.CreateRepository(ctx, api.CreateRepository{
 					Description:      utils.String("test resp"),
 					Name:             "happygo",
-					BlockStoreConfig: utils.String(cfg),
+					BlockstoreConfig: utils.String(cfg),
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
@@ -63,7 +63,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				grp, err := api.ParseGetRepositoryResponse(resp)
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(grp.JSON200.Head, convey.ShouldEqual, controller.DefaultBranchName)
-				fmt.Println(grp.JSON200.ID)
+				fmt.Println(grp.JSON200.Id)
 				//check default branch created
 				branchResp, err := client.GetBranch(ctx, userName, grp.JSON200.Name, &api.GetBranchParams{RefName: controller.DefaultBranchName})
 				convey.So(err, convey.ShouldBeNil)

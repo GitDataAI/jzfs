@@ -8,27 +8,23 @@ import (
 	"github.com/uptrace/bun"
 )
 
-type StorageNamespace struct {
-	IsPublic bool   `json:"is_public"`
-	Type     string `json:"type"`
-}
-
 type Repository struct {
-	bun.BaseModel `bun:"table:repositories"`
-	ID            uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
-	Name          string    `bun:"name,unique:name_owner_unique,notnull"`
-	OwnerID       uuid.UUID `bun:"owner_id,unique:name_owner_unique,type:uuid,notnull"`
-	HEAD          string    `bun:"head,notnull"`
+	bun.BaseModel `bun:"table:repositories" json:"bun_._base_model"`
+	ID            uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()" json:"id"`
+	Name          string    `bun:"name,unique:name_owner_unique,notnull" json:"name"`
+	OwnerID       uuid.UUID `bun:"owner_id,unique:name_owner_unique,type:uuid,notnull" json:"owner_id"`
+	HEAD          string    `bun:"head,notnull" json:"head"`
 
-	UsePublicStorage     bool   `bun:"use_public_storage,notnull"`
-	StorageAdapterParams string `bun:"storage_adapter,notnull"`
-	StorageNamespace     string `bun:"storage_namespace"`
+	UsePublicStorage bool    `bun:"use_public_storage,notnull" json:"use_public_storage"`
+	StorageNamespace *string `bun:"storage_namespace" json:"storage_namespace,omitempty"`
 
-	Description *string   `bun:"description"`
-	CreatorID   uuid.UUID `bun:"creator_id,type:uuid,notnull"`
+	StorageAdapterParams *string `bun:"storage_adapter_params" json:"storage_adapter_params,omitempty"`
 
-	CreatedAt time.Time `bun:"created_at"`
-	UpdatedAt time.Time `bun:"updated_at"`
+	Description *string   `bun:"description" json:"description,omitempty"`
+	CreatorID   uuid.UUID `bun:"creator_id,type:uuid,notnull" json:"creator_id"`
+
+	CreatedAt time.Time `bun:"created_at,notnull" json:"created_at"`
+	UpdatedAt time.Time `bun:"updated_at,notnull" json:"updated_at"`
 }
 
 type GetRepoParams struct {
