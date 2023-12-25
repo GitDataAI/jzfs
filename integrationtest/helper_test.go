@@ -117,7 +117,7 @@ func createUser(ctx context.Context, c convey.C, client *api.Client, userName st
 func loginAndSwitch(ctx context.Context, c convey.C, client *api.Client, userName string) {
 	c.Convey("login "+userName, func() {
 		resp, err := client.Login(ctx, api.LoginJSONRequestBody{
-			Username: userName,
+			Name:     userName,
 			Password: "12345678",
 		})
 		convey.So(err, convey.ShouldBeNil)

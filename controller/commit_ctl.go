@@ -44,7 +44,7 @@ func (commitCtl CommitController) GetEntriesInRef(ctx context.Context, w *api.Ji
 	}
 
 	refName := repository.HEAD
-	if params.Path != nil {
+	if params.Ref != nil {
 		refName = *params.Ref
 	}
 

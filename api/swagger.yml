@@ -1563,10 +1563,10 @@ paths:
             schema:
               type: object
               required:
-                - username
+                - name
                 - password
               properties:
-                username:
+                name:
                   type: string
                 password:
                   type: string

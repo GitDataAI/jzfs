@@ -35,7 +35,7 @@ type UserController struct {
 func (userCtl UserController) Login(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, body api.LoginJSONRequestBody) {
 
 	// get user encryptedPassword by username
-	ep, err := userCtl.Repo.UserRepo().GetEPByName(ctx, body.Username)
+	ep, err := userCtl.Repo.UserRepo().GetEPByName(ctx, body.Name)
 	if err != nil {
 		w.Code(http.StatusUnauthorized)
 		return
@@ -56,13 +56,13 @@ func (userCtl UserController) Login(ctx context.Context, w *api.JiaozifsResponse
 		return
 	}
 
-	tokenString, err := auth.GenerateJWTLogin(secretKey, body.Username, loginTime, expires)
+	tokenString, err := auth.GenerateJWTLogin(secretKey, body.Name, loginTime, expires)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	userCtlLog.Infof("usert %s login successful", body.Username)
+	userCtlLog.Infof("user %s login successful", body.Name)
 
 	internalAuthSession, _ := userCtl.SessionStore.Get(r, auth.InternalAuthSessionName)
 	internalAuthSession.Values[auth.TokenSessionKeyName] = tokenString
