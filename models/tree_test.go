@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/jiaozifs/jiaozifs/utils/hash"
+
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
@@ -70,5 +72,27 @@ func TestObjectRepo_Insert(t *testing.T) {
 		mistMatchModel.Properties.Mode = filemode.Regular
 		_, err := repo.Insert(ctx, mistMatchModel)
 		require.ErrorIs(t, err, models.ErrRepoIDMisMatch)
+	})
+}
+
+func TestNewTreeNode(t *testing.T) {
+	id, err := uuid.Parse("a91ef678-1980-4b26-9bb9-eadc9f366429")
+	require.NoError(t, err)
+
+	t.Run("no subobjects", func(t *testing.T) {
+		node, err := models.NewTreeNode(models.Property{Mode: filemode.Dir}, id)
+		require.NoError(t, err)
+		require.NotNil(t, node.SubObjects)
+		require.Equal(t, "03c2737fb833f979f2bb5398248e8e64", node.Hash.Hex())
+	})
+
+	t.Run("no subobjects", func(t *testing.T) {
+		node, err := models.NewTreeNode(models.Property{Mode: filemode.Dir}, id, models.TreeEntry{
+			Name: "a.txt",
+			Hash: hash.Hash("aaa"),
+		})
+		require.NoError(t, err)
+		require.NotNil(t, node.SubObjects)
+		require.Equal(t, "27d9fbf6d43195f34404a94c0de707a2", node.Hash.Hex())
 	})
 }

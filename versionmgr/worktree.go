@@ -17,8 +17,9 @@ import (
 )
 
 var EmptyRoot = &models.TreeNode{
-	Hash: hash.Hash([]byte{}),
-	Type: models.TreeObject,
+	Hash:       hash.Hash([]byte{}),
+	Type:       models.TreeObject,
+	SubObjects: make([]models.TreeEntry, 0),
 }
 
 var EmptyDirEntry = models.TreeEntry{
@@ -69,11 +70,11 @@ func (workTree *WorkTree) RepositoryID() uuid.UUID {
 }
 
 func (workTree *WorkTree) AppendDirectEntry(ctx context.Context, treeEntry models.TreeEntry) (*models.TreeNode, error) {
-	chilren, err := workTree.root.Children()
+	children, err := workTree.root.Children()
 	if err != nil {
 		return nil, err
 	}
-	for _, node := range chilren {
+	for _, node := range children {
 		if node.Name() == treeEntry.Name {
 			return nil, ErrEntryExit
 		}
@@ -94,7 +95,7 @@ func (workTree *WorkTree) AppendDirectEntry(ctx context.Context, treeEntry model
 }
 
 func (workTree *WorkTree) DeleteDirectEntry(ctx context.Context, name string) (*models.TreeNode, bool, error) {
-	var subObjects []models.TreeEntry
+	subObjects := []models.TreeEntry{} //ensure subobject not nul
 	for _, sub := range workTree.root.SubObjects() {
 		if sub.Name != name { //filter tree entry by name
 			subObjects = append(subObjects, sub)

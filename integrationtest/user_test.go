@@ -23,7 +23,7 @@ func UserSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 		c.Convey("login fail", func() {
 			resp, err := client.Login(ctx, api.LoginJSONRequestBody{
-				Username: "admin",
+				Name:     "admin",
 				Password: " vvvvvvvv",
 			})
 			convey.So(err, convey.ShouldBeNil)

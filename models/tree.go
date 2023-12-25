@@ -43,8 +43,9 @@ func SortSubObjects(subObjects []TreeEntry) []TreeEntry {
 
 func NewRootTreeEntry(hash hash.Hash) TreeEntry {
 	return TreeEntry{
-		Name: "",
-		Hash: hash,
+		Name:  "",
+		Hash:  hash,
+		IsDir: true,
 	}
 }
 func (treeEntry TreeEntry) Equal(other TreeEntry) bool {
@@ -158,6 +159,9 @@ type TreeNode struct {
 }
 
 func NewTreeNode(props Property, repoID uuid.UUID, subObjects ...TreeEntry) (*TreeNode, error) {
+	if subObjects == nil {
+		subObjects = make([]TreeEntry, 0) //to ensure tree entry not null
+	}
 	newTree := &TreeNode{
 		Type:         TreeObject,
 		RepositoryID: repoID,
@@ -226,7 +230,7 @@ type FileTree struct {
 	Size          int64      `bun:"size"`
 	Properties    Property   `bun:"properties,type:jsonb,notnull"`
 	//tree
-	SubObjects []TreeEntry `bun:"sub_objects,type:jsonb" json:"sub_objects"`
+	SubObjects []TreeEntry `bun:"sub_objects,type:jsonb,notnull" json:"sub_objects"`
 
 	CreatedAt time.Time `bun:"created_at,notnull" json:"created_at"`
 	UpdatedAt time.Time `bun:"updated_at,notnull" json:"updated_at"`
