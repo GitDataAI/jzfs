@@ -40,6 +40,14 @@ components:
       schema:
         type: string
         format: date-time 
+    
+    PaginationCommitAfter:
+      in: query
+      name: after
+      description: return items after this value
+      schema:
+        type: string
+        format: date-time-ns
 
     PaginationAmount:
       in: query
@@ -1260,6 +1268,8 @@ paths:
       operationId: getCommitsInRepository
       summary: get commits in repository
       parameters:
+        - $ref: "#/components/parameters/PaginationCommitAfter"
+        - $ref: "#/components/parameters/PaginationAmount"
         - in: query
           name: refName
           description: ref(branch/tag) name
