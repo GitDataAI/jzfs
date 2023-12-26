@@ -425,6 +425,15 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(*newResult.JSON200, convey.ShouldHaveLength, 1)
 				convey.So((*newResult.JSON200)[0].Message, convey.ShouldEqual, "second commit")
 			})
+
+			c.Convey("failed get commits by wrong params", func() {
+				resp, err := client.GetCommitsInRepository(ctx, userName, repoName, &api.GetCommitsInRepositoryParams{
+					After:   utils.String("123"),
+					RefName: utils.String(controller.DefaultBranchName),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusInternalServerError)
+			})
 		})
 
 		c.Convey("delete repository", func(c convey.C) {
