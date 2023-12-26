@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/jiaozifs/jiaozifs/api"
 	apiimpl "github.com/jiaozifs/jiaozifs/api/api_impl"
@@ -412,7 +413,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So((*result.JSON200)[0].Message, convey.ShouldEqual, "third commit")
 
 				newResp, err := client.GetCommitsInRepository(ctx, userName, repoName, &api.GetCommitsInRepositoryParams{
-					After:   utils.Time((*result.JSON200)[0].CreatedAt),
+					After:   utils.String((*result.JSON200)[0].Committer.When.Format(time.RFC3339Nano)),
 					Amount:  utils.Int(1),
 					RefName: utils.String(controller.DefaultBranchName),
 				})

@@ -47,7 +47,7 @@ components:
       description: return items after this value
       schema:
         type: string
-        format: date-time
+        format: date-time-ns
 
     PaginationAmount:
       in: query
