@@ -348,6 +348,7 @@ func (repositoryCtl RepositoryController) UpdateRepository(ctx context.Context, 
 		w.Error(err)
 		return
 	}
+	w.OK()
 }
 
 func (repositoryCtl RepositoryController) GetCommitsInRepository(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, params api.GetCommitsInRepositoryParams) {
@@ -401,6 +402,19 @@ func (repositoryCtl RepositoryController) GetCommitsInRepository(ctx context.Con
 	for {
 		commit, err := iter.Next()
 		if err == nil {
+			if params.After != nil {
+				parseTime, err := time.Parse(time.RFC3339Nano, *params.After)
+				if err != nil {
+					w.Error(err)
+					return
+				}
+				if commit.Commit().Committer.When.Add(time.Nanosecond).After(parseTime) {
+					continue
+				}
+			}
+			if params.Amount != nil && len(commits) == *params.Amount {
+				break
+			}
 			modelCommit := commit.Commit()
 			commits = append(commits, api.Commit{
 				RepositoryId: modelCommit.RepositoryID,
