@@ -31,7 +31,7 @@ func TestJiaozifsResponse(t *testing.T) {
 		jzResp.Forbidden()
 	})
 
-	t.Run("not found", func(t *testing.T) {
+	t.Run("Unauthorized", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		resp := NewMockResponseWriter(ctrl)
 		jzResp := JiaozifsResponse{resp}
@@ -82,8 +82,10 @@ func TestJiaozifsResponse(t *testing.T) {
 		resp := NewMockResponseWriter(ctrl)
 		jzResp := JiaozifsResponse{resp}
 
+		err := fmt.Errorf("mock %w", models.ErrNotFound)
 		resp.EXPECT().WriteHeader(http.StatusNotFound)
-		jzResp.Error(fmt.Errorf("mock %w", models.ErrNotFound))
+		resp.EXPECT().Write([]byte(err.Error()))
+		jzResp.Error(err)
 	})
 
 	t.Run("error no auth", func(t *testing.T) {
