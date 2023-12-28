@@ -148,7 +148,7 @@ func (workTree *WorkTree) ReplaceSubTreeEntry(ctx context.Context, treeEntry mod
 }
 
 func (workTree *WorkTree) matchPath(ctx context.Context, path string) ([]FullObject, []string, error) {
-	pathSegs := strings.Split(filepath.Clean(path), fmt.Sprintf("%c", os.PathSeparator))
+	pathSegs := strings.Split(path, fmt.Sprintf("%c", os.PathSeparator))
 	var existNodes []FullObject
 	var missingPath []string
 	//a/b/c/d/e
@@ -213,6 +213,9 @@ func (workTree *WorkTree) AddLeaf(ctx context.Context, fullPath string, blob *mo
 	slices.Reverse(missingPath)
 	var lastEntry models.TreeEntry
 	for index, path := range missingPath {
+		if len(path) == 0 { //todo add validate name check
+			return fmt.Errorf("name is empty")
+		}
 		if index == 0 {
 			_, err = workTree.object.Insert(ctx, blob.FileTree())
 			if err != nil {

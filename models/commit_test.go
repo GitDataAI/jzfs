@@ -38,3 +38,42 @@ func TestCommitRepo(t *testing.T) {
 		require.ErrorIs(t, err, models.ErrRepoIDMisMatch)
 	})
 }
+
+func TestDeleteCOmmit(t *testing.T) {
+	ctx := context.Background()
+	postgres, _, db := testhelper.SetupDatabase(ctx, t)
+	defer postgres.Stop() //nolint
+	t.Run("delete commit", func(t *testing.T) {
+		repoID := uuid.New()
+		commitRepo := models.NewCommitRepo(db, repoID)
+		require.Equal(t, commitRepo.RepositoryID(), repoID)
+
+		toDeleteModel := &models.Commit{}
+		require.NoError(t, gofakeit.Struct(toDeleteModel))
+		toDeleteModel.RepositoryID = repoID
+		toDeleteModel, err := commitRepo.Insert(ctx, toDeleteModel)
+		require.NoError(t, err)
+
+		affectRows, err := commitRepo.Delete(ctx, models.NewDeleteParams().SetHash(toDeleteModel.Hash))
+		require.NoError(t, err)
+		require.Equal(t, int64(1), affectRows)
+	})
+
+	t.Run("delete batch", func(t *testing.T) {
+		repoID := uuid.New()
+		commitRepo := models.NewCommitRepo(db, repoID)
+		require.Equal(t, commitRepo.RepositoryID(), repoID)
+
+		for i := 0; i < 5; i++ {
+			toDeleteModel := &models.Commit{}
+			require.NoError(t, gofakeit.Struct(toDeleteModel))
+			toDeleteModel.RepositoryID = repoID
+			toDeleteModel, err := commitRepo.Insert(ctx, toDeleteModel)
+			require.NoError(t, err)
+		}
+
+		affectRows, err := commitRepo.Delete(ctx, models.NewDeleteParams())
+		require.NoError(t, err)
+		require.Equal(t, int64(5), affectRows)
+	})
+}

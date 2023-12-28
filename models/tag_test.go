@@ -38,3 +38,42 @@ func TestTagRepo(t *testing.T) {
 		require.ErrorIs(t, err, models.ErrRepoIDMisMatch)
 	})
 }
+
+func TestDeleteTag(t *testing.T) {
+	ctx := context.Background()
+	postgres, _, db := testhelper.SetupDatabase(ctx, t)
+	defer postgres.Stop() //nolint
+	t.Run("delete tag", func(t *testing.T) {
+		repoID := uuid.New()
+		tagRepo := models.NewTagRepo(db, repoID)
+		require.Equal(t, tagRepo.RepositoryID(), repoID)
+
+		toDeleteModel := &models.Tag{}
+		require.NoError(t, gofakeit.Struct(toDeleteModel))
+		toDeleteModel.RepositoryID = repoID
+		toDeleteModel, err := tagRepo.Insert(ctx, toDeleteModel)
+		require.NoError(t, err)
+
+		affectRows, err := tagRepo.Delete(ctx, models.NewDeleteParams().SetHash(toDeleteModel.Hash))
+		require.NoError(t, err)
+		require.Equal(t, int64(1), affectRows)
+	})
+
+	t.Run("delete tags batch", func(t *testing.T) {
+		repoID := uuid.New()
+		tagRepo := models.NewTagRepo(db, repoID)
+		require.Equal(t, tagRepo.RepositoryID(), repoID)
+
+		for i := 0; i < 5; i++ {
+			toDeleteModel := &models.Tag{}
+			require.NoError(t, gofakeit.Struct(toDeleteModel))
+			toDeleteModel.RepositoryID = repoID
+			toDeleteModel, err := tagRepo.Insert(ctx, toDeleteModel)
+			require.NoError(t, err)
+		}
+
+		affectRows, err := tagRepo.Delete(ctx, models.NewDeleteParams())
+		require.NoError(t, err)
+		require.Equal(t, int64(5), affectRows)
+	})
+}

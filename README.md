@@ -15,3 +15,6 @@ init and running
 
 ./jzfs daemon
 ```
+
+
+revert object只revert一个对象

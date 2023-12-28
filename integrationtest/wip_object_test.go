@@ -295,7 +295,24 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		uploadObject(ctx, c, client, "update f5 to test branch", userName, repoName, branchName, "b.dat")
 		uploadObject(ctx, c, client, "update f6 to test branch", userName, repoName, branchName, "c.dat")
 
+		testBranchName := "test/empty_branch"
+		createBranch(ctx, c, client, userName, repoName, "main", testBranchName)
+		createWip(ctx, c, client, "create empty_branch wip", userName, repoName, testBranchName)
+
+		c.Convey("get wip success on init", func(c convey.C) {
+			resp, err := client.GetWipChanges(ctx, userName, repoName, &api.GetWipChangesParams{
+				RefName: testBranchName,
+			})
+			convey.So(err, convey.ShouldBeNil)
+			convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+			result, err := api.ParseGetWipChangesResponse(resp)
+			convey.So(err, convey.ShouldBeNil)
+			convey.So(*result.JSON200, convey.ShouldHaveLength, 0)
+		})
+
 		c.Convey("get wip changes", func(c convey.C) {
+
 			c.Convey("no auth", func() {
 				re := client.RequestEditors
 				client.RequestEditors = nil

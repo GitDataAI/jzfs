@@ -273,22 +273,52 @@ func (repositoryCtl RepositoryController) DeleteRepository(ctx context.Context, 
 		return
 	}
 
-	repo, err := repositoryCtl.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetName(repositoryName).SetOwnerID(owner.ID))
+	repository, err := repositoryCtl.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetName(repositoryName).SetOwnerID(owner.ID))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	affectRows, err := repositoryCtl.Repo.RepositoryRepo().Delete(ctx, models.NewDeleteRepoParams().SetID(repo.ID))
+	err = repositoryCtl.Repo.Transaction(ctx, func(repo models.IRepo) error {
+		// delete repository
+		affectRows, err := repositoryCtl.Repo.RepositoryRepo().Delete(ctx, models.NewDeleteRepoParams().SetID(repository.ID))
+		if err != nil {
+			return err
+		}
+
+		if affectRows == 0 {
+			return fmt.Errorf("repo not found %w", models.ErrNotFound)
+		}
+
+		//delete branch
+		_, err = repositoryCtl.Repo.BranchRepo().Delete(ctx, models.NewDeleteBranchParams().SetRepositoryID(repository.ID))
+		if err != nil {
+			return err
+		}
+
+		//delete commit
+		_, err = repositoryCtl.Repo.CommitRepo(repository.ID).Delete(ctx, models.NewDeleteParams())
+		if err != nil {
+			return err
+		}
+
+		//delete tag
+		_, err = repositoryCtl.Repo.TagRepo(repository.ID).Delete(ctx, models.NewDeleteParams())
+		if err != nil {
+			return err
+		}
+		// delete tree
+		_, err = repositoryCtl.Repo.FileTreeRepo(repository.ID).Delete(ctx, models.NewDeleteTreeParams())
+		if err != nil {
+			return err
+		}
+		return err
+	})
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	if affectRows == 0 {
-		w.NotFound()
-		return
-	}
 	w.OK()
 }
 

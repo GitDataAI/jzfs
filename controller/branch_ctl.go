@@ -36,8 +36,13 @@ func CheckBranchName(name string) error {
 		return fmt.Errorf("branch format must be <name> or <name>/<name>")
 	}
 
-	if !branchNameRegex.Match([]byte(seg[0])) || !branchNameRegex.Match([]byte(seg[1])) {
+	if !branchNameRegex.Match([]byte(seg[0])) {
 		return fmt.Errorf("branch name must be combination of number and letter or combine with '/'")
+	}
+	if len(seg) > 2 {
+		if !branchNameRegex.Match([]byte(seg[1])) {
+			return fmt.Errorf("branch name must be combination of number and letter or combine with '/'")
+		}
 	}
 	return nil
 }

@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -58,9 +57,9 @@ func (wipCtl WipController) CreateWip(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
-	_, err = wipCtl.Repo.WipRepo().Get(ctx, models.NewGetWipParams().SetCreatorID(operator.ID).SetRepositoryID(repository.ID).SetRefID(ref.ID))
+	wip, err := wipCtl.Repo.WipRepo().Get(ctx, models.NewGetWipParams().SetCreatorID(operator.ID).SetRepositoryID(repository.ID).SetRefID(ref.ID))
 	if err == nil {
-		w.BadRequest(fmt.Sprintf("ref %s already in wip", params.RefName))
+		w.JSON(wip)
 		return
 	}
 	if err != nil && !errors.Is(err, models.ErrNotFound) {
@@ -78,7 +77,7 @@ func (wipCtl WipController) CreateWip(ctx context.Context, w *api.JiaozifsRespon
 		currentTreeHash = baseCommit.TreeHash
 	}
 
-	wip := &models.WorkingInProcess{
+	wip = &models.WorkingInProcess{
 		CurrentTree:  currentTreeHash,
 		BaseCommit:   ref.CommitHash,
 		RepositoryID: repository.ID,
@@ -128,12 +127,43 @@ func (wipCtl WipController) GetWip(ctx context.Context, w *api.JiaozifsResponse,
 	}
 
 	wip, err := wipCtl.Repo.WipRepo().Get(ctx, models.NewGetWipParams().SetRefID(ref.ID).SetCreatorID(operator.ID).SetRepositoryID(repository.ID))
-	if err != nil {
+	if err == nil {
+		w.JSON(wip)
+		return
+	}
+
+	if err != nil && !errors.Is(err, models.ErrNotFound) {
 		w.Error(err)
 		return
 	}
 
-	w.JSON(wip)
+	// if not found create a wip
+	currentTreeHash := hash.EmptyHash
+	if !ref.CommitHash.IsEmpty() {
+		baseCommit, err := wipCtl.Repo.CommitRepo(repository.ID).Commit(ctx, ref.CommitHash)
+		if err != nil {
+			w.Error(err)
+			return
+		}
+		currentTreeHash = baseCommit.TreeHash
+	}
+
+	wip = &models.WorkingInProcess{
+		CurrentTree:  currentTreeHash,
+		BaseCommit:   ref.CommitHash,
+		RepositoryID: repository.ID,
+		RefID:        ref.ID,
+		State:        0,
+		CreatorID:    operator.ID,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
+	}
+	wip, err = wipCtl.Repo.WipRepo().Insert(ctx, wip)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+	w.JSON(wip, http.StatusCreated)
 }
 
 // ListWip return wips of branches, operator only see himself wips in specific repository
@@ -303,20 +333,24 @@ func (wipCtl WipController) GetWipChanges(ctx context.Context, w *api.JiaozifsRe
 		return
 	}
 
-	commit, err := wipCtl.Repo.CommitRepo(repository.ID).Commit(ctx, wip.BaseCommit)
-	if err != nil {
-		w.Error(err)
-		return
+	treeHash := hash.EmptyHash
+	if !wip.BaseCommit.IsEmpty() {
+		commit, err := wipCtl.Repo.CommitRepo(repository.ID).Commit(ctx, wip.BaseCommit)
+		if err != nil {
+			w.Error(err)
+			return
+		}
+		treeHash = commit.Hash
 	}
 
-	workTree, err := versionmgr.NewWorkTree(ctx, wipCtl.Repo.FileTreeRepo(repository.ID), models.NewRootTreeEntry(commit.TreeHash))
-	if err != nil {
-		w.Error(err)
-		return
-	}
-
-	if bytes.Equal(commit.TreeHash, wip.CurrentTree) {
+	if bytes.Equal(treeHash, wip.CurrentTree) {
 		w.JSON([]api.Change{}) //no change return nothing
+		return
+	}
+
+	workTree, err := versionmgr.NewWorkTree(ctx, wipCtl.Repo.FileTreeRepo(repository.ID), models.NewRootTreeEntry(treeHash))
+	if err != nil {
+		w.Error(err)
 		return
 	}
 

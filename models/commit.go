@@ -108,10 +108,24 @@ func (commit *Commit) NumParents() int {
 	return len(commit.ParentHashes)
 }
 
+type DeleteParams struct {
+	hash hash.Hash
+}
+
+func NewDeleteParams() *DeleteParams {
+	return &DeleteParams{}
+}
+
+func (params *DeleteParams) SetHash(hash hash.Hash) *DeleteParams {
+	params.hash = hash
+	return params
+}
+
 type ICommitRepo interface {
 	RepositoryID() uuid.UUID
 	Commit(ctx context.Context, hash hash.Hash) (*Commit, error)
 	Insert(ctx context.Context, commit *Commit) (*Commit, error)
+	Delete(ctx context.Context, params *DeleteParams) (int64, error)
 }
 type CommitRepo struct {
 	db           bun.IDB
@@ -149,4 +163,21 @@ func (cr CommitRepo) Insert(ctx context.Context, commit *Commit) (*Commit, error
 		return nil, err
 	}
 	return commit, nil
+}
+
+func (cr CommitRepo) Delete(ctx context.Context, params *DeleteParams) (int64, error) {
+	query := cr.db.NewDelete().Model((*Commit)(nil)).Where("repository_id = ?", cr.repositoryID)
+	if params.hash != nil {
+		query = query.Where("hash = ?", params.hash)
+	}
+
+	sqlResult, err := query.Exec(ctx)
+	if err != nil {
+		return 0, err
+	}
+	affectedRows, err := sqlResult.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	return affectedRows, err
 }

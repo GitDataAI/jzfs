@@ -21,9 +21,7 @@ func SetupDatabase(ctx context.Context, lc fx.Lifecycle, dbConfig *config.Databa
 
 	bunDB := bun.NewDB(sqlDB, pgdialect.New(), bun.WithDiscardUnknownColumns())
 
-	if dbConfig.Debug {
-		bunDB.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
-	}
+	bunDB.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
 
 	lc.Append(fx.Hook{
 		OnStop: func(ctx context.Context) error {
