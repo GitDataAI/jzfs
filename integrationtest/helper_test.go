@@ -114,19 +114,25 @@ func createUser(ctx context.Context, c convey.C, client *api.Client, userName st
 	})
 }
 
-func loginAndSwitch(ctx context.Context, c convey.C, client *api.Client, userName string) {
-	c.Convey("login "+userName, func() {
+func loginAndSwitch(ctx context.Context, c convey.C, client *api.Client, title, userName string, useCookie bool) {
+	c.Convey("login "+title, func() {
 		resp, err := client.Login(ctx, api.LoginJSONRequestBody{
 			Name:     userName,
 			Password: "12345678",
 		})
 		convey.So(err, convey.ShouldBeNil)
 		convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+		loginResult, err := api.ParseLoginResponse(resp)
+		convey.So(err, convey.ShouldBeNil)
 
 		client.RequestEditors = nil
 		client.RequestEditors = append(client.RequestEditors, func(ctx context.Context, req *http.Request) error {
-			for _, cookie := range resp.Cookies() {
-				req.AddCookie(cookie)
+			if useCookie {
+				for _, cookie := range resp.Cookies() {
+					req.AddCookie(cookie)
+				}
+			} else {
+				req.Header.Add("Authorization", "Bearer "+loginResult.JSON200.Token)
 			}
 			return nil
 		})

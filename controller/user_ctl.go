@@ -33,7 +33,6 @@ type UserController struct {
 }
 
 func (userCtl UserController) Login(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, body api.LoginJSONRequestBody) {
-
 	// get user encryptedPassword by username
 	ep, err := userCtl.Repo.UserRepo().GetEPByName(ctx, body.Name)
 	if err != nil {
