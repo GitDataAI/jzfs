@@ -289,6 +289,12 @@ func (repositoryCtl RepositoryController) DeleteRepository(ctx context.Context, 
 		w.NotFound()
 		return
 	}
+
+	err = utils.RemoveLocalFiles(config.DefaultLocalBSPath, repo.ID.String())
+	if err != nil {
+		w.Error(err)
+		return
+	}
 	w.OK()
 }
 
