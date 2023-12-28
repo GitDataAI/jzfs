@@ -30,9 +30,17 @@ func UserSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 		})
 
-		loginAndSwitch(ctx, c, client, userName)
+		loginAndSwitch(ctx, c, client, "admin login", userName, false)
 
 		c.Convey("usr profile", func() {
+			resp, err := client.GetUserInfo(ctx)
+			convey.So(err, convey.ShouldBeNil)
+			convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+		})
+
+		loginAndSwitch(ctx, c, client, "admin login again", userName, true)
+
+		c.Convey("usr profile with cookie", func() {
 			resp, err := client.GetUserInfo(ctx)
 			convey.So(err, convey.ShouldBeNil)
 			convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)

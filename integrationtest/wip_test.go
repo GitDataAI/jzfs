@@ -18,7 +18,7 @@ func WipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		branchNameForDelete := "feat/wip_test2"
 
 		createUser(ctx, c, client, userName)
-		loginAndSwitch(ctx, c, client, userName)
+		loginAndSwitch(ctx, c, client, "july login", userName, false)
 		createRepo(ctx, c, client, repoName)
 		createBranch(ctx, c, client, userName, repoName, "main", branchName)
 		createBranch(ctx, c, client, userName, repoName, "main", branchNameForDelete)

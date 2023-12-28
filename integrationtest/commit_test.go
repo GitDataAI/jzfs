@@ -19,7 +19,7 @@ func GetEntriesInRefSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		branchName := "feat/get_entries_test"
 
 		createUser(ctx, c, client, userName)
-		loginAndSwitch(ctx, c, client, userName)
+		loginAndSwitch(ctx, c, client, "kitty login", userName, false)
 		createRepo(ctx, c, client, repoName)
 		createBranch(ctx, c, client, userName, repoName, "main", branchName)
 		createWip(ctx, c, client, "feat get entries test0", userName, repoName, branchName)

@@ -19,7 +19,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		userName := "jimmy"
 		repoName := "happyrun"
 		createUser(ctx, c, client, userName)
-		loginAndSwitch(ctx, c, client, userName)
+		loginAndSwitch(ctx, c, client, "jimmy login", userName, false)
 
 		c.Convey("create repo", func(c convey.C) {
 			c.Convey("forbidden create repo name", func() {
