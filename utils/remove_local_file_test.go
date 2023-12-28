@@ -14,7 +14,7 @@ func TestRemoveLocalFiles(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating temporary directory: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer os.RemoveAll(tempDir) //nolint
 
 	testFilePath := filepath.Join(tempDir, testFilename)
 	err = os.WriteFile(testFilePath, content, 0644)

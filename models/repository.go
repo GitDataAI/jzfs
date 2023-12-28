@@ -292,10 +292,7 @@ func (r *RepositoryRepo) deleteCommits(ctx context.Context, tx *bun.Tx, repoID u
 	if err != nil {
 		return 0, err
 	}
-	affectedRows, err := sqlResult.RowsAffected()
-	if err != nil {
-		return 0, err
-	}
+	affectedRows, _ := sqlResult.RowsAffected()
 	return affectedRows, nil
 }
 
@@ -309,10 +306,7 @@ func (r *RepositoryRepo) deleteTags(ctx context.Context, tx *bun.Tx, repoID uuid
 	if err != nil {
 		return 0, err
 	}
-	affectedRows, err := sqlResult.RowsAffected()
-	if err != nil {
-		return 0, err
-	}
+	affectedRows, _ := sqlResult.RowsAffected()
 	return affectedRows, nil
 }
 
@@ -326,10 +320,7 @@ func (r *RepositoryRepo) deleteObjects(ctx context.Context, tx *bun.Tx, repoID u
 	if err != nil {
 		return 0, err
 	}
-	affectedRows, err := sqlResult.RowsAffected()
-	if err != nil {
-		return 0, err
-	}
+	affectedRows, _ := sqlResult.RowsAffected()
 	return affectedRows, nil
 }
 
@@ -343,10 +334,7 @@ func (r *RepositoryRepo) deleteWips(ctx context.Context, tx *bun.Tx, repoID uuid
 	if err != nil {
 		return 0, err
 	}
-	affectedRows, err := sqlResult.RowsAffected()
-	if err != nil {
-		return 0, err
-	}
+	affectedRows, _ := sqlResult.RowsAffected()
 	return affectedRows, nil
 }
 
@@ -360,10 +348,7 @@ func (r *RepositoryRepo) deleteBranches(ctx context.Context, tx *bun.Tx, repoID 
 	if err != nil {
 		return 0, err
 	}
-	affectedRows, err := sqlResult.RowsAffected()
-	if err != nil {
-		return 0, err
-	}
+	affectedRows, _ := sqlResult.RowsAffected()
 	return affectedRows, nil
 }
 
@@ -385,10 +370,7 @@ func (r *RepositoryRepo) deleteRepos(ctx context.Context, tx *bun.Tx, params *De
 	if err != nil {
 		return 0, err
 	}
-	affectedRows, err := sqlResult.RowsAffected()
-	if err != nil {
-		return 0, err
-	}
+	affectedRows, _ := sqlResult.RowsAffected()
 	return affectedRows, nil
 }
 

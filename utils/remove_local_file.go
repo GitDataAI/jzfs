@@ -16,9 +16,7 @@ func RemoveLocalFiles(path, filename string) error {
 	}
 
 	fileInfo, err := os.Stat(expandPath)
-	if os.IsNotExist(err) {
-		return nil
-	} else if err != nil {
+	if err != nil {
 		return err
 	}
 
@@ -28,7 +26,7 @@ func RemoveLocalFiles(path, filename string) error {
 			return err
 		}
 	} else {
-		os.Remove(expandPath)
+		err := os.Remove(expandPath)
 		if err != nil {
 			return err
 		}
