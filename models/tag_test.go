@@ -68,7 +68,7 @@ func TestDeleteTag(t *testing.T) {
 			toDeleteModel := &models.Tag{}
 			require.NoError(t, gofakeit.Struct(toDeleteModel))
 			toDeleteModel.RepositoryID = repoID
-			toDeleteModel, err := tagRepo.Insert(ctx, toDeleteModel)
+			_, err := tagRepo.Insert(ctx, toDeleteModel)
 			require.NoError(t, err)
 		}
 

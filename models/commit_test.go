@@ -39,7 +39,7 @@ func TestCommitRepo(t *testing.T) {
 	})
 }
 
-func TestDeleteCOmmit(t *testing.T) {
+func TestDeleteCommit(t *testing.T) {
 	ctx := context.Background()
 	postgres, _, db := testhelper.SetupDatabase(ctx, t)
 	defer postgres.Stop() //nolint
@@ -47,7 +47,6 @@ func TestDeleteCOmmit(t *testing.T) {
 		repoID := uuid.New()
 		commitRepo := models.NewCommitRepo(db, repoID)
 		require.Equal(t, commitRepo.RepositoryID(), repoID)
-
 		toDeleteModel := &models.Commit{}
 		require.NoError(t, gofakeit.Struct(toDeleteModel))
 		toDeleteModel.RepositoryID = repoID
@@ -63,12 +62,11 @@ func TestDeleteCOmmit(t *testing.T) {
 		repoID := uuid.New()
 		commitRepo := models.NewCommitRepo(db, repoID)
 		require.Equal(t, commitRepo.RepositoryID(), repoID)
-
 		for i := 0; i < 5; i++ {
 			toDeleteModel := &models.Commit{}
 			require.NoError(t, gofakeit.Struct(toDeleteModel))
 			toDeleteModel.RepositoryID = repoID
-			toDeleteModel, err := commitRepo.Insert(ctx, toDeleteModel)
+			_, err := commitRepo.Insert(ctx, toDeleteModel)
 			require.NoError(t, err)
 		}
 

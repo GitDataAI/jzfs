@@ -202,6 +202,8 @@ components:
       properties:
         description:
           type: string
+        head:
+          type: string
     RepositoryList:
       type: object
       required:

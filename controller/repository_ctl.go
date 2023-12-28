@@ -312,6 +312,9 @@ func (repositoryCtl RepositoryController) DeleteRepository(ctx context.Context, 
 		if err != nil {
 			return err
 		}
+
+		//delete wip
+		_, err = repositoryCtl.Repo.WipRepo().Delete(ctx, models.NewDeleteWipParams().SetRepositoryID(repository.ID))
 		return err
 	})
 	if err != nil {
@@ -373,7 +376,22 @@ func (repositoryCtl RepositoryController) UpdateRepository(ctx context.Context, 
 		return
 	}
 
-	err = repositoryCtl.Repo.RepositoryRepo().UpdateByID(ctx, models.NewUpdateRepoParams(repo.ID).SetDescription(utils.StringValue(body.Description)))
+	params := models.NewUpdateRepoParams(repo.ID)
+	if body.Head != nil {
+		_, err = repositoryCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repo.ID).SetName(utils.StringValue(body.Head)))
+		if err != nil {
+			w.Error(err)
+			return
+		}
+
+		params.SetHead(utils.StringValue(body.Head))
+	}
+
+	if body.Description != nil {
+		params.SetDescription(utils.StringValue(body.Description))
+	}
+
+	err = repositoryCtl.Repo.RepositoryRepo().UpdateByID(ctx, params)
 	if err != nil {
 		w.Error(err)
 		return
