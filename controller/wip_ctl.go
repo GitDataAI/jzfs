@@ -340,7 +340,7 @@ func (wipCtl WipController) GetWipChanges(ctx context.Context, w *api.JiaozifsRe
 			w.Error(err)
 			return
 		}
-		treeHash = commit.Hash
+		treeHash = commit.TreeHash
 	}
 
 	if bytes.Equal(treeHash, wip.CurrentTree) {
