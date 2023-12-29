@@ -44,3 +44,17 @@ func TestHexArrayOfHashes(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, hashes, hashes2)
 }
+
+func TestHashFromHex(t *testing.T) {
+	t.Run("empty", func(t *testing.T) {
+		hash, err := FromHex("")
+		require.NoError(t, err)
+		require.Equal(t, EmptyHash, hash)
+	})
+
+	t.Run("data", func(t *testing.T) {
+		hash, err := FromHex("616161616161")
+		require.NoError(t, err)
+		require.Equal(t, Hash("aaaaaa"), hash)
+	})
+}

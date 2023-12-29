@@ -19,4 +19,6 @@ func TestSpec(t *testing.T) {
 	convey.Convey("object test", t, ObjectSpec(ctx, urlStr))
 	convey.Convey("wip object test", t, WipObjectSpec(ctx, urlStr))
 	convey.Convey("commit test", t, GetEntriesInRefSpec(ctx, urlStr))
+	convey.Convey("commit test", t, GetCommitChangesSpec(ctx, urlStr))
+
 }

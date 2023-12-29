@@ -25,7 +25,6 @@ func TestWorkRepositoryDiffCommit(t *testing.T) {
 
 	project, err := makeRepository(ctx, repo.RepositoryRepo(), user, "testproject")
 	require.NoError(t, err)
-
 	//commit1  a.txt b/c.txt  b/e.txt
 	//commit2  a.txt b/d.txt  b/e.txt
 	testData1 := `
@@ -33,15 +32,20 @@ func TestWorkRepositoryDiffCommit(t *testing.T) {
 1|b/c.txt	|c
 1|b/e.txt |e1
 `
+
+	workRepo := NewWorkRepositoryFromAdapter(ctx, user, project, repo, adapter)
 	//base branch
-	baseBranch, err := makeBranch(ctx, repo.BranchRepo(), user, "feat/base", project.ID, hash.EmptyHash)
+
+	err = workRepo.CheckOut(ctx, InCommit, hash.EmptyHash.Hex())
 	require.NoError(t, err)
+	baseBranch, err := workRepo.CreateBranch(ctx, "feat/base")
+	require.NoError(t, err)
+
 	root1, err := makeRoot(ctx, repo.FileTreeRepo(project.ID), EmptyDirEntry, testData1)
 	require.NoError(t, err)
 	baseWip, err := makeWip(ctx, repo.WipRepo(), user.ID, project.ID, baseBranch.ID, EmptyRoot.Hash, root1.Hash)
 	require.NoError(t, err)
 
-	workRepo := NewWorkRepositoryFromAdapter(ctx, user, project, repo, adapter)
 	_, err = workRepo.CommitChanges(ctx, "base commit") //asset not correct state
 	require.Error(t, err)
 	require.NoError(t, workRepo.CheckOut(ctx, InWip, "feat/base"))

@@ -7,13 +7,15 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
-	"time"
+
+	"github.com/jiaozifs/jiaozifs/block/params"
+
+	"github.com/jiaozifs/jiaozifs/versionmgr"
 
 	"github.com/jiaozifs/jiaozifs/api"
 	"github.com/jiaozifs/jiaozifs/auth"
 	"github.com/jiaozifs/jiaozifs/models"
 	"github.com/jiaozifs/jiaozifs/utils"
-	"github.com/jiaozifs/jiaozifs/utils/hash"
 	"go.uber.org/fx"
 )
 
@@ -50,7 +52,8 @@ func CheckBranchName(name string) error {
 type BranchController struct {
 	fx.In
 
-	Repo models.IRepo
+	Repo                models.IRepo
+	PublicStorageConfig params.AdapterConfig
 }
 
 func (bct BranchController) ListBranches(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, params api.ListBranchesParams) {
@@ -153,16 +156,6 @@ func (bct BranchController) CreateBranch(ctx context.Context, w *api.JiaozifsRes
 		return
 	}
 
-	//check exit
-	_, err = bct.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetName(body.Name).SetRepositoryID(repository.ID))
-	if err == nil {
-		w.BadRequest(fmt.Sprintf("%s already exit", body.Name))
-		return
-	}
-	if err != nil && !errors.Is(err, models.ErrNotFound) {
-		w.Error(err)
-		return
-	}
 	//get source branch
 	sourceBranch, err := bct.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetName(body.Source).SetRepositoryID(repository.ID))
 	if err != nil && !errors.Is(err, models.ErrNotFound) {
@@ -170,25 +163,24 @@ func (bct BranchController) CreateBranch(ctx context.Context, w *api.JiaozifsRes
 		return
 	}
 
-	commitHash := hash.EmptyHash
-	if sourceBranch != nil {
-		commitHash = sourceBranch.CommitHash
-	}
-
-	// Create branch
-	newBranch := &models.Branch{
-		RepositoryID: repository.ID,
-		CommitHash:   commitHash,
-		Name:         body.Name,
-		CreatorID:    operator.ID,
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
-	}
-	newBranch, err = bct.Repo.BranchRepo().Insert(ctx, newBranch)
+	workRepo, err := versionmgr.NewWorkRepositoryFromConfig(ctx, operator, repository, bct.Repo, bct.PublicStorageConfig)
 	if err != nil {
 		w.Error(err)
 		return
 	}
+
+	err = workRepo.CheckOut(ctx, versionmgr.InCommit, sourceBranch.CommitHash.Hex())
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	newBranch, err := workRepo.CreateBranch(ctx, body.Name)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
 	w.JSON(api.Branch{
 		CommitHash:   newBranch.CommitHash.Hex(),
 		CreatedAt:    newBranch.CreatedAt,
@@ -226,14 +218,21 @@ func (bct BranchController) DeleteBranch(ctx context.Context, w *api.JiaozifsRes
 		return
 	}
 
-	// Delete branch
-	affectedRows, err := bct.Repo.BranchRepo().Delete(ctx, models.NewDeleteBranchParams().SetName(params.RefName).SetRepositoryID(repository.ID))
+	workRepo, err := versionmgr.NewWorkRepositoryFromConfig(ctx, operator, repository, bct.Repo, bct.PublicStorageConfig)
 	if err != nil {
 		w.Error(err)
 		return
 	}
-	if affectedRows == 0 {
-		w.NotFound()
+
+	err = workRepo.CheckOut(ctx, versionmgr.InBranch, params.RefName)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	err = workRepo.DeleteBranch(ctx)
+	if err != nil {
+		w.Error(err)
 		return
 	}
 	w.OK()

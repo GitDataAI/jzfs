@@ -4,10 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
-	"errors"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/jiaozifs/jiaozifs/api"
 	"github.com/jiaozifs/jiaozifs/auth"
@@ -51,50 +49,27 @@ func (wipCtl WipController) GetWip(ctx context.Context, w *api.JiaozifsResponse,
 		return
 	}
 
-	ref, err := wipCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.ID).SetName(params.RefName))
+	workRepo, err := versionmgr.NewWorkRepositoryFromConfig(ctx, operator, repository, wipCtl.Repo, wipCtl.PublicStorageConfig)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	wip, err := wipCtl.Repo.WipRepo().Get(ctx, models.NewGetWipParams().SetRefID(ref.ID).SetCreatorID(operator.ID).SetRepositoryID(repository.ID))
-	if err == nil {
-		w.JSON(wip)
-		return
-	}
-
-	if err != nil && !errors.Is(err, models.ErrNotFound) {
-		w.Error(err)
-		return
-	}
-
-	// if not found create a wip
-	currentTreeHash := hash.EmptyHash
-	if !ref.CommitHash.IsEmpty() {
-		baseCommit, err := wipCtl.Repo.CommitRepo(repository.ID).Commit(ctx, ref.CommitHash)
-		if err != nil {
-			w.Error(err)
-			return
-		}
-		currentTreeHash = baseCommit.TreeHash
-	}
-
-	wip = &models.WorkingInProcess{
-		CurrentTree:  currentTreeHash,
-		BaseCommit:   ref.CommitHash,
-		RepositoryID: repository.ID,
-		RefID:        ref.ID,
-		State:        0,
-		CreatorID:    operator.ID,
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
-	}
-	wip, err = wipCtl.Repo.WipRepo().Insert(ctx, wip)
+	err = workRepo.CheckOut(ctx, versionmgr.InBranch, params.RefName)
 	if err != nil {
 		w.Error(err)
 		return
 	}
-	w.JSON(wip, http.StatusCreated)
+
+	wip, isNew, err := workRepo.GetOrCreateWip(ctx)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+	if isNew {
+		w.JSON(wip, http.StatusCreated)
+	}
+	w.JSON(wip)
 }
 
 // ListWip return wips of branches, operator only see himself wips in specific repository
@@ -202,28 +177,23 @@ func (wipCtl WipController) DeleteWip(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
-	ref, err := wipCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.ID).SetName(params.RefName))
+	workRepo, err := versionmgr.NewWorkRepositoryFromConfig(ctx, operator, repository, wipCtl.Repo, wipCtl.PublicStorageConfig)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	deleteWipParams := models.NewDeleteWipParams().
-		SetCreatorID(operator.ID). //todo admin delete
-		SetRepositoryID(repository.ID).
-		SetRefID(ref.ID)
-
-	affectedRaw, err := wipCtl.Repo.WipRepo().Delete(ctx, deleteWipParams)
+	err = workRepo.CheckOut(ctx, versionmgr.InBranch, params.RefName)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	if affectedRaw == 0 {
-		w.NotFound()
+	err = workRepo.DeleteWip(ctx)
+	if err != nil {
+		w.Error(err)
 		return
 	}
-
 	w.OK()
 }
 
@@ -323,8 +293,8 @@ func (wipCtl WipController) GetWipChanges(ctx context.Context, w *api.JiaozifsRe
 	w.JSON(changesResp)
 }
 
-// RevertWip
-func (wipCtl WipController) RevertWip(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, ownerName string, repositoryName string, params api.RevertWipParams) {
+// RevertWip revert wip changes to base commit
+func (wipCtl WipController) RevertWip(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, params api.RevertWipParams) {
 	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
