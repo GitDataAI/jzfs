@@ -144,4 +144,5 @@ func TestCleanPath(t *testing.T) {
 
 	require.Equal(t, "a/b/c", CleanPath("a/b/c"))
 	require.Equal(t, "a/b/c", CleanPath("/a/b/c/"))
+	require.Equal(t, "a/b/c", CleanPath("\\a\\b\\c\\"))
 }

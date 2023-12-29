@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -159,7 +158,7 @@ func (workTree *WorkTree) ReplaceSubTreeEntry(ctx context.Context, treeEntry mod
 }
 
 func (workTree *WorkTree) matchPath(ctx context.Context, path string) ([]FullObject, []string, error) {
-	pathSegs := strings.Split(path, fmt.Sprintf("%c", os.PathSeparator))
+	pathSegs := strings.Split(path, "/") //path must be unix style
 	var existNodes []FullObject
 	var missingPath []string
 	//a/b/c/d/e
@@ -532,9 +531,10 @@ func (workTree *WorkTree) Diff(ctx context.Context, rootTreeHash hash.Hash) (*Ch
 }
 
 // CleanPath clean path
-// 1. trim space
-// 2. trim first or last /
-// 3. to slash
+// 1. replace \\ to /
+// 2. trim space
+// 3. trim first or last /
 func CleanPath(fullPath string) string {
-	return filepath.ToSlash(strings.Trim(strings.TrimSpace(fullPath), "/"))
+	path := strings.ReplaceAll(fullPath, "\\", "/")
+	return filepath.ToSlash(strings.Trim(strings.TrimSpace(path), "/\\"))
 }
