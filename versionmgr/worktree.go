@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jiaozifs/jiaozifs/models"
@@ -25,6 +26,16 @@ var EmptyRoot = &models.TreeNode{
 var EmptyDirEntry = models.TreeEntry{
 	Name: "",
 	Hash: hash.Hash([]byte{}),
+}
+
+type FullTreeEntry struct {
+	Name  string    `json:"name"`
+	IsDir bool      `json:"is_dir"`
+	Hash  hash.Hash `json:"hash"`
+	Size  int64     `json:"size"`
+
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 var (
@@ -409,10 +420,10 @@ func (workTree *WorkTree) RemoveEntry(ctx context.Context, fullPath string) erro
 //
 // Ls(ctx, root, "a") return b
 // Ls(ctx, root, "a/b" return c.txt and d.txt
-func (workTree *WorkTree) Ls(ctx context.Context, fullPath string) ([]models.TreeEntry, error) {
+func (workTree *WorkTree) Ls(ctx context.Context, fullPath string) ([]FullTreeEntry, error) {
 	fullPath = CleanPath(fullPath)
 	if len(fullPath) == 0 {
-		return workTree.root.SubObjects(), nil
+		return workTree.getFullEntry(ctx, workTree.root.SubObjects())
 	}
 
 	existNode, missingPath, err := workTree.matchPath(ctx, fullPath)
@@ -428,8 +439,37 @@ func (workTree *WorkTree) Ls(ctx context.Context, fullPath string) ([]models.Tre
 	if lastNode.Node().Type != models.TreeObject {
 		return nil, ErrNotDirectory
 	}
+	return workTree.getFullEntry(ctx, lastNode.Node().SubObjects)
+}
 
-	return lastNode.Node().SubObjects, nil
+func (workTree *WorkTree) getFullEntry(ctx context.Context, treeEntries []models.TreeEntry) ([]FullTreeEntry, error) {
+	entries := make([]FullTreeEntry, 0)
+	for _, entry := range treeEntries {
+		fe := FullTreeEntry{
+			Name:  entry.Name,
+			IsDir: entry.IsDir,
+			Hash:  entry.Hash,
+		}
+		if entry.IsDir {
+			blob, err := workTree.object.TreeNode(ctx, entry.Hash)
+			if err != nil {
+				return nil, err
+			}
+			fe.CreatedAt = blob.CreatedAt
+			fe.UpdatedAt = blob.UpdatedAt
+			entries = append(entries, fe)
+		} else {
+			blob, err := workTree.object.Blob(ctx, entry.Hash)
+			if err != nil {
+				return nil, err
+			}
+			fe.Size = blob.Size
+			fe.CreatedAt = blob.CreatedAt
+			fe.UpdatedAt = blob.UpdatedAt
+			entries = append(entries, fe)
+		}
+	}
+	return entries, nil
 }
 
 func (workTree *WorkTree) FindBlob(ctx context.Context, fullPath string) (*models.Blob, string, error) {

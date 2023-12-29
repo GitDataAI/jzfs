@@ -122,6 +122,16 @@ type CreateRepository struct {
 	Name             string  `json:"name"`
 }
 
+// FullTreeEntry defines model for FullTreeEntry.
+type FullTreeEntry struct {
+	CreatedAt time.Time `json:"created_at"`
+	Hash      string    `json:"hash"`
+	IsDir     bool      `json:"is_dir"`
+	Name      string    `json:"name"`
+	Size      int64     `json:"size"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
 // LoginConfig defines model for LoginConfig.
 type LoginConfig struct {
 	// RBAC RBAC will remain enabled on GUI if "external".  That only works
@@ -225,13 +235,6 @@ type Signature struct {
 	Email openapi_types.Email `json:"email"`
 	Name  string              `json:"name"`
 	When  time.Time           `json:"when"`
-}
-
-// TreeEntry defines model for TreeEntry.
-type TreeEntry struct {
-	Hash  string `json:"hash"`
-	IsDir bool   `json:"is_dir"`
-	Name  string `json:"name"`
 }
 
 // UpdateRepository defines model for UpdateRepository.
@@ -446,12 +449,6 @@ type GetWipParams struct {
 	RefName string `form:"refName" json:"refName"`
 }
 
-// CreateWipParams defines parameters for CreateWip.
-type CreateWipParams struct {
-	// RefName ref name
-	RefName string `form:"refName" json:"refName"`
-}
-
 // GetWipChangesParams defines parameters for GetWipChanges.
 type GetWipChangesParams struct {
 	// RefName ref name
@@ -466,6 +463,12 @@ type CommitWipParams struct {
 	// Msg commit message
 	Msg string `form:"msg" json:"msg"`
 
+	// RefName ref name
+	RefName string `form:"refName" json:"refName"`
+}
+
+// RevertWipParams defines parameters for RevertWip.
+type RevertWipParams struct {
 	// RefName ref name
 	RefName string `form:"refName" json:"refName"`
 }
@@ -646,9 +649,6 @@ type ClientInterface interface {
 	// GetWip request
 	GetWip(ctx context.Context, owner string, repository string, params *GetWipParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// CreateWip request
-	CreateWip(ctx context.Context, owner string, repository string, params *CreateWipParams, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// GetWipChanges request
 	GetWipChanges(ctx context.Context, owner string, repository string, params *GetWipChangesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -657,6 +657,9 @@ type ClientInterface interface {
 
 	// ListWip request
 	ListWip(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RevertWip request
+	RevertWip(ctx context.Context, owner string, repository string, params *RevertWipParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 func (c *Client) LoginWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -1019,18 +1022,6 @@ func (c *Client) GetWip(ctx context.Context, owner string, repository string, pa
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateWip(ctx context.Context, owner string, repository string, params *CreateWipParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateWipRequest(c.Server, owner, repository, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
 func (c *Client) GetWipChanges(ctx context.Context, owner string, repository string, params *GetWipChangesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetWipChangesRequest(c.Server, owner, repository, params)
 	if err != nil {
@@ -1057,6 +1048,18 @@ func (c *Client) CommitWip(ctx context.Context, owner string, repository string,
 
 func (c *Client) ListWip(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListWipRequest(c.Server, owner, repository)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) RevertWip(ctx context.Context, owner string, repository string, params *RevertWipParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRevertWipRequest(c.Server, owner, repository, params)
 	if err != nil {
 		return nil, err
 	}
@@ -2581,65 +2584,6 @@ func NewGetWipRequest(server string, owner string, repository string, params *Ge
 	return req, nil
 }
 
-// NewCreateWipRequest generates requests for CreateWip
-func NewCreateWipRequest(server string, owner string, repository string, params *CreateWipParams) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam1 string
-
-	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/wip/%s/%s", pathParam0, pathParam1)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	if params != nil {
-		queryValues := queryURL.Query()
-
-		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "refName", runtime.ParamLocationQuery, params.RefName); err != nil {
-			return nil, err
-		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-			return nil, err
-		} else {
-			for k, v := range parsed {
-				for _, v2 := range v {
-					queryValues.Add(k, v2)
-				}
-			}
-		}
-
-		queryURL.RawQuery = queryValues.Encode()
-	}
-
-	req, err := http.NewRequest("POST", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
 // NewGetWipChangesRequest generates requests for GetWipChanges
 func NewGetWipChangesRequest(server string, owner string, repository string, params *GetWipChangesParams) (*http.Request, error) {
 	var err error
@@ -2827,6 +2771,65 @@ func NewListWipRequest(server string, owner string, repository string) (*http.Re
 	return req, nil
 }
 
+// NewRevertWipRequest generates requests for RevertWip
+func NewRevertWipRequest(server string, owner string, repository string, params *RevertWipParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/wip/%s/%s/revert", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "refName", runtime.ParamLocationQuery, params.RefName); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -2955,9 +2958,6 @@ type ClientWithResponsesInterface interface {
 	// GetWipWithResponse request
 	GetWipWithResponse(ctx context.Context, owner string, repository string, params *GetWipParams, reqEditors ...RequestEditorFn) (*GetWipResponse, error)
 
-	// CreateWipWithResponse request
-	CreateWipWithResponse(ctx context.Context, owner string, repository string, params *CreateWipParams, reqEditors ...RequestEditorFn) (*CreateWipResponse, error)
-
 	// GetWipChangesWithResponse request
 	GetWipChangesWithResponse(ctx context.Context, owner string, repository string, params *GetWipChangesParams, reqEditors ...RequestEditorFn) (*GetWipChangesResponse, error)
 
@@ -2966,6 +2966,9 @@ type ClientWithResponsesInterface interface {
 
 	// ListWipWithResponse request
 	ListWipWithResponse(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*ListWipResponse, error)
+
+	// RevertWipWithResponse request
+	RevertWipWithResponse(ctx context.Context, owner string, repository string, params *RevertWipParams, reqEditors ...RequestEditorFn) (*RevertWipResponse, error)
 }
 
 type LoginResponse struct {
@@ -3294,7 +3297,7 @@ func (r GetCommitDiffResponse) StatusCode() int {
 type GetEntriesInRefResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *[]TreeEntry
+	JSON200      *[]FullTreeEntry
 }
 
 // Status returns HTTPResponse.Status
@@ -3509,28 +3512,6 @@ func (r GetWipResponse) StatusCode() int {
 	return 0
 }
 
-type CreateWipResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON201      *Wip
-}
-
-// Status returns HTTPResponse.Status
-func (r CreateWipResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r CreateWipResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
 type GetWipChangesResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -3591,6 +3572,27 @@ func (r ListWipResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r ListWipResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type RevertWipResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r RevertWipResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RevertWipResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -3862,15 +3864,6 @@ func (c *ClientWithResponses) GetWipWithResponse(ctx context.Context, owner stri
 	return ParseGetWipResponse(rsp)
 }
 
-// CreateWipWithResponse request returning *CreateWipResponse
-func (c *ClientWithResponses) CreateWipWithResponse(ctx context.Context, owner string, repository string, params *CreateWipParams, reqEditors ...RequestEditorFn) (*CreateWipResponse, error) {
-	rsp, err := c.CreateWip(ctx, owner, repository, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseCreateWipResponse(rsp)
-}
-
 // GetWipChangesWithResponse request returning *GetWipChangesResponse
 func (c *ClientWithResponses) GetWipChangesWithResponse(ctx context.Context, owner string, repository string, params *GetWipChangesParams, reqEditors ...RequestEditorFn) (*GetWipChangesResponse, error) {
 	rsp, err := c.GetWipChanges(ctx, owner, repository, params, reqEditors...)
@@ -3896,6 +3889,15 @@ func (c *ClientWithResponses) ListWipWithResponse(ctx context.Context, owner str
 		return nil, err
 	}
 	return ParseListWipResponse(rsp)
+}
+
+// RevertWipWithResponse request returning *RevertWipResponse
+func (c *ClientWithResponses) RevertWipWithResponse(ctx context.Context, owner string, repository string, params *RevertWipParams, reqEditors ...RequestEditorFn) (*RevertWipResponse, error) {
+	rsp, err := c.RevertWip(ctx, owner, repository, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRevertWipResponse(rsp)
 }
 
 // ParseLoginResponse parses an HTTP response from a LoginWithResponse call
@@ -4233,7 +4235,7 @@ func ParseGetEntriesInRefResponse(rsp *http.Response) (*GetEntriesInRefResponse,
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []TreeEntry
+		var dest []FullTreeEntry
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -4458,32 +4460,6 @@ func ParseGetWipResponse(rsp *http.Response) (*GetWipResponse, error) {
 	return response, nil
 }
 
-// ParseCreateWipResponse parses an HTTP response from a CreateWipWithResponse call
-func ParseCreateWipResponse(rsp *http.Response) (*CreateWipResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &CreateWipResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
-		var dest Wip
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON201 = &dest
-
-	}
-
-	return response, nil
-}
-
 // ParseGetWipChangesResponse parses an HTTP response from a GetWipChangesWithResponse call
 func ParseGetWipChangesResponse(rsp *http.Response) (*GetWipChangesResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -4557,6 +4533,22 @@ func ParseListWipResponse(rsp *http.Response) (*ListWipResponse, error) {
 		}
 		response.JSON200 = &dest
 
+	}
+
+	return response, nil
+}
+
+// ParseRevertWipResponse parses an HTTP response from a RevertWipWithResponse call
+func ParseRevertWipResponse(rsp *http.Response) (*RevertWipResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RevertWipResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
 	}
 
 	return response, nil
@@ -4639,9 +4631,6 @@ type ServerInterface interface {
 	// get working in process
 	// (GET /wip/{owner}/{repository})
 	GetWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params GetWipParams)
-	// create working in process
-	// (POST /wip/{owner}/{repository})
-	CreateWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params CreateWipParams)
 	// get working in process changes
 	// (GET /wip/{owner}/{repository}/changes)
 	GetWipChanges(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params GetWipChangesParams)
@@ -4651,6 +4640,9 @@ type ServerInterface interface {
 	// list wip in specific project and user
 	// (GET /wip/{owner}/{repository}/list)
 	ListWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string)
+	// revert working in process
+	// (POST /wip/{owner}/{repository}/revert)
+	RevertWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params RevertWipParams)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -4806,12 +4798,6 @@ func (_ Unimplemented) GetWip(ctx context.Context, w *JiaozifsResponse, r *http.
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// create working in process
-// (POST /wip/{owner}/{repository})
-func (_ Unimplemented) CreateWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params CreateWipParams) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
 // get working in process changes
 // (GET /wip/{owner}/{repository}/changes)
 func (_ Unimplemented) GetWipChanges(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params GetWipChangesParams) {
@@ -4827,6 +4813,12 @@ func (_ Unimplemented) CommitWip(ctx context.Context, w *JiaozifsResponse, r *ht
 // list wip in specific project and user
 // (GET /wip/{owner}/{repository}/list)
 func (_ Unimplemented) ListWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// revert working in process
+// (POST /wip/{owner}/{repository}/revert)
+func (_ Unimplemented) RevertWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params RevertWipParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -6161,65 +6153,6 @@ func (siw *ServerInterfaceWrapper) GetWip(w http.ResponseWriter, r *http.Request
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
-// CreateWip operation middleware
-func (siw *ServerInterfaceWrapper) CreateWip(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	var err error
-
-	// ------------- Path parameter "owner" -------------
-	var owner string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
-		return
-	}
-
-	// ------------- Path parameter "repository" -------------
-	var repository string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
-		return
-	}
-
-	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
-
-	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
-
-	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params CreateWipParams
-
-	// ------------- Required query parameter "refName" -------------
-
-	if paramValue := r.URL.Query().Get("refName"); paramValue != "" {
-
-	} else {
-		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "refName"})
-		return
-	}
-
-	err = runtime.BindQueryParameter("form", true, true, "refName", r.URL.Query(), &params.RefName)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "refName", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateWip(r.Context(), &JiaozifsResponse{w}, r, owner, repository, params)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r.WithContext(ctx))
-}
-
 // GetWipChanges operation middleware
 func (siw *ServerInterfaceWrapper) GetWipChanges(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -6393,6 +6326,65 @@ func (siw *ServerInterfaceWrapper) ListWip(w http.ResponseWriter, r *http.Reques
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListWip(r.Context(), &JiaozifsResponse{w}, r, owner, repository)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// RevertWip operation middleware
+func (siw *ServerInterfaceWrapper) RevertWip(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RevertWipParams
+
+	// ------------- Required query parameter "refName" -------------
+
+	if paramValue := r.URL.Query().Get("refName"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "refName"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "refName", r.URL.Query(), &params.RefName)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "refName", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RevertWip(r.Context(), &JiaozifsResponse{w}, r, owner, repository, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -6596,9 +6588,6 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/wip/{owner}/{repository}", wrapper.GetWip)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/wip/{owner}/{repository}", wrapper.CreateWip)
-	})
-	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/wip/{owner}/{repository}/changes", wrapper.GetWipChanges)
 	})
 	r.Group(func(r chi.Router) {
@@ -6607,6 +6596,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/wip/{owner}/{repository}/list", wrapper.ListWip)
 	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/wip/{owner}/{repository}/revert", wrapper.RevertWip)
+	})
 
 	return r
 }
@@ -6614,75 +6606,75 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"AAA=",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

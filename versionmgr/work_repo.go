@@ -207,6 +207,26 @@ func (repository *WorkRepository) CheckOut(ctx context.Context, refType WorkRepo
 	return nil
 }
 
+func (repository *WorkRepository) RevertWip(ctx context.Context) error {
+	if repository.state != InWip {
+		return fmt.Errorf("working repo not in wip state")
+	}
+	treeHash := hash.EmptyHash
+	if !repository.wip.BaseCommit.IsEmpty() {
+		commit, err := repository.repo.CommitRepo(repository.repoModel.ID).Commit(ctx, repository.wip.BaseCommit)
+		if err != nil {
+			return err
+		}
+		treeHash = commit.TreeHash
+	}
+	err := repository.repo.WipRepo().UpdateByID(ctx, models.NewUpdateWipParams(repository.wip.ID).SetCurrentTree(treeHash))
+	if err != nil {
+		return err
+	}
+	repository.wip.CurrentTree = treeHash
+	return nil
+}
+
 // CommitChanges append a new commit to current headTree, read changes from wip, than create a new commit with parent point to current headTree,
 // and replace tree hash with wip's currentTreeHash.
 func (repository *WorkRepository) CommitChanges(ctx context.Context, msg string) (*models.Commit, error) {

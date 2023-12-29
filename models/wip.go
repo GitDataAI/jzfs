@@ -124,8 +124,8 @@ type UpdateWipParams struct {
 	UpdatedAt     time.Time `bun:"updated_at"`
 }
 
-func NewUpdateWipParams(ID uuid.UUID) *UpdateWipParams {
-	return &UpdateWipParams{ID: ID, UpdatedAt: time.Now()}
+func NewUpdateWipParams(id uuid.UUID) *UpdateWipParams {
+	return &UpdateWipParams{ID: id, UpdatedAt: time.Now()}
 }
 
 func (up *UpdateWipParams) SetCurrentTree(currentTree hash.Hash) *UpdateWipParams {
