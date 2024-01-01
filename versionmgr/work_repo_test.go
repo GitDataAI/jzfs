@@ -171,7 +171,7 @@ func TestNewWorkRepositoryFromConfig(t *testing.T) {
 	})
 }
 
-func TestWorkRepository_RootTree(t *testing.T) {
+func TestWorkRepositoryRootTree(t *testing.T) {
 	ctx := context.Background()
 
 	postgres, _, db := testhelper.SetupDatabase(ctx, t)
@@ -181,10 +181,7 @@ func TestWorkRepository_RootTree(t *testing.T) {
 	user, err := makeUser(ctx, repo.UserRepo(), "admin")
 	require.NoError(t, err)
 
-	project, err := makeRepository(ctx, repo.RepositoryRepo(), user, "testproject")
-	require.NoError(t, err)
-
-	mainBranch, err := makeBranch(ctx, repo.BranchRepo(), user, "main", project.ID, hash.EmptyHash)
+	project, err := makeRepository(ctx, repo, user, "testproject")
 	require.NoError(t, err)
 
 	workRepo := NewWorkRepositoryFromAdapter(ctx, user, project, repo, mem.New(ctx))
@@ -195,18 +192,10 @@ func TestWorkRepository_RootTree(t *testing.T) {
 1|a.txt	|h1
 1|b/c.txt	|h2
 `
-	oriRoot, err := makeRoot(ctx, repo.FileTreeRepo(project.ID), EmptyDirEntry, testData)
-	require.NoError(t, err)
-	mainWip, err := makeWip(ctx, repo.WipRepo(), user.ID, project.ID, mainBranch.ID, hash.Hash{}, oriRoot.Hash)
-	require.NoError(t, err)
 
+	commit, err := addChangesToWip(ctx, workRepo, "main", "init commit", testData)
+	require.NoError(t, err)
 	require.Error(t, workRepo.CheckOut(ctx, WorkRepoState("mock"), "main"))
-
-	require.NoError(t, workRepo.CheckOut(ctx, InWip, "main"))
-	require.Equal(t, mainWip.ID, workRepo.CurWip().ID)
-	require.Equal(t, "main", workRepo.CurBranch().Name)
-	commit, err := workRepo.CommitChanges(ctx, "init commit")
-	require.NoError(t, err)
 
 	workTree, err := workRepo.RootTree(ctx)
 	require.NoError(t, err)
@@ -217,6 +206,151 @@ func TestWorkRepository_RootTree(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, commit.TreeHash.Hex(), hex.EncodeToString(workTree.Root().Hash()))
 	require.Equal(t, "main", workRepo.CurBranch().Name)
+}
+
+func TestWorkRepositoryRevert(t *testing.T) {
+	ctx := context.Background()
+	postgres, _, db := testhelper.SetupDatabase(ctx, t)
+	defer postgres.Stop() //nolint
+
+	repo := models.NewRepo(db)
+	adapter := mem.New(ctx)
+
+	user, err := makeUser(ctx, repo.UserRepo(), "admin")
+	require.NoError(t, err)
+
+	var checkFn = func(workRepo *WorkRepository, compareTree hash.Hash, path string, num int) {
+		beforeTree, err := workRepo.RootTree(ctx)
+		require.NoError(t, err)
+		beforeChanges, err := beforeTree.Diff(ctx, compareTree, path)
+		require.NoError(t, err)
+		require.Equal(t, num, beforeChanges.Num())
+
+		//revert
+		err = workRepo.Revert(ctx, path)
+		require.NoError(t, err)
+
+		//after tree
+		afterTree, err := workRepo.RootTree(ctx)
+		require.NoError(t, err)
+		afterChanges, err := afterTree.Diff(ctx, compareTree, path)
+		require.NoError(t, err)
+		require.Equal(t, 0, afterChanges.Num())
+	}
+
+	t.Run("revert", func(t *testing.T) {
+		project, err := makeRepository(ctx, repo, user, "testRevert")
+		require.NoError(t, err)
+		testData1 := `
+1|a.txt	|a
+1|b/c.txt	|c
+1|b/e.txt |e1
+`
+
+		workRepo := NewWorkRepositoryFromAdapter(ctx, user, project, repo, adapter)
+
+		initCommit, err := addChangesToWip(ctx, workRepo, "main", "base commit", testData1)
+		require.NoError(t, err)
+		testData2 := `
+3|a.txt	|a1
+2|b/c.txt	|d
+3|b/e.txt |e2
+1|b/g.txt |g1
+`
+		err = workRepo.CheckOut(ctx, InBranch, "main")
+		require.NoError(t, err)
+		err = workRepo.ChangeInWip(ctx, func(workTree *WorkTree) error {
+			return appendChangeToWorkTree(ctx, workTree, testData2)
+		})
+		require.Error(t, err) //state not correct
+
+		err = workRepo.CheckOut(ctx, InWip, "main")
+		require.NoError(t, err)
+
+		err = workRepo.ChangeInWip(ctx, func(workTree *WorkTree) error {
+			return appendChangeToWorkTree(ctx, workTree, testData2)
+		})
+		require.NoError(t, err)
+
+		checkFn(workRepo, initCommit.TreeHash, "a.txt", 1)
+		checkFn(workRepo, initCommit.TreeHash, "b/c.txt", 1)
+		checkFn(workRepo, initCommit.TreeHash, "b/e.txt", 1)
+		checkFn(workRepo, initCommit.TreeHash, "b/g.txt", 1)
+	})
+
+	t.Run("revert dir", func(t *testing.T) {
+		project, err := makeRepository(ctx, repo, user, "testRevertDir")
+		require.NoError(t, err)
+		testData1 := `
+1|a.txt	|a
+1|b/c.txt	|c
+1|b/e.txt |e1
+`
+
+		workRepo := NewWorkRepositoryFromAdapter(ctx, user, project, repo, adapter)
+
+		initCommit, err := addChangesToWip(ctx, workRepo, "main", "base commit", testData1)
+		require.NoError(t, err)
+		testData2 := `
+3|a.txt	|a1
+2|b/c.txt	|d
+3|b/e.txt |e2
+1|b/g.txt |g1
+`
+		err = workRepo.CheckOut(ctx, InBranch, "main")
+		require.NoError(t, err)
+		err = workRepo.ChangeInWip(ctx, func(workTree *WorkTree) error {
+			return appendChangeToWorkTree(ctx, workTree, testData2)
+		})
+		require.Error(t, err) //state not correct
+
+		err = workRepo.CheckOut(ctx, InWip, "main")
+		require.NoError(t, err)
+
+		err = workRepo.ChangeInWip(ctx, func(workTree *WorkTree) error {
+			return appendChangeToWorkTree(ctx, workTree, testData2)
+		})
+		require.NoError(t, err)
+
+		checkFn(workRepo, initCommit.TreeHash, "b", 3)
+	})
+
+	t.Run("revert all", func(t *testing.T) {
+		project, err := makeRepository(ctx, repo, user, "testRevertAll")
+		require.NoError(t, err)
+		testData1 := `
+1|a.txt	|a
+1|b/c.txt	|c
+1|b/e.txt |e1
+`
+
+		workRepo := NewWorkRepositoryFromAdapter(ctx, user, project, repo, adapter)
+
+		initCommit, err := addChangesToWip(ctx, workRepo, "main", "base commit", testData1)
+		require.NoError(t, err)
+		testData2 := `
+3|a.txt	|a1
+2|b/c.txt	|d
+3|b/e.txt |e2
+1|b/g.txt |g1
+`
+		err = workRepo.CheckOut(ctx, InBranch, "main")
+		require.NoError(t, err)
+		err = workRepo.ChangeInWip(ctx, func(workTree *WorkTree) error {
+			return appendChangeToWorkTree(ctx, workTree, testData2)
+		})
+		require.Error(t, err) //state not correct
+
+		err = workRepo.CheckOut(ctx, InWip, "main")
+		require.NoError(t, err)
+
+		err = workRepo.ChangeInWip(ctx, func(workTree *WorkTree) error {
+			return appendChangeToWorkTree(ctx, workTree, testData2)
+		})
+		require.NoError(t, err)
+
+		checkFn(workRepo, initCommit.TreeHash, "", 4)
+	})
 }
 
 func makeUser(ctx context.Context, userRepo models.IUserRepo, name string) (*models.User, error) {
@@ -234,8 +368,8 @@ func makeUser(ctx context.Context, userRepo models.IUserRepo, name string) (*mod
 	return userRepo.Insert(ctx, user)
 }
 
-func makeRepository(ctx context.Context, repoRepo models.IRepositoryRepo, user *models.User, name string) (*models.Repository, error) {
-	return repoRepo.Insert(ctx, &models.Repository{
+func makeRepository(ctx context.Context, repo models.IRepo, user *models.User, name string) (*models.Repository, error) {
+	repoModel, err := repo.RepositoryRepo().Insert(ctx, &models.Repository{
 		Name:             name,
 		Description:      utils.String("test"),
 		HEAD:             "main",
@@ -244,6 +378,22 @@ func makeRepository(ctx context.Context, repoRepo models.IRepositoryRepo, user *
 		CreatorID:        user.ID,
 		StorageNamespace: utils.String("mem://data"),
 	})
+	if err != nil {
+		return nil, err
+	}
+	_, err = repo.BranchRepo().Insert(ctx, &models.Branch{
+		RepositoryID: repoModel.ID,
+		CommitHash:   hash.EmptyHash,
+		Name:         "main",
+		Description:  nil,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
+		CreatorID:    user.ID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return repoModel, nil
 }
 
 // nolint
@@ -289,30 +439,29 @@ func makeBranch(ctx context.Context, branchRepo models.IBranchRepo, user *models
 	return branchRepo.Insert(ctx, branch)
 }
 
-func makeWip(ctx context.Context, wipRepo models.IWipRepo, creatorID, repoID, branchID uuid.UUID, parentHash, curHash hash.Hash) (*models.WorkingInProcess, error) {
-	wip := &models.WorkingInProcess{
-		CurrentTree:  curHash,
-		BaseCommit:   parentHash,
-		RefID:        branchID,
-		RepositoryID: repoID,
-		CreatorID:    creatorID,
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
-	}
-	return wipRepo.Insert(ctx, wip)
-}
-
-func rmWip(ctx context.Context, wipRepo models.IWipRepo, wipID uuid.UUID) error {
-	_, err := wipRepo.Delete(ctx, models.NewDeleteWipParams().SetID(wipID))
-	return err
-}
-
-func makeRoot(ctx context.Context, objRepo models.IFileTreeRepo, treeEntry models.TreeEntry, testData string) (*models.TreeNode, error) {
-	lines := strings.Split(testData, "\n")
-	treeOp, err := NewWorkTree(ctx, objRepo, treeEntry)
+func addChangesToWip(ctx context.Context, workRepo *WorkRepository, branchName string, msg string, testData string) (*models.Commit, error) {
+	err := workRepo.CheckOut(ctx, InBranch, branchName)
 	if err != nil {
 		return nil, err
 	}
+	_, _, err = workRepo.GetOrCreateWip(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	err = workRepo.CheckOut(ctx, InWip, branchName)
+	if err != nil {
+		return nil, err
+	}
+
+	return workRepo.ChangeAndCommit(ctx, msg, func(workTree *WorkTree) error {
+		return appendChangeToWorkTree(ctx, workTree, testData)
+	})
+}
+
+func appendChangeToWorkTree(ctx context.Context, workTree *WorkTree, testData string) error {
+	lines := strings.Split(testData, "\n")
+	var err error
 	for _, line := range lines {
 		if len(strings.TrimSpace(line)) == 0 {
 			continue
@@ -322,7 +471,7 @@ func makeRoot(ctx context.Context, objRepo models.IFileTreeRepo, treeEntry model
 		fileHash := strings.TrimSpace(commitData[2])
 		blob := &models.Blob{
 			Hash:         hash.Hash(fileHash),
-			RepositoryID: objRepo.RepositoryID(),
+			RepositoryID: workTree.RepositoryID(),
 			Type:         models.BlobObject,
 			Size:         10,
 			Properties:   models.Property{Mode: filemode.Regular},
@@ -331,23 +480,22 @@ func makeRoot(ctx context.Context, objRepo models.IFileTreeRepo, treeEntry model
 		}
 
 		if commitData[0] == "1" {
-			err = treeOp.AddLeaf(ctx, fullPath, blob)
+			err = workTree.AddLeaf(ctx, fullPath, blob)
 			if err != nil {
-				return nil, err
+				return err
 			}
 		} else if commitData[0] == "3" {
-			err = treeOp.ReplaceLeaf(ctx, fullPath, blob)
+			err = workTree.ReplaceLeaf(ctx, fullPath, blob)
 			if err != nil {
-				return nil, err
+				return err
 			}
 		} else {
 			//2
-			err = treeOp.RemoveEntry(ctx, fullPath)
+			err = workTree.RemoveEntry(ctx, fullPath)
 			if err != nil {
-				return nil, err
+				return err
 			}
 		}
-
 	}
-	return treeOp.Root().TreeNode(), nil
+	return nil
 }

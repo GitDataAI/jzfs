@@ -312,7 +312,6 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		})
 
 		c.Convey("get wip changes", func(c convey.C) {
-
 			c.Convey("no auth", func() {
 				re := client.RequestEditors
 				client.RequestEditors = nil
@@ -381,5 +380,80 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(*result.JSON200, convey.ShouldHaveLength, 4)
 			})
 		})
+
+		c.Convey("revert wip changes", func(c convey.C) {
+			c.Convey("no auth", func() {
+				re := client.RequestEditors
+				client.RequestEditors = nil
+				resp, err := client.RevertWipChanges(ctx, userName, repoName, &api.RevertWipChangesParams{
+					RefName: branchName,
+				})
+				client.RequestEditors = re
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
+			})
+
+			c.Convey("fail to revert changes in non exit user", func() {
+				resp, err := client.RevertWipChanges(ctx, "mockUser", repoName, &api.RevertWipChangesParams{
+					RefName: branchName,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
+			})
+
+			c.Convey("fail to revert changes in non exit repo", func() {
+				resp, err := client.RevertWipChanges(ctx, userName, "fakeRepo", &api.RevertWipChangesParams{
+					RefName: branchName,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
+			})
+
+			c.Convey("fail to revert changes in non exit branch", func() {
+				resp, err := client.RevertWipChanges(ctx, userName, repoName, &api.RevertWipChangesParams{
+					RefName: "mockref",
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
+			})
+
+			c.Convey("forbidden revert changes in others", func() {
+				resp, err := client.RevertWipChanges(ctx, "jimmy", "happygo", &api.RevertWipChangesParams{
+					RefName: branchName,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+			})
+
+			c.Convey("not exit path", func() {
+				resp, err := client.RevertWipChanges(ctx, userName, repoName, &api.RevertWipChangesParams{
+					RefName:    branchName,
+					PathPrefix: utils.String("a/b/c/d"),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
+			})
+
+			c.Convey("success to revert changes", func() {
+				resp, err := client.RevertWipChanges(ctx, userName, repoName, &api.RevertWipChangesParams{
+					RefName: branchName,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				{
+					resp, err = client.GetWipChanges(ctx, userName, repoName, &api.GetWipChangesParams{
+						RefName: branchName,
+					})
+					convey.So(err, convey.ShouldBeNil)
+					convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+					result, err := api.ParseGetWipChangesResponse(resp)
+					convey.So(err, convey.ShouldBeNil)
+					convey.So(*result.JSON200, convey.ShouldHaveLength, 0)
+				}
+			})
+		})
+
 	}
 }

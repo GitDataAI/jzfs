@@ -1070,6 +1070,8 @@ paths:
           description: Unauthorized
         403:
           description: Forbidden
+        500:
+          description: Server Internal Error
 
   /wip/{owner}/{repository}/changes:
     parameters:

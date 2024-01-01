@@ -23,7 +23,7 @@ func TestWorkRepositoryDiffCommit(t *testing.T) {
 	user, err := makeUser(ctx, repo.UserRepo(), "admin")
 	require.NoError(t, err)
 
-	project, err := makeRepository(ctx, repo.RepositoryRepo(), user, "testproject")
+	project, err := makeRepository(ctx, repo, user, "testproject")
 	require.NoError(t, err)
 	//commit1  a.txt b/c.txt  b/e.txt
 	//commit2  a.txt b/d.txt  b/e.txt
@@ -34,25 +34,15 @@ func TestWorkRepositoryDiffCommit(t *testing.T) {
 `
 
 	workRepo := NewWorkRepositoryFromAdapter(ctx, user, project, repo, adapter)
-	//base branch
 
+	//base branch
 	err = workRepo.CheckOut(ctx, InCommit, hash.EmptyHash.Hex())
 	require.NoError(t, err)
-	baseBranch, err := workRepo.CreateBranch(ctx, "feat/base")
+	_, err = workRepo.CreateBranch(ctx, "feat/base")
 	require.NoError(t, err)
 
-	root1, err := makeRoot(ctx, repo.FileTreeRepo(project.ID), EmptyDirEntry, testData1)
+	baseCommit, err := addChangesToWip(ctx, workRepo, "feat/base", "base commit", testData1)
 	require.NoError(t, err)
-	baseWip, err := makeWip(ctx, repo.WipRepo(), user.ID, project.ID, baseBranch.ID, EmptyRoot.Hash, root1.Hash)
-	require.NoError(t, err)
-
-	_, err = workRepo.CommitChanges(ctx, "base commit") //asset not correct state
-	require.Error(t, err)
-	require.NoError(t, workRepo.CheckOut(ctx, InWip, "feat/base"))
-
-	baseCommit, err := workRepo.CommitChanges(ctx, "base commit")
-	require.NoError(t, err)
-	require.NoError(t, rmWip(ctx, repo.WipRepo(), baseWip.ID))
 
 	testData2 := `
 3|a.txt	|a1
@@ -60,18 +50,14 @@ func TestWorkRepositoryDiffCommit(t *testing.T) {
 3|b/e.txt |e2
 1|b/g.txt |g1
 `
-	diffBranch, err := makeBranch(ctx, repo.BranchRepo(), user, "feat/diff", project.ID, hash.EmptyHash)
+
+	err = workRepo.CheckOut(ctx, InBranch, "feat/base")
+	require.NoError(t, err)
+	_, err = workRepo.CreateBranch(ctx, "feat/diff")
 	require.NoError(t, err)
 
-	root2, err := makeRoot(ctx, repo.FileTreeRepo(project.ID), models.NewRootTreeEntry(root1.Hash), testData2)
+	secondCommit, err := addChangesToWip(ctx, workRepo, "feat/diff", "merge commit", testData2)
 	require.NoError(t, err)
-	secondWip, err := makeWip(ctx, repo.WipRepo(), user.ID, project.ID, diffBranch.ID, EmptyRoot.Hash, root2.Hash)
-	require.NoError(t, err)
-
-	require.NoError(t, workRepo.CheckOut(ctx, InWip, "feat/diff"))
-	secondCommit, err := workRepo.CommitChanges(ctx, "merge commit")
-	require.NoError(t, err)
-	require.NoError(t, rmWip(ctx, repo.WipRepo(), secondWip.ID))
 
 	require.NoError(t, workRepo.CheckOut(ctx, InCommit, baseCommit.Hash.Hex()))
 	changes, err := workRepo.DiffCommit(ctx, secondCommit.Hash, "")
