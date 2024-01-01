@@ -44,19 +44,7 @@ func (c *Change) To() noder.Path {
 
 // Path return change path
 func (c *Change) Path() string {
-	action, err := c.Action()
-	if err != nil {
-		panic(err)
-	}
-
-	var path string
-	if action == merkletrie.Delete {
-		path = c.Change.From.String()
-	} else {
-		path = c.Change.To.String()
-	}
-
-	return path
+	return c.Change.Path()
 }
 
 // Changes used to recored changes between commit, also provider iter function

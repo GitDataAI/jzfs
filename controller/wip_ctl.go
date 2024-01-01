@@ -3,9 +3,7 @@ package controller
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
 	"net/http"
-	"strings"
 
 	"github.com/jiaozifs/jiaozifs/api"
 	"github.com/jiaozifs/jiaozifs/auth"
@@ -255,46 +253,22 @@ func (wipCtl WipController) GetWipChanges(ctx context.Context, w *api.JiaozifsRe
 		return
 	}
 
-	changes, err := workTree.Diff(ctx, wip.CurrentTree)
+	changes, err := workTree.Diff(ctx, wip.CurrentTree, utils.StringValue(params.Path))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	path := versionmgr.CleanPath(utils.StringValue(params.Path))
-
-	var changesResp []api.Change
-	err = changes.ForEach(func(change versionmgr.IChange) error {
-		action, err := change.Action()
-		if err != nil {
-			return err
-		}
-		fullPath := change.Path()
-		if strings.HasPrefix(fullPath, path) {
-			apiChange := api.Change{
-				Action: api.ChangeAction(action),
-				Path:   fullPath,
-			}
-			if change.From() != nil {
-				apiChange.BaseHash = utils.String(hex.EncodeToString(change.From().Hash()))
-			}
-			if change.To() != nil {
-				apiChange.ToHash = utils.String(hex.EncodeToString(change.To().Hash()))
-			}
-			changesResp = append(changesResp, apiChange)
-		}
-		return nil
-	})
+	changesResp, err := changesToDTO(changes)
 	if err != nil {
 		w.Error(err)
 		return
 	}
-
 	w.JSON(changesResp)
 }
 
-// RevertWip revert wip changes to base commit
-func (wipCtl WipController) RevertWip(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, params api.RevertWipParams) {
+// RevertWipChanges revert wip changes, if path is empty, revert all
+func (wipCtl WipController) RevertWipChanges(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, params api.RevertWipChangesParams) {
 	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
@@ -330,7 +304,7 @@ func (wipCtl WipController) RevertWip(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
-	err = workRepo.RevertWip(ctx)
+	err = workRepo.Revert(ctx, utils.StringValue(params.PathPrefix))
 	if err != nil {
 		w.Error(err)
 		return

@@ -1051,11 +1051,16 @@ paths:
         required: true
         schema:
           type: string
+      - in: query
+        name: pathPrefix
+        description: prefix of path
+        schema:
+          type: string
     post:
       tags:
         - wip
-      operationId: revertWip
-      summary: revert working in process
+      operationId: revertWipChanges
+      summary: revert changes in working in process, empty path will revert all
       responses:
         200:
           description: success to revert wip

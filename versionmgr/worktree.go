@@ -514,7 +514,7 @@ func (workTree *WorkTree) ApplyOneChange(ctx context.Context, change IChange) er
 	return fmt.Errorf("unexpect change action: %s", action)
 }
 
-func (workTree *WorkTree) Diff(ctx context.Context, rootTreeHash hash.Hash) (*Changes, error) {
+func (workTree *WorkTree) Diff(ctx context.Context, rootTreeHash hash.Hash, prefix string) (*Changes, error) {
 	toNode, err := NewTreeNode(ctx, models.NewRootTreeEntry(rootTreeHash), workTree.object)
 	if err != nil {
 		return nil, err
@@ -527,7 +527,17 @@ func (workTree *WorkTree) Diff(ctx context.Context, rootTreeHash hash.Hash) (*Ch
 	if err != nil {
 		return nil, err
 	}
-	return newChanges(changes), nil
+
+	prefix = CleanPath(prefix)
+	var filteredChange []merkletrie.Change
+	for _, change := range changes {
+		path := change.Path()
+		if !strings.HasPrefix(path, prefix) {
+			continue
+		}
+		filteredChange = append(filteredChange, change)
+	}
+	return newChanges(filteredChange), nil
 }
 
 // CleanPath clean path

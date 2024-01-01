@@ -154,35 +154,13 @@ func (commitCtl CommitController) CompareCommit(ctx context.Context, w *api.Jiao
 		return
 	}
 
-	changes, err := workRepo.DiffCommit(ctx, toCommitHash)
+	changes, err := workRepo.DiffCommit(ctx, toCommitHash, utils.StringValue(params.Path))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	path := versionmgr.CleanPath(utils.StringValue(params.Path))
-	var changesResp []api.Change
-	err = changes.ForEach(func(change versionmgr.IChange) error {
-		action, err := change.Action()
-		if err != nil {
-			return err
-		}
-		fullPath := change.Path()
-		if strings.HasPrefix(fullPath, path) {
-			apiChange := api.Change{
-				Action: api.ChangeAction(action),
-				Path:   fullPath,
-			}
-			if change.From() != nil {
-				apiChange.BaseHash = utils.String(hex.EncodeToString(change.From().Hash()))
-			}
-			if change.To() != nil {
-				apiChange.ToHash = utils.String(hex.EncodeToString(change.To().Hash()))
-			}
-			changesResp = append(changesResp, apiChange)
-		}
-		return nil
-	})
+	changesResp, err := changesToDTO(changes)
 	if err != nil {
 		w.Error(err)
 		return
@@ -226,35 +204,13 @@ func (commitCtl CommitController) GetCommitChanges(ctx context.Context, w *api.J
 		return
 	}
 
-	changes, err := workRepo.GetCommitChanges(ctx)
+	changes, err := workRepo.GetCommitChanges(ctx, utils.StringValue(params.Path))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	path := versionmgr.CleanPath(utils.StringValue(params.Path))
-	var changesResp []api.Change
-	err = changes.ForEach(func(change versionmgr.IChange) error {
-		action, err := change.Action()
-		if err != nil {
-			return err
-		}
-		fullPath := change.Path()
-		if strings.HasPrefix(fullPath, path) {
-			apiChange := api.Change{
-				Action: api.ChangeAction(action),
-				Path:   fullPath,
-			}
-			if change.From() != nil {
-				apiChange.BaseHash = utils.String(hex.EncodeToString(change.From().Hash()))
-			}
-			if change.To() != nil {
-				apiChange.ToHash = utils.String(hex.EncodeToString(change.To().Hash()))
-			}
-			changesResp = append(changesResp, apiChange)
-		}
-		return nil
-	})
+	changesResp, err := changesToDTO(changes)
 	if err != nil {
 		w.Error(err)
 		return

@@ -9,6 +9,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/jiaozifs/jiaozifs/versionmgr/merkletrie"
+
 	"github.com/jiaozifs/jiaozifs/utils"
 
 	logging "github.com/ipfs/go-log/v2"
@@ -209,24 +211,96 @@ func (repository *WorkRepository) CheckOut(ctx context.Context, refType WorkRepo
 	return nil
 }
 
-func (repository *WorkRepository) RevertWip(ctx context.Context) error {
+func (repository *WorkRepository) Revert(ctx context.Context, prefixPath string) error {
 	if repository.state != InWip {
 		return fmt.Errorf("working repo not in wip state")
 	}
-	treeHash := hash.EmptyHash
+
+	baseTreeHash := hash.EmptyHash
 	if !repository.wip.BaseCommit.IsEmpty() {
 		commit, err := repository.repo.CommitRepo(repository.repoModel.ID).Commit(ctx, repository.wip.BaseCommit)
 		if err != nil {
 			return err
 		}
-		treeHash = commit.TreeHash
+		baseTreeHash = commit.TreeHash
 	}
-	err := repository.repo.WipRepo().UpdateByID(ctx, models.NewUpdateWipParams(repository.wip.ID).SetCurrentTree(treeHash))
-	if err != nil {
-		return err
+
+	prefixPath = CleanPath(prefixPath)
+	if len(prefixPath) == 0 {
+		//just revert all
+		err := repository.repo.WipRepo().UpdateByID(ctx, models.NewUpdateWipParams(repository.wip.ID).SetCurrentTree(baseTreeHash))
+		if err != nil {
+			return err
+		}
+		repository.wip.CurrentTree = baseTreeHash
+		return nil
 	}
-	repository.wip.CurrentTree = treeHash
-	return nil
+
+	err := repository.repo.Transaction(ctx, func(repo models.IRepo) error {
+		baseTree, err := NewWorkTree(ctx, repo.FileTreeRepo(repository.repoModel.ID), models.NewRootTreeEntry(baseTreeHash))
+		if err != nil {
+			return err
+		}
+		curTree, err := NewWorkTree(ctx, repo.FileTreeRepo(repository.repoModel.ID), models.NewRootTreeEntry(repository.wip.CurrentTree))
+		if err != nil {
+			return err
+		}
+
+		changes, err := curTree.Diff(ctx, baseTreeHash, prefixPath)
+		if err != nil {
+			return err
+		}
+		if changes.Num() == 0 {
+			return models.ErrNotFound
+		}
+
+		err = changes.ForEach(func(change IChange) error {
+			action, err := change.Action()
+			if err != nil {
+				return err
+			}
+			changePath := change.Path()
+			switch action {
+			case merkletrie.Insert:
+				err = curTree.RemoveEntry(ctx, prefixPath)
+				if err != nil {
+					return err
+				}
+			case merkletrie.Modify:
+				blob, _, err := baseTree.FindBlob(ctx, changePath)
+				if err != nil {
+					return err
+				}
+
+				err = curTree.ReplaceLeaf(ctx, prefixPath, blob)
+				if err != nil {
+					return err
+				}
+			case merkletrie.Delete:
+				blob, _, err := baseTree.FindBlob(ctx, changePath)
+				if err != nil {
+					return err
+				}
+
+				err = curTree.AddLeaf(ctx, prefixPath, blob)
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+
+		err = repository.repo.WipRepo().UpdateByID(ctx, models.NewUpdateWipParams(repository.wip.ID).SetCurrentTree(curTree.Root().Hash()))
+		if err != nil {
+			return err
+		}
+		repository.wip.CurrentTree = curTree.Root().Hash()
+		return nil
+	})
+	return err
 }
 
 // DeleteWip remove wip  todo remove files
@@ -406,7 +480,7 @@ func (repository *WorkRepository) GetOrCreateWip(ctx context.Context) (*models.W
 }
 
 // DiffCommit find file changes in two commit
-func (repository *WorkRepository) DiffCommit(ctx context.Context, toCommitID hash.Hash) (*Changes, error) {
+func (repository *WorkRepository) DiffCommit(ctx context.Context, toCommitID hash.Hash, pathPrefix string) (*Changes, error) {
 	workTree, err := repository.RootTree(ctx)
 	if err != nil {
 		return nil, err
@@ -416,20 +490,20 @@ func (repository *WorkRepository) DiffCommit(ctx context.Context, toCommitID has
 		return nil, err
 	}
 
-	return workTree.Diff(ctx, toCommit.TreeHash)
+	return workTree.Diff(ctx, toCommit.TreeHash, pathPrefix)
 }
 
-func (repository *WorkRepository) GetCommitChanges(ctx context.Context) (*Changes, error) {
+func (repository *WorkRepository) GetCommitChanges(ctx context.Context, pathPrefix string) (*Changes, error) {
 	if len(repository.commit.ParentHashes) == 0 {
 		workTree, err := repository.RootTree(ctx)
 		if err != nil {
 			return nil, err
 		}
-		return workTree.Diff(ctx, hash.EmptyHash)
+		return workTree.Diff(ctx, hash.EmptyHash, pathPrefix)
 	} else if len(repository.commit.ParentHashes) == 1 {
-		return repository.DiffCommit(ctx, repository.commit.ParentHashes[0])
+		return repository.DiffCommit(ctx, repository.commit.ParentHashes[0], pathPrefix)
 	}
-	return repository.DiffCommit(ctx, repository.commit.ParentHashes[1])
+	return repository.DiffCommit(ctx, repository.commit.ParentHashes[1], pathPrefix)
 }
 
 // Merge implement merge like git, docs https://en.wikipedia.org/wiki/Merge_(version_control)
@@ -555,12 +629,12 @@ func merge(ctx context.Context,
 		return nil, err
 	}
 
-	baseDiff, err := ancestorWorkTree.Diff(ctx, baseCommit.TreeHash)
+	baseDiff, err := ancestorWorkTree.Diff(ctx, baseCommit.TreeHash, "")
 	if err != nil {
 		return nil, err
 	}
 
-	mergeDiff, err := ancestorWorkTree.Diff(ctx, toMergeCommit.TreeHash)
+	mergeDiff, err := ancestorWorkTree.Diff(ctx, toMergeCommit.TreeHash, "")
 	if err != nil {
 		return nil, err
 	}

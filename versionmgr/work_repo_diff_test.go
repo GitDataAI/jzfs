@@ -74,7 +74,7 @@ func TestWorkRepositoryDiffCommit(t *testing.T) {
 	require.NoError(t, rmWip(ctx, repo.WipRepo(), secondWip.ID))
 
 	require.NoError(t, workRepo.CheckOut(ctx, InCommit, baseCommit.Hash.Hex()))
-	changes, err := workRepo.DiffCommit(ctx, secondCommit.Hash)
+	changes, err := workRepo.DiffCommit(ctx, secondCommit.Hash, "")
 	require.NoError(t, err)
 	require.Equal(t, 4, changes.Num())
 	require.Equal(t, "a.txt", changes.Index(0).Path())
