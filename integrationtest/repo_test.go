@@ -342,6 +342,23 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
 			})
+
+			c.Convey("update head to not exit", func() {
+				resp, err := client.UpdateRepository(ctx, userName, repoName, api.UpdateRepositoryJSONRequestBody{
+					Head: utils.String("xxx"),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
+			})
+
+			createBranch(ctx, c, client, userName, repoName, "main", "feat/ano_branch")
+			c.Convey("update default head success", func() {
+				resp, err := client.UpdateRepository(ctx, userName, repoName, api.UpdateRepositoryJSONRequestBody{
+					Head: utils.String("feat/ano_branch"),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+			})
 		})
 
 		c.Convey("get commits in repository", func(c convey.C) {

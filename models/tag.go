@@ -34,6 +34,7 @@ type ITagRepo interface {
 	RepositoryID() uuid.UUID
 	Insert(ctx context.Context, tag *Tag) (*Tag, error)
 	Tag(ctx context.Context, hash hash.Hash) (*Tag, error)
+	Delete(ctx context.Context, params *DeleteParams) (int64, error)
 }
 
 type TagRepo struct {
@@ -73,4 +74,21 @@ func (t *TagRepo) Tag(ctx context.Context, hash hash.Hash) (*Tag, error) {
 		return nil, err
 	}
 	return tag, nil
+}
+
+func (t *TagRepo) Delete(ctx context.Context, params *DeleteParams) (int64, error) {
+	query := t.db.NewDelete().Model((*Tag)(nil)).Where("repository_id = ?", t.repositoryID)
+	if params.hash != nil {
+		query = query.Where("hash = ?", params.hash)
+	}
+
+	sqlResult, err := query.Exec(ctx)
+	if err != nil {
+		return 0, err
+	}
+	affectedRows, err := sqlResult.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	return affectedRows, err
 }

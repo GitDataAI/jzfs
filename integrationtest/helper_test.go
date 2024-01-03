@@ -184,6 +184,16 @@ func deleteObject(ctx context.Context, c convey.C, client *api.Client, title str
 	})
 }
 
+func createWip(ctx context.Context, c convey.C, client *api.Client, title string, user string, repoName string, refName string) {
+	c.Convey("create wip "+title, func() {
+		resp, err := client.GetWip(ctx, user, repoName, &api.GetWipParams{
+			RefName: refName,
+		})
+		convey.So(err, convey.ShouldBeNil)
+		convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
+	})
+}
+
 func commitWip(ctx context.Context, c convey.C, client *api.Client, title string, user string, repoName string, refName string, msg string) {
 	c.Convey("commit wip "+title, func() {
 		resp, err := client.CommitWip(ctx, user, repoName, &api.CommitWipParams{

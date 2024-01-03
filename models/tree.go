@@ -274,6 +274,19 @@ func (gop *GetObjParams) SetHash(hash hash.Hash) *GetObjParams {
 	return gop
 }
 
+type DeleteTreeParams struct {
+	hash hash.Hash
+}
+
+func NewDeleteTreeParams() *DeleteTreeParams {
+	return &DeleteTreeParams{}
+}
+
+func (dtp *DeleteTreeParams) SetHash(hash hash.Hash) *DeleteTreeParams {
+	dtp.hash = hash
+	return dtp
+}
+
 type IFileTreeRepo interface {
 	RepositoryID() uuid.UUID
 	Insert(ctx context.Context, repo *FileTree) (*FileTree, error)
@@ -282,6 +295,7 @@ type IFileTreeRepo interface {
 	List(ctx context.Context) ([]FileTree, error)
 	Blob(ctx context.Context, hash hash.Hash) (*Blob, error)
 	TreeNode(ctx context.Context, hash hash.Hash) (*TreeNode, error)
+	Delete(ctx context.Context, params *DeleteTreeParams) (int64, error)
 }
 
 var _ IFileTreeRepo = (*FileTreeRepo)(nil)
@@ -370,4 +384,21 @@ func (o FileTreeRepo) List(ctx context.Context) ([]FileTree, error) {
 		return nil, err
 	}
 	return obj, nil
+}
+
+func (o FileTreeRepo) Delete(ctx context.Context, params *DeleteTreeParams) (int64, error) {
+	query := o.db.NewDelete().Model((*TreeNode)(nil)).Where("repository_id = ?", o.repositoryID)
+	if params.hash != nil {
+		query = query.Where("hash = ?", params.hash)
+	}
+
+	sqlResult, err := query.Exec(ctx)
+	if err != nil {
+		return 0, err
+	}
+	affectedRows, err := sqlResult.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	return affectedRows, err
 }

@@ -16,7 +16,17 @@ var EmptyHash = Hash{}
 
 type Hash []byte
 
+func FromHex(str string) (Hash, error) {
+	if len(str) == 0 {
+		return EmptyHash, nil
+	}
+	return hex.DecodeString(str)
+}
+
 func (hash Hash) Hex() string {
+	if hash == nil {
+		hex.EncodeToString(EmptyHash)
+	}
 	return hex.EncodeToString(hash)
 }
 
@@ -39,7 +49,7 @@ func (hash *Hash) UnmarshalJSON(bytes []byte) error {
 		return nil
 	}
 
-	hexData, err := hex.DecodeString(string(bytes[1 : len(bytes)-1]))
+	hexData, err := FromHex(string(bytes[1 : len(bytes)-1]))
 	if err != nil {
 		return err
 	}
@@ -57,7 +67,7 @@ func (hash Hash) MarshalJSON() ([]byte, error) {
 func HashesOfHexArray(hashesStr ...string) ([]Hash, error) {
 	hashes := make([]Hash, len(hashesStr))
 	for i, hashStr := range hashesStr {
-		hash, err := hex.DecodeString(hashStr)
+		hash, err := FromHex(hashStr)
 		if err != nil {
 			return nil, err
 		}

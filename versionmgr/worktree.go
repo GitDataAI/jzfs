@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jiaozifs/jiaozifs/models"
@@ -25,6 +25,16 @@ var EmptyRoot = &models.TreeNode{
 var EmptyDirEntry = models.TreeEntry{
 	Name: "",
 	Hash: hash.Hash([]byte{}),
+}
+
+type FullTreeEntry struct {
+	Name  string    `json:"name"`
+	IsDir bool      `json:"is_dir"`
+	Hash  hash.Hash `json:"hash"`
+	Size  int64     `json:"size"`
+
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 var (
@@ -148,7 +158,7 @@ func (workTree *WorkTree) ReplaceSubTreeEntry(ctx context.Context, treeEntry mod
 }
 
 func (workTree *WorkTree) matchPath(ctx context.Context, path string) ([]FullObject, []string, error) {
-	pathSegs := strings.Split(filepath.Clean(path), fmt.Sprintf("%c", os.PathSeparator))
+	pathSegs := strings.Split(path, "/") //path must be unix style
 	var existNodes []FullObject
 	var missingPath []string
 	//a/b/c/d/e
@@ -213,6 +223,9 @@ func (workTree *WorkTree) AddLeaf(ctx context.Context, fullPath string, blob *mo
 	slices.Reverse(missingPath)
 	var lastEntry models.TreeEntry
 	for index, path := range missingPath {
+		if len(path) == 0 { //todo add validate name check
+			return fmt.Errorf("name is empty")
+		}
 		if index == 0 {
 			_, err = workTree.object.Insert(ctx, blob.FileTree())
 			if err != nil {
@@ -406,10 +419,10 @@ func (workTree *WorkTree) RemoveEntry(ctx context.Context, fullPath string) erro
 //
 // Ls(ctx, root, "a") return b
 // Ls(ctx, root, "a/b" return c.txt and d.txt
-func (workTree *WorkTree) Ls(ctx context.Context, fullPath string) ([]models.TreeEntry, error) {
+func (workTree *WorkTree) Ls(ctx context.Context, fullPath string) ([]FullTreeEntry, error) {
 	fullPath = CleanPath(fullPath)
 	if len(fullPath) == 0 {
-		return workTree.root.SubObjects(), nil
+		return workTree.getFullEntry(ctx, workTree.root.SubObjects())
 	}
 
 	existNode, missingPath, err := workTree.matchPath(ctx, fullPath)
@@ -425,8 +438,37 @@ func (workTree *WorkTree) Ls(ctx context.Context, fullPath string) ([]models.Tre
 	if lastNode.Node().Type != models.TreeObject {
 		return nil, ErrNotDirectory
 	}
+	return workTree.getFullEntry(ctx, lastNode.Node().SubObjects)
+}
 
-	return lastNode.Node().SubObjects, nil
+func (workTree *WorkTree) getFullEntry(ctx context.Context, treeEntries []models.TreeEntry) ([]FullTreeEntry, error) {
+	entries := make([]FullTreeEntry, 0)
+	for _, entry := range treeEntries {
+		fe := FullTreeEntry{
+			Name:  entry.Name,
+			IsDir: entry.IsDir,
+			Hash:  entry.Hash,
+		}
+		if entry.IsDir {
+			blob, err := workTree.object.TreeNode(ctx, entry.Hash)
+			if err != nil {
+				return nil, err
+			}
+			fe.CreatedAt = blob.CreatedAt
+			fe.UpdatedAt = blob.UpdatedAt
+			entries = append(entries, fe)
+		} else {
+			blob, err := workTree.object.Blob(ctx, entry.Hash)
+			if err != nil {
+				return nil, err
+			}
+			fe.Size = blob.Size
+			fe.CreatedAt = blob.CreatedAt
+			fe.UpdatedAt = blob.UpdatedAt
+			entries = append(entries, fe)
+		}
+	}
+	return entries, nil
 }
 
 func (workTree *WorkTree) FindBlob(ctx context.Context, fullPath string) (*models.Blob, string, error) {
@@ -472,7 +514,7 @@ func (workTree *WorkTree) ApplyOneChange(ctx context.Context, change IChange) er
 	return fmt.Errorf("unexpect change action: %s", action)
 }
 
-func (workTree *WorkTree) Diff(ctx context.Context, rootTreeHash hash.Hash) (*Changes, error) {
+func (workTree *WorkTree) Diff(ctx context.Context, rootTreeHash hash.Hash, prefix string) (*Changes, error) {
 	toNode, err := NewTreeNode(ctx, models.NewRootTreeEntry(rootTreeHash), workTree.object)
 	if err != nil {
 		return nil, err
@@ -485,13 +527,24 @@ func (workTree *WorkTree) Diff(ctx context.Context, rootTreeHash hash.Hash) (*Ch
 	if err != nil {
 		return nil, err
 	}
-	return newChanges(changes), nil
+
+	prefix = CleanPath(prefix)
+	var filteredChange []merkletrie.Change
+	for _, change := range changes {
+		path := change.Path()
+		if !strings.HasPrefix(path, prefix) {
+			continue
+		}
+		filteredChange = append(filteredChange, change)
+	}
+	return newChanges(filteredChange), nil
 }
 
 // CleanPath clean path
-// 1. trim space
-// 2. trim first or last /
-// 3. to slash
+// 1. replace \\ to /
+// 2. trim space
+// 3. trim first or last /
 func CleanPath(fullPath string) string {
-	return filepath.ToSlash(strings.Trim(strings.TrimSpace(fullPath), "/"))
+	path := strings.ReplaceAll(fullPath, "\\", "/")
+	return filepath.ToSlash(strings.Trim(strings.TrimSpace(path), "/\\"))
 }

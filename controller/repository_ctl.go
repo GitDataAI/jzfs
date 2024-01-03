@@ -273,22 +273,55 @@ func (repositoryCtl RepositoryController) DeleteRepository(ctx context.Context, 
 		return
 	}
 
-	repo, err := repositoryCtl.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetName(repositoryName).SetOwnerID(owner.ID))
+	repository, err := repositoryCtl.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetName(repositoryName).SetOwnerID(owner.ID))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	affectRows, err := repositoryCtl.Repo.RepositoryRepo().Delete(ctx, models.NewDeleteRepoParams().SetID(repo.ID))
+	err = repositoryCtl.Repo.Transaction(ctx, func(repo models.IRepo) error {
+		// delete repository
+		affectRows, err := repositoryCtl.Repo.RepositoryRepo().Delete(ctx, models.NewDeleteRepoParams().SetID(repository.ID))
+		if err != nil {
+			return err
+		}
+
+		if affectRows == 0 {
+			return fmt.Errorf("repo not found %w", models.ErrNotFound)
+		}
+
+		//delete branch
+		_, err = repositoryCtl.Repo.BranchRepo().Delete(ctx, models.NewDeleteBranchParams().SetRepositoryID(repository.ID))
+		if err != nil {
+			return err
+		}
+
+		//delete commit
+		_, err = repositoryCtl.Repo.CommitRepo(repository.ID).Delete(ctx, models.NewDeleteParams())
+		if err != nil {
+			return err
+		}
+
+		//delete tag
+		_, err = repositoryCtl.Repo.TagRepo(repository.ID).Delete(ctx, models.NewDeleteParams())
+		if err != nil {
+			return err
+		}
+		// delete tree
+		_, err = repositoryCtl.Repo.FileTreeRepo(repository.ID).Delete(ctx, models.NewDeleteTreeParams())
+		if err != nil {
+			return err
+		}
+
+		//delete wip
+		_, err = repositoryCtl.Repo.WipRepo().Delete(ctx, models.NewDeleteWipParams().SetRepositoryID(repository.ID))
+		return err
+	})
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	if affectRows == 0 {
-		w.NotFound()
-		return
-	}
 	w.OK()
 }
 
@@ -343,7 +376,22 @@ func (repositoryCtl RepositoryController) UpdateRepository(ctx context.Context, 
 		return
 	}
 
-	err = repositoryCtl.Repo.RepositoryRepo().UpdateByID(ctx, models.NewUpdateRepoParams(repo.ID).SetDescription(utils.StringValue(body.Description)))
+	params := models.NewUpdateRepoParams(repo.ID)
+	if body.Head != nil {
+		_, err = repositoryCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repo.ID).SetName(utils.StringValue(body.Head)))
+		if err != nil {
+			w.Error(err)
+			return
+		}
+
+		params.SetHead(utils.StringValue(body.Head))
+	}
+
+	if body.Description != nil {
+		params.SetDescription(utils.StringValue(body.Description))
+	}
+
+	err = repositoryCtl.Repo.RepositoryRepo().UpdateByID(ctx, params)
 	if err != nil {
 		w.Error(err)
 		return

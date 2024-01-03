@@ -106,7 +106,7 @@ func (commitCtl CommitController) GetEntriesInRef(ctx context.Context, w *api.Ji
 	w.JSON(treeEntry)
 }
 
-func (commitCtl CommitController) GetCommitDiff(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, basehead string, params api.GetCommitDiffParams) {
+func (commitCtl CommitController) CompareCommit(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, basehead string, params api.CompareCommitParams) {
 	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
@@ -154,35 +154,63 @@ func (commitCtl CommitController) GetCommitDiff(ctx context.Context, w *api.Jiao
 		return
 	}
 
-	changes, err := workRepo.DiffCommit(ctx, toCommitHash)
+	changes, err := workRepo.DiffCommit(ctx, toCommitHash, utils.StringValue(params.Path))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	path := versionmgr.CleanPath(utils.StringValue(params.Path))
-	var changesResp []api.Change
-	err = changes.ForEach(func(change versionmgr.IChange) error {
-		action, err := change.Action()
-		if err != nil {
-			return err
-		}
-		fullPath := change.Path()
-		if strings.HasPrefix(fullPath, path) {
-			apiChange := api.Change{
-				Action: api.ChangeAction(action),
-				Path:   fullPath,
-			}
-			if change.From() != nil {
-				apiChange.BaseHash = utils.String(hex.EncodeToString(change.From().Hash()))
-			}
-			if change.To() != nil {
-				apiChange.ToHash = utils.String(hex.EncodeToString(change.To().Hash()))
-			}
-			changesResp = append(changesResp, apiChange)
-		}
-		return nil
-	})
+	changesResp, err := changesToDTO(changes)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+	w.JSON(changesResp)
+}
+
+func (commitCtl CommitController) GetCommitChanges(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, commitID string, params api.GetCommitChangesParams) {
+	operator, err := auth.GetOperator(ctx)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	owner, err := commitCtl.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(ownerName))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	repository, err := commitCtl.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetName(repositoryName).SetOwnerID(owner.ID))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	if operator.ID != owner.ID { //todo check permission
+		w.Forbidden()
+		return
+	}
+
+	workRepo, err := versionmgr.NewWorkRepositoryFromConfig(ctx, operator, repository, commitCtl.Repo, commitCtl.PublicStorageConfig)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	err = workRepo.CheckOut(ctx, versionmgr.InCommit, commitID)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	changes, err := workRepo.GetCommitChanges(ctx, utils.StringValue(params.Path))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	changesResp, err := changesToDTO(changes)
 	if err != nil {
 		w.Error(err)
 		return
