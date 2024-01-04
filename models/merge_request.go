@@ -10,11 +10,15 @@ import (
 
 type MergeStatus int
 
+const (
+	InitMergeStatus MergeStatus = 1
+)
+
 type MergeRequest struct {
 	bun.BaseModel `bun:"table:merge_requests"`
-	ID            uuid.UUID   `bun:"id,pk,type:uuid,default:uuid_generate_v4()" json:"id"`
-	TargetBranch  string      `bun:"target_branch,notnull" json:"target_branch"`
-	SourceBranch  string      `bun:"source_branch,notnull" json:"source_branch"`
+	ID            uint64      `bun:"id,pk,autoincrement" json:"id"`
+	TargetBranch  uuid.UUID   `bun:"target_branch,type:bytea,notnull" json:"target_branch"`
+	SourceBranch  uuid.UUID   `bun:"source_branch,type:bytea,notnull" json:"source_branch"`
 	SourceRepoID  uuid.UUID   `bun:"source_repo_id,type:bytea,notnull" json:"source_repo_id"`
 	TargetRepoID  uuid.UUID   `bun:"target_repo_id,type:bytea,notnull" json:"target_repo_id"`
 	Title         string      `bun:"title,notnull" json:"title"`
@@ -23,24 +27,20 @@ type MergeRequest struct {
 
 	AuthorID uuid.UUID `bun:"author_id,type:bytea,notnull" json:"author_id"`
 
-	AssigneeID           uuid.UUID `bun:"assignee_id,type:bytea" json:"assignee_id"`
-	MergeUserID          uuid.UUID `bun:"merge_user_id,type:bytea" json:"merge_user_id"`
-	ApprovalsBeforeMerge int       `bun:"approvals_before_merge" json:"approvals_before_merge"`
-
 	CreatedAt time.Time `bun:"created_at,notnull" json:"created_at"`
 	UpdatedAt time.Time `bun:"updated_at,notnull" json:"updated_at"`
 }
 
 type GetMergeRequestParams struct {
-	ID uuid.UUID
+	ID *uint64
 }
 
 func NewGetMergeRequestParams() *GetMergeRequestParams {
 	return &GetMergeRequestParams{}
 }
 
-func (gmr *GetMergeRequestParams) SetID(id uuid.UUID) *GetMergeRequestParams {
-	gmr.ID = id
+func (gmr *GetMergeRequestParams) SetID(id uint64) *GetMergeRequestParams {
+	gmr.ID = &id
 	return gmr
 }
 
@@ -71,7 +71,7 @@ func (m MergeRequestRepo) Get(ctx context.Context, params *GetMergeRequestParams
 	mergeRequest := &MergeRequest{}
 	query := m.db.NewSelect().Model(mergeRequest)
 
-	if uuid.Nil != params.ID {
+	if params.ID != nil {
 		query = query.Where("id = ?", params.ID)
 	}
 
