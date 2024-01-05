@@ -58,7 +58,8 @@ func (response *JiaozifsResponse) BadRequest(msg string) {
 // Error response with 500 and error message
 func (response *JiaozifsResponse) Error(err error) {
 	if errors.Is(err, models.ErrNotFound) {
-		response.NotFound()
+		response.WriteHeader(http.StatusNotFound)
+		_, _ = response.Write([]byte(err.Error()))
 		return
 	}
 	if errors.Is(err, auth.ErrUserNotFound) {

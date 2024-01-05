@@ -22,7 +22,7 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		branchName := "feat/obj_test"
 
 		createUser(ctx, c, client, userName)
-		loginAndSwitch(ctx, c, client, userName)
+		loginAndSwitch(ctx, c, client, "molly login", userName, false)
 		createRepo(ctx, c, client, repoName)
 		createBranch(ctx, c, client, userName, repoName, "main", branchName)
 		createWip(ctx, c, client, "feat get obj test", userName, repoName, branchName)

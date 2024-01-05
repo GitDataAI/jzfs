@@ -3,12 +3,13 @@ package versionmgr
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"time"
+
+	"github.com/jiaozifs/jiaozifs/versionmgr/merkletrie"
 
 	"github.com/jiaozifs/jiaozifs/utils"
 
@@ -139,9 +140,13 @@ func (repository *WorkRepository) ReadBlob(ctx context.Context, blob *models.Blo
 
 // RootTree return worktree at root
 func (repository *WorkRepository) RootTree(ctx context.Context) (*WorkTree, error) {
+	return repository.rootTree(ctx, repository.repo)
+}
+
+func (repository *WorkRepository) rootTree(ctx context.Context, repo models.IRepo) (*WorkTree, error) {
 	if repository.headTree == nil {
 		//use repo default headTree
-		ref, err := repository.repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.repoModel.ID).SetName(repository.repoModel.HEAD))
+		ref, err := repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.repoModel.ID).SetName(repository.repoModel.HEAD))
 		if err != nil {
 			return nil, err
 		}
@@ -150,7 +155,7 @@ func (repository *WorkRepository) RootTree(ctx context.Context) (*WorkTree, erro
 		treeHash := hash.EmptyHash
 		var commit *models.Commit
 		if !ref.CommitHash.IsEmpty() {
-			commit, err = repository.repo.CommitRepo(repository.repoModel.ID).Commit(ctx, ref.CommitHash)
+			commit, err = repo.CommitRepo(repository.repoModel.ID).Commit(ctx, ref.CommitHash)
 			if err != nil {
 				return nil, err
 			}
@@ -159,7 +164,7 @@ func (repository *WorkRepository) RootTree(ctx context.Context) (*WorkTree, erro
 		repository.setCurState(InBranch, nil, ref, commit)
 		repository.headTree = &treeHash
 	}
-	return NewWorkTree(ctx, repository.repo.FileTreeRepo(repository.repoModel.ID), models.NewRootTreeEntry(*repository.headTree))
+	return NewWorkTree(ctx, repo.FileTreeRepo(repository.repoModel.ID), models.NewRootTreeEntry(*repository.headTree))
 }
 
 func (repository *WorkRepository) CheckOut(ctx context.Context, refType WorkRepoState, refName string) error {
@@ -167,11 +172,11 @@ func (repository *WorkRepository) CheckOut(ctx context.Context, refType WorkRepo
 	if refType == InWip {
 		ref, err := repository.repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.repoModel.ID).SetName(refName))
 		if err != nil {
-			return err
+			return fmt.Errorf("unable to get branch %s of repository %s: %w", refName, repository.repoModel.Name, err)
 		}
 		wip, err := repository.repo.WipRepo().Get(ctx, models.NewGetWipParams().SetCreatorID(repository.operator.ID).SetRepositoryID(repository.repoModel.ID).SetRefID(ref.ID))
 		if err != nil {
-			return err
+			return fmt.Errorf("unable to get wip of repository %s branch %s: %w", repository.repoModel.Name, refName, err)
 		}
 		treeHash = wip.CurrentTree
 		repository.setCurState(InWip, wip, ref, nil)
@@ -190,16 +195,19 @@ func (repository *WorkRepository) CheckOut(ctx context.Context, refType WorkRepo
 		}
 		repository.setCurState(InBranch, nil, branch, commit)
 	} else if refType == InCommit {
-		commitHash, err := hex.DecodeString(refName)
+		commitHash, err := hash.FromHex(refName)
 		if err != nil {
 			return err
 		}
-		commit, err := repository.repo.CommitRepo(repository.repoModel.ID).Commit(ctx, commitHash)
-		if err != nil {
-			return err
+
+		if !commitHash.IsEmpty() {
+			commit, err := repository.repo.CommitRepo(repository.repoModel.ID).Commit(ctx, commitHash)
+			if err != nil {
+				return err
+			}
+			treeHash = commit.TreeHash
+			repository.setCurState(InCommit, nil, nil, commit)
 		}
-		treeHash = commit.TreeHash
-		repository.setCurState(InCommit, nil, nil, commit)
 	} else {
 		return fmt.Errorf("not support type")
 	}
@@ -207,24 +215,231 @@ func (repository *WorkRepository) CheckOut(ctx context.Context, refType WorkRepo
 	return nil
 }
 
+// Revert changes in wip, not a good algo, but maybe enough
+func (repository *WorkRepository) Revert(ctx context.Context, prefixPath string) error {
+	if repository.state != InWip {
+		return fmt.Errorf("working repo not in wip state")
+	}
+
+	baseTreeHash := hash.EmptyHash
+	if !repository.wip.BaseCommit.IsEmpty() {
+		commit, err := repository.repo.CommitRepo(repository.repoModel.ID).Commit(ctx, repository.wip.BaseCommit)
+		if err != nil {
+			return err
+		}
+		baseTreeHash = commit.TreeHash
+	}
+
+	prefixPath = CleanPath(prefixPath)
+	if len(prefixPath) == 0 {
+		//just revert all, in fact this strategy can apply to all path , but not a easy work
+		err := repository.repo.WipRepo().UpdateByID(ctx, models.NewUpdateWipParams(repository.wip.ID).SetCurrentTree(baseTreeHash))
+		if err != nil {
+			return err
+		}
+		repository.wip.CurrentTree = baseTreeHash
+		return nil
+	}
+
+	err := repository.repo.Transaction(ctx, func(repo models.IRepo) error {
+		baseTree, err := NewWorkTree(ctx, repo.FileTreeRepo(repository.repoModel.ID), models.NewRootTreeEntry(baseTreeHash))
+		if err != nil {
+			return err
+		}
+		curTree, err := NewWorkTree(ctx, repo.FileTreeRepo(repository.repoModel.ID), models.NewRootTreeEntry(repository.wip.CurrentTree))
+		if err != nil {
+			return err
+		}
+
+		changes, err := baseTree.Diff(ctx, repository.wip.CurrentTree, prefixPath)
+		if err != nil {
+			return err
+		}
+		if changes.Num() == 0 {
+			return models.ErrNotFound
+		}
+
+		err = changes.ForEach(func(change IChange) error {
+			action, err := change.Action()
+			if err != nil {
+				return err
+			}
+			changePath := change.Path()
+			switch action {
+			case merkletrie.Insert:
+				err = curTree.RemoveEntry(ctx, changePath)
+				if err != nil {
+					return err
+				}
+			case merkletrie.Modify:
+				blob, _, err := baseTree.FindBlob(ctx, changePath)
+				if err != nil {
+					return err
+				}
+
+				err = curTree.ReplaceLeaf(ctx, changePath, blob)
+				if err != nil {
+					return err
+				}
+			case merkletrie.Delete:
+				blob, _, err := baseTree.FindBlob(ctx, changePath)
+				if err != nil {
+					return err
+				}
+
+				err = curTree.AddLeaf(ctx, changePath, blob)
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+
+		err = repository.repo.WipRepo().UpdateByID(ctx, models.NewUpdateWipParams(repository.wip.ID).SetCurrentTree(curTree.Root().Hash()))
+		if err != nil {
+			return err
+		}
+		repository.wip.CurrentTree = curTree.Root().Hash()
+		return nil
+	})
+	return err
+}
+
+// DeleteWip remove wip  todo remove files
+func (repository *WorkRepository) DeleteWip(ctx context.Context) error {
+	if repository.state != InBranch {
+		return fmt.Errorf("working repo not in branch state")
+	}
+
+	deleteParams := models.NewDeleteWipParams().SetRefID(repository.branch.ID).SetRepositoryID(repository.repoModel.ID).SetCreatorID(repository.operator.ID)
+	affectRow, err := repository.repo.WipRepo().Delete(ctx, deleteParams)
+	if err != nil {
+		return err
+	}
+	if affectRow == 0 {
+		return models.ErrNotFound
+	}
+	return nil
+}
+
 // CommitChanges append a new commit to current headTree, read changes from wip, than create a new commit with parent point to current headTree,
 // and replace tree hash with wip's currentTreeHash.
 func (repository *WorkRepository) CommitChanges(ctx context.Context, msg string) (*models.Commit, error) {
-	if !(repository.state == InWip || repository.state == InBranch) {
+	if !(repository.state == InWip) {
 		return nil, errors.New("must commit changes on branch")
-	}
-
-	head := repository.headTree
-	creator, err := repository.repo.UserRepo().Get(ctx, models.NewGetUserParams().SetID(repository.wip.CreatorID))
-	if err != nil {
-		return nil, err
 	}
 
 	if !bytes.Equal(repository.branch.CommitHash, repository.wip.BaseCommit) {
 		return nil, fmt.Errorf("base commit not equal with branch, please update wip")
 	}
 
-	parentHash := []hash.Hash{}
+	creator, err := repository.repo.UserRepo().Get(ctx, models.NewGetUserParams().SetID(repository.wip.CreatorID))
+	if err != nil {
+		return nil, err
+	}
+
+	author := models.Signature{
+		Name:  creator.Name,
+		Email: creator.Email,
+		When:  repository.wip.UpdatedAt,
+	}
+
+	var commit *models.Commit
+	err = repository.repo.Transaction(ctx, func(repo models.IRepo) error {
+		var err error
+		commit, err = repository.commitChangeRoot(ctx, repo, author, repository.wip.CurrentTree, msg)
+		if err != nil {
+			return err
+		}
+
+		return repo.WipRepo().UpdateByID(ctx, models.NewUpdateWipParams(repository.wip.ID).SetBaseCommit(commit.Hash))
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	repository.branch.CommitHash = commit.Hash
+	repository.wip.BaseCommit = commit.Hash
+	repository.headTree = &repository.wip.CurrentTree
+	return commit, err
+}
+
+// ChangeInWip apply change to wip
+func (repository *WorkRepository) ChangeInWip(ctx context.Context, changFn func(root *WorkTree) error) error {
+	return repository.repo.Transaction(ctx, func(repo models.IRepo) error {
+		workTree, err := repository.changeInWip(ctx, repo, changFn)
+		if err != nil {
+			return err
+		}
+
+		repository.wip.CurrentTree = workTree.Root().Hash()
+		repository.headTree = &repository.wip.CurrentTree
+		return repo.WipRepo().UpdateByID(ctx, models.NewUpdateWipParams(repository.wip.ID).SetCurrentTree(workTree.Root().Hash()))
+	})
+}
+
+// ChangeAndCommit apply changes to tree, and create a new commit
+func (repository *WorkRepository) ChangeAndCommit(ctx context.Context, msg string, changFn func(root *WorkTree) error) (*models.Commit, error) {
+	if !bytes.Equal(repository.branch.CommitHash, repository.wip.BaseCommit) {
+		return nil, fmt.Errorf("base commit not equal with branch, please update wip")
+	}
+
+	creator, err := repository.repo.UserRepo().Get(ctx, models.NewGetUserParams().SetID(repository.wip.CreatorID))
+	if err != nil {
+		return nil, err
+	}
+
+	author := models.Signature{
+		Name:  creator.Name,
+		Email: creator.Email,
+		When:  repository.wip.UpdatedAt,
+	}
+
+	var commit *models.Commit
+	err = repository.repo.Transaction(ctx, func(repo models.IRepo) error {
+		workTree, err := repository.changeInWip(ctx, repo, changFn)
+		if err != nil {
+			return err
+		}
+		commit, err = repository.commitChangeRoot(ctx, repo, author, workTree.Root().Hash(), msg)
+		if err != nil {
+			return err
+		}
+
+		err = repo.WipRepo().UpdateByID(ctx, models.NewUpdateWipParams(repository.wip.ID).SetCurrentTree(workTree.Root().Hash()).SetBaseCommit(commit.Hash))
+		if err != nil {
+			return err
+		}
+		repository.wip.CurrentTree = workTree.Root().Hash()
+		repository.headTree = &repository.wip.CurrentTree
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+	repository.branch.CommitHash = commit.Hash
+	repository.wip.BaseCommit = commit.Hash
+	return commit, err
+}
+
+func (repository *WorkRepository) changeInWip(ctx context.Context, repo models.IRepo, changFn func(root *WorkTree) error) (*WorkTree, error) {
+	if !(repository.state == InWip) {
+		return nil, errors.New("must commit changes on branch")
+	}
+
+	workTree, err := repository.rootTree(ctx, repo)
+	if err != nil {
+		return nil, err
+	}
+
+	return workTree, changFn(workTree)
+}
+
+func (repository *WorkRepository) commitChangeRoot(ctx context.Context, repo models.IRepo, author models.Signature, root hash.Hash, msg string) (*models.Commit, error) {
+	parentHash := make([]hash.Hash, 0) //avoid nil parent
 	if !repository.branch.CommitHash.IsEmpty() {
 		parentHash = []hash.Hash{repository.branch.CommitHash}
 	}
@@ -232,11 +447,7 @@ func (repository *WorkRepository) CommitChanges(ctx context.Context, msg string)
 	commit := &models.Commit{
 		Hash:         nil,
 		RepositoryID: repository.repoModel.ID,
-		Author: models.Signature{
-			Name:  creator.Name,
-			Email: creator.Email,
-			When:  repository.wip.UpdatedAt,
-		},
+		Author:       author,
 		Committer: models.Signature{
 			Name:  repository.operator.Name,
 			Email: repository.operator.Email,
@@ -244,7 +455,7 @@ func (repository *WorkRepository) CommitChanges(ctx context.Context, msg string)
 		},
 		MergeTag:     "",
 		Message:      msg,
-		TreeHash:     repository.wip.CurrentTree,
+		TreeHash:     root,
 		ParentHashes: parentHash,
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
@@ -254,32 +465,110 @@ func (repository *WorkRepository) CommitChanges(ctx context.Context, msg string)
 		return nil, err
 	}
 	commit.Hash = commitHash
-	err = repository.repo.Transaction(ctx, func(repo models.IRepo) error {
-		_, err = repo.CommitRepo(repository.repoModel.ID).Insert(ctx, commit)
-		if err != nil {
-			return err
-		}
 
-		err = repo.WipRepo().UpdateByID(ctx, models.NewUpdateWipParams(repository.wip.ID).SetBaseCommit(commitHash))
-		if err != nil {
-			return err
-		}
-
-		head = &repository.wip.CurrentTree
-		return repo.BranchRepo().UpdateByID(ctx, models.NewUpdateBranchParams(repository.branch.ID).SetCommitHash(commitHash))
-	})
+	_, err = repo.CommitRepo(repository.repoModel.ID).Insert(ctx, commit)
 	if err != nil {
 		return nil, err
 	}
 
-	repository.branch.CommitHash = commitHash
-	repository.wip.BaseCommit = commitHash
-	repository.headTree = head
+	// Update branch
+	err = repo.BranchRepo().UpdateByID(ctx, models.NewUpdateBranchParams(repository.branch.ID).SetCommitHash(commitHash))
+	if err != nil {
+		return nil, err
+	}
 	return commit, err
 }
 
+// CreateBranch create branch base on current head
+func (repository *WorkRepository) CreateBranch(ctx context.Context, branchName string) (*models.Branch, error) {
+	//check exit
+	_, err := repository.repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetName(branchName).SetRepositoryID(repository.repoModel.ID))
+	if err == nil {
+		return nil, fmt.Errorf("%s already exit", branchName)
+	}
+	if err != nil && !errors.Is(err, models.ErrNotFound) {
+		return nil, err
+	}
+
+	commitHash := hash.EmptyHash
+	if repository.commit != nil {
+		commitHash = repository.commit.Hash
+	}
+	// Create branch
+	newBranch := &models.Branch{
+		RepositoryID: repository.repoModel.ID,
+		CommitHash:   commitHash,
+		Name:         branchName,
+		CreatorID:    repository.operator.ID,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
+	}
+	return repository.repo.BranchRepo().Insert(ctx, newBranch)
+}
+
+// DeleteBranch delete branch also delete wip belong this branch
+func (repository *WorkRepository) DeleteBranch(ctx context.Context) error {
+	return repository.repo.Transaction(ctx, func(repo models.IRepo) error {
+		deleteBranchParams := models.NewDeleteBranchParams().
+			SetRepositoryID(repository.repoModel.ID).
+			SetName(repository.branch.Name)
+		_, err := repo.BranchRepo().Delete(ctx, deleteBranchParams)
+		if err != nil {
+			return err
+		}
+
+		deleteWipParams := models.NewDeleteWipParams().SetRepositoryID(repository.repoModel.ID).SetRefID(repository.branch.ID)
+		_, err = repo.WipRepo().Delete(ctx, deleteWipParams)
+		return err
+	})
+}
+
+func (repository *WorkRepository) GetOrCreateWip(ctx context.Context) (*models.WorkingInProcess, bool, error) {
+	if repository.state != InBranch {
+		return nil, false, fmt.Errorf("only create wip from branch")
+	}
+
+	wip, err := repository.repo.WipRepo().Get(ctx, models.NewGetWipParams().SetRefID(repository.branch.ID).SetCreatorID(repository.operator.ID).SetRepositoryID(repository.repoModel.ID))
+	if err == nil {
+		repository.headTree = &wip.CurrentTree
+		return wip, false, nil
+	}
+
+	if err != nil && !errors.Is(err, models.ErrNotFound) {
+		return nil, false, err
+	}
+
+	// if not found create a wip
+	currentTreeHash := hash.EmptyHash
+	if !repository.branch.CommitHash.IsEmpty() {
+		baseCommit, err := repository.repo.CommitRepo(repository.repoModel.ID).Commit(ctx, repository.branch.CommitHash)
+		if err != nil {
+			return nil, false, err
+		}
+		currentTreeHash = baseCommit.TreeHash
+	}
+
+	wip = &models.WorkingInProcess{
+		CurrentTree:  currentTreeHash,
+		BaseCommit:   repository.branch.CommitHash,
+		RepositoryID: repository.repoModel.ID,
+		RefID:        repository.branch.ID,
+		State:        0,
+		CreatorID:    repository.operator.ID,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
+	}
+	wip, err = repository.repo.WipRepo().Insert(ctx, wip)
+	if err != nil {
+		return nil, false, err
+	}
+	repository.headTree = &wip.CurrentTree
+	repository.setCurState(InWip, wip, repository.branch, nil)
+	return wip, true, nil
+}
+
 // DiffCommit find file changes in two commit
-func (repository *WorkRepository) DiffCommit(ctx context.Context, toCommitID hash.Hash) (*Changes, error) {
+func (repository *WorkRepository) DiffCommit(ctx context.Context, toCommitID hash.Hash, pathPrefix string) (*Changes, error) {
 	workTree, err := repository.RootTree(ctx)
 	if err != nil {
 		return nil, err
@@ -289,7 +578,20 @@ func (repository *WorkRepository) DiffCommit(ctx context.Context, toCommitID has
 		return nil, err
 	}
 
-	return workTree.Diff(ctx, toCommit.TreeHash)
+	return workTree.Diff(ctx, toCommit.TreeHash, pathPrefix)
+}
+
+func (repository *WorkRepository) GetCommitChanges(ctx context.Context, pathPrefix string) (*Changes, error) {
+	if len(repository.commit.ParentHashes) == 0 {
+		workTree, err := repository.RootTree(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return workTree.Diff(ctx, hash.EmptyHash, pathPrefix)
+	} else if len(repository.commit.ParentHashes) == 1 {
+		return repository.DiffCommit(ctx, repository.commit.ParentHashes[0], pathPrefix)
+	}
+	return repository.DiffCommit(ctx, repository.commit.ParentHashes[1], pathPrefix)
 }
 
 // Merge implement merge like git, docs https://en.wikipedia.org/wiki/Merge_(version_control)
@@ -415,12 +717,12 @@ func merge(ctx context.Context,
 		return nil, err
 	}
 
-	baseDiff, err := ancestorWorkTree.Diff(ctx, baseCommit.TreeHash)
+	baseDiff, err := ancestorWorkTree.Diff(ctx, baseCommit.TreeHash, "")
 	if err != nil {
 		return nil, err
 	}
 
-	mergeDiff, err := ancestorWorkTree.Diff(ctx, toMergeCommit.TreeHash)
+	mergeDiff, err := ancestorWorkTree.Diff(ctx, toMergeCommit.TreeHash, "")
 	if err != nil {
 		return nil, err
 	}

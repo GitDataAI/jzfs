@@ -131,6 +131,7 @@ type UpdateRepoParams struct {
 	bun.BaseModel `bun:"table:repositories"`
 	ID            uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()"`
 	Description   *string   `bun:"description"`
+	HEAD          *string   `bun:"head,notnull"`
 }
 
 func NewUpdateRepoParams(id uuid.UUID) *UpdateRepoParams {
@@ -141,6 +142,11 @@ func NewUpdateRepoParams(id uuid.UUID) *UpdateRepoParams {
 
 func (up *UpdateRepoParams) SetDescription(description string) *UpdateRepoParams {
 	up.Description = &description
+	return up
+}
+
+func (up *UpdateRepoParams) SetHead(head string) *UpdateRepoParams {
+	up.HEAD = &head
 	return up
 }
 
@@ -375,6 +381,13 @@ func (r *RepositoryRepo) deleteRepos(ctx context.Context, tx *bun.Tx, params *De
 }
 
 func (r *RepositoryRepo) UpdateByID(ctx context.Context, updateModel *UpdateRepoParams) error {
-	_, err := r.db.NewUpdate().Model(updateModel).WherePK().Exec(ctx)
+	updateQuery := r.db.NewUpdate().Model((*Repository)(nil)).Where("id = ?", updateModel.ID)
+	if updateModel.Description != nil {
+		updateQuery.Set("description = ?", *updateModel.Description)
+	}
+	if updateModel.HEAD != nil {
+		updateQuery.Set("head = ?", *updateModel.HEAD)
+	}
+	_, err := updateQuery.Exec(ctx)
 	return err
 }

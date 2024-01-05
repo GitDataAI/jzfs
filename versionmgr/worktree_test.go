@@ -137,3 +137,12 @@ func TestRemoveEntry(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, entries, 0)
 }
+
+func TestCleanPath(t *testing.T) {
+	require.Equal(t, "", CleanPath(""))
+	require.Equal(t, "", CleanPath("/"))
+
+	require.Equal(t, "a/b/c", CleanPath("a/b/c"))
+	require.Equal(t, "a/b/c", CleanPath("/a/b/c/"))
+	require.Equal(t, "a/b/c", CleanPath("\\a\\b\\c\\"))
+}

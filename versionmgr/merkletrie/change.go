@@ -56,6 +56,14 @@ func (c *Change) Action() (Action, error) {
 	return Modify, nil
 }
 
+// Path returns the path of the change.
+func (c *Change) Path() string {
+	if c.From != nil {
+		return c.From.String()
+	}
+	return c.To.String()
+}
+
 // NewInsert returns a new Change representing the insertion of n.
 func NewInsert(n noder.Path) Change { return Change{To: n} }
 

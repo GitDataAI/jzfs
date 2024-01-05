@@ -77,31 +77,43 @@ func TestWipRepoUpdateByID(t *testing.T) {
 
 	repo := models.NewWipRepo(db)
 
-	wipModel := &models.WorkingInProcess{}
-	require.NoError(t, gofakeit.Struct(wipModel))
-	newWipModel, err := repo.Insert(ctx, wipModel)
-	require.NoError(t, err)
-	require.NotEqual(t, uuid.Nil, newWipModel.ID)
+	t.Run("only update tree hash", func(t *testing.T) {
+		wipModel := &models.WorkingInProcess{}
+		require.NoError(t, gofakeit.Struct(wipModel))
+		newWipModel, err := repo.Insert(ctx, wipModel)
+		require.NoError(t, err)
+		require.NotEqual(t, uuid.Nil, newWipModel.ID)
 
-	getWipParams := models.NewGetWipParams().
-		SetID(newWipModel.ID).
-		SetCreatorID(newWipModel.CreatorID).
-		SetRepositoryID(newWipModel.RepositoryID).
-		SetRefID(newWipModel.RefID)
-	user, err := repo.Get(ctx, getWipParams)
-	require.NoError(t, err)
-	require.True(t, cmp.Equal(newWipModel, user, dbTimeCmpOpt))
+		updateModel := models.NewUpdateWipParams(newWipModel.ID).
+			SetCurrentTree(hash.Hash("mock hash"))
 
-	updateModel := models.NewUpdateWipParams(newWipModel.ID).
-		SetState(models.Completed).
-		SetBaseCommit(hash.Hash("mock base hash")).
-		SetCurrentTree(hash.Hash("mock hash"))
+		err = repo.UpdateByID(ctx, updateModel)
+		require.NoError(t, err)
+		updatedUser, err := repo.Get(ctx, models.NewGetWipParams().SetID(newWipModel.ID))
+		require.NoError(t, err)
+		require.Equal(t, newWipModel.State, updatedUser.State)
+		require.Equal(t, newWipModel.BaseCommit, updatedUser.BaseCommit)
+		require.Equal(t, "mock hash", string(updatedUser.CurrentTree))
+	})
 
-	err = repo.UpdateByID(ctx, updateModel)
-	require.NoError(t, err)
-	updatedUser, err := repo.Get(ctx, models.NewGetWipParams().SetID(newWipModel.ID))
-	require.NoError(t, err)
-	require.Equal(t, models.Completed, updatedUser.State)
-	require.Equal(t, "mock base hash", string(updatedUser.BaseCommit))
-	require.Equal(t, "mock hash", string(updatedUser.CurrentTree))
+	t.Run("update both", func(t *testing.T) {
+		wipModel := &models.WorkingInProcess{}
+		require.NoError(t, gofakeit.Struct(wipModel))
+		newWipModel, err := repo.Insert(ctx, wipModel)
+		require.NoError(t, err)
+		require.NotEqual(t, uuid.Nil, newWipModel.ID)
+
+		updateModel := models.NewUpdateWipParams(newWipModel.ID).
+			SetState(models.Completed).
+			SetBaseCommit(hash.Hash("mock base hash")).
+			SetCurrentTree(hash.Hash("mock hash"))
+
+		err = repo.UpdateByID(ctx, updateModel)
+		require.NoError(t, err)
+		updatedUser, err := repo.Get(ctx, models.NewGetWipParams().SetID(newWipModel.ID))
+		require.NoError(t, err)
+		require.Equal(t, models.Completed, updatedUser.State)
+		require.Equal(t, "mock base hash", string(updatedUser.BaseCommit))
+		require.Equal(t, "mock hash", string(updatedUser.CurrentTree))
+	})
 }

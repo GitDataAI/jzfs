@@ -96,3 +96,33 @@ func TestNewTreeNode(t *testing.T) {
 		require.Equal(t, "27d9fbf6d43195f34404a94c0de707a2", node.Hash.Hex())
 	})
 }
+
+func TestFileTreeRepo_Delete(t *testing.T) {
+	ctx := context.Background()
+	postgres, _, db := testhelper.SetupDatabase(ctx, t)
+	defer postgres.Stop() //nolint
+
+	repoID := uuid.New()
+	repo := models.NewFileTree(db, repoID)
+	require.Equal(t, repo.RepositoryID(), repoID)
+
+	var treeModels []*models.FileTree
+	for i := 0; i < 5; i++ {
+		objModel := &models.FileTree{}
+		require.NoError(t, gofakeit.Struct(objModel))
+		objModel.RepositoryID = repoID
+		newModel, err := repo.Insert(ctx, objModel)
+		require.NoError(t, err)
+		treeModels = append(treeModels, newModel)
+	}
+
+	//delete one
+	affectRows, err := repo.Delete(ctx, models.NewDeleteTreeParams().SetHash(treeModels[0].Hash))
+	require.NoError(t, err)
+	require.Equal(t, int64(1), affectRows)
+
+	//delete batch
+	affectRows, err = repo.Delete(ctx, models.NewDeleteTreeParams())
+	require.NoError(t, err)
+	require.Equal(t, int64(4), affectRows)
+}

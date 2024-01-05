@@ -13,7 +13,41 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestRepositoryRepo_Insert(t *testing.T) {
+func TestRepositoryUpdate(t *testing.T) {
+	ctx := context.Background()
+	postgres, _, db := testhelper.SetupDatabase(ctx, t)
+	defer postgres.Stop() //nolint
+
+	repo := models.NewRepositoryRepo(db)
+
+	t.Run("only update desc", func(t *testing.T) {
+		repoModel := &models.Repository{}
+		require.NoError(t, gofakeit.Struct(repoModel))
+		newRepo, err := repo.Insert(ctx, repoModel)
+		require.NoError(t, err)
+		err = repo.UpdateByID(ctx, models.NewUpdateRepoParams(newRepo.ID).SetDescription("description"))
+		require.NoError(t, err)
+		user, err := repo.Get(ctx, models.NewGetRepoParams().SetID(newRepo.ID))
+		require.NoError(t, err)
+		require.Equal(t, "description", *user.Description)
+		require.Equal(t, newRepo.HEAD, user.HEAD)
+	})
+
+	t.Run("update all fields", func(t *testing.T) {
+		repoModel := &models.Repository{}
+		require.NoError(t, gofakeit.Struct(repoModel))
+		newRepo, err := repo.Insert(ctx, repoModel)
+		require.NoError(t, err)
+		err = repo.UpdateByID(ctx, models.NewUpdateRepoParams(newRepo.ID).SetDescription("description").SetHead("ggg"))
+		require.NoError(t, err)
+		user, err := repo.Get(ctx, models.NewGetRepoParams().SetID(newRepo.ID))
+		require.NoError(t, err)
+		require.Equal(t, "description", *user.Description)
+		require.Equal(t, "ggg", user.HEAD)
+	})
+}
+
+func TestRepositoryRepoInsert(t *testing.T) {
 	ctx := context.Background()
 	postgres, _, db := testhelper.SetupDatabase(ctx, t)
 	defer postgres.Stop() //nolint
@@ -31,12 +65,6 @@ func TestRepositoryRepo_Insert(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, cmp.Equal(repoModel, user, dbTimeCmpOpt))
 
-	err = repo.UpdateByID(ctx, models.NewUpdateRepoParams(newRepo.ID).SetDescription("description"))
-	require.NoError(t, err)
-	user, err = repo.Get(ctx, models.NewGetRepoParams().SetID(newRepo.ID))
-	require.NoError(t, err)
-
-	require.Equal(t, "description", *user.Description)
 	//insert secondary
 	secModel := &models.Repository{}
 	require.NoError(t, gofakeit.Struct(secModel))

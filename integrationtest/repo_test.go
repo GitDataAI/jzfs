@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/jiaozifs/jiaozifs/api"
 	apiimpl "github.com/jiaozifs/jiaozifs/api/api_impl"
@@ -18,7 +19,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		userName := "jimmy"
 		repoName := "happyrun"
 		createUser(ctx, c, client, userName)
-		loginAndSwitch(ctx, c, client, userName)
+		loginAndSwitch(ctx, c, client, "jimmy login", userName, false)
 
 		c.Convey("create repo", func(c convey.C) {
 			c.Convey("forbidden create repo name", func() {
@@ -341,6 +342,23 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
 			})
+
+			c.Convey("update head to not exit", func() {
+				resp, err := client.UpdateRepository(ctx, userName, repoName, api.UpdateRepositoryJSONRequestBody{
+					Head: utils.String("xxx"),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
+			})
+
+			createBranch(ctx, c, client, userName, repoName, "main", "feat/ano_branch")
+			c.Convey("update default head success", func() {
+				resp, err := client.UpdateRepository(ctx, userName, repoName, api.UpdateRepositoryJSONRequestBody{
+					Head: utils.String("feat/ano_branch"),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+			})
 		})
 
 		c.Convey("get commits in repository", func(c convey.C) {
@@ -393,6 +411,45 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(*result.JSON200, convey.ShouldHaveLength, 1)
 				convey.So((*result.JSON200)[0].Message, convey.ShouldEqual, "first commit")
+			})
+
+			uploadObject(ctx, c, client, "add sec object", userName, repoName, controller.DefaultBranchName, "b.txt")
+			commitWip(ctx, c, client, "commit sec object", userName, repoName, controller.DefaultBranchName, "second commit")
+			uploadObject(ctx, c, client, "add third object", userName, repoName, controller.DefaultBranchName, "c.txt")
+			commitWip(ctx, c, client, "commit third object", userName, repoName, controller.DefaultBranchName, "third commit")
+			c.Convey("success get commits by params", func() {
+				resp, err := client.GetCommitsInRepository(ctx, userName, repoName, &api.GetCommitsInRepositoryParams{
+					RefName: utils.String(controller.DefaultBranchName),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				result, err := api.ParseGetCommitsInRepositoryResponse(resp)
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(*result.JSON200, convey.ShouldHaveLength, 3)
+				convey.So((*result.JSON200)[0].Message, convey.ShouldEqual, "third commit")
+
+				newResp, err := client.GetCommitsInRepository(ctx, userName, repoName, &api.GetCommitsInRepositoryParams{
+					After:   utils.String((*result.JSON200)[0].Committer.When.Format(time.RFC3339Nano)),
+					Amount:  utils.Int(1),
+					RefName: utils.String(controller.DefaultBranchName),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				newResult, err := api.ParseGetCommitsInRepositoryResponse(newResp)
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(*newResult.JSON200, convey.ShouldHaveLength, 1)
+				convey.So((*newResult.JSON200)[0].Message, convey.ShouldEqual, "second commit")
+			})
+
+			c.Convey("failed get commits by wrong params", func() {
+				resp, err := client.GetCommitsInRepository(ctx, userName, repoName, &api.GetCommitsInRepositoryParams{
+					After:   utils.String("123"),
+					RefName: utils.String(controller.DefaultBranchName),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusInternalServerError)
 			})
 		})
 
