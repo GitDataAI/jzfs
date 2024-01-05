@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/jiaozifs/jiaozifs/utils/hash"
+	"github.com/mitchellh/go-homedir"
 
 	"github.com/google/uuid"
 	"github.com/jiaozifs/jiaozifs/block"
@@ -185,6 +186,29 @@ func (l *Adapter) Remove(_ context.Context, obj block.ObjectPointer) error {
 		dir := filepath.Dir(p)
 		repoRoot := obj.StorageNamespace[len(DefaultNamespacePrefix):]
 		removeEmptyDirUntil(dir, path.Join(l.path, repoRoot))
+	}
+	return nil
+}
+
+func (l *Adapter) Clean(_ context.Context, filepath, storageNamespace string) error {
+	storageNamespaceSplits := strings.Split(storageNamespace, "://")
+	if len(storageNamespaceSplits) != 2 {
+		return errors.New("Invalid storageNamespace")
+	}
+	filepath = fmt.Sprintf("%s/%s", filepath, storageNamespaceSplits[1])
+	expandPath, err := homedir.Expand(filepath)
+	if err != nil {
+		return err
+	}
+
+	_, err = os.Stat(expandPath)
+	if err != nil {
+		return err
+	}
+
+	err = os.RemoveAll(expandPath)
+	if err != nil {
+		return err
 	}
 	return nil
 }

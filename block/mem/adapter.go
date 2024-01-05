@@ -176,6 +176,10 @@ func (a *Adapter) Remove(_ context.Context, obj block.ObjectPointer) error {
 	return nil
 }
 
+func (a *Adapter) Clean(_ context.Context, filepath, storageNamespace string) error {
+	return nil
+}
+
 func (a *Adapter) Copy(_ context.Context, sourceObj, destinationObj block.ObjectPointer) error {
 	if err := verifyObjectPointer(sourceObj); err != nil {
 		return err
