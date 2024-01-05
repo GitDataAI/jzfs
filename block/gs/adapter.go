@@ -226,7 +226,8 @@ func (a *Adapter) Remove(ctx context.Context, obj block.ObjectPointer) error {
 }
 
 func (a *Adapter) Clean(_ context.Context, _, _ string) error {
-	return nil
+	//TODO implement me
+	panic("implement me")
 }
 
 func (a *Adapter) Copy(ctx context.Context, sourceObj, destinationObj block.ObjectPointer) error {

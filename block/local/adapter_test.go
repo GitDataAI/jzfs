@@ -64,3 +64,37 @@ func TestAdapterNamespace(t *testing.T) {
 		})
 	}
 }
+
+//func TestAdapter_Clean(t *testing.T) {
+//	ctx := context.Background()
+//	tmpDir := t.TempDir()
+//	localPath := path.Join(tmpDir, "jiaozifs")
+//	adapter, err := local.NewAdapter(localPath, local.WithRemoveEmptyDir(false))
+//	require.NoError(t, err, "create new adapter")
+//	expr, err := regexp.Compile(adapter.GetStorageNamespaceInfo().ValidityRegex)
+//	require.NoError(t, err)
+//
+//	testData := "test data"
+//	reader := strings.NewReader(testData)
+//
+//	hashingReader := hash.NewHashingReader(reader, hash.Md5)
+//
+//	tempf, err := os.CreateTemp("", "*")
+//	require.NoError(t, err)
+//
+//	_, err = io.Copy(tempf, hashingReader)
+//	require.NoError(t, err)
+//
+//	checkSum := hash.Hash(hashingReader.Md5.Sum(nil))
+//
+//	address := pathutil.PathOfHash(checkSum)
+//	pointer := block.ObjectPointer{
+//		StorageNamespace: "local://test/repo1",
+//		Identifier:       address,
+//		IdentifierType:   block.IdentifierTypeRelative,
+//	}
+//	err = adapter.Put(ctx, pointer, int64(len(testData)), tempf, block.PutOpts{})
+//	require.NoError(t, err)
+//	err = adapter.Clean(ctx, config.DefaultLocalBSPath, "local://test/repo1")
+//	require.NoError(t, err)
+//}
