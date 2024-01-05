@@ -36,7 +36,7 @@ func TestWorkRepositoryDiffCommit(t *testing.T) {
 	workRepo := NewWorkRepositoryFromAdapter(ctx, user, project, repo, adapter)
 
 	//base branch
-	err = workRepo.CheckOut(ctx, InCommit, hash.EmptyHash.Hex())
+	err = workRepo.CheckOut(ctx, InCommit, hash.Empty.Hex())
 	require.NoError(t, err)
 	_, err = workRepo.CreateBranch(ctx, "feat/base")
 	require.NoError(t, err)

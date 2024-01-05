@@ -76,7 +76,7 @@ func ConflictCollector() ConflictResolver {
 		if err != nil {
 			return nil, err
 		}
-		baseHash := hash.EmptyHash
+		baseHash := hash.Empty
 		if baseAct != merkletrie.Delete {
 			baseHash = base.To().Hash()
 		}
@@ -84,7 +84,7 @@ func ConflictCollector() ConflictResolver {
 		if err != nil {
 			return nil, err
 		}
-		mergeHash := hash.EmptyHash
+		mergeHash := hash.Empty
 		if mergeAct != merkletrie.Delete {
 			mergeHash = merge.To().Hash()
 		}

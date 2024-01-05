@@ -126,29 +126,29 @@ func newChanges(mChanges merkletrie.Changes) *Changes {
 }
 
 type ChangePair struct {
-	Base       IChange
-	Merge      IChange
+	Left       IChange
+	Right      IChange
 	IsConflict bool
 }
 
 type ChangesPairIter struct {
-	BaseChanges   *Changes
-	MergerChanges *Changes
+	leftChanges  *Changes
+	rightChanges *Changes
 }
 
 func NewChangesPairIter(baseChanges *Changes, mergerChanges *Changes) *ChangesPairIter {
-	return &ChangesPairIter{BaseChanges: baseChanges, MergerChanges: mergerChanges}
+	return &ChangesPairIter{leftChanges: baseChanges, rightChanges: mergerChanges}
 }
 
 // Has check if any changes
 func (cw *ChangesPairIter) Has() bool {
-	return cw.BaseChanges.Has() || cw.MergerChanges.Has()
+	return cw.leftChanges.Has() || cw.rightChanges.Has()
 }
 
 // Reset reset changes
 func (cw *ChangesPairIter) Reset() {
-	cw.BaseChanges.Reset()
-	cw.MergerChanges.Reset()
+	cw.leftChanges.Reset()
+	cw.rightChanges.Reset()
 }
 
 // Next find change file, first sort each file in change, pop files from two changes, compare filename,
@@ -158,12 +158,12 @@ func (cw *ChangesPairIter) Reset() {
 //	both file name match, try to resolve file changes
 //	if one of the queue consume up, pick left change in the other queue
 func (cw *ChangesPairIter) Next() (*ChangePair, error) {
-	baseNode, baseErr := cw.BaseChanges.Next()
+	baseNode, baseErr := cw.leftChanges.Next()
 	if baseErr != nil && baseErr != io.EOF {
 		return nil, baseErr
 	}
 
-	mergeNode, mergerError := cw.MergerChanges.Next()
+	mergeNode, mergerError := cw.rightChanges.Next()
 	if mergerError != nil && mergerError != io.EOF {
 		return nil, mergerError
 	}
@@ -173,19 +173,19 @@ func (cw *ChangesPairIter) Next() (*ChangePair, error) {
 	}
 
 	if baseErr == io.EOF {
-		return &ChangePair{Merge: mergeNode}, nil
+		return &ChangePair{Right: mergeNode}, nil
 	}
 
 	if mergerError == io.EOF {
-		return &ChangePair{Base: baseNode}, nil
+		return &ChangePair{Left: baseNode}, nil
 	}
 
 	compare := strings.Compare(baseNode.Path(), mergeNode.Path())
 	if compare > 0 {
 		//only merger change
-		cw.BaseChanges.Back()
+		cw.leftChanges.Back()
 		return &ChangePair{
-			Merge: mergeNode,
+			Right: mergeNode,
 		}, nil
 	} else if compare == 0 {
 		isConflict, err := cw.isConflict(baseNode, mergeNode)
@@ -193,15 +193,15 @@ func (cw *ChangesPairIter) Next() (*ChangePair, error) {
 			return nil, err
 		}
 		return &ChangePair{
-			Base:       baseNode,
-			Merge:      mergeNode,
+			Left:       baseNode,
+			Right:      mergeNode,
 			IsConflict: isConflict,
 		}, nil
 	}
 	//only base change
-	cw.MergerChanges.Back()
+	cw.rightChanges.Back()
 	return &ChangePair{
-		Base: baseNode,
+		Left: baseNode,
 	}, nil
 }
 
@@ -287,12 +287,12 @@ func (cw *ChangesMergeIter) Next() (IChange, error) {
 	}
 
 	if chPair.IsConflict {
-		return cw.resolveConflict(chPair.Base, chPair.Merge)
+		return cw.resolveConflict(chPair.Left, chPair.Right)
 	}
-	if chPair.Base != nil {
-		return chPair.Base, nil
+	if chPair.Left != nil {
+		return chPair.Left, nil
 	}
-	return chPair.Merge, nil
+	return chPair.Right, nil
 }
 
 func (cw *ChangesMergeIter) resolveConflict(base, merge IChange) (IChange, error) {

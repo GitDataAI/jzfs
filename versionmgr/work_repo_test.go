@@ -383,7 +383,7 @@ func makeRepository(ctx context.Context, repo models.IRepo, user *models.User, n
 	}
 	_, err = repo.BranchRepo().Insert(ctx, &models.Branch{
 		RepositoryID: repoModel.ID,
-		CommitHash:   hash.EmptyHash,
+		CommitHash:   hash.Empty,
 		Name:         "main",
 		Description:  nil,
 		CreatedAt:    time.Now(),

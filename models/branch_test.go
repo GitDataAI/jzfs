@@ -40,9 +40,7 @@ func TestRefRepoInsert(t *testing.T) {
 	err = repo.UpdateByID(ctx, models.NewUpdateBranchParams(newBranch.ID).SetCommitHash(mockHash))
 	require.NoError(t, err)
 
-	branchAfterUpdated, err := repo.Get(ctx, &models.GetBranchParams{
-		ID: newBranch.ID,
-	})
+	branchAfterUpdated, err := repo.Get(ctx, models.NewGetBranchParams().SetID(newBranch.ID))
 	require.NoError(t, err)
 	require.Equal(t, mockHash, branchAfterUpdated.CommitHash)
 
