@@ -399,7 +399,7 @@ func (repositoryCtl RepositoryController) UpdateRepository(ctx context.Context, 
 	w.OK()
 }
 
-func (repositoryCtl RepositoryController) GetCommitsInRepository(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, params api.GetCommitsInRepositoryParams) {
+func (repositoryCtl RepositoryController) GetCommitsInRef(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, params api.GetCommitsInRefParams) {
 	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
