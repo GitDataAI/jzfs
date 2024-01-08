@@ -1,5 +1,5 @@
-# jiaozifs
-version control file system.
+# JiaoziFS
+A version control file system for data centric applications & teams.
 
 ## quick start 
 
