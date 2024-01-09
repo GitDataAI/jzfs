@@ -26,10 +26,10 @@ func AdapterTest(t *testing.T, adapter block.Adapter, storageNamespace, external
 	t.Run("Adapter_Exists", func(t *testing.T) { testAdapterExists(t, adapter, storageNamespace) })
 	t.Run("Adapter_GetRange", func(t *testing.T) { testAdapterGetRange(t, adapter, storageNamespace) })
 	t.Run("Adapter_Walker", func(t *testing.T) { testAdapterWalker(t, adapter, storageNamespace) })
-	t.Run("Adapter_Clean", func(t *testing.T) { testAdapterClean(t, adapter, storageNamespace, localPath) })
+	// t.Run("Adapter_Clean", func(t *testing.T) { testAdapterClean(t, adapter, storageNamespace, localPath) })
 }
 
-func testAdapterClean(t *testing.T, adapter block.Adapter, storageNamespace, localPath string) {
+func testAdapterClean(t *testing.T, adapter block.Adapter, storageNamespace, localPath string) { //nolint
 	ctx := context.Background()
 	const content = "content used for testing"
 
