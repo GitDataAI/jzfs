@@ -13,6 +13,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiaozifs/jiaozifs/utils"
+
 	"github.com/jiaozifs/jiaozifs/api"
 	"github.com/smartystreets/goconvey/convey"
 
@@ -139,8 +141,8 @@ func loginAndSwitch(ctx context.Context, c convey.C, client *api.Client, title, 
 	})
 }
 
-func createBranch(ctx context.Context, c convey.C, client *api.Client, user string, repoName string, source, refName string) {
-	c.Convey("create branch "+refName, func() {
+func createBranch(ctx context.Context, c convey.C, client *api.Client, title string, user string, repoName string, source, refName string) {
+	c.Convey("create branch "+title, func() {
 		resp, err := client.CreateBranch(ctx, user, repoName, api.CreateBranchJSONRequestBody{
 			Source: source,
 			Name:   refName,
@@ -201,6 +203,19 @@ func commitWip(ctx context.Context, c convey.C, client *api.Client, title string
 			Msg:     msg,
 		})
 
+		convey.So(err, convey.ShouldBeNil)
+		convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
+	})
+}
+
+func createMergeRequest(ctx context.Context, c convey.C, client *api.Client, title string, user string, repoName string, sourceBranch string, targetBranch string) {
+	c.Convey("create mr "+title, func() {
+		resp, err := client.CreateMergeRequest(ctx, user, repoName, api.CreateMergeRequestJSONRequestBody{
+			Description:      utils.String("create merge request test"),
+			SourceBranchName: sourceBranch,
+			TargetBranchName: targetBranch,
+			Title:            "Merge: test",
+		})
 		convey.So(err, convey.ShouldBeNil)
 		convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
 	})

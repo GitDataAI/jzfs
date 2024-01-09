@@ -22,7 +22,7 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		createUser(ctx, c, client, userName)
 		loginAndSwitch(ctx, c, client, "jude login", userName, false)
 		createRepo(ctx, c, client, repoName)
-		createBranch(ctx, c, client, userName, repoName, "main", branchName)
+		createBranch(ctx, c, client, "create branch", userName, repoName, "main", branchName)
 		createWip(ctx, c, client, "get wip obj test", userName, repoName, branchName)
 		uploadObject(ctx, c, client, "update f1 to test branch", userName, repoName, branchName, "m.dat")
 		uploadObject(ctx, c, client, "update f2 to test branch", userName, repoName, branchName, "g/m.dat")
@@ -298,7 +298,7 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		uploadObject(ctx, c, client, "update f6 to test branch", userName, repoName, branchName, "c.dat")
 
 		testBranchName := "test/empty_branch"
-		createBranch(ctx, c, client, userName, repoName, "main", testBranchName)
+		createBranch(ctx, c, client, "create empty branch", userName, repoName, "main", testBranchName)
 		createWip(ctx, c, client, "create empty_branch wip", userName, repoName, testBranchName)
 
 		c.Convey("get wip success on init", func(c convey.C) {

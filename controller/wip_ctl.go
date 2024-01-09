@@ -151,7 +151,7 @@ func (wipCtl WipController) CommitWip(ctx context.Context, w *api.JiaozifsRespon
 	w.JSON(workRepo.CurWip(), http.StatusCreated)
 }
 
-func (wipCtl WipController) UpdateWip(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, body api.UpdateWipJSONRequestBody, ownerName string, repositoryName string, params api.UpdateWipParams) {
+func (wipCtl WipController) UpdateWip(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, body api.UpdateWipJSONRequestBody, ownerName string, repositoryName string, params api.UpdateWipParams) {
 	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)

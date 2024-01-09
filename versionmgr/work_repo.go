@@ -737,6 +737,7 @@ func findBestAncestor(ctx context.Context,
 	if baseCommit == nil && toMergeCommit != nil {
 		return toMergeCommit, nil
 	}
+
 	if baseCommit != nil && toMergeCommit == nil {
 		return baseCommit, nil
 	}

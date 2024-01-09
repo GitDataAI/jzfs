@@ -131,6 +131,13 @@ type ChangePair struct {
 	IsConflict bool
 }
 
+func (changePair ChangePair) Path() string {
+	if changePair.Left != nil {
+		return changePair.Left.Path()
+	}
+	return changePair.Right.Path()
+}
+
 type ChangesPairIter struct {
 	leftChanges  *Changes
 	rightChanges *Changes

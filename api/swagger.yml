@@ -164,14 +164,17 @@ components:
           type: string
         description:
           type: string
+        status:
+          type: integer
+          format: int
     MergeMergeRequest:
       type: object
       required:
         - msg
-        - conflict_resolve
       properties:
         msg:
           type: string
+          allowEmptyValue: true
         conflict_resolve:
           description: use to record the resolution of the conflict, example({"b/a.txt":"base"})
           type: object
@@ -181,6 +184,7 @@ components:
       type: object
       required:
         - id
+        - sequence
         - target_branch
         - source_branch
         - source_repo_id
@@ -192,6 +196,9 @@ components:
         - updated_at
       properties:
         id:
+          type: string
+          format: uuid
+        sequence:
           type: integer
           format: uint64
         target_branch:
@@ -226,6 +233,7 @@ components:
       type: object
       required:
         - id
+        - sequence
         - target_branch
         - source_branch
         - source_repo_id
@@ -238,6 +246,9 @@ components:
         - updated_at
       properties:
         id:
+          type: string
+          format: uuid
+        sequence:
           type: integer
           format: uint64
         target_branch:
@@ -1633,7 +1644,7 @@ paths:
         403:
           description: Forbidden
 
-  /mergequest/{owner}/{repository}:
+  /mergerequest/{owner}/{repository}:
     parameters:
       - in: path
         name: owner
@@ -1651,9 +1662,14 @@ paths:
       operationId: listMergeRequests
       summary: get list of merge request in repository
       parameters:
-        - $ref: "#/components/parameters/PaginationPrefix"
         - $ref: "#/components/parameters/PaginationRepoAfter"
         - $ref: "#/components/parameters/PaginationAmount"
+        - in: query
+          name: state
+          required: false
+          schema:
+            type: integer
+            format: int
       responses:
         200:
           description: merge request
@@ -1696,7 +1712,7 @@ paths:
         500:
           description: Internal Server Error
 
-  /mergequest/{owner}/{repository}/{mrId}/merge:
+  /mergerequest/{owner}/{repository}/{mrSeq}/merge:
     parameters:
       - in: path
         name: owner
@@ -1709,7 +1725,7 @@ paths:
         schema:
           type: string
       - in: path
-        name: mrId
+        name: mrSeq
         required: true
         schema:
           type: integer
@@ -1742,7 +1758,7 @@ paths:
           description: Too many requests
         500:
           description: Internal Server Error
-  /mergequest/{owner}/{repository}/{mrId}:
+  /mergequest/{owner}/{repository}/{mrSeq}:
     parameters:
       - in: path
         name: owner
@@ -1755,7 +1771,7 @@ paths:
         schema:
           type: string
       - in: path
-        name: mrId
+        name: mrSeq
         required: true
         schema:
           type: integer
@@ -1772,22 +1788,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MergeRequestFullState"
-        401:
-          description: Unauthorized
-        404:
-          description: Resource Not Found
-        420:
-          description: Too many requests
-        500:
-          description: Internal Server Error
-    delete:
-      tags:
-        - mergerequest
-      operationId: deleteMergeRequest
-      summary: delete merge request
-      responses:
-        204:
-          description: delete merge request successfully
         401:
           description: Unauthorized
         404:

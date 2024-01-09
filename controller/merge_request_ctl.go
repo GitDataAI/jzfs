@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -51,6 +52,9 @@ func (mrCtl MergeRequestController) ListMergeRequests(ctx context.Context, w *ap
 	}
 
 	listParams := models.NewListMergeRequestParams().SetTargetRepoID(repository.ID)
+	if params.State != nil {
+		listParams.SetMergeState(models.MergeState(*params.State))
+	}
 
 	if params.After != nil {
 		listParams.SetAfter(*params.After)
@@ -71,14 +75,13 @@ func (mrCtl MergeRequestController) ListMergeRequests(ctx context.Context, w *ap
 	results := make([]api.MergeRequest, len(mrs))
 	for index, mr := range mrs {
 		results[index] = api.MergeRequest{
-			Id:           mr.ID,
 			Title:        mr.Title,
 			Description:  mr.Description,
 			AuthorId:     mr.AuthorID,
-			MergeStatus:  int(mr.MergeStatus),
-			SourceBranch: mr.SourceBranch,
+			MergeStatus:  int(mr.MergeState),
+			SourceBranch: mr.SourceBranchID,
 			SourceRepoId: mr.SourceRepoID,
-			TargetBranch: mr.TargetBranch,
+			TargetBranch: mr.TargetBranchID,
 			TargetRepoId: mr.TargetRepoID,
 			CreatedAt:    mr.CreatedAt,
 			UpdatedAt:    mr.UpdatedAt,
@@ -123,10 +126,11 @@ func (mrCtl MergeRequestController) CreateMergeRequest(ctx context.Context, w *a
 	}
 
 	if body.SourceBranchName == body.TargetBranchName {
-		w.BadRequest(fmt.Sprintf("source branch name %s and target branch name %s can not be same", body.SourceBranchName, body.TargetBranchName))
+		w.BadRequest(fmt.Sprintf("source branch name %s and target branch name %s can not be same", body.SourceBranchName, body.SourceBranchName))
+		return
 	}
 
-	sorceBranch, err := mrCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.ID).SetName(body.SourceBranchName))
+	sourceBranch, err := mrCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.ID).SetName(body.SourceBranchName))
 	if err != nil {
 		w.Error(err)
 		return
@@ -138,17 +142,30 @@ func (mrCtl MergeRequestController) CreateMergeRequest(ctx context.Context, w *a
 		return
 	}
 
+	params := models.NewGetMergeRequestParams().SetTargetRepo(repository.ID).SetTargetBranch(targetBranch.ID).SetSourceBranch(sourceBranch.ID).SetState(models.MergeStateInit)
+	mr, err := mrCtl.Repo.MergeRequestRepo().Get(ctx, params)
+	if err == nil {
+		fmt.Println(mr)
+		w.BadRequest(fmt.Sprintf("repo %s merge request between %s and %s already exists", repositoryName, body.SourceBranchName, body.TargetBranchName))
+		return
+	}
+
+	if err != nil && !errors.Is(err, models.ErrNotFound) {
+		w.Error(err)
+		return
+	}
+
 	mrModel, err := mrCtl.Repo.MergeRequestRepo().Insert(ctx, &models.MergeRequest{
-		TargetBranch: targetBranch.ID,
-		SourceBranch: sorceBranch.ID,
-		SourceRepoID: repository.ID,
-		TargetRepoID: repository.ID,
-		Title:        body.Title,
-		MergeStatus:  models.InitMergeStatus,
-		Description:  body.Description,
-		AuthorID:     operator.ID,
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
+		TargetBranchID: targetBranch.ID,
+		SourceBranchID: sourceBranch.ID,
+		SourceRepoID:   repository.ID,
+		TargetRepoID:   repository.ID,
+		Title:          body.Title,
+		MergeState:     models.MergeStateInit,
+		Description:    body.Description,
+		AuthorID:       operator.ID,
+		CreatedAt:      time.Now(),
+		UpdatedAt:      time.Now(),
 	})
 
 	if err != nil {
@@ -162,7 +179,7 @@ func (mrCtl MergeRequestController) CreateMergeRequest(ctx context.Context, w *a
 		return
 	}
 
-	err = workRepo.CheckOut(ctx, versionmgr.InBranch, sorceBranch.Name)
+	err = workRepo.CheckOut(ctx, versionmgr.InBranch, sourceBranch.Name)
 	if err != nil {
 		w.Error(err)
 		return
@@ -176,13 +193,14 @@ func (mrCtl MergeRequestController) CreateMergeRequest(ctx context.Context, w *a
 
 	resp := api.MergeRequestFullState{
 		Id:           mrModel.ID,
+		Sequence:     mrModel.Sequence,
 		Title:        mrModel.Title,
 		Description:  mrModel.Description,
 		AuthorId:     mrModel.AuthorID,
-		MergeStatus:  int(mrModel.MergeStatus),
-		SourceBranch: mrModel.SourceBranch,
+		MergeStatus:  int(mrModel.MergeState),
+		SourceBranch: mrModel.SourceBranchID,
 		SourceRepoId: mrModel.SourceRepoID,
-		TargetBranch: mrModel.TargetBranch,
+		TargetBranch: mrModel.TargetBranchID,
 		TargetRepoId: mrModel.TargetRepoID,
 		CreatedAt:    mrModel.CreatedAt,
 		UpdatedAt:    mrModel.UpdatedAt,
@@ -196,8 +214,7 @@ func (mrCtl MergeRequestController) CreateMergeRequest(ctx context.Context, w *a
 	//get merge state
 	w.JSON(mrModel, http.StatusCreated)
 }
-
-func (mrCtl MergeRequestController) DeleteMergeRequest(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, _ string, mrID uint64) {
+func (mrCtl MergeRequestController) GetMergeRequest(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, mrSeq uint64) {
 	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
@@ -215,37 +232,6 @@ func (mrCtl MergeRequestController) DeleteMergeRequest(ctx context.Context, w *a
 		return
 	}
 
-	affectRows, err := mrCtl.Repo.MergeRequestRepo().Delete(ctx, models.NewDeleteMergeRequestParams().SetID(mrID))
-	if err != nil {
-		w.Error(err)
-		return
-	}
-	if affectRows == 0 {
-		w.NotFound()
-		return
-	}
-	w.OK()
-}
-
-func (mrCtl MergeRequestController) GetMergeRequest(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, mrID uint64) {
-	operator, err := auth.GetOperator(ctx)
-	if err != nil {
-		w.Error(err)
-		return
-	}
-
-	owner, err := mrCtl.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(ownerName))
-	if err != nil {
-		w.Error(err)
-		return
-	}
-
-	if operator.Name != owner.Name {
-		w.Forbidden()
-		return
-	}
-
-	// Get repo
 	repository, err := mrCtl.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
 	if err != nil {
 		w.Error(err)
@@ -258,19 +244,19 @@ func (mrCtl MergeRequestController) GetMergeRequest(ctx context.Context, w *api.
 		return
 	}
 
-	mergeRequest, err := mrCtl.Repo.MergeRequestRepo().Get(ctx, models.NewGetMergeRequestParams().SetID(mrID))
+	mergeRequest, err := mrCtl.Repo.MergeRequestRepo().Get(ctx, models.NewGetMergeRequestParams().SetTargetRepo(repository.ID).SetNumber(mrSeq))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	sourceBranch, err := mrCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetID(mergeRequest.SourceRepoID))
+	sourceBranch, err := mrCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetID(mergeRequest.SourceBranchID))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	targetBranch, err := mrCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetID(mergeRequest.TargetBranch))
+	targetBranch, err := mrCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetID(mergeRequest.TargetBranchID))
 	if err != nil {
 		w.Error(err)
 		return
@@ -290,13 +276,14 @@ func (mrCtl MergeRequestController) GetMergeRequest(ctx context.Context, w *api.
 
 	resp := api.MergeRequestFullState{
 		Id:           mergeRequest.ID,
+		Sequence:     mergeRequest.Sequence,
 		Title:        mergeRequest.Title,
 		Description:  mergeRequest.Description,
 		AuthorId:     mergeRequest.AuthorID,
-		MergeStatus:  int(mergeRequest.MergeStatus),
-		SourceBranch: mergeRequest.SourceBranch,
+		MergeStatus:  int(mergeRequest.MergeState),
+		SourceBranch: mergeRequest.SourceBranchID,
 		SourceRepoId: mergeRequest.SourceRepoID,
-		TargetBranch: mergeRequest.TargetBranch,
+		TargetBranch: mergeRequest.TargetBranchID,
 		TargetRepoId: mergeRequest.TargetRepoID,
 		CreatedAt:    mergeRequest.CreatedAt,
 		UpdatedAt:    mergeRequest.UpdatedAt,
@@ -309,7 +296,7 @@ func (mrCtl MergeRequestController) GetMergeRequest(ctx context.Context, w *api.
 	w.JSON(resp)
 }
 
-func (mrCtl MergeRequestController) UpdateMergeRequest(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, body api.UpdateMergeRequestJSONRequestBody, ownerName string, repositoryName string, mrID uint64) {
+func (mrCtl MergeRequestController) UpdateMergeRequest(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, body api.UpdateMergeRequestJSONRequestBody, ownerName string, repositoryName string, mrSeq uint64) {
 	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
@@ -326,13 +313,21 @@ func (mrCtl MergeRequestController) UpdateMergeRequest(ctx context.Context, w *a
 		w.Forbidden()
 		return
 	}
+	repository, err := mrCtl.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
+	if err != nil {
+		w.Error(err)
+		return
+	}
 
-	updateParams := models.NewUpdateMergeRequestParams(mrID)
+	updateParams := models.NewUpdateMergeRequestParams(repository.ID, mrSeq)
 	if body.Title != nil {
 		updateParams.SetTitle(utils.StringValue(body.Title))
 	}
 	if body.Description != nil {
 		updateParams.SetDescription(utils.StringValue(body.Description))
+	}
+	if body.Status != nil {
+		updateParams.SetState(models.MergeState(utils.IntValue(body.Status)))
 	}
 
 	err = mrCtl.Repo.MergeRequestRepo().UpdateByID(ctx, updateParams)
@@ -343,7 +338,7 @@ func (mrCtl MergeRequestController) UpdateMergeRequest(ctx context.Context, w *a
 	w.OK()
 }
 
-func (mrCtl MergeRequestController) Merge(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, body api.MergeJSONRequestBody, ownerName string, repositoryName string, mrID uint64) {
+func (mrCtl MergeRequestController) Merge(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, body api.MergeJSONRequestBody, ownerName string, repositoryName string, mrSeq uint64) {
 	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
@@ -368,42 +363,47 @@ func (mrCtl MergeRequestController) Merge(ctx context.Context, w *api.JiaozifsRe
 		return
 	}
 
-	mergeRequest, err := mrCtl.Repo.MergeRequestRepo().Get(ctx, models.NewGetMergeRequestParams().SetID(mrID))
+	mergeRequest, err := mrCtl.Repo.MergeRequestRepo().Get(ctx, models.NewGetMergeRequestParams().SetTargetRepo(repository.ID).SetNumber(mrSeq))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	workRepo, err := versionmgr.NewWorkRepositoryFromConfig(ctx, operator, repository, mrCtl.Repo, mrCtl.PublicStorageConfig)
+	var commit *models.Commit
+	err = mrCtl.Repo.Transaction(ctx, func(repo models.IRepo) error {
+		workRepo, err := versionmgr.NewWorkRepositoryFromConfig(ctx, operator, repository, mrCtl.Repo, mrCtl.PublicStorageConfig)
+		if err != nil {
+			return err
+		}
+
+		sourceBranch, err := mrCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetID(mergeRequest.SourceBranchID))
+		if err != nil {
+			return err
+		}
+
+		targetBranch, err := mrCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetID(mergeRequest.TargetBranchID))
+		if err != nil {
+			return err
+		}
+
+		err = workRepo.CheckOut(ctx, versionmgr.InBranch, sourceBranch.Name)
+		if err != nil {
+			return err
+		}
+
+		commit, err = workRepo.Merge(ctx, targetBranch.CommitHash, body.Msg, versionmgr.ResolveFromSelector(utils.Map(body.ConflictResolve)))
+		if err != nil {
+			return err
+		}
+
+		return mrCtl.Repo.MergeRequestRepo().UpdateByID(ctx, models.NewUpdateMergeRequestParams(repository.ID, mergeRequest.Sequence).SetState(models.MergeStateMerged))
+	})
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	sourceBranch, err := mrCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetID(mergeRequest.SourceRepoID))
-	if err != nil {
-		w.Error(err)
-		return
-	}
-
-	targetBranch, err := mrCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetID(mergeRequest.TargetBranch))
-	if err != nil {
-		w.Error(err)
-		return
-	}
-
-	err = workRepo.CheckOut(ctx, versionmgr.InBranch, sourceBranch.Name)
-	if err != nil {
-		w.Error(err)
-		return
-	}
-
-	merge, err := workRepo.Merge(ctx, targetBranch.CommitHash, body.Msg, versionmgr.ResolveFromSelector(body.ConflictResolve))
-	if err != nil {
-		w.Error(err)
-		return
-	}
-	w.JSON(merge)
+	w.JSON(commit)
 }
 
 func changePairToDTO(pairs []*versionmgr.ChangePair) ([]api.ChangePair, error) {
@@ -448,10 +448,10 @@ func changePairToDTO(pairs []*versionmgr.ChangePair) ([]api.ChangePair, error) {
 				Path:   path,
 			}
 			if ch.Right.From() != nil {
-				pair.Left.BaseHash = utils.String(hash.Hash(ch.Right.From().Hash()).Hex())
+				pair.Right.BaseHash = utils.String(hash.Hash(ch.Right.From().Hash()).Hex())
 			}
 			if ch.Right.To() != nil {
-				pair.Left.ToHash = utils.String(hash.Hash(ch.Right.To().Hash()).Hex())
+				pair.Right.ToHash = utils.String(hash.Hash(ch.Right.To().Hash()).Hex())
 			}
 		}
 		changes[index] = pair
