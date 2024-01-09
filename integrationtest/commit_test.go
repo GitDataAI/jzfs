@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/jiaozifs/jiaozifs/utils/hash"
+
 	"github.com/jiaozifs/jiaozifs/api"
 	apiimpl "github.com/jiaozifs/jiaozifs/api/api_impl"
 	"github.com/jiaozifs/jiaozifs/utils"
@@ -227,6 +229,66 @@ func GetEntriesInRefSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		uploadObject(ctx, c, client, "update f2 to main branch", userName, repoName, "main", "g/m.dat") //modify
 		commitWip(ctx, c, client, "commit branch change", userName, repoName, "main", "test")
 
+		c.Convey("get commit entries", func(c convey.C) {
+			c.Convey("fail to get entries in uncorrected hash", func() {
+				resp, err := client.GetEntriesInRef(ctx, userName, repoName, &api.GetEntriesInRefParams{
+					Path: utils.String("/"),
+					Ref:  utils.String("123"),
+					Type: api.RefTypeCommit,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)
+			})
+
+			c.Convey("fail to get entries in not found", func() {
+				resp, err := client.GetEntriesInRef(ctx, userName, repoName, &api.GetEntriesInRefParams{
+					Path: utils.String("/"),
+					Ref:  utils.String("46780d412b4b3c71ba6cdfcb52105c7b"),
+					Type: api.RefTypeCommit,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
+			})
+
+			c.Convey("success to get entries in empty hash", func() {
+				resp, err := client.GetEntriesInRef(ctx, userName, repoName, &api.GetEntriesInRefParams{
+					Path: utils.String("/"),
+					Ref:  utils.String(hash.EmptyHash.Hex()),
+					Type: api.RefTypeCommit,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				result, err := api.ParseGetEntriesInRefResponse(resp)
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(*result.JSON200, convey.ShouldHaveLength, 0)
+			})
+
+			c.Convey("success to get entries in commit", func() {
+				getCommitsResp, err := client.GetCommitsInRef(ctx, userName, repoName, &api.GetCommitsInRefParams{
+					RefName: utils.String(branchName),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				getCommitsResult, err := api.ParseGetCommitsInRefResponse(getCommitsResp)
+				convey.So(err, convey.ShouldBeNil)
+
+				commit := (*getCommitsResult.JSON200)[0]
+				resp, err := client.GetEntriesInRef(ctx, userName, repoName, &api.GetEntriesInRefParams{
+					Path: utils.String("/"),
+					Ref:  utils.String(commit.Hash),
+					Type: api.RefTypeCommit,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				result, err := api.ParseGetEntriesInRefResponse(resp)
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(*result.JSON200, convey.ShouldHaveLength, 2)
+				convey.So((*result.JSON200)[0].Name, convey.ShouldEqual, "g")
+				convey.So((*result.JSON200)[1].Name, convey.ShouldEqual, "m.dat")
+			})
+		})
+
 		c.Convey("compare commit", func(c convey.C) {
 			c.Convey("get base and head", func() {
 				resp, err := client.GetBranch(ctx, userName, repoName, &api.GetBranchParams{RefName: "main"})
@@ -331,10 +393,10 @@ func GetCommitChangesSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 		c.Convey("get commit change", func(c convey.C) {
 			c.Convey("list commit history", func() {
-				resp, err := client.GetCommitsInRepository(ctx, userName, repoName, &api.GetCommitsInRepositoryParams{RefName: utils.String("main")})
+				resp, err := client.GetCommitsInRef(ctx, userName, repoName, &api.GetCommitsInRefParams{RefName: utils.String("main")})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
-				result, err := api.ParseGetCommitsInRepositoryResponse(resp)
+				result, err := api.ParseGetCommitsInRefResponse(resp)
 				convey.So(err, convey.ShouldBeNil)
 
 				commits = *result.JSON200

@@ -43,11 +43,6 @@ func (commitCtl CommitController) GetEntriesInRef(ctx context.Context, w *api.Ji
 		return
 	}
 
-	refName := repository.HEAD
-	if params.Ref != nil {
-		refName = *params.Ref
-	}
-
 	if operator.Name != ownerName { //todo check permission
 		w.Forbidden()
 		return
@@ -55,6 +50,11 @@ func (commitCtl CommitController) GetEntriesInRef(ctx context.Context, w *api.Ji
 
 	treeHash := hash.EmptyHash
 	if params.Type == api.RefTypeWip {
+		refName := repository.HEAD
+		if params.Ref != nil {
+			refName = *params.Ref
+		}
+
 		//todo maybe from tag reference
 		ref, err := commitCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.ID).SetName(refName))
 		if err != nil {
@@ -68,6 +68,11 @@ func (commitCtl CommitController) GetEntriesInRef(ctx context.Context, w *api.Ji
 		}
 		treeHash = wip.CurrentTree
 	} else if params.Type == api.RefTypeBranch {
+		refName := repository.HEAD
+		if params.Ref != nil {
+			refName = *params.Ref
+		}
+
 		ref, err := commitCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.ID).SetName(refName))
 		if err != nil {
 			w.Error(err)
@@ -75,6 +80,21 @@ func (commitCtl CommitController) GetEntriesInRef(ctx context.Context, w *api.Ji
 		}
 		if !ref.CommitHash.IsEmpty() {
 			commit, err := commitCtl.Repo.CommitRepo(repository.ID).Commit(ctx, ref.CommitHash)
+			if err != nil {
+				w.Error(err)
+				return
+			}
+			treeHash = commit.TreeHash
+		}
+	} else if params.Type == api.RefTypeCommit {
+		commitHash, err := hash.FromHex(utils.StringValue(params.Ref))
+		if err != nil {
+			w.BadRequest(err.Error())
+			return
+		}
+
+		if !commitHash.IsEmpty() {
+			commit, err := commitCtl.Repo.CommitRepo(repository.ID).Commit(ctx, commitHash)
 			if err != nil {
 				w.Error(err)
 				return

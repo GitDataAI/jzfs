@@ -389,8 +389,8 @@ type GetCommitChangesParams struct {
 	Path *string `form:"path,omitempty" json:"path,omitempty"`
 }
 
-// GetCommitsInRepositoryParams defines parameters for GetCommitsInRepository.
-type GetCommitsInRepositoryParams struct {
+// GetCommitsInRefParams defines parameters for GetCommitsInRef.
+type GetCommitsInRefParams struct {
 	// After return items after this value
 	After *PaginationCommitAfter `form:"after,omitempty" json:"after,omitempty"`
 
@@ -412,10 +412,10 @@ type GetEntriesInRefParams struct {
 	// Path specific path, if not specific return entries in root
 	Path *string `form:"path,omitempty" json:"path,omitempty"`
 
-	// Ref specific branch,  default to repostiory default branch(HEAD)
+	// Ref specific( ref name, tag name, commit hash), for wip and branchm, branch name default to repository default branch(HEAD),
 	Ref *string `form:"ref,omitempty" json:"ref,omitempty"`
 
-	// Type type indicate to retrieve from wip/branch/tag, default branch
+	// Type type indicate to retrieve from wip/branch/tag/commit, default branch
 	Type RefType `form:"type" json:"type"`
 }
 
@@ -621,8 +621,8 @@ type ClientInterface interface {
 	// GetCommitChanges request
 	GetCommitChanges(ctx context.Context, owner string, repository string, commitId string, params *GetCommitChangesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetCommitsInRepository request
-	GetCommitsInRepository(ctx context.Context, owner string, repository string, params *GetCommitsInRepositoryParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetCommitsInRef request
+	GetCommitsInRef(ctx context.Context, owner string, repository string, params *GetCommitsInRefParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CompareCommit request
 	CompareCommit(ctx context.Context, owner string, repository string, basehead string, params *CompareCommitParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -878,8 +878,8 @@ func (c *Client) GetCommitChanges(ctx context.Context, owner string, repository 
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetCommitsInRepository(ctx context.Context, owner string, repository string, params *GetCommitsInRepositoryParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetCommitsInRepositoryRequest(c.Server, owner, repository, params)
+func (c *Client) GetCommitsInRef(ctx context.Context, owner string, repository string, params *GetCommitsInRefParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetCommitsInRefRequest(c.Server, owner, repository, params)
 	if err != nil {
 		return nil, err
 	}
@@ -1974,8 +1974,8 @@ func NewGetCommitChangesRequest(server string, owner string, repository string, 
 	return req, nil
 }
 
-// NewGetCommitsInRepositoryRequest generates requests for GetCommitsInRepository
-func NewGetCommitsInRepositoryRequest(server string, owner string, repository string, params *GetCommitsInRepositoryParams) (*http.Request, error) {
+// NewGetCommitsInRefRequest generates requests for GetCommitsInRef
+func NewGetCommitsInRefRequest(server string, owner string, repository string, params *GetCommitsInRefParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -3031,8 +3031,8 @@ type ClientWithResponsesInterface interface {
 	// GetCommitChangesWithResponse request
 	GetCommitChangesWithResponse(ctx context.Context, owner string, repository string, commitId string, params *GetCommitChangesParams, reqEditors ...RequestEditorFn) (*GetCommitChangesResponse, error)
 
-	// GetCommitsInRepositoryWithResponse request
-	GetCommitsInRepositoryWithResponse(ctx context.Context, owner string, repository string, params *GetCommitsInRepositoryParams, reqEditors ...RequestEditorFn) (*GetCommitsInRepositoryResponse, error)
+	// GetCommitsInRefWithResponse request
+	GetCommitsInRefWithResponse(ctx context.Context, owner string, repository string, params *GetCommitsInRefParams, reqEditors ...RequestEditorFn) (*GetCommitsInRefResponse, error)
 
 	// CompareCommitWithResponse request
 	CompareCommitWithResponse(ctx context.Context, owner string, repository string, basehead string, params *CompareCommitParams, reqEditors ...RequestEditorFn) (*CompareCommitResponse, error)
@@ -3385,14 +3385,14 @@ func (r GetCommitChangesResponse) StatusCode() int {
 	return 0
 }
 
-type GetCommitsInRepositoryResponse struct {
+type GetCommitsInRefResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *[]Commit
 }
 
 // Status returns HTTPResponse.Status
-func (r GetCommitsInRepositoryResponse) Status() string {
+func (r GetCommitsInRefResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -3400,7 +3400,7 @@ func (r GetCommitsInRepositoryResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetCommitsInRepositoryResponse) StatusCode() int {
+func (r GetCommitsInRefResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -3884,13 +3884,13 @@ func (c *ClientWithResponses) GetCommitChangesWithResponse(ctx context.Context, 
 	return ParseGetCommitChangesResponse(rsp)
 }
 
-// GetCommitsInRepositoryWithResponse request returning *GetCommitsInRepositoryResponse
-func (c *ClientWithResponses) GetCommitsInRepositoryWithResponse(ctx context.Context, owner string, repository string, params *GetCommitsInRepositoryParams, reqEditors ...RequestEditorFn) (*GetCommitsInRepositoryResponse, error) {
-	rsp, err := c.GetCommitsInRepository(ctx, owner, repository, params, reqEditors...)
+// GetCommitsInRefWithResponse request returning *GetCommitsInRefResponse
+func (c *ClientWithResponses) GetCommitsInRefWithResponse(ctx context.Context, owner string, repository string, params *GetCommitsInRefParams, reqEditors ...RequestEditorFn) (*GetCommitsInRefResponse, error) {
+	rsp, err := c.GetCommitsInRef(ctx, owner, repository, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetCommitsInRepositoryResponse(rsp)
+	return ParseGetCommitsInRefResponse(rsp)
 }
 
 // CompareCommitWithResponse request returning *CompareCommitResponse
@@ -4338,15 +4338,15 @@ func ParseGetCommitChangesResponse(rsp *http.Response) (*GetCommitChangesRespons
 	return response, nil
 }
 
-// ParseGetCommitsInRepositoryResponse parses an HTTP response from a GetCommitsInRepositoryWithResponse call
-func ParseGetCommitsInRepositoryResponse(rsp *http.Response) (*GetCommitsInRepositoryResponse, error) {
+// ParseGetCommitsInRefResponse parses an HTTP response from a GetCommitsInRefWithResponse call
+func ParseGetCommitsInRefResponse(rsp *http.Response) (*GetCommitsInRefResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetCommitsInRepositoryResponse{
+	response := &GetCommitsInRefResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -4768,9 +4768,9 @@ type ServerInterface interface {
 	// get changes in commit
 	// (GET /repos/{owner}/{repository}/changes/{commit_id})
 	GetCommitChanges(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, commitId string, params GetCommitChangesParams)
-	// get commits in repository
+	// get commits in ref
 	// (GET /repos/{owner}/{repository}/commits)
-	GetCommitsInRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params GetCommitsInRepositoryParams)
+	GetCommitsInRef(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params GetCommitsInRefParams)
 	// compare two commit
 	// (GET /repos/{owner}/{repository}/compare/{basehead})
 	CompareCommit(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, basehead string, params CompareCommitParams)
@@ -4905,9 +4905,9 @@ func (_ Unimplemented) GetCommitChanges(ctx context.Context, w *JiaozifsResponse
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// get commits in repository
+// get commits in ref
 // (GET /repos/{owner}/{repository}/commits)
-func (_ Unimplemented) GetCommitsInRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params GetCommitsInRepositoryParams) {
+func (_ Unimplemented) GetCommitsInRef(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params GetCommitsInRefParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -5855,8 +5855,8 @@ func (siw *ServerInterfaceWrapper) GetCommitChanges(w http.ResponseWriter, r *ht
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
-// GetCommitsInRepository operation middleware
-func (siw *ServerInterfaceWrapper) GetCommitsInRepository(w http.ResponseWriter, r *http.Request) {
+// GetCommitsInRef operation middleware
+func (siw *ServerInterfaceWrapper) GetCommitsInRef(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var err error
@@ -5886,7 +5886,7 @@ func (siw *ServerInterfaceWrapper) GetCommitsInRepository(w http.ResponseWriter,
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
-	var params GetCommitsInRepositoryParams
+	var params GetCommitsInRefParams
 
 	// ------------- Optional query parameter "after" -------------
 
@@ -5913,7 +5913,7 @@ func (siw *ServerInterfaceWrapper) GetCommitsInRepository(w http.ResponseWriter,
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetCommitsInRepository(r.Context(), &JiaozifsResponse{w}, r, owner, repository, params)
+		siw.Handler.GetCommitsInRef(r.Context(), &JiaozifsResponse{w}, r, owner, repository, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -6803,7 +6803,7 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/repos/{owner}/{repository}/changes/{commit_id}", wrapper.GetCommitChanges)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/repos/{owner}/{repository}/commits", wrapper.GetCommitsInRepository)
+		r.Get(options.BaseURL+"/repos/{owner}/{repository}/commits", wrapper.GetCommitsInRef)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/repos/{owner}/{repository}/compare/{basehead}", wrapper.CompareCommit)
@@ -6857,76 +6857,77 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
