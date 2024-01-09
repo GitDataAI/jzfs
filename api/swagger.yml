@@ -1101,6 +1101,7 @@ paths:
           name: path
           description: path
           required: false
+          allowEmptyValue: true
           schema:
             type: string
       responses:
@@ -1220,17 +1221,19 @@ paths:
           name: path
           description: specific path, if not specific return entries in root
           required: false
+          allowEmptyValue: true
           schema:
             type: string
         - in: query
           name: ref
-          description: specific branch,  default to repostiory default branch(HEAD)
+          description: specific( ref name, tag name, commit hash), for wip and branchm, branch name default to repository default branch(HEAD),
           required: false
+          allowEmptyValue: true
           schema:
             type: string
         - in: query
           name: type
-          description: type indicate to retrieve from wip/branch/tag, default branch
+          description: type indicate to retrieve from wip/branch/tag/commit, default branch
           required: true
           schema:
             $ref: "#/components/schemas/RefType"
@@ -1279,6 +1282,7 @@ paths:
           name: path
           description: specific path, if not specific return entries in root
           required: false
+          allowEmptyValue: true
           schema:
             type: string
       responses:
@@ -1324,6 +1328,7 @@ paths:
           name: path
           description: specific path, if not specific return entries in root
           required: false
+          allowEmptyValue: true
           schema:
             type: string
       responses:
@@ -1356,8 +1361,8 @@ paths:
     get:
       tags:
         - repo
-      operationId: getCommitsInRepository
-      summary: get commits in repository
+      operationId: getCommitsInRef
+      summary: get commits in ref
       parameters:
         - $ref: "#/components/parameters/PaginationCommitAfter"
         - $ref: "#/components/parameters/PaginationAmount"
@@ -1365,6 +1370,7 @@ paths:
           name: refName
           description: ref(branch/tag) name
           required: false
+          allowEmptyValue: true
           schema:
             type: string
       responses:

@@ -25,7 +25,7 @@ func FromHex(str string) (Hash, error) {
 
 func (hash Hash) Hex() string {
 	if hash == nil {
-		hex.EncodeToString(EmptyHash)
+		return hex.EncodeToString(EmptyHash)
 	}
 	return hex.EncodeToString(hash)
 }
