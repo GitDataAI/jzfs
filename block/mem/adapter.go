@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -179,7 +178,7 @@ func (a *Adapter) Remove(_ context.Context, obj block.ObjectPointer) error {
 
 func (a *Adapter) Clean(_ context.Context, _, storageNamespace string) error {
 	if storageNamespace == "" {
-		return errors.New("storageNamespace cannot be empty")
+		return fmt.Errorf("storageNamespace cannot be empty")
 	}
 	for key := range a.data {
 		if strings.HasPrefix(key, storageNamespace) {

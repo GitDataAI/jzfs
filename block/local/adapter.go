@@ -193,7 +193,7 @@ func (l *Adapter) Remove(_ context.Context, obj block.ObjectPointer) error {
 func (l *Adapter) Clean(_ context.Context, filepath, storageNamespace string) error {
 	storageNamespaceSplits := strings.Split(storageNamespace, "://")
 	if len(storageNamespaceSplits) != 2 {
-		return errors.New("Invalid storageNamespace")
+		return fmt.Errorf("Invalid storageNamespace")
 	}
 	filepath = fmt.Sprintf("%s/%s", filepath, storageNamespaceSplits[1])
 	expandPath, err := homedir.Expand(filepath)
