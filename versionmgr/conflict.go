@@ -9,31 +9,31 @@ import (
 )
 
 // ConflictResolver resolve conflict between two change
-type ConflictResolver func(base IChange, merged IChange) (IChange, error)
+type ConflictResolver func(left IChange, right IChange) (IChange, error)
 
-// LeastHashResolve use least hash change for test
-func LeastHashResolve(base IChange, merged IChange) (IChange, error) {
-	baseAction, err := base.Action()
+// LeastHashResolve use the least hash change for test
+func LeastHashResolve(left IChange, right IChange) (IChange, error) {
+	leftAction, err := left.Action()
 	if err != nil {
 		return nil, err
 	}
 
-	mergeAction, err := merged.Action()
+	rightAction, err := right.Action()
 	if err != nil {
 		return nil, err
 	}
 
-	if baseAction == merkletrie.Delete {
-		return merged, nil
+	if leftAction == merkletrie.Delete {
+		return right, nil
 	}
-	if mergeAction == merkletrie.Delete {
-		return base, nil
+	if rightAction == merkletrie.Delete {
+		return left, nil
 	}
 
-	if bytes.Compare(base.To().Hash(), merged.To().Hash()) < 0 {
-		return base, nil
+	if bytes.Compare(left.To().Hash(), right.To().Hash()) < 0 {
+		return left, nil
 	}
-	return merged, nil
+	return right, nil
 }
 
 func ForbidResolver(_ IChange, _ IChange) (IChange, error) {
@@ -47,58 +47,24 @@ type BaseChange struct {
 
 type Conflict struct {
 	Path  string
-	Base  BaseChange
-	Merge BaseChange
+	Left  BaseChange
+	Right BaseChange
 }
 
-func OneSideResolver(isBase bool) ConflictResolver {
-	return func(base IChange, merge IChange) (IChange, error) {
-		if isBase {
-			return base, nil
+func OneSideResolver(useLeft bool) ConflictResolver {
+	return func(left IChange, right IChange) (IChange, error) {
+		if useLeft {
+			return left, nil
 		}
-		return merge, nil
+		return right, nil
 	}
 }
 
 func ResolveFromSelector(resolveMsg map[string]string) ConflictResolver {
-	return func(base IChange, merge IChange) (IChange, error) {
-		if resolveMsg[base.Path()] == "base" {
-			return base, nil
+	return func(left IChange, right IChange) (IChange, error) {
+		if resolveMsg[left.Path()] == "left" {
+			return left, nil
 		}
-		return merge, nil
-	}
-}
-
-func ConflictCollector() ConflictResolver {
-	changes := make([]Conflict, 0)
-	return func(base IChange, merge IChange) (IChange, error) {
-		baseAct, err := base.Action()
-		if err != nil {
-			return nil, err
-		}
-		baseHash := hash.Empty
-		if baseAct != merkletrie.Delete {
-			baseHash = base.To().Hash()
-		}
-		mergeAct, err := merge.Action()
-		if err != nil {
-			return nil, err
-		}
-		mergeHash := hash.Empty
-		if mergeAct != merkletrie.Delete {
-			mergeHash = merge.To().Hash()
-		}
-		changes = append(changes, Conflict{
-			Path: base.Path(),
-			Base: BaseChange{
-				Action: baseAct,
-				Hash:   baseHash,
-			},
-			Merge: BaseChange{
-				Action: mergeAct,
-				Hash:   mergeHash,
-			},
-		})
-		return base, nil
+		return right, nil
 	}
 }

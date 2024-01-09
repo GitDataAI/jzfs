@@ -189,7 +189,7 @@ func (wipCtl WipController) UpdateWip(ctx context.Context, w *api.JiaozifsRespon
 
 	updateParams := models.NewUpdateWipParams(wip.ID)
 	if body.BaseCommit != nil {
-		baseCommitHash, err := hash.FromHex(*body.BaseCommit)
+		baseCommitHash, err := hash.FromHex(utils.StringValue(body.BaseCommit))
 		if err != nil {
 			w.Error(err)
 			return
@@ -205,7 +205,7 @@ func (wipCtl WipController) UpdateWip(ctx context.Context, w *api.JiaozifsRespon
 		updateParams.SetBaseCommit(baseCommitHash)
 	}
 	if body.CurrentTree != nil {
-		currentTreeHash, err := hash.FromHex(*body.CurrentTree)
+		currentTreeHash, err := hash.FromHex(utils.StringValue(body.CurrentTree))
 		if err != nil {
 			w.Error(err)
 			return

@@ -176,7 +176,7 @@ components:
           type: string
           allowEmptyValue: true
         conflict_resolve:
-          description: use to record the resolution of the conflict, example({"b/a.txt":"base"})
+          description: use to record the resolution of the conflict, example({"b/a.txt":"left"})
           type: object
           additionalProperties:
             type: string

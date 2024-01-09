@@ -180,7 +180,7 @@ type LoginConfigRBAC string
 
 // MergeMergeRequest defines model for MergeMergeRequest.
 type MergeMergeRequest struct {
-	// ConflictResolve use to record the resolution of the conflict, example({"b/a.txt":"base"})
+	// ConflictResolve use to record the resolution of the conflict, example({"b/a.txt":"left"})
 	ConflictResolve *map[string]string `json:"conflict_resolve,omitempty"`
 	Msg             string             `json:"msg"`
 }
@@ -8326,7 +8326,7 @@ var swaggerSpec = []string{
 	"R69q5RkphRi8y5jhIkxiCMeVnaw+oH2hhgmJSGO8sJPhAs1nDKnv1RPd2y8IoyiLYySASqABGCeNCMSB",
 	"hsAhvKSEovcXH08QpiFK8ELBjFSahFFM6DftwqGSl7pblICcsfCSdnPNKZKUk6QikEESYJl0d9buZEro",
 	"FLFM7i5dsyWNTinXBnatVL3f9W96uU025iBYfK0licOQKOpxfFp3rnvx21NT1LGkgPEQyZnyowWLM/Ua",
-	"sUg/yYfzEdzgJI3hxe2lNxnhXXkjL73DS21vX3p3Lz3HdBKhAQfHMZsfJ6lc/K5jDoeSZ7CMlerbThZ1",
+	"sUg/yYfzEdzgJI3hxe2lNxnhXXkjL73DS22wXnp3Lz3HdBKhAQfHMZsfJ6lc/K5jDoeSZ7CMlerbThZ1",
 	"csdYKkOtqXU2lA35y8Z6EhLLTDR3FOd+ItSUaVDffrLu/admVwwiyX6hjL/B5mjVolnli5UGyU2tLUUK",
 	"Cs4259NkYotFrenkxDbk61f0crWtu6rtyjo6l1jCvdVe+33DvfyKQ+vYXn4soh+LaEuLKFfUrSynx42c",
 	"1baxjcXPftP/UyAhHJbDDIJvQlncrkgzU4acHJsXTZvI9IsSCAlGuolzNUocYomXTd109lkA/5h/ob7W",
@@ -8385,7 +8385,7 @@ var swaggerSpec = []string{
 	"bu0G7MdBwPvFCGJ11H0CLuOcpDVfMeVMH/hSKtcIMHwnoMvhGvhA0P03MJj99q3hEJEbxCK0xOKxAZ+1",
 	"EP1MC6Fm963k5hohPhoEOoazMb0ixucK7lmqK4V8bUzwEShDVDM//wFe/RWO4zY+1gMWt9Vbrr9eKdlW",
 	"b9w2T2q3an+9UjIyqO3aUCt5OwPsNEyZudewvML6cDSKWYDjGRPy8NXrv++/GuGUjK73vbZ2Le2w+PTq",
-	"7v8DAAD//yVnSbY2hwAA",
+	"7v8DAAD//9cankg2hwAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

@@ -471,8 +471,14 @@ func UpdateWipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		loginAndSwitch(ctx, c, client, "jude login", userName, false)
 		createRepo(ctx, c, client, repoName)
 		createWip(ctx, c, client, "get wip obj test", userName, repoName, branchName)
+
+		//make wip base commit has value
+		uploadObject(ctx, c, client, "update init object", userName, repoName, branchName, "a.txt")
+		commitWip(ctx, c, client, "commit init object", userName, repoName, branchName, "test")
+
 		uploadObject(ctx, c, client, "update f1 to test branch", userName, repoName, branchName, "m.dat")
 		uploadObject(ctx, c, client, "update f2 to test branch", userName, repoName, branchName, "g/m.dat")
+
 		c.Convey("get wip", func(c convey.C) {
 			resp, err := client.GetWip(ctx, userName, repoName, &api.GetWipParams{
 				RefName: branchName,
@@ -535,6 +541,26 @@ func UpdateWipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
 			})
 
+			c.Convey("update wip with fail base commit", func() {
+				//delete
+				resp, err := client.UpdateWip(ctx, userName, repoName, &api.UpdateWipParams{RefName: branchName}, api.UpdateWipJSONRequestBody{
+					CurrentTree: utils.String(hash.Empty.Hex()),
+					BaseCommit:  utils.String("ddd"),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusInternalServerError)
+			})
+
+			c.Convey("update wip with fail tree hash", func() {
+				//delete
+				resp, err := client.UpdateWip(ctx, userName, repoName, &api.UpdateWipParams{RefName: branchName}, api.UpdateWipJSONRequestBody{
+					CurrentTree: utils.String("ddd"),
+					BaseCommit:  utils.String(hash.Empty.Hex()),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusInternalServerError)
+			})
+
 			c.Convey("update wip successful", func() {
 				//delete
 				resp, err := client.UpdateWip(ctx, userName, repoName, &api.UpdateWipParams{RefName: branchName}, api.UpdateWipJSONRequestBody{
@@ -553,6 +579,26 @@ func UpdateWipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(err, convey.ShouldBeNil)
 				convey.So((*updatedWip.JSON200).BaseCommit, convey.ShouldEqual, "")
 				convey.So((*updatedWip.JSON200).CurrentTree, convey.ShouldEqual, "")
+			})
+
+			c.Convey("fail to update non exit tree hash", func() {
+				//delete
+				resp, err := client.UpdateWip(ctx, userName, repoName, &api.UpdateWipParams{RefName: branchName}, api.UpdateWipJSONRequestBody{
+					CurrentTree: utils.String("6161616161"),
+					BaseCommit:  utils.String(wip.BaseCommit),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
+			})
+
+			c.Convey("fail to update non exit base commit", func() {
+				//delete
+				resp, err := client.UpdateWip(ctx, userName, repoName, &api.UpdateWipParams{RefName: branchName}, api.UpdateWipJSONRequestBody{
+					CurrentTree: utils.String(wip.CurrentTree),
+					BaseCommit:  utils.String("6161616161"),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
 			})
 
 			c.Convey("update wip to non empty successful", func() {

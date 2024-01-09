@@ -92,42 +92,49 @@ func (m mockChange) String() string {
 	panic("implement me")
 }
 
-func makeMockChange(testData string) (*Changes, error) {
+func makeMockChange(data string) (IChange, error) {
+	segs := strings.Split(data, "|")
+	num, err := strconv.Atoi(segs[0])
+	if err != nil {
+		return nil, err
+	}
+	action := merkletrie.Action(num)
+	pHash := hash.Hash(strings.Trim(segs[2], " \t/"))
+	fullPath := filepath.Clean(strings.Trim(segs[1], " \t/"))
+	pathSeg := strings.Split(fullPath, "/")
+	path := make([]noder.Noder, len(pathSeg))
+	for index, p := range pathSeg {
+		path[index] = NewMockNode(p, pHash)
+	}
+	c := &mockChange{
+		action: action,
+		path:   fullPath,
+	}
+	switch action {
+	case merkletrie.Delete:
+		c.from = path
+		c.to = nil
+	case merkletrie.Insert:
+		c.from = nil
+		c.to = path
+	case merkletrie.Modify:
+		c.from = nil
+		c.to = path
+	}
+	return c, nil
+}
+func makeMockChanges(testData string) (*Changes, error) {
 	var changes []IChange
 	for _, line := range strings.Split(testData, "\n") {
 		line = strings.TrimSpace(line)
 		if len(line) == 0 {
 			continue
 		}
-		segs := strings.Split(line, "|")
-		num, err := strconv.Atoi(segs[0])
+
+		c, err := makeMockChange(line)
 		if err != nil {
 			return nil, err
 		}
-		action := merkletrie.Action(num)
-		pHash := hash.Hash(strings.Trim(segs[2], " \t/"))
-		fullPath := filepath.Clean(strings.Trim(segs[1], " \t/"))
-		pathSeg := strings.Split(fullPath, "/")
-		path := make([]noder.Noder, len(pathSeg))
-		for index, p := range pathSeg {
-			path[index] = NewMockNode(p, pHash)
-		}
-		c := &mockChange{
-			action: action,
-			path:   fullPath,
-		}
-		switch action {
-		case merkletrie.Delete:
-			c.from = path
-			c.to = nil
-		case merkletrie.Insert:
-			c.from = nil
-			c.to = path
-		case merkletrie.Modify:
-			c.from = nil
-			c.to = path
-		}
-
 		changes = append(changes, c)
 	}
 
@@ -140,13 +147,13 @@ func TestNewChangesMergeIter(t *testing.T) {
 1|a.txt|h1
 1|b/a.txt|h2
 `
-		changeSet1, err := makeMockChange(changeData1)
+		changeSet1, err := makeMockChanges(changeData1)
 		require.NoError(t, err)
 		changeData2 := `
 1|c.txt|h1
 1|d/a.txt|h2
 `
-		changeSet2, err := makeMockChange(changeData2)
+		changeSet2, err := makeMockChanges(changeData2)
 		require.NoError(t, err)
 		iter := NewChangesMergeIter(changeSet1, changeSet2, nil)
 
@@ -169,14 +176,14 @@ func TestNewChangesMergeIter(t *testing.T) {
 2|b/d.txt|h2
 3|b/a.txt|h2
 `
-		changeSet1, err := makeMockChange(changeData1)
+		changeSet1, err := makeMockChanges(changeData1)
 		require.NoError(t, err)
 		changeData2 := `
 1|a.txt|h1
 2|b/d.txt|h2
 3|b/a.txt|h2
 `
-		changeSet2, err := makeMockChange(changeData2)
+		changeSet2, err := makeMockChanges(changeData2)
 		require.NoError(t, err)
 		iter := NewChangesMergeIter(changeSet1, changeSet2, nil)
 
@@ -196,12 +203,12 @@ func TestNewChangesMergeIter(t *testing.T) {
 		changeData1 := `
 1|a.txt|h1
 `
-		changeSet1, err := makeMockChange(changeData1)
+		changeSet1, err := makeMockChanges(changeData1)
 		require.NoError(t, err)
 		changeData2 := `
 1|a.txt|h2
 `
-		changeSet2, err := makeMockChange(changeData2)
+		changeSet2, err := makeMockChanges(changeData2)
 		require.NoError(t, err)
 		iter := NewChangesMergeIter(changeSet1, changeSet2, nil)
 
@@ -215,12 +222,12 @@ func TestNewChangesMergeIter(t *testing.T) {
 		changeData1 := `
 3|a.txt|h1
 `
-		changeSet1, err := makeMockChange(changeData1)
+		changeSet1, err := makeMockChanges(changeData1)
 		require.NoError(t, err)
 		changeData2 := `
 3|a.txt|h2
 `
-		changeSet2, err := makeMockChange(changeData2)
+		changeSet2, err := makeMockChanges(changeData2)
 		require.NoError(t, err)
 		iter := NewChangesMergeIter(changeSet1, changeSet2, nil)
 
@@ -234,12 +241,12 @@ func TestNewChangesMergeIter(t *testing.T) {
 		changeData1 := `
 2|a.txt|h1
 `
-		changeSet1, err := makeMockChange(changeData1)
+		changeSet1, err := makeMockChanges(changeData1)
 		require.NoError(t, err)
 		changeData2 := `
 2|a.txt|h2
 `
-		changeSet2, err := makeMockChange(changeData2)
+		changeSet2, err := makeMockChanges(changeData2)
 		require.NoError(t, err)
 		iter := NewChangesMergeIter(changeSet1, changeSet2, nil)
 
@@ -258,13 +265,13 @@ func TestNewChangesMergeIter(t *testing.T) {
 1|a.txt|h1
 2|b.txt|h3
 `
-		changeSet1, err := makeMockChange(changeData1)
+		changeSet1, err := makeMockChanges(changeData1)
 		require.NoError(t, err)
 		changeData2 := `
 1|a.txt|h2
 2|b.txt|h4
 `
-		changeSet2, err := makeMockChange(changeData2)
+		changeSet2, err := makeMockChanges(changeData2)
 		require.NoError(t, err)
 		iter := NewChangesMergeIter(changeSet1, changeSet2, LeastHashResolve)
 
@@ -289,7 +296,7 @@ func TestChanges_ForEach(t *testing.T) {
 1|a.txt|h1
 1|b.txt|h2
 `
-	changeSet, err := makeMockChange(changeData1)
+	changeSet, err := makeMockChanges(changeData1)
 	require.NoError(t, err)
 
 	t.Run("simple", func(t *testing.T) {

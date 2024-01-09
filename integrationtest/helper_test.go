@@ -13,17 +13,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiaozifs/jiaozifs/utils"
-
 	"github.com/jiaozifs/jiaozifs/api"
-	"github.com/smartystreets/goconvey/convey"
-
-	"github.com/jiaozifs/jiaozifs/testhelper"
-
-	"github.com/stretchr/testify/require"
-
 	"github.com/jiaozifs/jiaozifs/cmd"
+	"github.com/jiaozifs/jiaozifs/testhelper"
+	"github.com/jiaozifs/jiaozifs/utils"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 	"github.com/phayes/freeport"
+	"github.com/smartystreets/goconvey/convey"
+	"github.com/stretchr/testify/require"
 )
 
 func InitCmd(ctx context.Context, jzHome string, listen string, db string) error {
@@ -57,7 +54,7 @@ func TestDoubleInit(t *testing.T) { //nolint
 type Closer func()
 
 func SetupDaemon(t *testing.T, ctx context.Context) (string, Closer) { //nolint
-	pg, connectString, _ := testhelper.SetupDatabase(ctx, t)
+	closeDB, connectString, _ := testhelper.SetupDatabase(ctx, t)
 
 	port, err := freeport.GetFreePort()
 	require.NoError(t, err)
@@ -70,7 +67,8 @@ func SetupDaemon(t *testing.T, ctx context.Context) (string, Closer) { //nolint
 
 	closer := func() {
 		cancel()
-		require.NoError(t, pg.Stop())
+		require.NoError(t, os.RemoveAll(tmpDir))
+		closeDB()
 	}
 	go func() {
 		err := Daemon(ctx, buf, tmpDir, url)
@@ -104,12 +102,15 @@ func SetupDaemon(t *testing.T, ctx context.Context) (string, Closer) { //nolint
 	}
 }
 
+var count int
+
 func createUser(ctx context.Context, c convey.C, client *api.Client, userName string) {
 	c.Convey("register "+userName, func() {
+		count++
 		resp, err := client.Register(ctx, api.RegisterJSONRequestBody{
 			Name:     userName,
 			Password: "12345678",
-			Email:    "mock@gmail.com",
+			Email:    openapi_types.Email(fmt.Sprintf("mock%d@gmail.com", count)),
 		})
 		convey.So(err, convey.ShouldBeNil)
 		convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
