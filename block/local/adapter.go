@@ -193,7 +193,7 @@ func (l *Adapter) Remove(_ context.Context, obj block.ObjectPointer) error {
 }
 
 func (l *Adapter) Clean(_ context.Context, localPath, storageNamespace string) error {
-	filepath := path.Join(l.path, storageNamespace[len(DefaultNamespacePrefix):])
+	filepath := path.Join(localPath, storageNamespace[len(DefaultNamespacePrefix):])
 
 	expandPath, err := homedir.Expand(filepath)
 	if err != nil {
