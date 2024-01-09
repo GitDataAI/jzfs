@@ -36,9 +36,10 @@ type Adapter struct {
 }
 
 var (
-	ErrPathNotWritable       = errors.New("path provided is not writable")
-	ErrInvalidUploadIDFormat = errors.New("invalid upload id format")
-	ErrBadPath               = errors.New("bad path traversal blocked")
+	ErrPathNotWritable         = errors.New("path provided is not writable")
+	ErrInvalidUploadIDFormat   = errors.New("invalid upload id format")
+	ErrBadPath                 = errors.New("bad path traversal blocked")
+	ErrInvalidStorageNamespace = errors.New("invalid storageNamespace")
 )
 
 type QualifiedKey struct {
@@ -157,6 +158,7 @@ func (l *Adapter) Path() string {
 
 func (l *Adapter) Put(_ context.Context, obj block.ObjectPointer, _ int64, reader io.Reader, _ block.PutOpts) error {
 	p, err := l.extractParamsFromObj(obj)
+	fmt.Println(p)
 	if err != nil {
 		return err
 	}
@@ -190,12 +192,9 @@ func (l *Adapter) Remove(_ context.Context, obj block.ObjectPointer) error {
 	return nil
 }
 
-func (l *Adapter) Clean(_ context.Context, filepath, storageNamespace string) error {
-	storageNamespaceSplits := strings.Split(storageNamespace, "://")
-	if len(storageNamespaceSplits) != 2 {
-		return fmt.Errorf("Invalid storageNamespace")
-	}
-	filepath = fmt.Sprintf("%s/%s", filepath, storageNamespaceSplits[1])
+func (l *Adapter) Clean(_ context.Context, localPath, storageNamespace string) error {
+	filepath := path.Join(l.path, storageNamespace[len(DefaultNamespacePrefix):])
+
 	expandPath, err := homedir.Expand(filepath)
 	if err != nil {
 		return err

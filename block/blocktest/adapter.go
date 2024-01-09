@@ -12,8 +12,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiaozifs/jiaozifs/config"
-
 	"github.com/go-test/deep"
 	"github.com/jiaozifs/jiaozifs/block"
 	"github.com/stretchr/testify/require"
@@ -73,7 +71,6 @@ func testAdapterClean(t *testing.T, adapter block.Adapter, storageNamespace stri
 	// setup env
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// setup env
 			envObjects := tt.additionalObjects
 			envObjects = append(envObjects, tt.path)
 			for _, p := range envObjects {
@@ -82,14 +79,19 @@ func testAdapterClean(t *testing.T, adapter block.Adapter, storageNamespace stri
 					Identifier:       tt.name + "/" + p,
 					IdentifierType:   block.IdentifierTypeRelative,
 				}
+				fmt.Println("obj.storageNamespace==>", obj.StorageNamespace)
+				fmt.Println("obj.Indentifier==>", obj.Identifier)
+				fmt.Println("obj.IndentifierType==>", obj.IdentifierType)
 				require.NoError(t, adapter.Put(ctx, obj, int64(len(content)), strings.NewReader(content), block.PutOpts{}))
 			}
 		})
 	}
 
 	// clean
+	tmpDir := t.TempDir()
+	localPath := path.Join(tmpDir, "lakefs")
 	t.Run("clean repo", func(t *testing.T) {
-		err := adapter.Clean(ctx, config.DefaultLocalBSPath, storageNamespace)
+		err := adapter.Clean(ctx, localPath, storageNamespace)
 		require.NoError(t, err)
 	})
 }
