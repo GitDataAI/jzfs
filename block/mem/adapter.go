@@ -176,12 +176,12 @@ func (a *Adapter) Remove(_ context.Context, obj block.ObjectPointer) error {
 	return nil
 }
 
-func (a *Adapter) Clean(_ context.Context, _, storageNamespace string) error {
+func (a *Adapter) RemoveNameSpace(_ context.Context, storageNamespace string) error {
 	if storageNamespace == "" {
 		return fmt.Errorf("storageNamespace cannot be empty")
 	}
 	for key := range a.data {
-		if strings.HasPrefix(key, storageNamespace) {
+		if strings.HasPrefix(key, storageNamespace+":") {
 			delete(a.data, key)
 		}
 	}

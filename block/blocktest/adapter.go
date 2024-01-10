@@ -26,10 +26,10 @@ func AdapterTest(t *testing.T, adapter block.Adapter, storageNamespace, external
 	t.Run("Adapter_Exists", func(t *testing.T) { testAdapterExists(t, adapter, storageNamespace) })
 	t.Run("Adapter_GetRange", func(t *testing.T) { testAdapterGetRange(t, adapter, storageNamespace) })
 	t.Run("Adapter_Walker", func(t *testing.T) { testAdapterWalker(t, adapter, storageNamespace) })
-	// t.Run("Adapter_Clean", func(t *testing.T) { testAdapterClean(t, adapter, storageNamespace, localPath) })
+	t.Run("Adapter_Clean", func(t *testing.T) { testAdapterClean(t, adapter, storageNamespace) })
 }
 
-func testAdapterClean(t *testing.T, adapter block.Adapter, storageNamespace, localPath string) { //nolint
+func testAdapterClean(t *testing.T, adapter block.Adapter, storageNamespace string) { //nolint
 	ctx := context.Background()
 	const content = "content used for testing"
 
@@ -86,7 +86,7 @@ func testAdapterClean(t *testing.T, adapter block.Adapter, storageNamespace, loc
 
 	// clean
 	t.Run("clean repo", func(t *testing.T) {
-		err := adapter.Clean(ctx, localPath, storageNamespace)
+		err := adapter.RemoveNameSpace(ctx, storageNamespace)
 		require.NoError(t, err)
 	})
 }

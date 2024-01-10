@@ -17,7 +17,7 @@ func newAdapter() *gs.Adapter {
 func TestAdapter(t *testing.T) {
 	basePath, err := url.JoinPath("gs://", bucketName)
 	require.NoError(t, err)
-	localPath, err := url.JoinPath(basePath, "lakefs")
+	localPath, err := url.JoinPath(basePath, "jiaozfs")
 	require.NoError(t, err)
 	externalPath, err := url.JoinPath(basePath, "external")
 	require.NoError(t, err)
