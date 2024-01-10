@@ -22,8 +22,8 @@ type Branch struct {
 	// CreatorID who create this branch
 	CreatorID uuid.UUID `bun:"creator_id,type:uuid,notnull" json:"creator_id"`
 
-	CreatedAt time.Time `bun:"created_at,notnull" json:"created_at"`
-	UpdatedAt time.Time `bun:"updated_at,notnull" json:"updated_at"`
+	CreatedAt time.Time `bun:"created_at,type:timestamp,notnull" json:"created_at"`
+	UpdatedAt time.Time `bun:"updated_at,type:timestamp,notnull" json:"updated_at"`
 }
 
 type GetBranchParams struct {

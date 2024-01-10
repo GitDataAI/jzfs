@@ -20,7 +20,6 @@ import (
 	"github.com/jiaozifs/jiaozifs/utils"
 	"github.com/jiaozifs/jiaozifs/utils/hash"
 	"github.com/jiaozifs/jiaozifs/versionmgr"
-	openapi_types "github.com/oapi-codegen/runtime/types"
 	"go.uber.org/fx"
 )
 
@@ -68,7 +67,7 @@ func (repositoryCtl RepositoryController) ListRepositoryOfAuthenticatedUser(ctx 
 		listRepoParams.SetName(*params.Prefix, models.PrefixMatch)
 	}
 	if params.After != nil {
-		listRepoParams.SetAfter(*params.After)
+		listRepoParams.SetAfter(time.UnixMilli(utils.Int64Value(params.After)))
 	}
 	pageAmount := utils.IntValue(params.Amount)
 	if pageAmount > utils.DefaultMaxPerPage || pageAmount <= 0 {
@@ -85,16 +84,7 @@ func (repositoryCtl RepositoryController) ListRepositoryOfAuthenticatedUser(ctx 
 	}
 	results := make([]api.Repository, 0, len(repositories))
 	for _, repo := range repositories {
-		r := api.Repository{
-			CreatedAt:   repo.CreatedAt,
-			CreatorId:   repo.CreatorID,
-			Description: repo.Description,
-			Head:        repo.HEAD,
-			Id:          repo.ID,
-			Name:        repo.Name,
-			UpdatedAt:   repo.UpdatedAt,
-		}
-		results = append(results, r)
+		results = append(results, *repositoryToDto(repo))
 	}
 	pagMag := utils.PaginationFor(hasMore, results, "UpdatedAt")
 	pagination := api.Pagination{
@@ -131,7 +121,7 @@ func (repositoryCtl RepositoryController) ListRepository(ctx context.Context, w 
 		listRepoParams.SetName(*params.Prefix, models.PrefixMatch)
 	}
 	if params.After != nil {
-		listRepoParams.SetAfter(*params.After)
+		listRepoParams.SetAfter(time.UnixMilli(*params.After))
 	}
 	pageAmount := utils.IntValue(params.Amount)
 	if pageAmount > utils.DefaultMaxPerPage || pageAmount <= 0 {
@@ -147,16 +137,7 @@ func (repositoryCtl RepositoryController) ListRepository(ctx context.Context, w 
 	}
 	results := make([]api.Repository, 0, len(repositories))
 	for _, repo := range repositories {
-		r := api.Repository{
-			CreatedAt:   repo.CreatedAt,
-			CreatorId:   repo.CreatorID,
-			Description: repo.Description,
-			Head:        repo.HEAD,
-			Id:          repo.ID,
-			Name:        repo.Name,
-			UpdatedAt:   repo.UpdatedAt,
-		}
-		results = append(results, r)
+		results = append(results, *repositoryToDto(repo))
 	}
 	pagMag := utils.PaginationFor(hasMore, results, "UpdatedAt")
 	pagination := api.Pagination{
@@ -244,15 +225,7 @@ func (repositoryCtl RepositoryController) CreateRepository(ctx context.Context, 
 		return
 	}
 
-	w.JSON(api.Repository{
-		CreatedAt:   createdRepo.CreatedAt,
-		CreatorId:   createdRepo.CreatorID,
-		Description: createdRepo.Description,
-		Head:        createdRepo.HEAD,
-		Id:          createdRepo.ID,
-		Name:        createdRepo.Name,
-		UpdatedAt:   createdRepo.UpdatedAt,
-	})
+	w.JSON(repositoryToDto(createdRepo))
 }
 
 func (repositoryCtl RepositoryController) DeleteRepository(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string) {
@@ -349,7 +322,7 @@ func (repositoryCtl RepositoryController) GetRepository(ctx context.Context, w *
 		return
 	}
 
-	w.JSON(repo)
+	w.JSON(repositoryToDto(repo))
 }
 
 func (repositoryCtl RepositoryController) UpdateRepository(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, body api.UpdateRepositoryJSONRequestBody, ownerName string, repositoryName string) {
@@ -451,11 +424,7 @@ func (repositoryCtl RepositoryController) GetCommitsInRef(ctx context.Context, w
 		commit, err := iter.Next()
 		if err == nil {
 			if params.After != nil {
-				parseTime, err := time.Parse(time.RFC3339Nano, *params.After)
-				if err != nil {
-					w.Error(err)
-					return
-				}
+				parseTime := time.UnixMilli(*params.After)
 				if commit.Commit().Committer.When.Add(time.Nanosecond).After(parseTime) {
 					continue
 				}
@@ -464,27 +433,7 @@ func (repositoryCtl RepositoryController) GetCommitsInRef(ctx context.Context, w
 				break
 			}
 			modelCommit := commit.Commit()
-			commits = append(commits, api.Commit{
-				RepositoryId: modelCommit.RepositoryID,
-				Author: api.Signature{
-					Email: openapi_types.Email(modelCommit.Author.Email),
-					Name:  modelCommit.Author.Name,
-					When:  modelCommit.Author.When,
-				},
-
-				Committer: api.Signature{
-					Email: openapi_types.Email(modelCommit.Committer.Email),
-					Name:  modelCommit.Committer.Name,
-					When:  modelCommit.Committer.When,
-				},
-				CreatedAt:    modelCommit.CreatedAt,
-				Hash:         modelCommit.Hash.Hex(),
-				MergeTag:     modelCommit.MergeTag,
-				Message:      modelCommit.Message,
-				ParentHashes: hash.HexArrayOfHashes(modelCommit.ParentHashes...),
-				TreeHash:     modelCommit.TreeHash.Hex(),
-				UpdatedAt:    modelCommit.UpdatedAt,
-			})
+			commits = append(commits, *commitToDto(modelCommit))
 			continue
 		}
 		if err == io.EOF {
@@ -494,4 +443,16 @@ func (repositoryCtl RepositoryController) GetCommitsInRef(ctx context.Context, w
 		return
 	}
 	w.JSON(commits)
+}
+
+func repositoryToDto(repository *models.Repository) *api.Repository {
+	return &api.Repository{
+		CreatedAt:   repository.CreatedAt.UnixMilli(),
+		CreatorId:   repository.CreatorID,
+		Description: repository.Description,
+		Head:        repository.HEAD,
+		Id:          repository.ID,
+		Name:        repository.Name,
+		UpdatedAt:   repository.UpdatedAt.UnixMilli(),
+	}
 }

@@ -66,9 +66,9 @@ func (wipCtl WipController) GetWip(ctx context.Context, w *api.JiaozifsResponse,
 		return
 	}
 	if isNew {
-		w.JSON(wip, http.StatusCreated)
+		w.JSON(wipToDto(wip), http.StatusCreated)
 	}
-	w.JSON(wip)
+	w.JSON(wipToDto(wip))
 }
 
 // ListWip return wips of branches, operator only see himself wips in specific repository
@@ -102,7 +102,11 @@ func (wipCtl WipController) ListWip(ctx context.Context, w *api.JiaozifsResponse
 		return
 	}
 
-	w.JSON(wips)
+	apiWips := make([]*api.Wip, len(wips))
+	for index, wip := range wips {
+		apiWips[index] = wipToDto(wip)
+	}
+	w.JSON(apiWips)
 }
 
 // CommitWip commit wip to branch, operator only could operator himself wip
@@ -148,7 +152,7 @@ func (wipCtl WipController) CommitWip(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
-	w.JSON(workRepo.CurWip(), http.StatusCreated)
+	w.JSON(wipToDto(workRepo.CurWip()), http.StatusCreated)
 }
 
 func (wipCtl WipController) UpdateWip(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, body api.UpdateWipJSONRequestBody, ownerName string, repositoryName string, params api.UpdateWipParams) {
@@ -390,4 +394,18 @@ func (wipCtl WipController) RevertWipChanges(ctx context.Context, w *api.Jiaozif
 	}
 
 	w.OK()
+}
+
+func wipToDto(wip *models.WorkingInProcess) *api.Wip {
+	return &api.Wip{
+		BaseCommit:   wip.BaseCommit.Hex(),
+		CreatedAt:    wip.CreatedAt.UnixMilli(),
+		CreatorId:    wip.CreatorID,
+		CurrentTree:  wip.CurrentTree.Hex(),
+		Id:           wip.ID,
+		RefId:        wip.RefID,
+		RepositoryId: wip.RepositoryID,
+		State:        int(wip.State),
+		UpdatedAt:    wip.UpdatedAt.UnixMilli(),
+	}
 }

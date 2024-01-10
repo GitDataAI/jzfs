@@ -39,8 +39,8 @@ type Commit struct {
 	// ParentHashes are the hashes of the parent commits of the commit.
 	ParentHashes []hash.Hash `bun:"parent_hashes,type:bytea[]" json:"parent_hashes"`
 
-	CreatedAt time.Time `bun:"created_at,notnull" json:"created_at"`
-	UpdatedAt time.Time `bun:"updated_at,notnull" json:"updated_at"`
+	CreatedAt time.Time `bun:"created_at,type:timestamp,notnull" json:"created_at"`
+	UpdatedAt time.Time `bun:"updated_at,type:timestamp,notnull" json:"updated_at"`
 }
 
 func (commit *Commit) GetHash() (hash.Hash, error) {

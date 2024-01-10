@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strings"
 
+	openapi_types "github.com/oapi-codegen/runtime/types"
+
 	"github.com/jiaozifs/jiaozifs/api"
 	"github.com/jiaozifs/jiaozifs/auth"
 	"github.com/jiaozifs/jiaozifs/block/params"
@@ -123,7 +125,18 @@ func (commitCtl CommitController) GetEntriesInRef(ctx context.Context, w *api.Ji
 		w.Error(err)
 		return
 	}
-	w.JSON(treeEntry)
+	apiTreeEntries := make([]api.FullTreeEntry, len(treeEntry))
+	for index, entry := range treeEntry {
+		apiTreeEntries[index] = api.FullTreeEntry{
+			CreatedAt: entry.CreatedAt.UnixMilli(),
+			Hash:      entry.Hash.Hex(),
+			IsDir:     entry.IsDir,
+			Name:      entry.Name,
+			Size:      entry.Size,
+			UpdatedAt: entry.UpdatedAt.UnixMilli(),
+		}
+	}
+	w.JSON(apiTreeEntries)
 }
 
 func (commitCtl CommitController) CompareCommit(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, basehead string, params api.CompareCommitParams) {
@@ -236,4 +249,27 @@ func (commitCtl CommitController) GetCommitChanges(ctx context.Context, w *api.J
 		return
 	}
 	w.JSON(changesResp)
+}
+
+func commitToDto(commit *models.Commit) *api.Commit {
+	return &api.Commit{
+		Author: api.Signature{
+			Email: openapi_types.Email(commit.Author.Email),
+			Name:  commit.Author.Name,
+			When:  commit.Author.When.UnixMilli(),
+		},
+		Committer: api.Signature{
+			Email: openapi_types.Email(commit.Committer.Email),
+			Name:  commit.Committer.Name,
+			When:  commit.Committer.When.UnixMilli(),
+		},
+		CreatedAt:    commit.CreatedAt.UnixMilli(),
+		Hash:         commit.Hash.Hex(),
+		MergeTag:     commit.MergeTag,
+		Message:      commit.Message,
+		ParentHashes: hash.HexArrayOfHashes(commit.ParentHashes...),
+		RepositoryId: commit.RepositoryID,
+		TreeHash:     commit.TreeHash.Hex(),
+		UpdatedAt:    commit.UpdatedAt.UnixMilli(),
+	}
 }

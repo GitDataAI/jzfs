@@ -26,28 +26,21 @@ components:
       schema:
         type: string
 
-    PaginationBranchAfter:
+    PaginationStringAfter:
       in: query
       name: after
       description: return items after this value
       schema:
         type: string
     
-    PaginationRepoAfter:
+    PaginationInt64After:
       in: query
       name: after
       description: return items after this value
       schema:
-        type: string
-        format: date-time 
-    
-    PaginationCommitAfter:
-      in: query
-      name: after
-      description: return items after this value
-      schema:
-        type: string
-        format: date-time-ns
+        type: integer
+        format: int64
+
 
     PaginationAmount:
       in: query
@@ -224,11 +217,11 @@ components:
           type: string
           format: uuid
         created_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         updated_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
     MergeRequestFullState:
       type: object
       required:
@@ -278,11 +271,11 @@ components:
           items:
             $ref: "#/components/schemas/ChangePair"
         created_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         updated_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
     MergeRequestList:
       type: object
       required:
@@ -322,11 +315,11 @@ components:
           type: string
           format: uuid
         created_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         updated_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
     BranchList:
       type: object
       required:
@@ -405,11 +398,11 @@ components:
           type: string
           format: uuid
         created_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         updated_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
     Blob:
       type: object
       required:
@@ -440,11 +433,11 @@ components:
           additionalProperties:
             type: string
         created_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         updated_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
     Signature:
       type: object
       required:
@@ -458,8 +451,8 @@ components:
           type: string
           format: email
         when:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
     Commit:
       type: object
       required:
@@ -494,11 +487,11 @@ components:
           items:
             type: string
         created_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         updated_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
     TreeEntry:
       type: object
       required:
@@ -532,11 +525,11 @@ components:
           type: integer
           format: int64
         created_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         updated_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
     TreeNode:
       type: object
       required:
@@ -565,11 +558,11 @@ components:
           items:
             $ref: "#/components/schemas/TreeEntry"
         created_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         updated_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
     Wip:
       type: object
       required:
@@ -603,11 +596,11 @@ components:
           type: string
           format: uuid
         created_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         updated_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
     UpdateWip:
       type: object
       properties:
@@ -676,11 +669,11 @@ components:
           type: string
           format: email
         current_sign_in_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         last_sign_in_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         current_sign_in_ip:
           type: string
           format: ipv4
@@ -688,11 +681,11 @@ components:
           type: string
           format: ipv4
         created_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         updated_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
     UserRegisterInfo:
       type: object
       required:
@@ -1560,7 +1553,7 @@ paths:
       operationId: getCommitsInRef
       summary: get commits in ref
       parameters:
-        - $ref: "#/components/parameters/PaginationCommitAfter"
+        - $ref: "#/components/parameters/PaginationInt64After"
         - $ref: "#/components/parameters/PaginationAmount"
         - in: query
           name: refName
@@ -1662,7 +1655,7 @@ paths:
       operationId: listMergeRequests
       summary: get list of merge request in repository
       parameters:
-        - $ref: "#/components/parameters/PaginationRepoAfter"
+        - $ref: "#/components/parameters/PaginationInt64After"
         - $ref: "#/components/parameters/PaginationAmount"
         - in: query
           name: state
@@ -1833,7 +1826,7 @@ paths:
       summary: list repository in specific owner
       parameters:
         - $ref: "#/components/parameters/PaginationPrefix"
-        - $ref: "#/components/parameters/PaginationRepoAfter"
+        - $ref: "#/components/parameters/PaginationInt64After"
         - $ref: "#/components/parameters/PaginationAmount"
       responses:
         200:
@@ -1857,7 +1850,7 @@ paths:
       summary: list repository
       parameters:
         - $ref: "#/components/parameters/PaginationPrefix"
-        - $ref: "#/components/parameters/PaginationRepoAfter"
+        - $ref: "#/components/parameters/PaginationInt64After"
         - $ref: "#/components/parameters/PaginationAmount"
       responses:
         200:
@@ -1918,7 +1911,7 @@ paths:
       summary: list branches
       parameters:
         - $ref: "#/components/parameters/PaginationPrefix"
-        - $ref: "#/components/parameters/PaginationBranchAfter"
+        - $ref: "#/components/parameters/PaginationStringAfter"
         - $ref: "#/components/parameters/PaginationAmount"
       responses:
         200:
