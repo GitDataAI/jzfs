@@ -11,8 +11,8 @@ import (
 type User struct {
 	bun.BaseModel     `bun:"table:users"`
 	ID                uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()" json:"id"`
-	Name              string    `bun:"name,notnull" json:"name"`
-	Email             string    `bun:"email,notnull" json:"email"`
+	Name              string    `bun:"name,unique,notnull" json:"name"`
+	Email             string    `bun:"email,unique,notnull" json:"email"`
 	EncryptedPassword string    `bun:"encrypted_password,notnull" json:"encrypted_password"`
 	CurrentSignInAt   time.Time `bun:"current_sign_in_at" json:"current_sign_in_at"`
 	LastSignInAt      time.Time `bun:"last_sign_in_at" json:"last_sign_in_at"`
@@ -23,9 +23,9 @@ type User struct {
 }
 
 type GetUserParams struct {
-	ID    uuid.UUID
-	Name  *string
-	Email *string
+	id    uuid.UUID
+	name  *string
+	email *string
 }
 
 func NewGetUserParams() *GetUserParams {
@@ -33,21 +33,37 @@ func NewGetUserParams() *GetUserParams {
 }
 
 func (gup *GetUserParams) SetID(id uuid.UUID) *GetUserParams {
-	gup.ID = id
+	gup.id = id
 	return gup
 }
 
 func (gup *GetUserParams) SetName(name string) *GetUserParams {
-	gup.Name = &name
+	gup.name = &name
 	return gup
 }
 
 func (gup *GetUserParams) SetEmail(email string) *GetUserParams {
-	gup.Email = &email
+	gup.email = &email
 	return gup
 }
 
-type CountUserParams = GetUserParams
+type CountUserParams struct {
+	name  *string
+	email *string
+}
+
+func NewCountUserParams() *CountUserParams {
+	return &CountUserParams{}
+}
+
+func (gup *CountUserParams) SetName(name string) *CountUserParams {
+	gup.name = &name
+	return gup
+}
+func (gup *CountUserParams) SetEmail(email string) *CountUserParams {
+	gup.email = &email
+	return gup
+}
 
 func NewCountUserParam() *CountUserParams {
 	return &CountUserParams{}
@@ -74,16 +90,16 @@ func (userRepo *UserRepo) Get(ctx context.Context, params *GetUserParams) (*User
 	user := &User{}
 	query := userRepo.db.NewSelect().Model(user)
 
-	if uuid.Nil != params.ID {
-		query = query.Where("id = ?", params.ID)
+	if uuid.Nil != params.id {
+		query = query.Where("id = ?", params.id)
 	}
 
-	if params.Name != nil {
-		query = query.Where("name = ?", params.Name)
+	if params.name != nil {
+		query = query.Where("name = ?", params.name)
 	}
 
-	if params.Email != nil {
-		query = query.Where("email = ?", *params.Email)
+	if params.email != nil {
+		query = query.Where("email = ?", *params.email)
 	}
 
 	err := query.Limit(1).Scan(ctx)
@@ -93,19 +109,15 @@ func (userRepo *UserRepo) Get(ctx context.Context, params *GetUserParams) (*User
 	return user, nil
 }
 
-func (userRepo *UserRepo) Count(ctx context.Context, params *GetUserParams) (int, error) {
+func (userRepo *UserRepo) Count(ctx context.Context, params *CountUserParams) (int, error) {
 	query := userRepo.db.NewSelect().Model((*User)(nil))
 
-	if uuid.Nil != params.ID {
-		query = query.Where("id = ?", params.ID)
+	if params.name != nil {
+		query = query.Where("name = ?", params.name)
 	}
 
-	if params.Name != nil {
-		query = query.Where("name = ?", params.Name)
-	}
-
-	if params.Email != nil {
-		query = query.Where("email = ?", *params.Email)
+	if params.email != nil {
+		query = query.Where("email = ?", *params.email)
 	}
 
 	return query.Count(ctx)

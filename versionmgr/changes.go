@@ -125,154 +125,190 @@ func newChanges(mChanges merkletrie.Changes) *Changes {
 	return NewChanges(changes)
 }
 
-// ConflictResolver resolve conflict between two change
-type ConflictResolver func(base IChange, merged IChange) (IChange, error)
-
-// LeastHashResolve use least hash change for test
-func LeastHashResolve(base IChange, merged IChange) (IChange, error) {
-	baseAction, err := base.Action()
-	if err != nil {
-		return nil, err
-	}
-
-	mergeAction, err := merged.Action()
-	if err != nil {
-		return nil, err
-	}
-
-	if baseAction == merkletrie.Delete {
-		return merged, nil
-	}
-	if mergeAction == merkletrie.Delete {
-		return base, nil
-	}
-
-	if bytes.Compare(base.To().Hash(), merged.To().Hash()) < 0 {
-		return base, nil
-	}
-	return merged, nil
+type ChangePair struct {
+	Left       IChange
+	Right      IChange
+	IsConflict bool
 }
 
-// ChangesMergeIter walk two changes set and try to resolve
-type ChangesMergeIter struct {
-	baseChanges   *Changes
-	mergerChanges *Changes
-	resolver      ConflictResolver
+func (changePair ChangePair) Path() string {
+	if changePair.Left != nil {
+		return changePair.Left.Path()
+	}
+	return changePair.Right.Path()
 }
 
-// NewChangesMergeIter create a changes iter with two changes set and resolver function
-func NewChangesMergeIter(baseChanges *Changes, mergerChanges *Changes, resolver ConflictResolver) *ChangesMergeIter {
-	return &ChangesMergeIter{baseChanges: baseChanges, mergerChanges: mergerChanges, resolver: resolver}
+type ChangesPairIter struct {
+	leftChanges  *Changes
+	rightChanges *Changes
+}
+
+func NewChangesPairIter(leftChanges *Changes, rightChanges *Changes) *ChangesPairIter {
+	return &ChangesPairIter{leftChanges: leftChanges, rightChanges: rightChanges}
 }
 
 // Has check if any changes
-func (cw *ChangesMergeIter) Has() bool {
-	return cw.baseChanges.Has() || cw.mergerChanges.Has()
+func (cw *ChangesPairIter) Has() bool {
+	return cw.leftChanges.Has() || cw.rightChanges.Has()
 }
 
 // Reset reset changes
-func (cw *ChangesMergeIter) Reset() {
-	cw.baseChanges.Reset()
-	cw.mergerChanges.Reset()
+func (cw *ChangesPairIter) Reset() {
+	cw.leftChanges.Reset()
+	cw.rightChanges.Reset()
 }
 
 // Next find change file, first sort each file in change, pop files from two changes, compare filename,
 //
-//	base file < merge file, pop base change and put merge file back to queue
-//	base file > merge file, pop merge file and put base file back to queue
+//	left file < right file, pop left change and put right file back to queue
+//	left file > right file, pop right file and put left file back to queue
 //	both file name match, try to resolve file changes
 //	if one of the queue consume up, pick left change in the other queue
-func (cw *ChangesMergeIter) Next() (IChange, error) {
-	baseNode, baseErr := cw.baseChanges.Next()
-	if baseErr != nil && baseErr != io.EOF {
-		return nil, baseErr
+func (cw *ChangesPairIter) Next() (*ChangePair, error) {
+	leftNode, leftErr := cw.leftChanges.Next()
+	if leftErr != nil && leftErr != io.EOF {
+		return nil, leftErr
 	}
 
-	mergeNode, mergerError := cw.mergerChanges.Next()
-	if mergerError != nil && mergerError != io.EOF {
-		return nil, mergerError
+	rightNode, rightError := cw.rightChanges.Next()
+	if rightError != nil && rightError != io.EOF {
+		return nil, rightError
 	}
 
-	if baseErr == io.EOF && mergerError == io.EOF {
+	if leftErr == io.EOF && rightError == io.EOF {
 		return nil, io.EOF
 	}
 
-	if baseErr == io.EOF {
-		return mergeNode, nil
+	if leftErr == io.EOF {
+		return &ChangePair{Right: rightNode}, nil
 	}
 
-	if mergerError == io.EOF {
-		return baseNode, nil
+	if rightError == io.EOF {
+		return &ChangePair{Left: leftNode}, nil
 	}
 
-	compare := strings.Compare(baseNode.Path(), mergeNode.Path())
+	compare := strings.Compare(leftNode.Path(), rightNode.Path())
 	if compare > 0 {
-		//only merger change
-		cw.baseChanges.Back()
-		return mergeNode, nil
+		//only right change
+		cw.leftChanges.Back()
+		return &ChangePair{
+			Right: rightNode,
+		}, nil
 	} else if compare == 0 {
-		return cw.compareBothChange(baseNode, mergeNode)
+		isConflict, err := cw.isConflict(leftNode, rightNode)
+		if err != nil {
+			return nil, err
+		}
+		return &ChangePair{
+			Left:       leftNode,
+			Right:      rightNode,
+			IsConflict: isConflict,
+		}, nil
 	}
-	//only base change
-	cw.mergerChanges.Back()
-	return baseNode, nil
+	//only left change
+	cw.rightChanges.Back()
+	return &ChangePair{
+		Left: leftNode,
+	}, nil
 }
 
-func (cw *ChangesMergeIter) compareBothChange(base, merge IChange) (IChange, error) {
-	baseAction, err := base.Action()
+func (cw *ChangesPairIter) isConflict(left, right IChange) (bool, error) {
+	leftAction, err := left.Action()
 	if err != nil {
-		return nil, err
+		return false, err
 	}
-	mergeAction, err := merge.Action()
+	rightAction, err := right.Action()
 	if err != nil {
-		return nil, err
+		return false, err
 	}
-	switch baseAction {
+	switch leftAction {
 	case merkletrie.Insert:
-		switch mergeAction {
+		switch rightAction {
 		case merkletrie.Delete:
-			return cw.resolveConflict(base, merge)
+			return false, fmt.Errorf("%s right should never be Delete while the left diff is Insert, must be a bug, fire issue at https://github.com/jiaozifs/jiaozifs/issues %w", left.Path(), ErrActionNotMatch)
 		case merkletrie.Modify:
-			return nil, fmt.Errorf("%s merge should never be Modify while the other diff is Insert, must be a bug, fire issue at https://github.com/jiaozifs/jiaozifs/issues %w", base.Path(), ErrActionNotMatch)
+			return false, fmt.Errorf("%s right should never be Modify while the left diff is Insert, must be a bug, fire issue at https://github.com/jiaozifs/jiaozifs/issues %w", left.Path(), ErrActionNotMatch)
 		case merkletrie.Insert:
-			if bytes.Equal(base.To().Hash(), merge.To().Hash()) {
-				return base, nil
+			if bytes.Equal(left.To().Hash(), right.To().Hash()) {
+				return false, nil
 			}
-			return cw.resolveConflict(base, merge)
+			return true, nil
 		}
 	case merkletrie.Delete:
-		switch mergeAction {
+		switch rightAction {
 		case merkletrie.Delete:
-			return base, nil
+			return false, nil
 		case merkletrie.Insert:
-			return nil, fmt.Errorf("%s merge should never be Insert while the other diff is Delete, must be a bug, fire issue at https://github.com/jiaozifs/jiaozifs/issues %w", base.Path(), ErrActionNotMatch)
+			return false, fmt.Errorf("%s right should never be Insert while the other diff is Delete, must be a bug, fire issue at https://github.com/jiaozifs/jiaozifs/issues %w", left.Path(), ErrActionNotMatch)
 		case merkletrie.Modify:
-			return cw.resolveConflict(base, merge)
+			return true, nil
 		}
 	case merkletrie.Modify:
-		switch mergeAction {
+		switch rightAction {
 		case merkletrie.Insert:
-			return nil, fmt.Errorf("%s merge should never be Insert while the other diff is Modify, must be a bug, fire issue at https://github.com/jiaozifs/jiaozifs/issues %w", base.Path(), ErrActionNotMatch)
+			return false, fmt.Errorf("%s right should never be Insert while the other diff is Modify, must be a bug, fire issue at https://github.com/jiaozifs/jiaozifs/issues %w", left.Path(), ErrActionNotMatch)
 		case merkletrie.Delete:
-			return cw.resolveConflict(base, merge)
+			return true, nil
 		case merkletrie.Modify:
-			if bytes.Equal(base.To().Hash(), merge.To().Hash()) {
-				return base, nil
+			if bytes.Equal(left.To().Hash(), right.To().Hash()) {
+				return false, nil
 			}
-			return cw.resolveConflict(base, merge)
+			return true, nil
 		}
 	}
 	//should never come here
-	return nil, ErrActionNotMatch
+	return false, ErrActionNotMatch
 }
 
-func (cw *ChangesMergeIter) resolveConflict(base, merge IChange) (IChange, error) {
+// ChangesMergeIter walk two changes set and merge changes
+type ChangesMergeIter struct {
+	changePairIter *ChangesPairIter
+	resolver       ConflictResolver
+}
+
+// NewChangesMergeIter create a changes iter with two changes set and resolver function
+func NewChangesMergeIter(leftChanges *Changes, rightChanges *Changes, resolver ConflictResolver) *ChangesMergeIter {
+	return &ChangesMergeIter{changePairIter: NewChangesPairIter(leftChanges, rightChanges), resolver: resolver}
+}
+
+// Has check if any changes exit
+func (cw *ChangesMergeIter) Has() bool {
+	return cw.changePairIter.Has()
+}
+
+// Reset reset changes
+func (cw *ChangesMergeIter) Reset() {
+	cw.changePairIter.Reset()
+}
+
+// Next find change file, first sort each file in change, pop files from two changes, compare filename,
+//
+//	left file < right file, pop left change and put right file back to queue
+//	left file > right file, pop right file and put left file back to queue
+//	both file name match, try to resolve file changes
+//	if one of the queue consume up, pick left change in the other queue
+func (cw *ChangesMergeIter) Next() (IChange, error) {
+	chPair, err := cw.changePairIter.Next()
+	if err != nil {
+		return nil, err // when iter all, return io.EOF
+	}
+
+	if chPair.IsConflict {
+		return cw.resolveConflict(chPair.Left, chPair.Right)
+	}
+	if chPair.Left != nil {
+		return chPair.Left, nil
+	}
+	return chPair.Right, nil
+}
+
+func (cw *ChangesMergeIter) resolveConflict(left, right IChange) (IChange, error) {
 	if cw.resolver != nil {
-		resolveResult, err := cw.resolver(base, merge)
+		resolveResult, err := cw.resolver(left, right)
 		if err != nil {
 			return nil, err
 		}
 		return resolveResult, nil
 	}
-	return nil, fmt.Errorf("path %s confilict %w", merge.Path(), ErrConflict)
+	return nil, fmt.Errorf("path %s confilict %w", right.Path(), ErrConflict)
 }

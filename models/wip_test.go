@@ -15,8 +15,8 @@ import (
 
 func TestWipRepo(t *testing.T) {
 	ctx := context.Background()
-	postgres, _, db := testhelper.SetupDatabase(ctx, t)
-	defer postgres.Stop() //nolint
+	closeDB, _, db := testhelper.SetupDatabase(ctx, t)
+	defer closeDB()
 
 	repo := models.NewWipRepo(db)
 
@@ -44,6 +44,14 @@ func TestWipRepo(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEqual(t, uuid.Nil, secNewWipModel.ID)
 
+		thirdWipModel := &models.WorkingInProcess{}
+		require.NoError(t, gofakeit.Struct(thirdWipModel))
+		thirdWipModel.CreatorID = uuid.New()
+		thirdWipModel.RepositoryID = newWipModel.RepositoryID
+		thirdWipModel.RefID = newWipModel.RefID
+		_, err = repo.Insert(ctx, thirdWipModel)
+		require.NoError(t, err)
+
 		listParams := models.NewListWipParams().
 			SetCreatorID(secNewWipModel.CreatorID).
 			SetRepositoryID(secNewWipModel.RepositoryID)
@@ -51,6 +59,16 @@ func TestWipRepo(t *testing.T) {
 		list, err := repo.List(ctx, listParams)
 		require.NoError(t, err)
 		require.Len(t, list, 2)
+
+		{
+			listParams := models.NewListWipParams().
+				SetRepositoryID(newWipModel.RepositoryID).
+				SetRefID(newWipModel.RefID)
+
+			list, err := repo.List(ctx, listParams)
+			require.NoError(t, err)
+			require.Len(t, list, 2)
+		}
 
 		deleteParams := models.NewDeleteWipParams().
 			SetID(secWipModel.ID).
@@ -72,8 +90,8 @@ func TestWipRepo(t *testing.T) {
 
 func TestWipRepoUpdateByID(t *testing.T) {
 	ctx := context.Background()
-	postgres, _, db := testhelper.SetupDatabase(ctx, t)
-	defer postgres.Stop() //nolint
+	closeDB, _, db := testhelper.SetupDatabase(ctx, t)
+	defer closeDB()
 
 	repo := models.NewWipRepo(db)
 
