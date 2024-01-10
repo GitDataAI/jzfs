@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/jiaozifs/jiaozifs/api"
 	apiimpl "github.com/jiaozifs/jiaozifs/api/api_impl"
@@ -147,7 +146,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(len(listRepos.JSON200.Results), convey.ShouldEqual, 2)
 
 				newResp, err := client.ListRepositoryOfAuthenticatedUser(ctx, &api.ListRepositoryOfAuthenticatedUserParams{
-					After:  utils.Time(listRepos.JSON200.Results[0].UpdatedAt),
+					After:  utils.Int64(listRepos.JSON200.Results[0].UpdatedAt),
 					Amount: utils.Int(1),
 				})
 				convey.So(err, convey.ShouldBeNil)
@@ -205,7 +204,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(len(listRepos.JSON200.Results), convey.ShouldEqual, 2)
 
 				newResp, err := client.ListRepository(ctx, userName, &api.ListRepositoryParams{
-					After:  utils.Time(listRepos.JSON200.Results[0].UpdatedAt),
+					After:  utils.Int64(listRepos.JSON200.Results[0].UpdatedAt),
 					Amount: utils.Int(1),
 				})
 				convey.So(err, convey.ShouldBeNil)
@@ -430,7 +429,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So((*result.JSON200)[0].Message, convey.ShouldEqual, "third commit")
 
 				newResp, err := client.GetCommitsInRef(ctx, userName, repoName, &api.GetCommitsInRefParams{
-					After:   utils.String((*result.JSON200)[0].Committer.When.Format(time.RFC3339Nano)),
+					After:   utils.Int64((*result.JSON200)[0].Committer.When),
 					Amount:  utils.Int(1),
 					RefName: utils.String(controller.DefaultBranchName),
 				})
@@ -441,15 +440,6 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(*newResult.JSON200, convey.ShouldHaveLength, 1)
 				convey.So((*newResult.JSON200)[0].Message, convey.ShouldEqual, "second commit")
-			})
-
-			c.Convey("failed get commits by wrong params", func() {
-				resp, err := client.GetCommitsInRef(ctx, userName, repoName, &api.GetCommitsInRefParams{
-					After:   utils.String("123"),
-					RefName: utils.String(controller.DefaultBranchName),
-				})
-				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusInternalServerError)
 			})
 		})
 

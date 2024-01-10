@@ -83,8 +83,8 @@ type Blob struct {
 	Size          int64      `bun:"size"`
 	Properties    Property   `bun:"properties,type:jsonb,notnull"`
 
-	CreatedAt time.Time `bun:"created_at,notnull"`
-	UpdatedAt time.Time `bun:"updated_at,notnull"`
+	CreatedAt time.Time `bun:"created_at,type:timestamp,notnull"`
+	UpdatedAt time.Time `bun:"updated_at,type:timestamp,notnull"`
 }
 
 func NewBlob(props Property, repoID uuid.UUID, checkSum hash.Hash, size int64) (*Blob, error) {
@@ -154,8 +154,8 @@ type TreeNode struct {
 	SubObjects []TreeEntry `bun:"sub_objects,type:jsonb" json:"sub_objects"`
 	Properties Property    `bun:"properties,type:jsonb,notnull" json:"properties"`
 
-	CreatedAt time.Time `bun:"created_at,notnull" json:"created_at"`
-	UpdatedAt time.Time `bun:"updated_at,notnull" json:"updated_at"`
+	CreatedAt time.Time `bun:"created_at,type:timestamp,notnull" json:"created_at"`
+	UpdatedAt time.Time `bun:"updated_at,type:timestamp,notnull" json:"updated_at"`
 }
 
 func NewTreeNode(props Property, repoID uuid.UUID, subObjects ...TreeEntry) (*TreeNode, error) {

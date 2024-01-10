@@ -25,8 +25,8 @@ type WorkingInProcess struct {
 	RefID         uuid.UUID `bun:"ref_id,unique:creator_id_repository_id_ref_id_unique,type:uuid,notnull" json:"ref_id"`
 	State         WipState  `bun:"state,notnull" json:"state"`
 	CreatorID     uuid.UUID `bun:"creator_id,unique:creator_id_repository_id_ref_id_unique,type:uuid,notnull" json:"creator_id"`
-	CreatedAt     time.Time `bun:"created_at" json:"created_at"`
-	UpdatedAt     time.Time `bun:"updated_at" json:"updated_at"`
+	CreatedAt     time.Time `bun:"created_at,type:timestamp,notnull" json:"created_at"`
+	UpdatedAt     time.Time `bun:"updated_at,type:timestamp,notnull" json:"updated_at"`
 }
 
 type GetWipParams struct {

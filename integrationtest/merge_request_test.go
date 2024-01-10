@@ -325,7 +325,7 @@ func MergeRequestSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 
 			c.Convey("success to list page merge quest", func() {
-				var after *time.Time
+				var after *int64
 				for i := 0; i < 6; i++ {
 					resp, err := client.ListMergeRequests(ctx, userName, repoName, &api.ListMergeRequestsParams{
 						After:  after,
@@ -341,9 +341,10 @@ func MergeRequestSpec(ctx context.Context, urlStr string) func(c convey.C) {
 						convey.ShouldBeFalse((*result.JSON200).Pagination.HasMore)
 					} else {
 						convey.ShouldBeTrue((*result.JSON200).Pagination.HasMore)
-						next, err := time.Parse(`2006-01-02 15:04:05.999999999 -0700 MST`, (*result.JSON200).Pagination.NextOffset)
+						val, err := strconv.ParseInt((*result.JSON200).Pagination.NextOffset, 10, 64)
 						convey.So(err, convey.ShouldBeNil)
-						after = &next
+						next := time.UnixMilli(val)
+						after = utils.Int64(next.UnixMilli())
 					}
 				}
 			})

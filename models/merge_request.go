@@ -31,8 +31,8 @@ type MergeRequest struct {
 
 	AuthorID uuid.UUID `bun:"author_id,type:bytea,notnull" json:"author_id"`
 
-	CreatedAt time.Time `bun:"created_at,notnull" json:"created_at"`
-	UpdatedAt time.Time `bun:"updated_at,notnull" json:"updated_at"`
+	CreatedAt time.Time `bun:"created_at,type:timestamp,notnull" json:"created_at"`
+	UpdatedAt time.Time `bun:"updated_at,type:timestamp,notnull" json:"updated_at"`
 }
 
 type GetMergeRequestParams struct {

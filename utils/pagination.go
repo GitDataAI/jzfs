@@ -2,6 +2,7 @@ package utils
 
 import (
 	"reflect"
+	"strconv"
 	"time"
 )
 
@@ -32,8 +33,10 @@ func PaginationFor(hasMore bool, results interface{}, fieldName string) PageMana
 		if token.Type() == reflect.TypeOf(time.Time{}) {
 			pagination.NextOffset = token.Interface().(time.Time).String()
 		}
+	case reflect.Int64:
+		pagination.NextOffset = strconv.FormatInt(token.Int(), 10)
 	case reflect.String:
-		pagination.NextOffset = token.Interface().(string)
+		pagination.NextOffset = token.String()
 	}
 	return pagination
 }

@@ -57,7 +57,7 @@ func (mrCtl MergeRequestController) ListMergeRequests(ctx context.Context, w *ap
 	}
 
 	if params.After != nil {
-		listParams.SetAfter(*params.After)
+		listParams.SetAfter(time.UnixMilli(*params.After))
 	}
 	pageAmount := utils.IntValue(params.Amount)
 	if pageAmount > utils.DefaultMaxPerPage || pageAmount <= 0 {
@@ -83,8 +83,8 @@ func (mrCtl MergeRequestController) ListMergeRequests(ctx context.Context, w *ap
 			SourceRepoId: mr.SourceRepoID,
 			TargetBranch: mr.TargetBranchID,
 			TargetRepoId: mr.TargetRepoID,
-			CreatedAt:    mr.CreatedAt,
-			UpdatedAt:    mr.UpdatedAt,
+			CreatedAt:    mr.CreatedAt.UnixMilli(),
+			UpdatedAt:    mr.UpdatedAt.UnixMilli(),
 		}
 	}
 	pagMag := utils.PaginationFor(hasMore, results, "UpdatedAt")
@@ -202,8 +202,8 @@ func (mrCtl MergeRequestController) CreateMergeRequest(ctx context.Context, w *a
 		SourceRepoId: mrModel.SourceRepoID,
 		TargetBranch: mrModel.TargetBranchID,
 		TargetRepoId: mrModel.TargetRepoID,
-		CreatedAt:    mrModel.CreatedAt,
-		UpdatedAt:    mrModel.UpdatedAt,
+		CreatedAt:    mrModel.CreatedAt.UnixMilli(),
+		UpdatedAt:    mrModel.UpdatedAt.UnixMilli(),
 	}
 
 	resp.Changes, err = changePairToDTO(changePairs)
@@ -212,7 +212,7 @@ func (mrCtl MergeRequestController) CreateMergeRequest(ctx context.Context, w *a
 		return
 	}
 	//get merge state
-	w.JSON(mrModel, http.StatusCreated)
+	w.JSON(resp, http.StatusCreated)
 }
 func (mrCtl MergeRequestController) GetMergeRequest(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, mrSeq uint64) {
 	operator, err := auth.GetOperator(ctx)
@@ -285,8 +285,8 @@ func (mrCtl MergeRequestController) GetMergeRequest(ctx context.Context, w *api.
 		SourceRepoId: mergeRequest.SourceRepoID,
 		TargetBranch: mergeRequest.TargetBranchID,
 		TargetRepoId: mergeRequest.TargetRepoID,
-		CreatedAt:    mergeRequest.CreatedAt,
-		UpdatedAt:    mergeRequest.UpdatedAt,
+		CreatedAt:    mergeRequest.CreatedAt.UnixMilli(),
+		UpdatedAt:    mergeRequest.UpdatedAt.UnixMilli(),
 	}
 	resp.Changes, err = changePairToDTO(changePairs)
 	if err != nil {
@@ -403,7 +403,7 @@ func (mrCtl MergeRequestController) Merge(ctx context.Context, w *api.JiaozifsRe
 		return
 	}
 
-	w.JSON(commit)
+	w.JSON(commitToDto(commit))
 }
 
 func changePairToDTO(pairs []*versionmgr.ChangePair) ([]api.ChangePair, error) {

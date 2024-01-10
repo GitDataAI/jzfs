@@ -14,12 +14,12 @@ type User struct {
 	Name              string    `bun:"name,unique,notnull" json:"name"`
 	Email             string    `bun:"email,unique,notnull" json:"email"`
 	EncryptedPassword string    `bun:"encrypted_password,notnull" json:"encrypted_password"`
-	CurrentSignInAt   time.Time `bun:"current_sign_in_at" json:"current_sign_in_at"`
-	LastSignInAt      time.Time `bun:"last_sign_in_at" json:"last_sign_in_at"`
+	CurrentSignInAt   time.Time `bun:"current_sign_in_at,type:timestamp" json:"current_sign_in_at"`
+	LastSignInAt      time.Time `bun:"last_sign_in_at,type:timestamp" json:"last_sign_in_at"`
 	CurrentSignInIP   string    `bun:"current_sign_in_ip" json:"current_sign_in_ip"`
 	LastSignInIP      string    `bun:"last_sign_in_ip" json:"last_sign_in_ip"`
-	CreatedAt         time.Time `bun:"created_at,notnull" json:"created_at"`
-	UpdatedAt         time.Time `bun:"updated_at,notnull" json:"updated_at"`
+	CreatedAt         time.Time `bun:"created_at,type:timestamp,notnull" json:"created_at"`
+	UpdatedAt         time.Time `bun:"updated_at,type:timestamp,notnull" json:"updated_at"`
 }
 
 type GetUserParams struct {
