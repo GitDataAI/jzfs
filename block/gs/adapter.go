@@ -225,9 +225,36 @@ func (a *Adapter) Remove(ctx context.Context, obj block.ObjectPointer) error {
 	return nil
 }
 
-func (a *Adapter) Clean(_ context.Context, _, _ string) error {
-	//TODO implement me
-	panic("implement me")
+func (a *Adapter) RemoveNameSpace(ctx context.Context, namespace string) error {
+	var err error
+	defer reportMetrics("RemoveNameSpace", time.Now(), nil, &err)
+	bucket, key, err := a.extractParamsFromObj(block.ObjectPointer{
+		StorageNamespace: namespace,
+		Identifier:       "'",
+		IdentifierType:   block.IdentifierTypeRelative,
+	})
+	if err != nil {
+		return err
+	}
+	iter := a.client.Bucket(bucket).Objects(ctx, &storage.Query{
+		Delimiter: key,
+	})
+
+	for {
+		obj, err := iter.Next()
+		if err != nil {
+			return err
+		}
+		if iter.PageInfo().Remaining() == 0 {
+			break
+		}
+		err = a.client.Bucket(bucket).Object(obj.Name).Delete(ctx)
+		if err != nil {
+			return fmt.Errorf("Object(%q).Delete: %w", key, err)
+		}
+	}
+
+	return nil
 }
 
 func (a *Adapter) Copy(ctx context.Context, sourceObj, destinationObj block.ObjectPointer) error {

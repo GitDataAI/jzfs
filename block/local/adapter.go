@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"github.com/jiaozifs/jiaozifs/utils/hash"
-	"github.com/mitchellh/go-homedir"
 
 	"github.com/google/uuid"
 	"github.com/jiaozifs/jiaozifs/block"
@@ -192,23 +191,17 @@ func (l *Adapter) Remove(_ context.Context, obj block.ObjectPointer) error {
 	return nil
 }
 
-func (l *Adapter) Clean(_ context.Context, localPath, storageNamespace string) error {
-	filepath := path.Join(localPath, storageNamespace[len(DefaultNamespacePrefix):])
-	expandPath, err := homedir.Expand(filepath)
+func (l *Adapter) RemoveNameSpace(_ context.Context, storageNamespace string) error {
+	p, err := l.extractParamsFromObj(block.ObjectPointer{
+		StorageNamespace: storageNamespace,
+		Identifier:       "",
+		IdentifierType:   block.IdentifierTypeRelative,
+	})
 	if err != nil {
 		return err
 	}
-
-	_, err = os.Stat(expandPath)
-	if err != nil {
-		return nil
-	}
-
-	err = os.RemoveAll(expandPath)
-	if err != nil {
-		return err
-	}
-	return nil
+	p = filepath.Clean(p)
+	return os.RemoveAll(p)
 }
 
 func removeEmptyDirUntil(dir string, stopAt string) {

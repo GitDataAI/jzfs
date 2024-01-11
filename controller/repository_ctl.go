@@ -14,7 +14,6 @@ import (
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/jiaozifs/jiaozifs/api"
 	"github.com/jiaozifs/jiaozifs/auth"
-	"github.com/jiaozifs/jiaozifs/block"
 	"github.com/jiaozifs/jiaozifs/block/factory"
 	"github.com/jiaozifs/jiaozifs/block/params"
 	"github.com/jiaozifs/jiaozifs/config"
@@ -324,22 +323,20 @@ func (repositoryCtl RepositoryController) DeleteRepository(ctx context.Context, 
 		return
 	}
 
-	// Clean Repo
-	var adapter block.Adapter
-	if !repository.UsePublicStorage {
-		w.String("The repo doesn't use public storage and cannot be cleared.", 200)
-		return
+	//clean repo data
+	if repository.UsePublicStorage { //todo for use custom storage, maybe add a config in setting or params in delete repository api
+		adapter, err := factory.BuildBlockAdapter(ctx, repositoryCtl.PublicStorageConfig)
+		if err != nil {
+			w.Error(err)
+			return
+		}
+		err = adapter.RemoveNameSpace(ctx, *repository.StorageNamespace)
+		if err != nil {
+			w.Error(err)
+			return
+		}
 	}
-	adapter, err = factory.BuildBlockAdapter(ctx, repositoryCtl.PublicStorageConfig)
-	if err != nil {
-		w.Error(err)
-		return
-	}
-	err = adapter.Clean(ctx, config.DefaultLocalBSPath, *repository.StorageNamespace)
-	if err != nil {
-		w.Error(err)
-		return
-	}
+
 	w.OK()
 }
 
