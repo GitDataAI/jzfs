@@ -513,7 +513,8 @@ func (a *Adapter) Remove(ctx context.Context, obj block.ObjectPointer) error {
 
 func (a *Adapter) Clean(_ context.Context, _, _ string) error {
 	//TODO implement me
-	panic("implement me")
+	// panic("implement me")
+	return nil
 }
 
 func (a *Adapter) copyPart(ctx context.Context, sourceObj, destinationObj block.ObjectPointer, uploadID string, partNumber int, byteRange *string) (*block.UploadPartResponse, error) {

@@ -66,7 +66,8 @@ func (a *Adapter) Remove(_ context.Context, _ block.ObjectPointer) error {
 
 func (a *Adapter) Clean(_ context.Context, _, _ string) error {
 	//TODO implement me
-	panic("implement me")
+	// panic("implement me")
+	return nil
 }
 
 func (a *Adapter) Copy(_ context.Context, _, _ block.ObjectPointer) error {

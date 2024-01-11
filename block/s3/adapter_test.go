@@ -39,7 +39,7 @@ func TestS3Adapter(t *testing.T) {
 	require.NoError(t, err)
 
 	adapter := getS3BlockAdapter(t)
-	blocktest.AdapterTest(t, adapter, localPath, externalPath)
+	blocktest.AdapterTest(t, adapter, localPath, externalPath, localPath)
 }
 
 func TestAdapterNamespace(t *testing.T) {

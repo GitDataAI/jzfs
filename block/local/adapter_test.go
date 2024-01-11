@@ -21,7 +21,7 @@ func TestLocalAdapter(t *testing.T) {
 	if err != nil {
 		t.Fatal("Failed to create new adapter", err)
 	}
-	blocktest.AdapterTest(t, adapter, testStorageNamespace, externalPath)
+	blocktest.AdapterTest(t, adapter, testStorageNamespace, externalPath, localPath)
 }
 
 func TestAdapterNamespace(t *testing.T) {
