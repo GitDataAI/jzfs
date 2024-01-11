@@ -46,10 +46,15 @@ func TestHexArrayOfHashes(t *testing.T) {
 }
 
 func TestHashFromHex(t *testing.T) {
+	t.Run("hex nil", func(t *testing.T) {
+		require.Equal(t, "", (Hash(nil)).Hex())
+		require.Equal(t, "616161", (Hash("aaa")).Hex())
+	})
+
 	t.Run("empty", func(t *testing.T) {
 		hash, err := FromHex("")
 		require.NoError(t, err)
-		require.Equal(t, EmptyHash, hash)
+		require.Equal(t, Empty, hash)
 	})
 
 	t.Run("data", func(t *testing.T) {

@@ -26,8 +26,8 @@ type Tag struct {
 	// Message is the tag message, contains arbitrary text.
 	Message string `bun:"message" json:"message"`
 
-	CreatedAt time.Time `bun:"created_at" json:"created_at"`
-	UpdatedAt time.Time `bun:"updated_at" json:"updated_at"`
+	CreatedAt time.Time `bun:"created_at,type:timestamp,notnull" json:"created_at"`
+	UpdatedAt time.Time `bun:"updated_at,type:timestamp,notnull" json:"updated_at"`
 }
 
 type ITagRepo interface {

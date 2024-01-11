@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/jiaozifs/jiaozifs/utils"
+
 	"github.com/go-openapi/swag"
 	"github.com/gorilla/sessions"
 	logging "github.com/ipfs/go-log/v2"
@@ -105,12 +107,12 @@ func (userCtl UserController) GetUserInfo(ctx context.Context, w *api.JiaozifsRe
 	userInfo := api.UserInfo{
 		Name:            user.Name,
 		Email:           openapitypes.Email(user.Email),
-		CurrentSignInAt: &user.CurrentSignInAt,
+		CurrentSignInAt: utils.Int64(user.CurrentSignInAt.UnixMilli()),
 		CurrentSignInIp: &user.CurrentSignInIP,
-		LastSignInAt:    &user.LastSignInAt,
+		LastSignInAt:    utils.Int64(user.LastSignInAt.UnixMilli()),
 		LastSignInIp:    &user.LastSignInIP,
-		UpdatedAt:       user.UpdatedAt,
-		CreatedAt:       user.CreatedAt,
+		UpdatedAt:       user.UpdatedAt.UnixMilli(),
+		CreatedAt:       user.CreatedAt.UnixMilli(),
 	}
 	w.JSON(userInfo)
 }

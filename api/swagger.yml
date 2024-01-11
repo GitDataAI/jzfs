@@ -26,28 +26,21 @@ components:
       schema:
         type: string
 
-    PaginationBranchAfter:
+    PaginationStringAfter:
       in: query
       name: after
       description: return items after this value
       schema:
         type: string
     
-    PaginationRepoAfter:
+    PaginationInt64After:
       in: query
       name: after
       description: return items after this value
       schema:
-        type: string
-        format: date-time 
-    
-    PaginationCommitAfter:
-      in: query
-      name: after
-      description: return items after this value
-      schema:
-        type: string
-        format: date-time-ns
+        type: integer
+        format: int64
+
 
     PaginationAmount:
       in: query
@@ -140,6 +133,161 @@ components:
     RefType:
       type: string
       enum: ["branch", "wip","tag", "commit"]
+    CreateMergeRequest:
+      type: object
+      required:
+        - target_branch_name
+        - source_branch_name
+        - title
+      properties:
+        target_branch_name:
+          type: string
+        source_branch_name:
+          type: string
+        title:
+          type: string
+          maximum: 50
+        description:
+          type: string
+          maximum: 500
+    UpdateMergeRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: integer
+          format: int
+    MergeMergeRequest:
+      type: object
+      required:
+        - msg
+      properties:
+        msg:
+          type: string
+          allowEmptyValue: true
+        conflict_resolve:
+          description: use to record the resolution of the conflict, example({"b/a.txt":"left"})
+          type: object
+          additionalProperties:
+            type: string
+    MergeRequest:
+      type: object
+      required:
+        - id
+        - sequence
+        - target_branch
+        - source_branch
+        - source_repo_id
+        - target_repo_id
+        - title
+        - merge_status
+        - author_id
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        sequence:
+          type: integer
+          format: uint64
+        target_branch:
+          type: string
+          format: uuid
+        source_branch:
+          type: string
+          format: uuid
+        source_repo_id:
+          type: string
+          format: uuid
+        target_repo_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        merge_status:
+          type: integer
+          format: int
+        description:
+          type: string
+        author_id:
+          type: string
+          format: uuid
+        created_at:
+          type: integer
+          format: int64
+        updated_at:
+          type: integer
+          format: int64
+    MergeRequestFullState:
+      type: object
+      required:
+        - id
+        - sequence
+        - target_branch
+        - source_branch
+        - source_repo_id
+        - target_repo_id
+        - title
+        - changes
+        - merge_status
+        - author_id
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        sequence:
+          type: integer
+          format: uint64
+        target_branch:
+          type: string
+          format: uuid
+        source_branch:
+          type: string
+          format: uuid
+        source_repo_id:
+          type: string
+          format: uuid
+        target_repo_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        merge_status:
+          type: integer
+          format: int
+        description:
+          type: string
+        author_id:
+          type: string
+          format: uuid
+        changes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChangePair"
+        created_at:
+          type: integer
+          format: int64
+        updated_at:
+          type: integer
+          format: int64
+    MergeRequestList:
+      type: object
+      required:
+        - pagination
+        - results
+      properties:
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/MergeRequest"
     Branch:
       type: object
       required:
@@ -167,11 +315,11 @@ components:
           type: string
           format: uuid
         created_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         updated_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
     BranchList:
       type: object
       required:
@@ -250,11 +398,11 @@ components:
           type: string
           format: uuid
         created_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         updated_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
     Blob:
       type: object
       required:
@@ -285,11 +433,11 @@ components:
           additionalProperties:
             type: string
         created_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         updated_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
     Signature:
       type: object
       required:
@@ -303,8 +451,8 @@ components:
           type: string
           format: email
         when:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
     Commit:
       type: object
       required:
@@ -339,11 +487,11 @@ components:
           items:
             type: string
         created_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         updated_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
     TreeEntry:
       type: object
       required:
@@ -377,11 +525,11 @@ components:
           type: integer
           format: int64
         created_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         updated_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
     TreeNode:
       type: object
       required:
@@ -410,11 +558,11 @@ components:
           items:
             $ref: "#/components/schemas/TreeEntry"
         created_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         updated_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
     Wip:
       type: object
       required:
@@ -448,11 +596,18 @@ components:
           type: string
           format: uuid
         created_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         updated_at:
+          type: integer
+          format: int64
+    UpdateWip:
+      type: object
+      properties:
+        base_commit:
           type: string
-          format: date-time
+        current_tree:
+          type: string
     Change:
       type: object
       required:
@@ -468,6 +623,20 @@ components:
           type: string
         to_hash:
           type: string
+    ChangePair:
+      type: object
+      required:
+        - path
+        - is_conflict
+      properties:
+        path:
+          type: string
+        left:
+          $ref: "#/components/schemas/Change"
+        right:
+          $ref: "#/components/schemas/Change"
+        is_conflict:
+          type: boolean
     UserUpdate:
       type: object
       required:
@@ -500,11 +669,11 @@ components:
           type: string
           format: email
         current_sign_in_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         last_sign_in_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         current_sign_in_ip:
           type: string
           format: ipv4
@@ -512,11 +681,11 @@ components:
           type: string
           format: ipv4
         created_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         updated_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
     UserRegisterInfo:
       type: object
       required:
@@ -1018,6 +1187,26 @@ paths:
           description: Unauthorized
         403:
           description: Forbidden
+    post:
+      tags:
+        - wip
+      operationId: updateWip
+      summary: update wip
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateWip"
+      responses:
+        200:
+          description: update working in process success
+        400:
+          description: ValidationError
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden
     delete:
       tags:
         - wip
@@ -1101,6 +1290,7 @@ paths:
           name: path
           description: path
           required: false
+          allowEmptyValue: true
           schema:
             type: string
       responses:
@@ -1220,17 +1410,19 @@ paths:
           name: path
           description: specific path, if not specific return entries in root
           required: false
+          allowEmptyValue: true
           schema:
             type: string
         - in: query
           name: ref
-          description: specific branch,  default to repostiory default branch(HEAD)
+          description: specific( ref name, tag name, commit hash), for wip and branchm, branch name default to repository default branch(HEAD),
           required: false
+          allowEmptyValue: true
           schema:
             type: string
         - in: query
           name: type
-          description: type indicate to retrieve from wip/branch/tag, default branch
+          description: type indicate to retrieve from wip/branch/tag/commit, default branch
           required: true
           schema:
             $ref: "#/components/schemas/RefType"
@@ -1279,6 +1471,7 @@ paths:
           name: path
           description: specific path, if not specific return entries in root
           required: false
+          allowEmptyValue: true
           schema:
             type: string
       responses:
@@ -1324,6 +1517,7 @@ paths:
           name: path
           description: specific path, if not specific return entries in root
           required: false
+          allowEmptyValue: true
           schema:
             type: string
       responses:
@@ -1356,15 +1550,16 @@ paths:
     get:
       tags:
         - repo
-      operationId: getCommitsInRepository
-      summary: get commits in repository
+      operationId: getCommitsInRef
+      summary: get commits in ref
       parameters:
-        - $ref: "#/components/parameters/PaginationCommitAfter"
+        - $ref: "#/components/parameters/PaginationInt64After"
         - $ref: "#/components/parameters/PaginationAmount"
         - in: query
           name: refName
           description: ref(branch/tag) name
           required: false
+          allowEmptyValue: true
           schema:
             type: string
       responses:
@@ -1442,6 +1637,181 @@ paths:
         403:
           description: Forbidden
 
+  /mergerequest/{owner}/{repository}:
+    parameters:
+      - in: path
+        name: owner
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: repository
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - mergerequest
+      operationId: listMergeRequests
+      summary: get list of merge request in repository
+      parameters:
+        - $ref: "#/components/parameters/PaginationInt64After"
+        - $ref: "#/components/parameters/PaginationAmount"
+        - in: query
+          name: state
+          required: false
+          schema:
+            type: integer
+            format: int
+      responses:
+        200:
+          description: merge request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MergeRequestList"
+        401:
+          description: Unauthorized
+        404:
+          description: Resource Not Found
+        420:
+          description: Too many requests
+        500:
+          description: Internal Server Error
+    post:
+      tags:
+        - mergerequest
+      operationId: createMergeRequest
+      summary: create merge request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMergeRequest"
+      responses:
+        201:
+          description: merge request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MergeRequest"
+        401:
+          description: Unauthorized
+        404:
+          description: Resource Not Found
+        420:
+          description: Too many requests
+        500:
+          description: Internal Server Error
+
+  /mergerequest/{owner}/{repository}/{mrSeq}/merge:
+    parameters:
+      - in: path
+        name: owner
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: repository
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: mrSeq
+        required: true
+        schema:
+          type: integer
+          format: uint64
+    post:
+      tags:
+        - mergerequest
+      operationId: merge
+      summary: merge a mergerequest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MergeMergeRequest"
+      responses:
+        200:
+          description: merge mergerequest success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Commit"
+        401:
+          description: Unauthorized
+        404:
+          description: Resource Not Found
+        420:
+          description: Too many requests
+        500:
+          description: Internal Server Error
+  /mergequest/{owner}/{repository}/{mrSeq}:
+    parameters:
+      - in: path
+        name: owner
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: repository
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: mrSeq
+        required: true
+        schema:
+          type: integer
+          format: uint64
+    get:
+      tags:
+        - mergerequest
+      operationId: getMergeRequest
+      summary: get merge request
+      responses:
+        200:
+          description: merge request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MergeRequestFullState"
+        401:
+          description: Unauthorized
+        404:
+          description: Resource Not Found
+        420:
+          description: Too many requests
+        500:
+          description: Internal Server Error
+    post:
+      tags:
+        - mergerequest
+      operationId: updateMergeRequest
+      summary: update merge request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMergeRequest"
+      responses:
+        200:
+          description: update merge request success
+        401:
+          description: Unauthorized
+        404:
+          description: Resource Not Found
+        420:
+          description: Too many requests
+        500:
+          description: Internal Server Error
+
   /users/{owner}/repos:
     parameters:
       - in: path
@@ -1456,7 +1826,7 @@ paths:
       summary: list repository in specific owner
       parameters:
         - $ref: "#/components/parameters/PaginationPrefix"
-        - $ref: "#/components/parameters/PaginationRepoAfter"
+        - $ref: "#/components/parameters/PaginationInt64After"
         - $ref: "#/components/parameters/PaginationAmount"
       responses:
         200:
@@ -1480,7 +1850,7 @@ paths:
       summary: list repository
       parameters:
         - $ref: "#/components/parameters/PaginationPrefix"
-        - $ref: "#/components/parameters/PaginationRepoAfter"
+        - $ref: "#/components/parameters/PaginationInt64After"
         - $ref: "#/components/parameters/PaginationAmount"
       responses:
         200:
@@ -1541,7 +1911,7 @@ paths:
       summary: list branches
       parameters:
         - $ref: "#/components/parameters/PaginationPrefix"
-        - $ref: "#/components/parameters/PaginationBranchAfter"
+        - $ref: "#/components/parameters/PaginationStringAfter"
         - $ref: "#/components/parameters/PaginationAmount"
       responses:
         200:
