@@ -9,8 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jiaozifs/jiaozifs/utils/hash"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/blob"
@@ -19,6 +17,8 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/sas"
 	"github.com/jiaozifs/jiaozifs/block"
 	"github.com/jiaozifs/jiaozifs/block/params"
+	"github.com/jiaozifs/jiaozifs/utils"
+	"github.com/jiaozifs/jiaozifs/utils/hash"
 )
 
 const (
@@ -152,6 +152,7 @@ func (a *Adapter) Put(ctx context.Context, obj block.ObjectPointer, sizeBytes in
 	if err != nil {
 		return err
 	}
+
 	_, err = containerClient.NewBlockBlobClient(qualifiedKey.BlobURL).UploadStream(ctx, reader, &azblob.UploadStreamOptions{})
 	return err
 }
@@ -347,6 +348,40 @@ func (a *Adapter) Remove(ctx context.Context, obj block.ObjectPointer) error {
 	blobURL := containerClient.NewBlobClient(qualifiedKey.BlobURL)
 
 	_, err = blobURL.Delete(ctx, nil)
+	return err
+}
+
+func (a *Adapter) RemoveNameSpace(ctx context.Context, namespace string) error {
+	var err error
+	parsedNamespace, err := url.ParseRequestURI(namespace)
+	if err != nil {
+		return err
+	}
+	qp, err := ResolveBlobURLInfoFromURL(parsedNamespace)
+	if err != nil {
+		return err
+	}
+	containerClient, err := a.clientCache.NewContainerClient(qp.StorageAccountName, qp.ContainerName)
+	if err != nil {
+		return err
+	}
+	objs := containerClient.NewListBlobsFlatPager(&azblob.ListBlobsFlatOptions{
+		Prefix: &qp.BlobURL,
+	})
+	for objs.More() {
+		page, err := objs.NextPage(ctx)
+		if err != nil {
+			return err
+		}
+		for _, blob := range page.ListBlobsFlatSegmentResponse.Segment.BlobItems {
+			blobClient := containerClient.NewBlobClient(utils.StringValue(blob.Name))
+			_, err = blobClient.Delete(ctx, &azblob.DeleteBlobOptions{})
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return err
 }
 
