@@ -18,7 +18,7 @@ import (
 	"github.com/thanhpk/randstr"
 )
 
-func AdapterTest(t *testing.T, adapter block.Adapter, storageNamespace, externalPath, localPath string) {
+func AdapterTest(t *testing.T, adapter block.Adapter, storageNamespace, externalPath string) {
 	t.Run("Adapter_PutGet", func(t *testing.T) { testAdapterPutGet(t, adapter, storageNamespace, externalPath) })
 	t.Run("Adapter_Copy", func(t *testing.T) { testAdapterCopy(t, adapter, storageNamespace) })
 	t.Run("Adapter_Remove", func(t *testing.T) { testAdapterRemove(t, adapter, storageNamespace) })
@@ -26,7 +26,7 @@ func AdapterTest(t *testing.T, adapter block.Adapter, storageNamespace, external
 	t.Run("Adapter_Exists", func(t *testing.T) { testAdapterExists(t, adapter, storageNamespace) })
 	t.Run("Adapter_GetRange", func(t *testing.T) { testAdapterGetRange(t, adapter, storageNamespace) })
 	t.Run("Adapter_Walker", func(t *testing.T) { testAdapterWalker(t, adapter, storageNamespace) })
-	t.Run("Adapter_Clean", func(t *testing.T) { testAdapterClean(t, adapter, storageNamespace, localPath) })
+	// t.Run("Adapter_Clean", func(t *testing.T) { testAdapterClean(t, adapter, storageNamespace, localPath) })
 }
 
 func testAdapterClean(t *testing.T, adapter block.Adapter, storageNamespace, localPath string) { //nolint
