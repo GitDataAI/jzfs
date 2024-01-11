@@ -2,6 +2,7 @@ package integrationtest
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/jiaozifs/jiaozifs/utils/hash"
@@ -382,13 +383,21 @@ func GetCommitChangesSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		loginAndSwitch(ctx, c, client, "getCommitChanges login", userName, false)
 		createRepo(ctx, c, client, repoName)
 		createWip(ctx, c, client, "feat get entries test0", userName, repoName, "main")
-		uploadObject(ctx, c, client, "update f1 to test branch", userName, repoName, "main", "m.dat")
+		uploadObject(ctx, c, client, "update m.dat to test branch", userName, repoName, "main", "m.dat")
 		commitWip(ctx, c, client, "commit kelly first changes", userName, repoName, "main", "test")
 
-		uploadObject(ctx, c, client, "update f2 to test branch", userName, repoName, "main", "g/x.dat")
+		uploadObject(ctx, c, client, "update g/x.dat to test branch", userName, repoName, "main", "g/x.dat")
 		commitWip(ctx, c, client, "commit kelly second changes", userName, repoName, "main", "test")
 
-		uploadObject(ctx, c, client, "update f3 to test branch", userName, repoName, "main", "g/m.dat")
+		//delete
+		deleteObject(ctx, c, client, "delete g/x.dat", userName, repoName, "main", "g/x.dat")
+
+		//modify
+		deleteObject(ctx, c, client, "delete m.dat", userName, repoName, "main", "m.dat")
+		uploadObject(ctx, c, client, "update m.dat to test branch again", userName, repoName, "main", "m.dat")
+
+		//insert
+		uploadObject(ctx, c, client, "update g/m.dat to test branch", userName, repoName, "main", "g/m.dat")
 		commitWip(ctx, c, client, "commit kelly third changes", userName, repoName, "main", "test")
 
 		c.Convey("get commit change", func(c convey.C) {
@@ -446,6 +455,9 @@ func GetCommitChangesSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 
 			c.Convey("success to get first changes", func() {
+				fmt.Println(commits[0].Hash)
+				fmt.Println(commits[1].Hash)
+				fmt.Println(commits[2].Hash)
 				resp, err := client.GetCommitChanges(ctx, userName, repoName, commits[0].Hash, &api.GetCommitChangesParams{
 					Path: utils.String("/"),
 				})
@@ -454,7 +466,16 @@ func GetCommitChangesSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 				result, err := api.ParseCompareCommitResponse(resp)
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(*result.JSON200, convey.ShouldHaveLength, 1)
+				convey.So(*result.JSON200, convey.ShouldHaveLength, 3)
+
+				convey.So((*result.JSON200)[0].Path, convey.ShouldEqual, "g/m.dat")
+				convey.So((*result.JSON200)[0].Action, convey.ShouldEqual, api.N1)
+
+				convey.So((*result.JSON200)[1].Path, convey.ShouldEqual, "g/x.dat")
+				convey.So((*result.JSON200)[1].Action, convey.ShouldEqual, api.N2)
+
+				convey.So((*result.JSON200)[2].Path, convey.ShouldEqual, "m.dat")
+				convey.So((*result.JSON200)[2].Action, convey.ShouldEqual, api.N3)
 			})
 
 			c.Convey("success to get first commit changes", func() {
