@@ -509,16 +509,31 @@ func (repository *WorkRepository) CreateBranch(ctx context.Context, branchName s
 // DeleteBranch delete branch also delete wip belong this branch
 func (repository *WorkRepository) DeleteBranch(ctx context.Context) error {
 	return repository.repo.Transaction(ctx, func(repo models.IRepo) error {
+		wips, err := repo.WipRepo().List(ctx, models.NewListWipParams().SetRepositoryID(repository.repoModel.ID).SetRefID(repository.branch.ID))
+		if err != nil {
+			return err
+		}
+		for _, wip := range wips {
+			_, err = repo.WipRepo().Delete(ctx, models.NewDeleteWipParams().SetID(wip.ID))
+			if err != nil {
+				return err
+			}
+		}
+
 		deleteBranchParams := models.NewDeleteBranchParams().
 			SetRepositoryID(repository.repoModel.ID).
 			SetName(repository.branch.Name)
-		_, err := repo.BranchRepo().Delete(ctx, deleteBranchParams)
+		_, err = repo.BranchRepo().Delete(ctx, deleteBranchParams)
 		if err != nil {
 			return err
 		}
 
 		deleteWipParams := models.NewDeleteWipParams().SetRepositoryID(repository.repoModel.ID).SetRefID(repository.branch.ID)
 		_, err = repo.WipRepo().Delete(ctx, deleteWipParams)
+		if err != nil {
+			return err
+		}
+
 		return err
 	})
 }
