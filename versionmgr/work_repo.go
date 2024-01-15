@@ -582,16 +582,39 @@ func (repository *WorkRepository) DiffCommit(ctx context.Context, toCommitID has
 }
 
 func (repository *WorkRepository) GetCommitChanges(ctx context.Context, pathPrefix string) (*Changes, error) {
-	if len(repository.commit.ParentHashes) == 0 {
-		workTree, err := repository.RootTree(ctx)
+	commitHash := hash.Empty
+	if len(repository.commit.ParentHashes) == 1 {
+		commitHash = repository.commit.ParentHashes[0]
+	} else if len(repository.commit.ParentHashes) == 2 {
+		commitHash = repository.commit.ParentHashes[1]
+	}
+
+	treeHash := hash.Empty
+	if !commitHash.IsEmpty() {
+		commit, err := repository.repo.CommitRepo(repository.repoModel.ID).Commit(ctx, commitHash)
 		if err != nil {
 			return nil, err
 		}
-		return workTree.Diff(ctx, hash.Empty, pathPrefix)
-	} else if len(repository.commit.ParentHashes) == 1 {
-		return repository.DiffCommit(ctx, repository.commit.ParentHashes[0], pathPrefix)
+		treeHash = commit.TreeHash
 	}
-	return repository.DiffCommit(ctx, repository.commit.ParentHashes[1], pathPrefix)
+
+	workTree, err := NewWorkTree(ctx, repository.repo.FileTreeRepo(repository.repoModel.ID), models.NewRootTreeEntry(treeHash))
+	if err != nil {
+		return nil, err
+	}
+	files, _ := workTree.Ls(ctx, "g")
+	fmt.Println(files)
+	{
+		workTree2, err := NewWorkTree(ctx, repository.repo.FileTreeRepo(repository.repoModel.ID), models.NewRootTreeEntry(repository.commit.TreeHash))
+		if err != nil {
+			return nil, err
+		}
+		f2, _ := workTree2.Ls(ctx, "g")
+		fmt.Println(f2)
+	}
+	fmt.Println(repository.commit.Hash.Hex())
+	fmt.Println(commitHash.Hex())
+	return workTree.Diff(ctx, repository.commit.TreeHash, pathPrefix)
 }
 
 func (repository *WorkRepository) GetMergeState(ctx context.Context, toMergeCommitHash hash.Hash) ([]*ChangePair, error) {

@@ -35,9 +35,10 @@ type Adapter struct {
 }
 
 var (
-	ErrPathNotWritable       = errors.New("path provided is not writable")
-	ErrInvalidUploadIDFormat = errors.New("invalid upload id format")
-	ErrBadPath               = errors.New("bad path traversal blocked")
+	ErrPathNotWritable         = errors.New("path provided is not writable")
+	ErrInvalidUploadIDFormat   = errors.New("invalid upload id format")
+	ErrBadPath                 = errors.New("bad path traversal blocked")
+	ErrInvalidStorageNamespace = errors.New("invalid storageNamespace")
 )
 
 type QualifiedKey struct {
@@ -156,6 +157,7 @@ func (l *Adapter) Path() string {
 
 func (l *Adapter) Put(_ context.Context, obj block.ObjectPointer, _ int64, reader io.Reader, _ block.PutOpts) error {
 	p, err := l.extractParamsFromObj(obj)
+	fmt.Println(p)
 	if err != nil {
 		return err
 	}
@@ -187,6 +189,19 @@ func (l *Adapter) Remove(_ context.Context, obj block.ObjectPointer) error {
 		removeEmptyDirUntil(dir, path.Join(l.path, repoRoot))
 	}
 	return nil
+}
+
+func (l *Adapter) RemoveNameSpace(_ context.Context, storageNamespace string) error {
+	p, err := l.extractParamsFromObj(block.ObjectPointer{
+		StorageNamespace: storageNamespace,
+		Identifier:       "",
+		IdentifierType:   block.IdentifierTypeRelative,
+	})
+	if err != nil {
+		return err
+	}
+	p = filepath.Clean(p)
+	return os.RemoveAll(p)
 }
 
 func removeEmptyDirUntil(dir string, stopAt string) {

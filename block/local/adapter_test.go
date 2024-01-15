@@ -15,8 +15,8 @@ const testStorageNamespace = "local://test"
 
 func TestLocalAdapter(t *testing.T) {
 	tmpDir := t.TempDir()
-	localPath := path.Join(tmpDir, "lakefs")
-	externalPath := block.BlockstoreTypeLocal + "://" + path.Join(tmpDir, "lakefs", "external")
+	localPath := path.Join(tmpDir, "jiaozfs")
+	externalPath := block.BlockstoreTypeLocal + "://" + path.Join(tmpDir, "jiaozfs", "external")
 	adapter, err := local.NewAdapter(localPath, local.WithRemoveEmptyDir(false))
 	if err != nil {
 		t.Fatal("Failed to create new adapter", err)
@@ -26,7 +26,7 @@ func TestLocalAdapter(t *testing.T) {
 
 func TestAdapterNamespace(t *testing.T) {
 	tmpDir := t.TempDir()
-	localPath := path.Join(tmpDir, "lakefs")
+	localPath := path.Join(tmpDir, "jiaozfs")
 	adapter, err := local.NewAdapter(localPath, local.WithRemoveEmptyDir(false))
 	require.NoError(t, err, "create new adapter")
 	expr, err := regexp.Compile(adapter.GetStorageNamespaceInfo().ValidityRegex)

@@ -12,6 +12,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/jiaozifs/jiaozifs/utils"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -509,6 +511,51 @@ func (a *Adapter) Remove(ctx context.Context, obj block.ObjectPointer) error {
 	const maxWaitDur = 100 * time.Second
 	waiter := s3.NewObjectNotExistsWaiter(client)
 	return waiter.Wait(ctx, headInput, maxWaitDur)
+}
+
+func (a *Adapter) RemoveNameSpace(ctx context.Context, namespace string) error {
+	var err error
+	defer reportMetrics("RemoveNameSpace", time.Now(), nil, &err)
+	bucket, key, _, err := a.extractParamsFromObj(block.ObjectPointer{
+		StorageNamespace: namespace,
+		Identifier:       "",
+		IdentifierType:   block.IdentifierTypeRelative,
+	})
+	if err != nil {
+		return err
+	}
+
+	for {
+		listInput := &s3.ListObjectsInput{
+			Bucket:  aws.String(bucket),
+			Prefix:  utils.String(key),
+			MaxKeys: utils.Int32(500),
+		}
+		client := a.clients.Get(ctx, bucket)
+		resp, err := client.ListObjects(ctx, listInput)
+		if err != nil {
+			log.Errorf("failed to list S3 object %v", err)
+			return err
+		}
+
+		for _, obj := range resp.Contents {
+			deleteInput := &s3.DeleteObjectInput{
+				Bucket: aws.String(bucket),
+				Key:    obj.Key,
+			}
+			client := a.clients.Get(ctx, bucket)
+			_, err = client.DeleteObject(ctx, deleteInput)
+			if err != nil {
+				log.Errorf("failed to delete S3 object %v", err)
+				return err
+			}
+		}
+		if len(resp.Contents) < 500 {
+			break
+		}
+	}
+
+	return nil
 }
 
 func (a *Adapter) copyPart(ctx context.Context, sourceObj, destinationObj block.ObjectPointer, uploadID string, partNumber int, byteRange *string) (*block.UploadPartResponse, error) {
