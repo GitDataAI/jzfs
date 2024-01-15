@@ -26,7 +26,7 @@ import (
 )
 
 var objLog = logging.Logger("object_ctl")
-var pathRegex = regexp.MustCompile(`^([a-zA-Z0-9]+\/)*[a-zA-Z0-9]+\.[a-zA-Z0-9]+$`) //nolint
+var pathRegex = regexp.MustCompile(`^([a-zA-Z0-9]+\/)*[a-zA-Z0-9]+(?:\.[a-zA-Z0-9]+)?$`) //nolint
 
 func CheckObjectPath(path string) error {
 	if !pathRegex.MatchString(path) {

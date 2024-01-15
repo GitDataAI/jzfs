@@ -3,8 +3,9 @@ package integrationtest
 import (
 	"context"
 	"fmt"
-	openapi_types "github.com/oapi-codegen/runtime/types"
 	"net/http"
+
+	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/jiaozifs/jiaozifs/api"
 	apiimpl "github.com/jiaozifs/jiaozifs/api/api_impl"
