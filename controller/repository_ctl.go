@@ -26,8 +26,7 @@ import (
 const DefaultBranchName = "main"
 
 var repoLog = logging.Logger("repo control")
-var maxNameLength = 20
-var alphanumeric = regexp.MustCompile("^[a-zA-Z0-9_]*$")
+var alphanumeric = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]$`)
 
 // RepoNameBlackList forbid repo name, reserve for routes
 var RepoNameBlackList = []string{"repository", "repositories", "wip", "wips", "object", "objects", "commit", "commits", "ref", "refs", "repo", "repos", "user", "users"}
@@ -40,10 +39,7 @@ func CheckRepositoryName(name string) error {
 	}
 
 	if !alphanumeric.MatchString(name) {
-		return errors.New("repository name must be combination of number and letter")
-	}
-	if len(name) > maxNameLength {
-		return errors.New("repository name is too long")
+		return errors.New("repository name must start with a number or letter, can only contain numbers, letters, or hyphens, and must be between 3 and 63 characters in length")
 	}
 	return nil
 }

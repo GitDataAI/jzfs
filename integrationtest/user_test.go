@@ -2,6 +2,8 @@ package integrationtest
 
 import (
 	"context"
+	"fmt"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 	"net/http"
 
 	"github.com/jiaozifs/jiaozifs/api"
@@ -14,6 +16,16 @@ func UserSpec(ctx context.Context, urlStr string) func(c convey.C) {
 	return func(c convey.C) {
 		userName := "admin"
 		createUser(ctx, c, client, userName)
+
+		c.Convey("invalid username", func() {
+			resp, err := client.Register(ctx, api.RegisterJSONRequestBody{
+				Name:     "admin!@#",
+				Password: "12345678",
+				Email:    openapi_types.Email(fmt.Sprintf("mock%d@gmail.com", count)),
+			})
+			convey.So(err, convey.ShouldBeNil)
+			convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)
+		})
 
 		c.Convey("usr profile no cookie", func() {
 			resp, err := client.GetUserInfo(ctx)

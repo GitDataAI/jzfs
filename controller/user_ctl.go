@@ -3,7 +3,9 @@ package controller
 import (
 	"context"
 	"encoding/hex"
+	"errors"
 	"net/http"
+	"regexp"
 	"time"
 
 	"github.com/jiaozifs/jiaozifs/utils"
@@ -21,10 +23,18 @@ import (
 )
 
 var userCtlLog = logging.Logger("user_ctl")
+var usernameRegex = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_-]{1,28}[a-zA-Z0-9]$`)
 
 const (
 	AuthHeader = "Authorization"
 )
+
+func CheckUserName(name string) error {
+	if !usernameRegex.MatchString(name) {
+		return errors.New("invalid username: it must start and end with a letter or digit, can contain letters, digits, hyphens, and cannot start or end with a hyphen; the length must be between 3 and 30 characters")
+	}
+	return nil
+}
 
 type UserController struct {
 	fx.In
@@ -80,6 +90,12 @@ func (userCtl UserController) Login(ctx context.Context, w *api.JiaozifsResponse
 }
 
 func (userCtl UserController) Register(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, body api.RegisterJSONRequestBody) {
+	err := CheckUserName(body.Name)
+	if err != nil {
+		w.BadRequest(err.Error())
+		return
+	}
+
 	register := auth.Register{
 		Username: body.Name,
 		Email:    string(body.Email),
@@ -87,7 +103,7 @@ func (userCtl UserController) Register(ctx context.Context, w *api.JiaozifsRespo
 	}
 
 	// perform register
-	err := register.Register(ctx, userCtl.Repo.UserRepo())
+	err = register.Register(ctx, userCtl.Repo.UserRepo())
 	if err != nil {
 		w.Error(err)
 		return

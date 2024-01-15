@@ -93,6 +93,15 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)
 			})
 
+			c.Convey("invalid path", func() {
+				resp, err := client.UploadObjectWithBody(ctx, userName, repoName, &api.UploadObjectParams{
+					RefName: branchName,
+					Path:    "a~a.bin",
+				}, "application/octet-stream", bytes.NewReader([]byte{1, 2, 3, 4, 5, 6, 7, 8}))
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)
+			})
+
 			c.Convey("success upload object", func() {
 				resp, err := client.UploadObjectWithBody(ctx, userName, repoName, &api.UploadObjectParams{
 					RefName: branchName,

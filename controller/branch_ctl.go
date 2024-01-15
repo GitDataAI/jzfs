@@ -20,7 +20,7 @@ import (
 )
 
 var MaxBranchNameLength = 40
-var branchNameRegex = regexp.MustCompile("^[a-zA-Z0-9_]*$")
+var branchNameRegex = regexp.MustCompile(`^\w[-\w]*$`)
 
 func CheckBranchName(name string) error {
 	for _, blackName := range RepoNameBlackList {
@@ -39,11 +39,11 @@ func CheckBranchName(name string) error {
 	}
 
 	if !branchNameRegex.Match([]byte(seg[0])) {
-		return fmt.Errorf("branch name must be combination of number and letter or combine with '/'")
+		return fmt.Errorf("invalid branch name: %s, must start with a number or letter and can only contain numbers, letters, hyphens or underscores", seg[0])
 	}
 	if len(seg) > 2 {
 		if !branchNameRegex.Match([]byte(seg[1])) {
-			return fmt.Errorf("branch name must be combination of number and letter or combine with '/'")
+			return fmt.Errorf("invalid branch name: %s, must start with a number or letter and can only contain numbers, letters, hyphens or underscores", seg[1])
 		}
 	}
 	return nil
