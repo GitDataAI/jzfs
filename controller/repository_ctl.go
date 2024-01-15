@@ -27,7 +27,7 @@ import (
 const DefaultBranchName = "main"
 
 var repoLog = logging.Logger("repo control")
-var alphanumeric = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]$`)
+var alphanumeric = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_\-]{1,61}[a-zA-Z0-9]$`)
 
 // RepoNameBlackList forbid repo name, reserve for routes
 var RepoNameBlackList = []string{"repository", "repositories", "wip", "wips", "object", "objects", "commit", "commits", "ref", "refs", "repo", "repos", "user", "users"}

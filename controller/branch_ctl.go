@@ -20,7 +20,7 @@ import (
 )
 
 var MaxBranchNameLength = 40
-var branchNameRegex = regexp.MustCompile(`^\w[-\w]*$`)
+var branchNameRegex = regexp.MustCompile(`^[\w]+\/?[\w]+$`)
 
 func CheckBranchName(name string) error {
 	for _, blackName := range RepoNameBlackList {
