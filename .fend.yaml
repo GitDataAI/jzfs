@@ -6,5 +6,6 @@ skip:
     - jzfs
   extension:
     - .input
+    - .png
     - .output
     - .jpg
