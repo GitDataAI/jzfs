@@ -218,6 +218,11 @@ func (bct BranchController) DeleteBranch(ctx context.Context, w *api.JiaozifsRes
 		return
 	}
 
+	if params.RefName == repository.HEAD {
+		w.BadRequest("can not delete HEAD branch")
+		return
+	}
+
 	workRepo, err := versionmgr.NewWorkRepositoryFromConfig(ctx, operator, repository, bct.Repo, bct.PublicStorageConfig)
 	if err != nil {
 		w.Error(err)
