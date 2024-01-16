@@ -2117,3 +2117,31 @@ paths:
           description: Forbiden
         default:
           description: Internal Server Error
+
+  /users/refreshtoken:
+    get:
+      tags:
+        - auth
+      operationId: refreshToken
+      summary: refresh token for more time
+      security:
+        - jwt_token: [ ]
+        - cookie_auth: [ ]
+      responses:
+        200:
+          description: successful refresh token
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: "internal_auth_session=abcde12356; Path=/; HttpOnly"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationToken"
+        401:
+          description: Unauthorized ValidationError
+        420:
+          description: too many requests
+        default:
+          description: Internal Server Error
