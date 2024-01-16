@@ -53,5 +53,14 @@ func UserSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			_, err = api.ParseRefreshTokenResponse(resp)
 			convey.So(err, convey.ShouldBeNil)
 		})
+
+		c.Convey("no auth refresh", func() {
+			re := client.RequestEditors
+			client.RequestEditors = nil
+			resp, err := client.RefreshToken(ctx)
+			convey.So(err, convey.ShouldBeNil)
+			convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
+			client.RequestEditors = re
+		})
 	}
 }
