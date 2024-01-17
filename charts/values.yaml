@@ -1,0 +1,10 @@
+# Additional Trusted CAs.
+# Enable this flag and add your CA certs as a secret named tls-ca-additional in the namespace.
+# See README.md for details.
+replicas: 1
+db: ""
+bs_path: "/app/data"
+config: "/app/config.toml"
+port: 34913
+ingress_name: nginx
+log_level: info

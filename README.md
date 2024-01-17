@@ -31,6 +31,10 @@ After following the above steps, you should be able to see an executable file na
 ./jzfs daemon
 ```
 
+#### run with docker
+```bash
+docker run -v <data>:/app -p 34913:34913 gitdatateam/jzfs:latest  --db "postgres://<user>:<password>@192.168.1.16:5432/jiaozifs?sslmode=disable" --bs_path /app/data --listen http://0.0.0.0:34913 --config /app/config.toml
+```
 ## License
 
 Dual-licensed under [MIT](https://github.com/jiaozifs/jiaozifs/blob/main/LICENSE-MIT) + [Apache 2.0](https://github.com/jiaozifs/jiaozifs/blob/main/LICENSE-APACHE)

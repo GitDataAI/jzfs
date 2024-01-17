@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jiaozifs-backend-api-deployment
+  labels:
+    apptype: jiaozifs-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jiaozifs-backend-api
+  template:
+    metadata:
+      labels:
+        app: jiaozifs-backend-api
+        apptype: jiaozifs-api
+    spec:
+      containers:
+        - name: jiaozifs-backend
+          image: gitdatateam/jzfs:latest
+          imagePullPolicy: Always
+          args: ["--db  {{ .Values.db }} --log-level {{ .Values.log_level }} --bs_path {{ .Values.bs_path }} --listen http://0.0.0.0:{{ .Values.port }} --config {{ .Values.config }}"]
+          ports:
+            - containerPort: {{ .Values.port }}

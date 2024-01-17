@@ -1,0 +1,13 @@
+apiVersion: v2
+name: jiaozifs-api
+description: Install jiaozifs api to provider backend function of jiaozifs.
+version: 1.0.0
+kubeVersion: < 1.28.0-0
+home: https://jiaozifs.com/
+keywords:
+  - jiaozifs
+sources:
+  - https://github.com/jiaozifs/jiaozifs
+  - https://github.com/jiaozifs/jiaozifs-ui
+maintainers:
+  - name: jiaozifs team

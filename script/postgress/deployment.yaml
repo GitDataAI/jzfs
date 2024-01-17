@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jiaozifs-api-pg-db-deployment  # Sets Deployment name
+  labels:
+    apptype: jiaozifs-pg-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jiaozifs-api-pg-db
+  template:
+    metadata:
+      labels:
+        app: jiaozifs-api-pg-db
+        apptype: jiaozifs-pg-db
+    spec:
+      nodeName: k2
+      containers:
+        - name: postgres
+          image: postgres:13.13
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - configMapRef:
+                name: jiaozifs-api-postgres-config
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: postgredb
+      volumes:
+        - name: postgredb
+          persistentVolumeClaim:
+            claimName: jiaozifs-postgres-pv-claim
