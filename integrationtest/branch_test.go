@@ -256,7 +256,11 @@ func BranchSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
 			})
-
+			c.Convey("fail to delete default branch", func() {
+				resp, err := client.DeleteBranch(ctx, userName, repoName, &api.DeleteBranchParams{RefName: "main"})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)
+			})
 			createWip(ctx, c, client, "creat wip for delete", userName, repoName, "feat/sec_branch")
 			c.Convey("delete branch successful", func() {
 				resp, err := client.DeleteBranch(ctx, userName, repoName, &api.DeleteBranchParams{RefName: "feat/sec_branch"})
