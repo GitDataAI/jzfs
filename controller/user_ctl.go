@@ -50,6 +50,21 @@ func (userCtl UserController) Login(ctx context.Context, w *api.JiaozifsResponse
 		w.Code(http.StatusUnauthorized)
 		return
 	}
+
+	userCtl.generateAndRespToken(w, r, body.Name)
+}
+
+func (userCtl UserController) RefreshToken(ctx context.Context, w *api.JiaozifsResponse, r *http.Request) {
+	operator, err := auth.GetOperator(ctx)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	userCtl.generateAndRespToken(w, r, operator.Name)
+}
+
+func (userCtl UserController) generateAndRespToken(w *api.JiaozifsResponse, r *http.Request, name string) {
 	// Generate user token
 	loginTime := time.Now()
 	expires := loginTime.Add(auth.ExpirationDuration)
@@ -59,13 +74,13 @@ func (userCtl UserController) Login(ctx context.Context, w *api.JiaozifsResponse
 		return
 	}
 
-	tokenString, err := auth.GenerateJWTLogin(secretKey, body.Name, loginTime, expires)
+	tokenString, err := auth.GenerateJWTLogin(secretKey, name, loginTime, expires)
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	userCtlLog.Infof("user %s login successful", body.Name)
+	userCtlLog.Infof("user %s login successful", name)
 
 	internalAuthSession, _ := userCtl.SessionStore.Get(r, auth.InternalAuthSessionName)
 	internalAuthSession.Values[auth.TokenSessionKeyName] = tokenString
