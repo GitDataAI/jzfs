@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jiaozifs/jiaozifs/controller/validator"
 	"io"
 	"mime"
 	"mime/multipart"
 	"net/http"
-	"regexp"
 	"time"
 
 	"github.com/go-openapi/swag"
@@ -26,14 +26,6 @@ import (
 )
 
 var objLog = logging.Logger("object_ctl")
-var pathRegex = regexp.MustCompile(`^([a-zA-Z0-9]+\/)*[a-zA-Z0-9]+(?:\.[a-zA-Z0-9]+)?$`) //nolint
-
-func CheckObjectPath(path string) error {
-	if !pathRegex.MatchString(path) {
-		return fmt.Errorf("invalid object path: it must start with a letter or digit, can contain letters, digits, and must be separated by slashes")
-	}
-	return nil
-}
 
 type ObjectController struct {
 	fx.In
@@ -321,7 +313,7 @@ func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsRes
 	}
 	defer reader.Close() //nolint
 
-	err = CheckObjectPath(params.Path)
+	err = validator.ValidateObjectPath(params.Path)
 	if err != nil {
 		w.BadRequest(err.Error())
 		return

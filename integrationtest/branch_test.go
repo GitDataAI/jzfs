@@ -2,12 +2,12 @@ package integrationtest
 
 import (
 	"context"
+	"github.com/jiaozifs/jiaozifs/controller/validator"
 	"net/http"
 	"strings"
 
 	"github.com/jiaozifs/jiaozifs/api"
 	apiimpl "github.com/jiaozifs/jiaozifs/api/api_impl"
-	"github.com/jiaozifs/jiaozifs/controller"
 	"github.com/jiaozifs/jiaozifs/utils"
 	"github.com/smartystreets/goconvey/convey"
 )
@@ -59,7 +59,7 @@ func BranchSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 			c.Convey("too long name", func() {
 				resp, err := client.CreateBranch(ctx, userName, repoName, api.CreateBranchJSONRequestBody{
-					Name:   "feat/" + strings.Repeat("a", controller.MaxBranchNameLength),
+					Name:   "feat/" + strings.Repeat("a", validator.MaxBranchNameLength),
 					Source: "main",
 				})
 				convey.So(err, convey.ShouldBeNil)

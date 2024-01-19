@@ -3,14 +3,10 @@ package controller
 import (
 	"context"
 	"errors"
-	"fmt"
-	"net/http"
-	"regexp"
-	"strings"
-
 	"github.com/jiaozifs/jiaozifs/block/params"
-
+	"github.com/jiaozifs/jiaozifs/controller/validator"
 	"github.com/jiaozifs/jiaozifs/versionmgr"
+	"net/http"
 
 	"github.com/jiaozifs/jiaozifs/api"
 	"github.com/jiaozifs/jiaozifs/auth"
@@ -18,36 +14,6 @@ import (
 	"github.com/jiaozifs/jiaozifs/utils"
 	"go.uber.org/fx"
 )
-
-var MaxBranchNameLength = 40
-var branchNameRegex = regexp.MustCompile(`^[\w]+\/?[\w]+$`)
-
-func CheckBranchName(name string) error {
-	for _, blackName := range RepoNameBlackList {
-		if name == blackName {
-			return errors.New("repository name is black list")
-		}
-	}
-
-	if len(name) > MaxBranchNameLength {
-		return fmt.Errorf("branch name is too long")
-	}
-
-	seg := strings.Split(name, "/")
-	if len(seg) > 2 {
-		return fmt.Errorf("branch format must be <name> or <name>/<name>")
-	}
-
-	if !branchNameRegex.Match([]byte(seg[0])) {
-		return fmt.Errorf("invalid branch name: %s, must start with a number or letter and can only contain numbers, letters, hyphens or underscores", seg[0])
-	}
-	if len(seg) > 2 {
-		if !branchNameRegex.Match([]byte(seg[1])) {
-			return fmt.Errorf("invalid branch name: %s, must start with a number or letter and can only contain numbers, letters, hyphens or underscores", seg[1])
-		}
-	}
-	return nil
-}
 
 type BranchController struct {
 	fx.In
@@ -127,7 +93,7 @@ func (bct BranchController) ListBranches(ctx context.Context, w *api.JiaozifsRes
 }
 
 func (bct BranchController) CreateBranch(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, body api.CreateBranchJSONRequestBody, ownerName string, repositoryName string) {
-	if err := CheckBranchName(body.Name); err != nil {
+	if err := validator.ValidateBranchName(body.Name); err != nil {
 		w.BadRequest(err.Error())
 		return
 	}
