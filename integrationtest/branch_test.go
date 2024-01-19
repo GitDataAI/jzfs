@@ -2,9 +2,10 @@ package integrationtest
 
 import (
 	"context"
-	"github.com/jiaozifs/jiaozifs/controller/validator"
 	"net/http"
 	"strings"
+
+	"github.com/jiaozifs/jiaozifs/controller/validator"
 
 	"github.com/jiaozifs/jiaozifs/api"
 	apiimpl "github.com/jiaozifs/jiaozifs/api/api_impl"

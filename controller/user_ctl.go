@@ -3,9 +3,10 @@ package controller
 import (
 	"context"
 	"encoding/hex"
-	"github.com/jiaozifs/jiaozifs/controller/validator"
 	"net/http"
 	"time"
+
+	"github.com/jiaozifs/jiaozifs/controller/validator"
 
 	"github.com/jiaozifs/jiaozifs/utils"
 
