@@ -3,12 +3,12 @@ package controller
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"regexp"
 	"time"
+
+	"github.com/jiaozifs/jiaozifs/controller/validator"
 
 	"github.com/google/uuid"
 	logging "github.com/ipfs/go-log/v2"
@@ -27,27 +27,6 @@ import (
 const DefaultBranchName = "main"
 
 var repoLog = logging.Logger("repo control")
-var maxNameLength = 20
-var alphanumeric = regexp.MustCompile("^[a-zA-Z0-9_]*$")
-
-// RepoNameBlackList forbid repo name, reserve for routes
-var RepoNameBlackList = []string{"repository", "repositories", "wip", "wips", "object", "objects", "commit", "commits", "ref", "refs", "repo", "repos", "user", "users"}
-
-func CheckRepositoryName(name string) error {
-	for _, blackName := range RepoNameBlackList {
-		if name == blackName {
-			return errors.New("repository name is black list")
-		}
-	}
-
-	if !alphanumeric.MatchString(name) {
-		return errors.New("repository name must be combination of number and letter")
-	}
-	if len(name) > maxNameLength {
-		return errors.New("repository name is too long")
-	}
-	return nil
-}
 
 type RepositoryController struct {
 	fx.In
@@ -154,7 +133,7 @@ func (repositoryCtl RepositoryController) ListRepository(ctx context.Context, w 
 }
 
 func (repositoryCtl RepositoryController) CreateRepository(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, body api.CreateRepositoryJSONRequestBody) {
-	err := CheckRepositoryName(body.Name)
+	err := validator.ValidateRepoName(body.Name)
 	if err != nil {
 		w.BadRequest(err.Error())
 		return

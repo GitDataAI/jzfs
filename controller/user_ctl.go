@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/jiaozifs/jiaozifs/controller/validator"
+
 	"github.com/jiaozifs/jiaozifs/utils"
 
 	"github.com/go-openapi/swag"
@@ -95,6 +97,12 @@ func (userCtl UserController) generateAndRespToken(w *api.JiaozifsResponse, r *h
 }
 
 func (userCtl UserController) Register(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, body api.RegisterJSONRequestBody) {
+	err := validator.ValidateUsername(body.Name)
+	if err != nil {
+		w.BadRequest(err.Error())
+		return
+	}
+
 	register := auth.Register{
 		Username: body.Name,
 		Email:    string(body.Email),
@@ -102,7 +110,7 @@ func (userCtl UserController) Register(ctx context.Context, w *api.JiaozifsRespo
 	}
 
 	// perform register
-	err := register.Register(ctx, userCtl.Repo.UserRepo())
+	err = register.Register(ctx, userCtl.Repo.UserRepo())
 	if err != nil {
 		w.Error(err)
 		return

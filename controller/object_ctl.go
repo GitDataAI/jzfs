@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/jiaozifs/jiaozifs/controller/validator"
+
 	"github.com/go-openapi/swag"
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/jiaozifs/jiaozifs/api"
@@ -311,6 +313,12 @@ func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsRes
 		}
 	}
 	defer reader.Close() //nolint
+
+	err = validator.ValidateObjectPath(params.Path)
+	if err != nil {
+		w.BadRequest(err.Error())
+		return
+	}
 
 	operator, err := auth.GetOperator(ctx)
 	if err != nil {
