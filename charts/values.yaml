@@ -7,3 +7,4 @@ home_path: "/app/data"
 port: 34913
 ingress_name: nginx
 log_level: info
+claim_name: jiaozifs-home"
