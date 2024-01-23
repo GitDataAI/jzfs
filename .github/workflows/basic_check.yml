@@ -1,12 +1,7 @@
 name: basic-check
 
 on:
-  push:
-    branches:
-      - master
-  pull_request:
-    branches:
-      - '**'
+  workflow_call:
 
 jobs:
   check:
@@ -34,6 +29,15 @@ jobs:
 
       - name: end-of-file-check
         uses: njgibbon/fend@main
+
+      - uses: azure/setup-helm@v3
+        with:
+          version: 'v3.14.0'
+        id: install
+
+      - name: Helm lint
+        run: |
+          helm lint --strict chart
 
       - name: Lint
         run: |
