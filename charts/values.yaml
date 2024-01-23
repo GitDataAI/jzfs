@@ -3,7 +3,8 @@
 # See README.md for details.
 replicas: 1
 db: ""
-home_path: "/app/data"
+home_path: "/app"
 port: 34913
 ingress_name: nginx
 log_level: info
+claim_name: jiaozifs-home
