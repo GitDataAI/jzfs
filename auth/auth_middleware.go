@@ -3,8 +3,11 @@ package auth
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
+
+	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/routers"
@@ -110,7 +113,7 @@ func checkSecurityRequirements(r *http.Request,
 					continue
 				}
 				token := parts[1]
-				user, err = userByToken(ctx, secretStore, userRepo, token)
+				user, err = userByToken(ctx, userRepo, secretStore.SharedSecret(), token)
 			case "basic_auth":
 				// validate using basic auth
 				accessKey, secretKey, ok := r.BasicAuth()
@@ -128,7 +131,7 @@ func checkSecurityRequirements(r *http.Request,
 				if token == "" {
 					continue
 				}
-				user, err = userByToken(ctx, secretStore, userRepo, token)
+				user, err = userByToken(ctx, userRepo, secretStore.SharedSecret(), token)
 			default:
 				// unknown security requirement to check
 				log.With("provider", provider).Error("Authentication middleware unknown security requirement provider")
@@ -146,20 +149,28 @@ func checkSecurityRequirements(r *http.Request,
 	return nil, nil
 }
 
-func userByToken(ctx context.Context, secretStore crypt.SecretStore, userRepo models.IUserRepo, tokenString string) (*models.User, error) {
-	claims, err := VerifyToken(secretStore.SharedSecret(), tokenString)
-	// make sure no audience is set for login token
-	if err != nil || !claims.VerifyAudience(LoginAudience, false) {
+func userByToken(ctx context.Context, userRepo models.IUserRepo, secret []byte, tokenString string) (*models.User, error) {
+	claims, err := VerifyToken(secret, tokenString)
+	if err != nil {
 		return nil, ErrAuthenticatingRequest
 	}
 
-	username := claims.Subject
+	// make sure no audience is set for login token
+	validator := jwt.NewValidator(jwt.WithAudience(LoginAudience))
+	if err = validator.Validate(claims); err != nil {
+		return nil, fmt.Errorf("invalid token: %s %w", err, ErrAuthenticatingRequest)
+	}
+
+	username, err := claims.GetSubject()
+	if err != nil {
+		return nil, err
+	}
 	userData, err := userRepo.Get(ctx, models.NewGetUserParams().SetName(username))
 	if err != nil {
 		log.With(
-			"token_id", claims.Id,
+			"token", tokenString,
 			"username", username,
-			"subject", claims.Subject,
+			"subject", username,
 		).Debugf("could not find user id by credentials %v", err)
 		return nil, ErrAuthenticatingRequest
 	}
