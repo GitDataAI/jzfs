@@ -27,3 +27,8 @@ test: gen-api
 	go test -timeout=30m -parallel=4  -v ./...
 build:gen-api
 	go build $(GOFLAGS) -o jzfs
+
+TAG:=test
+docker:build
+	docker build -t gitdatateam/jzfs:$(TAG) .
+	docker push gitdatateam/jzfs:$(TAG)

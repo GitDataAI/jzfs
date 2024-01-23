@@ -3,6 +3,8 @@ package cmd
 import (
 	"context"
 
+	"github.com/pelletier/go-toml/v2"
+
 	"github.com/gorilla/sessions"
 	logging "github.com/ipfs/go-log/v2"
 	apiImpl "github.com/jiaozifs/jiaozifs/api/api_impl"
@@ -16,7 +18,6 @@ import (
 	"github.com/jiaozifs/jiaozifs/utils"
 	"github.com/jiaozifs/jiaozifs/version"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"github.com/uptrace/bun"
 )
 
@@ -37,6 +38,12 @@ var daemonCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+
+		cfgData, err := toml.Marshal(cfg)
+		if err != nil {
+			return err
+		}
+		log.Debug(string(cfgData))
 
 		shutdown := make(utils.Shutdown)
 		stop, err := fx_opt.New(cmd.Context(),
@@ -76,9 +83,4 @@ var daemonCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(daemonCmd)
-	daemonCmd.Flags().String("db", "", "pg connection string eg. postgres://user:pass@localhost:5432/jiaozifs?sslmode=disable")
-	daemonCmd.Flags().String("log-level", "INFO", "set log level eg. DEBUG INFO ERROR")
-
-	_ = viper.BindPFlag("database.connection", daemonCmd.Flags().Lookup("db"))
-	_ = viper.BindPFlag("log.level", daemonCmd.Flags().Lookup("log-level"))
 }

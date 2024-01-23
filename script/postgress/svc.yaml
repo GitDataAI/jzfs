@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: jiaozifs-api-db-service
+  labels:
+    apptype: jiaozifs-pg-db
+spec:
+  type: ClusterIP
+  selector:
+    app: jiaozifs-api-pg-db
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
