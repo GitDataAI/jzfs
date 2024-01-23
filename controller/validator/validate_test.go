@@ -23,6 +23,8 @@ func TestValidateBranchName(t *testing.T) {
 		{"wip", "repository name is black list"},
 		{"too_long_branch_name_that_exceeds_max_length_limit", "name too long"},
 		{"invalid/name\x00", "invalid branch name: must start with a number or letter and can only contain numbers, letters, hyphens or underscores"},
+		{"invalid/名称", "invalid branch name: must start with a number or letter and can only contain numbers, letters, hyphens or underscores"},
+		{"invalid/지점명", "invalid branch name: must start with a number or letter and can only contain numbers, letters, hyphens or underscores"},
 		{"invalid/branch/name", "branch format must be <name> or <name>/<name>"},
 	}
 
@@ -52,6 +54,8 @@ func TestValidateRepoName(t *testing.T) {
 		{"repository", "repository name is black list"},
 		{"wip", "repository name is black list"},
 		{"invalid/name", "repository name must start with a number or letter, can only contain numbers, letters, or hyphens, and must be between 3 and 63 characters in length"},
+		{"分支/name", "repository name must start with a number or letter, can only contain numbers, letters, or hyphens, and must be between 3 and 63 characters in length"},
+		{"私は支店です/name", "repository name must start with a number or letter, can only contain numbers, letters, or hyphens, and must be between 3 and 63 characters in length"},
 	}
 
 	for _, testCase := range invalidRepoNames {
@@ -78,6 +82,8 @@ func TestValidateUsername(t *testing.T) {
 		error string
 	}{
 		{"user name", "invalid username: it must start and end with a letter or digit, can contain letters, digits, hyphens, and cannot start or end with a hyphen; the length must be between 3 and 30 characters"},
+		{"张三三", "invalid username: it must start and end with a letter or digit, can contain letters, digits, hyphens, and cannot start or end with a hyphen; the length must be between 3 and 30 characters"},
+		{"モンキー・D・ルフィ", "invalid username: it must start and end with a letter or digit, can contain letters, digits, hyphens, and cannot start or end with a hyphen; the length must be between 3 and 30 characters"},
 		{"user-with-hyphen-", "invalid username: it must start and end with a letter or digit, can contain letters, digits, hyphens, and cannot start or end with a hyphen; the length must be between 3 and 30 characters"},
 		{"invalid/username", "invalid username: it must start and end with a letter or digit, can contain letters, digits, hyphens, and cannot start or end with a hyphen; the length must be between 3 and 30 characters"},
 	}
