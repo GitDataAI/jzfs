@@ -1,7 +1,6 @@
 name: test
 
 on:
-  create:
   push:
     branches:
       - main
