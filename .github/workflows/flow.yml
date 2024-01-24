@@ -1,14 +1,14 @@
 name: test
 
 on:
+  create:
   push:
     branches:
       - main
-      - 'deployment/**'
+      - deployment/**
   pull_request:
     branches:
       - '**'
-
 jobs:
   check:
     uses: ./.github/workflows/basic_check.yml
