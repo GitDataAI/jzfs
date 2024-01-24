@@ -19,7 +19,7 @@ spec:
         - name: jiaozifs-backend
           image: gitdatateam/jzfs:{{ .Values.tag }}
           imagePullPolicy: Always
-          args: ["--db  {{ .Values.db }} --log-level {{ .Values.log_level }} --bs_path {{ .Values.home_path }}/data --listen http://0.0.0.0:{{ .Values.port }} --config {{ .Values.home_path }}/config.yaml"]
+          args:   ["--db  {{ .Values.db }} --log-level {{ .Values.log_level }} --bs_path {{ .Values.home_path }}/data --listen http://0.0.0.0:{{ .Values.port }} --config {{ .Values.home_path }}/config.yaml"]
           ports:
             - containerPort: {{ .Values.port }}
           volumeMounts:
