@@ -12,7 +12,7 @@ var (
 	ReValidRef  = regexp.MustCompile(`^\w+/?\w+$`)
 	ReValidRepo = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_\-]{1,61}[a-zA-Z0-9]$`)
 	ReValidUser = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_-]{1,28}[a-zA-Z0-9]$`)
-	ReValidPath = regexp.MustCompile(`^/(?:[^\x00-\x1F\\/:*?"<>|]+/)*[^\x00-\x1F\\/:*?"<>|]+(\.[^\x00-\x1F\\/:*?"<>|]+)?$`)
+	ReValidPath = regexp.MustCompile(`^(?:/?[^\x00-\x1F\\/:*?"<>|]+/)*[^\x00-\x1F\\/:*?"<>|]+(\.[^\x00-\x1F\\/:*?"<>|]+)?$`)
 
 	// RepoNameBlackList forbid repo name, reserve for routes
 	RepoNameBlackList = []string{"repository", "repositories", "wip", "wips", "object", "objects", "commit", "commits", "ref", "refs", "repo", "repos", "user", "users"}
