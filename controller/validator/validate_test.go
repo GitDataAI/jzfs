@@ -98,7 +98,7 @@ func TestValidateUsername(t *testing.T) {
 
 func TestValidateObjectPath(t *testing.T) {
 	//Validate Obj Path
-	validObjectPaths := []string{"path/to/object", "file.txt", "folder/file.txt", "我的图片.png", "我的文件/我的应用.exe", "私のビデオ.mp3"}
+	validObjectPaths := []string{"path/to/object", "file.txt", "folder/file.txt", "我的图片.png", "我的文件/我的应用.exe", "私のビデオ.mp3, /video.mp3, /path/pic.png"}
 	for _, path := range validObjectPaths {
 		err := ValidateObjectPath(path)
 		if err != nil {
