@@ -8,7 +8,7 @@ import (
 	"github.com/smartystreets/goconvey/convey"
 )
 
-func StatusSpec(ctx context.Context, urlStr string) func(c convey.C) {
+func StatusSpec(_ context.Context, urlStr string) func(c convey.C) {
 	return func(c convey.C) {
 		url, err := url.Parse(urlStr)
 		convey.ShouldBeNil(err)
