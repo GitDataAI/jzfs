@@ -116,11 +116,11 @@ func checkSecurityRequirements(r *http.Request,
 				user, err = userByToken(ctx, userRepo, secretStore.SharedSecret(), token)
 			case "basic_auth":
 				// validate using basic auth
-				accessKey, secretKey, ok := r.BasicAuth()
+				userName, password, ok := r.BasicAuth()
 				if !ok {
 					continue
 				}
-				user, err = userByAuth(ctx, authenticator, userRepo, accessKey, secretKey)
+				user, err = userByAuth(ctx, authenticator, userRepo, userName, password)
 			case "cookie_auth":
 				var internalAuthSession *sessions.Session
 				internalAuthSession, _ = sessionStore.Get(r, InternalAuthSessionName)
