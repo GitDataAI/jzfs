@@ -3,19 +3,17 @@ package ipfs
 import (
 	"context"
 	"fmt"
-	"github.com/modern-go/reflect2"
+
 	"net/url"
 	"sort"
 	"strings"
 
-	iface "github.com/ipfs/kubo/core/coreiface"
-
-	"github.com/ipfs/kubo/core/coreiface/options"
-
 	"github.com/ipfs/boxo/path"
-
 	"github.com/ipfs/kubo/client/rpc"
+	iface "github.com/ipfs/kubo/core/coreiface"
+	"github.com/ipfs/kubo/core/coreiface/options"
 	"github.com/jiaozifs/jiaozifs/block"
+	"github.com/modern-go/reflect2"
 )
 
 type Walker struct {
@@ -31,7 +29,6 @@ func NewIPFSWalker(client *rpc.HttpApi) *Walker {
 }
 
 func (s *Walker) Walk(ctx context.Context, storageURI *url.URL, op block.WalkOptions, walkFn func(e block.ObjectStoreEntry) error) error {
-	const maxKeys = 1000
 	prefix := strings.TrimLeft(storageURI.Path, "/")
 
 	curPath, err := path.NewPath(prefix)

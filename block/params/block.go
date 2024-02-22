@@ -17,7 +17,7 @@ type AdapterConfig interface {
 type Mem struct{}
 
 type Ipfs struct {
-	Url string
+	URL string
 }
 
 type Local struct {

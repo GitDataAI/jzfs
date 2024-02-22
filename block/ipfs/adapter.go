@@ -65,7 +65,7 @@ func (qk QualifiedKey) GetKey() string {
 }
 
 func NewAdapter(url string, opts ...func(a *Adapter)) (*Adapter, error) {
-	addr, err := ma.NewMultiaddr(strings.TrimSpace(string(url)))
+	addr, err := ma.NewMultiaddr(strings.TrimSpace(url))
 	if err != nil {
 		return nil, err
 	}
@@ -282,7 +282,7 @@ func (l *Adapter) GetRange(ctx context.Context, obj block.ObjectPointer, start i
 	return rc, nil
 }
 
-func (l *Adapter) GetProperties(_ context.Context, obj block.ObjectPointer) (block.Properties, error) {
+func (l *Adapter) GetProperties(_ context.Context, _ block.ObjectPointer) (block.Properties, error) {
 	return block.Properties{}, nil
 }
 
@@ -317,7 +317,7 @@ func (l *Adapter) UploadPart(ctx context.Context, obj block.ObjectPointer, _ int
 	}, err
 }
 
-func (l *Adapter) AbortMultiPartUpload(_ context.Context, obj block.ObjectPointer, uploadID string) error {
+func (l *Adapter) AbortMultiPartUpload(_ context.Context, _ block.ObjectPointer, uploadID string) error {
 	if err := isValidUploadID(uploadID); err != nil {
 		return err
 	}
@@ -325,18 +325,17 @@ func (l *Adapter) AbortMultiPartUpload(_ context.Context, obj block.ObjectPointe
 	panic("todo")
 }
 
-func (l *Adapter) CompleteMultiPartUpload(ctx context.Context, obj block.ObjectPointer, uploadID string, multipartList *block.MultipartUploadCompletion) (*block.CompleteMultiPartUploadResponse, error) {
+func (l *Adapter) CompleteMultiPartUpload(_ context.Context, obj block.ObjectPointer, uploadID string, multipartList *block.MultipartUploadCompletion) (*block.CompleteMultiPartUploadResponse, error) {
 	if err := isValidUploadID(uploadID); err != nil {
 		return nil, err
 	}
-	etag := computeETag(multipartList.Part) + "-" + strconv.Itoa(len(multipartList.Part))
 
 	size, err := l.unitePartFiles(obj, uploadID)
 	if err != nil {
 		return nil, fmt.Errorf("multipart upload unite for %s: %w", uploadID, err)
 	}
 	return &block.CompleteMultiPartUploadResponse{
-		ETag:          etag,
+		ETag:          computeETag(multipartList.Part) + "-" + strconv.Itoa(len(multipartList.Part)),
 		ContentLength: size,
 	}, nil
 }
@@ -354,11 +353,11 @@ func computeETag(parts []block.MultipartPart) string {
 	return csm
 }
 
-func (l *Adapter) unitePartFiles(identifier block.ObjectPointer, uploadID string) (int64, error) {
+func (l *Adapter) unitePartFiles(_ block.ObjectPointer, _ string) (int64, error) {
 	panic("not impl")
 }
 
-func (l *Adapter) removePartFiles(ctx context.Context, files []string) error {
+func (l *Adapter) removePartFiles(ctx context.Context, files []string) error { //nolint
 	var firstErr error
 	for _, name := range files {
 		// If removal fails prefer to skip the error: "only" wasted space.

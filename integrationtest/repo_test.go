@@ -447,31 +447,31 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			c.Convey("no auth", func() {
 				re := client.RequestEditors
 				client.RequestEditors = nil
-				resp, err := client.DeleteRepository(ctx, userName, repoName)
+				resp, err := client.DeleteRepository(ctx, userName, repoName, &api.DeleteRepositoryParams{})
 				client.RequestEditors = re
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 			c.Convey("delete repository in not exit repo", func() {
-				resp, err := client.DeleteRepository(ctx, userName, "happyrunfake")
+				resp, err := client.DeleteRepository(ctx, userName, "happyrunfake", &api.DeleteRepositoryParams{})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
 			})
 
 			c.Convey("delete repository in non exit user", func() {
-				resp, err := client.DeleteRepository(ctx, "telo", repoName)
+				resp, err := client.DeleteRepository(ctx, "telo", repoName, &api.DeleteRepositoryParams{})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
 			})
 
 			c.Convey("delete repository in other's repo", func() {
-				resp, err := client.DeleteRepository(ctx, "admin", repoName)
+				resp, err := client.DeleteRepository(ctx, "admin", repoName, &api.DeleteRepositoryParams{})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
 			})
 
 			c.Convey("delete repository successful", func() {
-				resp, err := client.DeleteRepository(ctx, userName, repoName)
+				resp, err := client.DeleteRepository(ctx, userName, repoName, &api.DeleteRepositoryParams{})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
 

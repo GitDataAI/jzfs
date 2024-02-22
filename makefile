@@ -23,6 +23,8 @@ SWAGGER_ARG=
 swagger-srv:
 	 swagger serve $(SWAGGER_ARG) -F swagger  ./api/swagger.yml
 
+lint:
+	golang-lint run ./...
 test: gen-api
 	go test -timeout=30m -parallel=4  -v ./...
 build:gen-api
