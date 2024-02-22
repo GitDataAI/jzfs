@@ -19,7 +19,7 @@ type BlockStoreConfig struct {
 		AllowedExternalPrefixes []string `mapstructure:"allowed_external_prefixes" json:"allowed_external_prefixes"`
 	} `mapstructure:"local" json:"local"`
 	Ipfs *struct {
-		Url string `mapstructure:"url" json:"url"`
+		URL string `mapstructure:"url" json:"url"`
 	} `mapstructure:"ipfs" json:"ipfs"`
 	S3 *struct {
 		S3AuthInfo                    `mapstructure:",squash"`
@@ -67,7 +67,7 @@ func (c *BlockStoreConfig) BlockstoreType() string {
 
 func (c *BlockStoreConfig) BlockstoreIpfsParams() (params.Ipfs, error) {
 	return params.Ipfs{
-		Url: c.Ipfs.Url,
+		URL: c.Ipfs.URL,
 	}, nil
 }
 

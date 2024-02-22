@@ -76,13 +76,13 @@ func BuildBlockAdapter(ctx context.Context, c params.AdapterConfig) (block.Adapt
 }
 
 func buildIpfsAdapter(_ context.Context, params params.Ipfs) (*ipfs.Adapter, error) {
-	adapter, err := ipfs.NewAdapter(params.Url)
+	adapter, err := ipfs.NewAdapter(params.URL)
 	if err != nil {
-		return nil, fmt.Errorf("got error opening a local block adapter with path %s: %w", params.Url, err)
+		return nil, fmt.Errorf("got error opening a local block adapter with path %s: %w", params.URL, err)
 	}
 	log.With(
 		"type", "local",
-		"url", params.Url,
+		"url", params.URL,
 	).Info("initialized blockstore adapter")
 	return adapter, nil
 }
