@@ -9,6 +9,8 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/hellofresh/health-go/v5"
+
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/routers/gorillamux"
 
@@ -74,6 +76,11 @@ func SetupAPI(lc fx.Lifecycle, apiConfig *config.APIConfig, secretStore crypt.Se
 
 	api.HandlerFromMuxWithBaseURL(controller, apiRouter, APIV1Prefix)
 	r.Handle("/api/docs/*", http.StripPrefix("/api/docs", swaggerui.Handler(raw)))
+	h, _ := health.New(health.WithComponent(health.Component{
+		Name:    "myservice",
+		Version: "v1.0",
+	}))
+	r.Get("/status", h.HandlerFunc)
 
 	url, err := url.Parse(apiConfig.Listen)
 	if err != nil {
