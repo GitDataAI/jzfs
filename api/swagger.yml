@@ -1607,6 +1607,11 @@ paths:
         - repo
       operationId: deleteRepository
       summary: delete repository
+      parameters:
+        - in: query
+          name: is_clean_data
+          schema:
+            type: boolean
       responses:
         200:
           description: success to delete repository

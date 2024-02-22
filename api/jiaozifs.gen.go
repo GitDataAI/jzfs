@@ -442,6 +442,11 @@ type UploadObjectParams struct {
 	Path string `form:"path" json:"path"`
 }
 
+// DeleteRepositoryParams defines parameters for DeleteRepository.
+type DeleteRepositoryParams struct {
+	IsCleanData *bool `form:"is_clean_data,omitempty" json:"is_clean_data,omitempty"`
+}
+
 // DeleteBranchParams defines parameters for DeleteBranch.
 type DeleteBranchParams struct {
 	RefName string `form:"refName" json:"refName"`
@@ -714,7 +719,7 @@ type ClientInterface interface {
 	UploadObjectWithBody(ctx context.Context, owner string, repository string, params *UploadObjectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteRepository request
-	DeleteRepository(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteRepository(ctx context.Context, owner string, repository string, params *DeleteRepositoryParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetRepository request
 	GetRepository(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -982,8 +987,8 @@ func (c *Client) UploadObjectWithBody(ctx context.Context, owner string, reposit
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteRepository(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteRepositoryRequest(c.Server, owner, repository)
+func (c *Client) DeleteRepository(ctx context.Context, owner string, repository string, params *DeleteRepositoryParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteRepositoryRequest(c.Server, owner, repository, params)
 	if err != nil {
 		return nil, err
 	}
@@ -2081,7 +2086,7 @@ func NewUploadObjectRequestWithBody(server string, owner string, repository stri
 }
 
 // NewDeleteRepositoryRequest generates requests for DeleteRepository
-func NewDeleteRepositoryRequest(server string, owner string, repository string) (*http.Request, error) {
+func NewDeleteRepositoryRequest(server string, owner string, repository string, params *DeleteRepositoryParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -2111,6 +2116,28 @@ func NewDeleteRepositoryRequest(server string, owner string, repository string) 
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.IsCleanData != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "is_clean_data", runtime.ParamLocationQuery, *params.IsCleanData); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
@@ -3703,7 +3730,7 @@ type ClientWithResponsesInterface interface {
 	UploadObjectWithBodyWithResponse(ctx context.Context, owner string, repository string, params *UploadObjectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadObjectResponse, error)
 
 	// DeleteRepositoryWithResponse request
-	DeleteRepositoryWithResponse(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*DeleteRepositoryResponse, error)
+	DeleteRepositoryWithResponse(ctx context.Context, owner string, repository string, params *DeleteRepositoryParams, reqEditors ...RequestEditorFn) (*DeleteRepositoryResponse, error)
 
 	// GetRepositoryWithResponse request
 	GetRepositoryWithResponse(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*GetRepositoryResponse, error)
@@ -4725,8 +4752,8 @@ func (c *ClientWithResponses) UploadObjectWithBodyWithResponse(ctx context.Conte
 }
 
 // DeleteRepositoryWithResponse request returning *DeleteRepositoryResponse
-func (c *ClientWithResponses) DeleteRepositoryWithResponse(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*DeleteRepositoryResponse, error) {
-	rsp, err := c.DeleteRepository(ctx, owner, repository, reqEditors...)
+func (c *ClientWithResponses) DeleteRepositoryWithResponse(ctx context.Context, owner string, repository string, params *DeleteRepositoryParams, reqEditors ...RequestEditorFn) (*DeleteRepositoryResponse, error) {
+	rsp, err := c.DeleteRepository(ctx, owner, repository, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -5877,7 +5904,7 @@ type ServerInterface interface {
 	UploadObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params UploadObjectParams)
 	// delete repository
 	// (DELETE /repos/{owner}/{repository})
-	DeleteRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string)
+	DeleteRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params DeleteRepositoryParams)
 	// get repository
 	// (GET /repos/{owner}/{repository})
 	GetRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string)
@@ -6026,7 +6053,7 @@ func (_ Unimplemented) UploadObject(ctx context.Context, w *JiaozifsResponse, r 
 
 // delete repository
 // (DELETE /repos/{owner}/{repository})
-func (_ Unimplemented) DeleteRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string) {
+func (_ Unimplemented) DeleteRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params DeleteRepositoryParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -6922,8 +6949,19 @@ func (siw *ServerInterfaceWrapper) DeleteRepository(w http.ResponseWriter, r *ht
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteRepositoryParams
+
+	// ------------- Optional query parameter "is_clean_data" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "is_clean_data", r.URL.Query(), &params.IsCleanData)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "is_clean_data", Err: err})
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteRepository(r.Context(), &JiaozifsResponse{w}, r, owner, repository)
+		siw.Handler.DeleteRepository(r.Context(), &JiaozifsResponse{w}, r, owner, repository, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -8492,29 +8530,29 @@ var swaggerSpec = []string{
 	"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",
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

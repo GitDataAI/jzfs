@@ -163,7 +163,7 @@ func (repositoryCtl RepositoryController) CreateRepository(ctx context.Context, 
 			w.Forbidden()
 			return
 		}
-		storageNamespace = cfg.DefaultNamespacePrefix
+		storageNamespace = utils.String(fmt.Sprintf("%s://%s", cfg.BlockstoreType(), repoID.String()))
 	} else {
 		storageNamespace = utils.String(fmt.Sprintf("%s://%s", repositoryCtl.PublicStorageConfig.BlockstoreType(), repoID.String()))
 	}
@@ -208,7 +208,7 @@ func (repositoryCtl RepositoryController) CreateRepository(ctx context.Context, 
 	w.JSON(repositoryToDto(createdRepo))
 }
 
-func (repositoryCtl RepositoryController) DeleteRepository(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string) {
+func (repositoryCtl RepositoryController) DeleteRepository(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, params api.DeleteRepositoryParams) {
 	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
@@ -278,6 +278,23 @@ func (repositoryCtl RepositoryController) DeleteRepository(ctx context.Context, 
 	//clean repo data
 	if repository.UsePublicStorage { //todo for use custom storage, maybe add a config in setting or params in delete repository api
 		adapter, err := factory.BuildBlockAdapter(ctx, repositoryCtl.PublicStorageConfig)
+		if err != nil {
+			w.Error(err)
+			return
+		}
+		err = adapter.RemoveNameSpace(ctx, *repository.StorageNamespace)
+		if err != nil {
+			w.Error(err)
+			return
+		}
+	} else if utils.BoolValue(params.IsCleanData) {
+		cfg := config.BlockStoreConfig{}
+		err = json.Unmarshal([]byte(utils.StringValue(repository.StorageAdapterParams)), &cfg)
+		if err != nil {
+			w.Error(err)
+			return
+		}
+		adapter, err := factory.BuildBlockAdapter(ctx, &cfg)
 		if err != nil {
 			w.Error(err)
 			return
