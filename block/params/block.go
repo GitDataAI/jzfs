@@ -10,10 +10,15 @@ type AdapterConfig interface {
 	BlockstoreLocalParams() (Local, error)
 	BlockstoreS3Params() (S3, error)
 	BlockstoreGSParams() (GS, error)
+	BlockstoreIpfsParams() (Ipfs, error)
 	BlockstoreAzureParams() (Azure, error)
 }
 
 type Mem struct{}
+
+type Ipfs struct {
+	Url string
+}
 
 type Local struct {
 	Path                    string

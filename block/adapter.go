@@ -33,6 +33,7 @@ const (
 	BlockstoreTypeGS        = "gs"
 	BlockstoreTypeAzure     = "azure"
 	BlockstoreTypeLocal     = "local"
+	BlockstoreIPFS          = "ipfs"
 	BlockstoreTypeMem       = "mem"
 	BlockstoreTypeTransient = "transient"
 )
