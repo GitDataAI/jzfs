@@ -23,14 +23,14 @@ import (
 )
 
 const (
-	Access_key_idScopes     = "access_key_id.Scopes"
-	Basic_authScopes        = "basic_auth.Scopes"
-	Cookie_authScopes       = "cookie_auth.Scopes"
-	Jwt_tokenScopes         = "jwt_token.Scopes"
-	SignatureScopes         = "signature.Scopes"
-	Signature_methodScopes  = "signature_method.Scopes"
-	Signature_versionScopes = "signature_version.Scopes"
-	TimestampScopes         = "timestamp.Scopes"
+	JiaozifsAccessKeyIdScopes = "JiaozifsAccessKeyId.Scopes"
+	SignatureScopes           = "Signature.Scopes"
+	SignatureMethodScopes     = "SignatureMethod.Scopes"
+	SignatureVersionScopes    = "SignatureVersion.Scopes"
+	TimestampScopes           = "Timestamp.Scopes"
+	Basic_authScopes          = "basic_auth.Scopes"
+	Cookie_authScopes         = "cookie_auth.Scopes"
+	Jwt_tokenScopes           = "jwt_token.Scopes"
 )
 
 // Defines values for ChangeAction.
@@ -4834,7 +4834,7 @@ func (r ListRepositoryOfAuthenticatedUserResponse) StatusCode() int {
 type CreateRepositoryResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON201      *[]Repository
+	JSON201      *Repository
 }
 
 // Status returns HTTPResponse.Status
@@ -5008,7 +5008,7 @@ func (r GetWipChangesResponse) StatusCode() int {
 type CommitWipResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Wip
+	JSON201      *Wip
 }
 
 // Status returns HTTPResponse.Status
@@ -6206,7 +6206,7 @@ func ParseCreateRepositoryResponse(rsp *http.Response) (*CreateRepositoryRespons
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
-		var dest []Repository
+		var dest Repository
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -6393,12 +6393,12 @@ func ParseCommitWipResponse(rsp *http.Response) (*CommitWipResponse, error) {
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest Wip
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	}
 
@@ -6867,13 +6867,13 @@ func (siw *ServerInterfaceWrapper) Logout(w http.ResponseWriter, r *http.Request
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -6927,13 +6927,13 @@ func (siw *ServerInterfaceWrapper) GetMergeRequest(w http.ResponseWriter, r *htt
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -6997,13 +6997,13 @@ func (siw *ServerInterfaceWrapper) UpdateMergeRequest(w http.ResponseWriter, r *
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -7048,13 +7048,13 @@ func (siw *ServerInterfaceWrapper) ListMergeRequests(w http.ResponseWriter, r *h
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -7136,13 +7136,13 @@ func (siw *ServerInterfaceWrapper) CreateMergeRequest(w http.ResponseWriter, r *
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -7206,13 +7206,13 @@ func (siw *ServerInterfaceWrapper) Merge(w http.ResponseWriter, r *http.Request)
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -7257,13 +7257,13 @@ func (siw *ServerInterfaceWrapper) DeleteObject(w http.ResponseWriter, r *http.R
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -7341,13 +7341,13 @@ func (siw *ServerInterfaceWrapper) GetObject(w http.ResponseWriter, r *http.Requ
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -7461,13 +7461,13 @@ func (siw *ServerInterfaceWrapper) HeadObject(w http.ResponseWriter, r *http.Req
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -7581,13 +7581,13 @@ func (siw *ServerInterfaceWrapper) UploadObject(w http.ResponseWriter, r *http.R
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -7665,13 +7665,13 @@ func (siw *ServerInterfaceWrapper) DeleteRepository(w http.ResponseWriter, r *ht
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -7727,13 +7727,13 @@ func (siw *ServerInterfaceWrapper) GetRepository(w http.ResponseWriter, r *http.
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -7788,13 +7788,13 @@ func (siw *ServerInterfaceWrapper) UpdateRepository(w http.ResponseWriter, r *ht
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -7839,13 +7839,13 @@ func (siw *ServerInterfaceWrapper) DeleteBranch(w http.ResponseWriter, r *http.R
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -7908,13 +7908,13 @@ func (siw *ServerInterfaceWrapper) GetBranch(w http.ResponseWriter, r *http.Requ
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -7987,13 +7987,13 @@ func (siw *ServerInterfaceWrapper) CreateBranch(w http.ResponseWriter, r *http.R
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -8038,13 +8038,13 @@ func (siw *ServerInterfaceWrapper) ListBranches(w http.ResponseWriter, r *http.R
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -8125,13 +8125,13 @@ func (siw *ServerInterfaceWrapper) GetCommitChanges(w http.ResponseWriter, r *ht
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -8187,13 +8187,13 @@ func (siw *ServerInterfaceWrapper) GetCommitsInRef(w http.ResponseWriter, r *htt
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -8274,13 +8274,13 @@ func (siw *ServerInterfaceWrapper) CompareCommit(w http.ResponseWriter, r *http.
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -8336,13 +8336,13 @@ func (siw *ServerInterfaceWrapper) GetEntriesInRef(w http.ResponseWriter, r *htt
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -8418,13 +8418,13 @@ func (siw *ServerInterfaceWrapper) DeleteAksk(w http.ResponseWriter, r *http.Req
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -8470,13 +8470,13 @@ func (siw *ServerInterfaceWrapper) GetAksk(w http.ResponseWriter, r *http.Reques
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -8522,13 +8522,13 @@ func (siw *ServerInterfaceWrapper) CreateAksk(w http.ResponseWriter, r *http.Req
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -8566,13 +8566,13 @@ func (siw *ServerInterfaceWrapper) ListAksks(w http.ResponseWriter, r *http.Requ
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -8662,13 +8662,13 @@ func (siw *ServerInterfaceWrapper) ListRepositoryOfAuthenticatedUser(w http.Resp
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -8730,13 +8730,13 @@ func (siw *ServerInterfaceWrapper) CreateRepository(w http.ResponseWriter, r *ht
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -8761,13 +8761,13 @@ func (siw *ServerInterfaceWrapper) GetUserInfo(w http.ResponseWriter, r *http.Re
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -8803,13 +8803,13 @@ func (siw *ServerInterfaceWrapper) ListRepository(w http.ResponseWriter, r *http
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -8896,13 +8896,13 @@ func (siw *ServerInterfaceWrapper) DeleteWip(w http.ResponseWriter, r *http.Requ
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -8965,13 +8965,13 @@ func (siw *ServerInterfaceWrapper) GetWip(w http.ResponseWriter, r *http.Request
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -9044,13 +9044,13 @@ func (siw *ServerInterfaceWrapper) UpdateWip(w http.ResponseWriter, r *http.Requ
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -9113,13 +9113,13 @@ func (siw *ServerInterfaceWrapper) GetWipChanges(w http.ResponseWriter, r *http.
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -9190,13 +9190,13 @@ func (siw *ServerInterfaceWrapper) CommitWip(w http.ResponseWriter, r *http.Requ
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -9274,13 +9274,13 @@ func (siw *ServerInterfaceWrapper) ListWip(w http.ResponseWriter, r *http.Reques
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -9325,13 +9325,13 @@ func (siw *ServerInterfaceWrapper) RevertWipChanges(w http.ResponseWriter, r *ht
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
 
 	ctx = context.WithValue(ctx, SignatureScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
 
-	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
 
 	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
@@ -9695,17 +9695,17 @@ var swaggerSpec = []string{
 	"7fM6laUv5XBrhanSuppQ938KdVAeoEOudezvD/W/0S3uL0yzbYvuCtgrzjyJcD22AuxWAg4RBzErrkRy",
 	"6sKxaWSudXlQt8hY8s1HI3/eJuO6Tea6eufVj3NliLUbtX6c39T8yBpL9TY2YRyQvs/aeatKrkjmMsDu",
 	"+2fy6wK3VWLUvJGwuzi0GeRVLxlClyaQ3+IQ2YpvtFMRK3oYtwQpWaDqhPpFlrL+BaAs2Po1qhgnhIrZ",
-	"d5wAfsiLSePSZAdmaTh+KKVqTWJcsf0e52/r1YKtYbZQdXL7S6hbMqYwfzAitk7gsmpEAwTq374oS3H1",
-	"7xZNqBjDwdiTcsHXh/Iig3Om+UDu3XqfRKjZ1Va/nGWu54z1t82mEO4Q/aUC3ge6eVB9FfD9ibQrIG0l",
-	"mF668A8EafXHTvIcRh5gvZO8qg6nVq4J7TL18obQrYmwfuGy63R349rjPsfHJoLyVzANkeNSZlcAdE7S",
-	"NY+dfNef41jneMicpPerjxwSdgn6+52ETpU6ppxph7fkkiKyL1jYPf2NqIfq3qEUDpLv/VDIIDYut+aN",
-	"Jn3XStu0ql6GVbps7PxJrlLbOnhS6NT61xS2Zb1esfGWjp0Unwiq6F4fyo0q3wnsMfTOysata8zQnHz+",
-	"+fonUCPjULFcSg8Q6lD5Gb/VIe8hJJe7TaP4BMLjOyR/l9htiuEMdvfCg62MyT9M7SYtEdMHcxyqwwex",
-	"88j9Ou1sWhKQ/hY6hfm9+Hi+98p1DdCgSyPMnBz2LVn7LMmAhSW2nw3r3NduwH8cBLzfjSBWR90HsGWc",
-	"k7S2V0w503cNKJVrRBieCOhyuAQ+EHT/Axxmv/0tIIjIFWIRWuLx2IjPWoh+rIVQ8/tW2uYaId4bBDqG",
-	"s0G9Isjniu5ZqitHPtqY4CNQjqhmvrnF0b6F47iNj0szcNUv4Lhzcn7rkzs68FF+e6b2Z/ExmfrTIuCj",
-	"Hle+8GJzfpo3rgW7UkJmFg4apsxc2V1+nuVwNIpZgOMZE/Lwxcu/7r8Y4ZSMLve9tvYu7bB49fzm/wMA",
-	"AP//KxKoD8WUAAA=",
+	"d5wAfsiLSePSZAdmaTh+KKVqTWJcsf0e52/r1YKtYe646qS/NJXC/MFI0vp6y4oOjb2rf/uCKcUNv1u0",
+	"lGIMB2NPynVdn72LDJyZ5gO5d+vtEKFm81r9QJa5hTPWnzCbQrhD9AcJeB+25rHzVTD2J6CuAKiVmHnp",
+	"qT8QQNXfNMlTFXkc9U7SpzpqWrkNtMvUy4tAtybC+r3KrkPcjduN+/wbm+/JX8E0RI67l11xzjlJ1zxd",
+	"8l1/dWOdUyBzkt6vPnJI2CXoz3QSOlXqmHKm/dqSS4rIvphg9/Q3oh6qe4dSOEi+97Mfg9i43Jo3mttd",
+	"KzvTKm4ZVtCysWMmuUpt63xJoVPr30bYlvV6NcVbOl1SfAmoont9KDeqfA6wx9A7Cxi3rjFDU+/5V+qf",
+	"QCmMQ8VyKT1AqEPl1/pWh7yHkEPuNo3iSweP7yz8XWK3qXkz2N0LD7YAJv/+tJu0RExveeppf9s+iJ1H",
+	"7tdpZ9OSgPQnzynM78XH871Xrtt+Bt0NYebksG/J2kdGBiwssf06WOe+dgP+4yDg/W4EsTrqPoAt45yk",
+	"tb1iypm+UkCpXCPC8ERAl8Ml8IGg+x/gMPvtT/5ARK4Qi9ASj8dGfNZC9GMthJrft9I21wjx3iDQMZwN",
+	"6hVBPld0z1JdOdnRxgQfgXJENfPNZY32LRzHbXxcmmirfujGnXrzr50fzdHhj8pn+mp/2i/C1B/mER39",
+	"tPxWS57e0/xxLdqVajGzeNAwZeZ27vJLLIejUcwCHM+YkIcvXv51/8UIp2R0ue+1NXhph8Wr5zf/HwAA",
+	"///6wwPHsJQAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

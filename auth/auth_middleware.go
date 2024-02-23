@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/jiaozifs/jiaozifs/utils"
+
 	"github.com/jiaozifs/jiaozifs/auth/aksk"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -112,57 +114,55 @@ func checkSecurityRequirements(r *http.Request,
 	var err error
 
 	for _, securityRequirement := range securityRequirements {
-		for provider := range securityRequirement {
-			switch provider {
-			case "jwt_token":
-				// validate jwt token from header
-				authHeaderValue := r.Header.Get("Authorization")
-				if authHeaderValue == "" {
-					continue
-				}
-				parts := strings.Fields(authHeaderValue)
-				if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
-					continue
-				}
-				token := parts[1]
-				user, err = userByToken(ctx, userRepo, secretStore.SharedSecret(), token)
-			case "basic_auth":
-				// validate using basic auth
-				userName, password, ok := r.BasicAuth()
-				if !ok {
-					continue
-				}
-
-				user, err = userByAuth(ctx, authenticator, userName, password)
-			case "cookie_auth":
-				var internalAuthSession *sessions.Session
-				internalAuthSession, _ = sessionStore.Get(r, InternalAuthSessionName)
-				token := ""
-				if internalAuthSession != nil {
-					token, _ = internalAuthSession.Values[TokenSessionKeyName].(string)
-				}
-				if token == "" {
-					continue
-				}
-				user, err = userByToken(ctx, userRepo, secretStore.SharedSecret(), token)
-			case "ak_sk":
-				isAkskRequest := verifier.IsAkskCredential(r)
-				if !isAkskRequest {
-					continue
-				}
-				user, err = userByAKSK(ctx, akskRepo, userRepo, verifier, r)
-			default:
-				// unknown security requirement to check
-				log.With("provider", provider).Error("Authentication middleware unknown security requirement provider")
-				return nil, ErrAuthenticatingRequest
+		securityKeys := getSecurityKey(securityRequirement)
+		if utils.Contain(securityKeys, "jwt_token") {
+			// validate jwt token from header
+			authHeaderValue := r.Header.Get("Authorization")
+			if authHeaderValue == "" {
+				continue
+			}
+			parts := strings.Fields(authHeaderValue)
+			if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
+				continue
+			}
+			token := parts[1]
+			user, err = userByToken(ctx, userRepo, secretStore.SharedSecret(), token)
+		} else if utils.Contain(securityKeys, "basic_auth") {
+			// validate using basic auth
+			userName, password, ok := r.BasicAuth()
+			if !ok {
+				continue
 			}
 
-			if err != nil {
-				return nil, err
+			user, err = userByAuth(ctx, authenticator, userName, password)
+		} else if utils.Contain(securityKeys, "cookie_auth") {
+			var internalAuthSession *sessions.Session
+			internalAuthSession, _ = sessionStore.Get(r, InternalAuthSessionName)
+			token := ""
+			if internalAuthSession != nil {
+				token, _ = internalAuthSession.Values[TokenSessionKeyName].(string)
 			}
-			if user != nil {
-				return user, nil
+			if token == "" {
+				continue
 			}
+			user, err = userByToken(ctx, userRepo, secretStore.SharedSecret(), token)
+		} else if utils.Contain(securityKeys, aksk.AccessKeykey) {
+			isAkskRequest := verifier.IsAkskCredential(r)
+			if !isAkskRequest {
+				continue
+			}
+			user, err = userByAKSK(ctx, akskRepo, userRepo, verifier, r)
+		} else {
+			// unknown security requirement to check
+			log.With("provider", securityKeys).Error("Authentication middleware unknown security requirement provider")
+			return nil, ErrAuthenticatingRequest
+		}
+
+		if err != nil {
+			return nil, err
+		}
+		if user != nil {
+			return user, nil
 		}
 	}
 	return nil, nil
@@ -221,4 +221,12 @@ func userByAuth(ctx context.Context, authenticator *BasicAuthenticator, accessKe
 		return nil, ErrAuthenticatingRequest
 	}
 	return user, nil
+}
+
+func getSecurityKey(security openapi3.SecurityRequirement) []string {
+	var keys []string
+	for key := range security {
+		keys = append(keys, key)
+	}
+	return keys
 }

@@ -72,7 +72,7 @@ func (v *V0Verier) Verify(req *http.Request) (string, error) {
 	query.Del(SignatureKey)
 
 	method := req.Method
-	host := req.URL.Host
+	host := req.Host
 	path := req.URL.Path
 	if path == "" {
 		path = "/"
@@ -103,6 +103,7 @@ func (v *V0Verier) Verify(req *http.Request) (string, error) {
 		path,
 		queryString,
 	}, "\n")
+
 	hash := hmac.New(sha256.New, []byte(secretKey))
 	hash.Write([]byte(stringToSign))
 	actualSig := base64.StdEncoding.EncodeToString(hash.Sum(nil))

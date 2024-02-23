@@ -58,14 +58,14 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 					Name:        repoName,
 				})
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
 
-				grp, err := api.ParseGetRepositoryResponse(resp)
+				grp, err := api.ParseCreateRepositoryResponse(resp)
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(grp.JSON200.Head, convey.ShouldEqual, controller.DefaultBranchName)
-				fmt.Println(grp.JSON200.Id)
+				convey.So(grp.JSON201.Head, convey.ShouldEqual, controller.DefaultBranchName)
+				fmt.Println(grp.JSON201.Id)
 				//check default branch created
-				branchResp, err := client.GetBranch(ctx, userName, grp.JSON200.Name, &api.GetBranchParams{RefName: controller.DefaultBranchName})
+				branchResp, err := client.GetBranch(ctx, userName, grp.JSON201.Name, &api.GetBranchParams{RefName: controller.DefaultBranchName})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(branchResp.StatusCode, convey.ShouldEqual, http.StatusOK)
 
@@ -80,7 +80,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 					Name:        "happygo",
 				})
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
 			})
 
 			c.Convey("duplicate repo name", func() {

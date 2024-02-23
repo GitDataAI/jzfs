@@ -701,18 +701,20 @@ func (repository *WorkRepository) Merge(ctx context.Context, toMergeCommitHash h
 	if repository.state != InBranch {
 		return nil, errors.New("must merge on branch")
 	}
-	var commit *models.Commit
+	var targetCommit *models.Commit
 	var err error
 	if !repository.branch.CommitHash.IsEmpty() {
-		commit, err = repository.repo.CommitRepo(repository.repoModel.ID).Commit(ctx, repository.branch.CommitHash)
+		//get branch commit
+		targetCommit, err = repository.repo.CommitRepo(repository.repoModel.ID).Commit(ctx, repository.branch.CommitHash)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	var toMergeCommit *models.Commit
+	var sourceCommit *models.Commit
 	if !toMergeCommitHash.IsEmpty() {
-		toMergeCommit, err = repository.repo.CommitRepo(repository.repoModel.ID).Commit(ctx, toMergeCommitHash)
+		//get toMergeCommit
+		sourceCommit, err = repository.repo.CommitRepo(repository.repoModel.ID).Commit(ctx, toMergeCommitHash)
 		if err != nil {
 			return nil, err
 		}
@@ -722,11 +724,11 @@ func (repository *WorkRepository) Merge(ctx context.Context, toMergeCommitHash h
 	err = repository.repo.Transaction(ctx, func(repo models.IRepo) error {
 		commitRepo := repo.CommitRepo(repository.repoModel.ID)
 		fileTreeRepo := repo.FileTreeRepo(repository.repoModel.ID)
-		bestAncestor, err := findBestAncestor(ctx, commitRepo, fileTreeRepo, repository.operator, repository.repoModel, commit, toMergeCommit)
+		bestAncestor, err := findBestAncestor(ctx, commitRepo, fileTreeRepo, repository.operator, repository.repoModel, sourceCommit, targetCommit)
 		if err != nil {
 			return err
 		}
-		newCommit, err = merge(ctx, commitRepo, fileTreeRepo, repository.repoModel, repository.operator, bestAncestor, commit, toMergeCommit, msg, resolver)
+		newCommit, err = merge(ctx, commitRepo, fileTreeRepo, repository.repoModel, repository.operator, bestAncestor, sourceCommit, targetCommit, msg, resolver)
 		if err != nil {
 			return err
 		}
@@ -819,49 +821,49 @@ func merge(ctx context.Context,
 	repoModel *models.Repository,
 	merger *models.User,
 	bestAncestor *models.Commit,
-	baseCommit *models.Commit,
-	toMergeCommit *models.Commit,
+	sourceCommit *models.Commit,
+	targetCommit *models.Commit,
 	msg string,
 	resolver ConflictResolver) (*models.Commit, error) {
-	if baseCommit == nil && toMergeCommit == nil {
+	if sourceCommit == nil && targetCommit == nil {
 		return nil, errors.New("cannot find nil commit")
 	}
 
-	if baseCommit != nil && toMergeCommit == nil {
+	if sourceCommit != nil && targetCommit == nil {
 		//do nothing
-		return baseCommit, nil
+		return sourceCommit, nil
 	}
 
-	if baseCommit == nil && toMergeCommit != nil {
-		return toMergeCommit, nil
+	if sourceCommit == nil && targetCommit != nil {
+		return targetCommit, nil
 	}
 
-	baseCommitNode := NewWrapCommitNode(commitRepo, baseCommit)
-	toMergeCommitNode := NewWrapCommitNode(commitRepo, toMergeCommit)
+	baseCommitNode := NewWrapCommitNode(commitRepo, sourceCommit)
+	targetMergeCommitNode := NewWrapCommitNode(commitRepo, targetCommit)
 
 	{
 		//do nothing while merge is ancestor of base
-		mergeIsAncestorOfBase, err := toMergeCommitNode.IsAncestor(ctx, baseCommitNode)
+		mergeIsAncestorOfBase, err := targetMergeCommitNode.IsAncestor(ctx, baseCommitNode)
 		if err != nil {
 			return nil, err
 		}
 
 		if mergeIsAncestorOfBase {
-			workRepoLog.Warnf("merge commit %s is ancestor of base commit %s", toMergeCommit.Hash, baseCommit.Hash)
-			return baseCommit, nil
+			workRepoLog.Warnf("merge commit %s is ancestor of base commit %s", targetCommit.Hash, sourceCommit.Hash)
+			return sourceCommit, nil
 		}
 	}
 
 	{
 		//try fast-forward merge no need to create new commit node
-		baseIsAncestorOfMerge, err := baseCommitNode.IsAncestor(ctx, toMergeCommitNode)
+		baseIsAncestorOfMerge, err := baseCommitNode.IsAncestor(ctx, targetMergeCommitNode)
 		if err != nil {
 			return nil, err
 		}
 
 		if baseIsAncestorOfMerge {
-			workRepoLog.Warnf("base commit %s is ancestor of merge commit %s", toMergeCommit.Hash, baseCommit.Hash)
-			return toMergeCommit, nil
+			workRepoLog.Warnf("base commit %s is ancestor of merge commit %s", targetCommit.Hash, sourceCommit.Hash)
+			return targetCommit, nil
 		}
 	}
 
@@ -870,12 +872,12 @@ func merge(ctx context.Context,
 		return nil, err
 	}
 
-	baseDiff, err := ancestorWorkTree.Diff(ctx, baseCommit.TreeHash, "")
+	sourceDiff, err := ancestorWorkTree.Diff(ctx, sourceCommit.TreeHash, "")
 	if err != nil {
 		return nil, err
 	}
 
-	mergeDiff, err := ancestorWorkTree.Diff(ctx, toMergeCommit.TreeHash, "")
+	targetDiff, err := ancestorWorkTree.Diff(ctx, targetCommit.TreeHash, "")
 	if err != nil {
 		return nil, err
 	}
@@ -886,7 +888,7 @@ func merge(ctx context.Context,
 		return nil, err
 	}
 
-	cmw := NewChangesMergeIter(baseDiff, mergeDiff, resolver)
+	cmw := NewChangesMergeIter(sourceDiff, targetDiff, resolver)
 	for cmw.Has() {
 		change, err := cmw.Next()
 		if err != nil {
@@ -912,7 +914,7 @@ func merge(ctx context.Context,
 		MergeTag:     "",
 		Message:      msg,
 		TreeHash:     baseWorkTree.Root().Hash(),
-		ParentHashes: []hash.Hash{baseCommit.Hash, toMergeCommit.Hash},
+		ParentHashes: []hash.Hash{sourceCommit.Hash, targetCommit.Hash},
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
 	}

@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestFull(t *testing.T) {
+func TestAkSK(t *testing.T) {
 	ak, sk, err := GenerateAksk()
 	require.NoError(t, err)
 
@@ -52,11 +52,12 @@ func TestFull(t *testing.T) {
 		require.NoError(t, err)
 
 		query := req.URL.Query()
-		query.Del("AWSAccessKeyId")
+		query.Del(AccessKeykey)
 		req.URL.RawQuery = query.Encode()
 		_, err = verifer.Verify(req)
 		require.Error(t, err)
 	})
+
 	t.Run("sig method fail", func(t *testing.T) {
 		req := mockHttpRequest()
 		signer := NewV0Signer(ak, sk)
@@ -66,21 +67,7 @@ func TestFull(t *testing.T) {
 		require.NoError(t, err)
 
 		query := req.URL.Query()
-		query.Set("SignatureMethod", "2")
-		req.URL.RawQuery = query.Encode()
-		_, err = verifer.Verify(req)
-		require.Error(t, err)
-	})
-	t.Run("sig method fail", func(t *testing.T) {
-		req := mockHttpRequest()
-		signer := NewV0Signer(ak, sk)
-		verifer := NewV0Verier(skGetter{sk})
-
-		err = signer.Sign(req)
-		require.NoError(t, err)
-
-		query := req.URL.Query()
-		query.Set("SignatureMethod", "md5")
+		query.Set(SignatureMethodKey, "md5")
 		req.URL.RawQuery = query.Encode()
 		_, err = verifer.Verify(req)
 		require.Error(t, err)
@@ -94,7 +81,7 @@ func TestFull(t *testing.T) {
 		require.NoError(t, err)
 
 		query := req.URL.Query()
-		query.Set("SignatureVersion", "2")
+		query.Set(SignatureVersionKey, "2")
 		req.URL.RawQuery = query.Encode()
 		_, err = verifer.Verify(req)
 		require.Error(t, err)
@@ -108,7 +95,7 @@ func TestFull(t *testing.T) {
 		require.NoError(t, err)
 
 		query := req.URL.Query()
-		query.Del("Timestamp")
+		query.Del(TimestampKey)
 		req.URL.RawQuery = query.Encode()
 		_, err = verifer.Verify(req)
 		require.Error(t, err)
@@ -123,7 +110,7 @@ func TestFull(t *testing.T) {
 		require.NoError(t, err)
 
 		query := req.URL.Query()
-		query.Set("Timestamp", time.Now().String())
+		query.Set(TimestampKey, time.Now().String())
 		req.URL.RawQuery = query.Encode()
 		_, err = verifer.Verify(req)
 		require.Error(t, err)
@@ -137,7 +124,7 @@ func TestFull(t *testing.T) {
 		require.NoError(t, err)
 
 		query := req.URL.Query()
-		query.Set("Timestamp", time.Now().Add(-time.Minute*10).UTC().Format(timeFormat))
+		query.Set(TimestampKey, time.Now().Add(-time.Minute*10).UTC().Format(timeFormat))
 		req.URL.RawQuery = query.Encode()
 		_, err = verifer.Verify(req)
 		require.Error(t, err)

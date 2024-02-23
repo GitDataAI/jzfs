@@ -45,7 +45,7 @@ func (voSigner V0Signer) Sign(req *http.Request) error {
 	query := req.URL.Query()
 	query.Set(AccessKeykey, voSigner.accessKey)
 	query.Set(SignatureVersionKey, signatureVersion)
-	query.Set(SignatureVersionKey, signatureMethod)
+	query.Set(SignatureMethodKey, signatureMethod)
 	query.Set(TimestampKey, curTime.UTC().Format(timeFormat))
 
 	req.Header.Del("Signature")
