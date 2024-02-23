@@ -34,6 +34,7 @@ require (
 	github.com/google/uuid v1.5.0
 	github.com/gorilla/sessions v1.2.2
 	github.com/hashicorp/go-version v1.6.0
+	github.com/hellofresh/health-go/v5 v5.5.2
 	github.com/hnlq715/golang-lru v0.4.0
 	github.com/ipfs/boxo v0.18.0
 	github.com/ipfs/go-log/v2 v2.5.1
@@ -117,7 +118,6 @@ require (
 	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/jsonpointer v0.19.6 // indirect
-	github.com/go-sql-driver/mysql v1.7.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
@@ -134,7 +134,6 @@ require (
 	github.com/hashicorp/golang-lru v1.0.2 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
-	github.com/hellofresh/health-go/v5 v5.5.2 // indirect
 	github.com/imdario/mergo v0.3.15 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/invopop/yaml v0.2.0 // indirect
