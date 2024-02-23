@@ -114,7 +114,7 @@ func (userCtl UserController) GetUserInfo(ctx context.Context, w *api.JiaozifsRe
 	// Get token from Header
 	user, err := auth.GetOperator(ctx)
 	if err != nil {
-		w.Code(http.StatusForbidden)
+		w.Code(http.StatusUnauthorized)
 		return
 	}
 

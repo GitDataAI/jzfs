@@ -31,7 +31,7 @@ func UserSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		c.Convey("usr profile no cookie", func() {
 			resp, err := client.GetUserInfo(ctx)
 			convey.So(err, convey.ShouldBeNil)
-			convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+			convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 		})
 
 		c.Convey("login fail", func() {

@@ -17,7 +17,11 @@ security:
   - jwt_token: [] # Default security for the entire API
   - basic_auth: []
   - cookie_auth: []
-  - ak_sk: []
+  - access_key_id: []
+    signature_version: []
+    signature_method: []
+    timestamp: []
+    signature: []
 components:
   parameters:
     PaginationPrefix:
@@ -72,7 +76,26 @@ components:
       type: apiKey
       in: cookie
       name: internal_auth_session
-
+    access_key_id:
+      type: apiKey
+      in: query
+      name: JiaozifsAccessKeyId
+    signature_version:
+      type: apiKey
+      in: query
+      name: SignatureVersion
+    signature_method:
+      type: apiKey
+      in: query
+      name: SignatureMethod
+    timestamp:
+      type: apiKey
+      in: query
+      name: Timestamp
+    signature:
+      type: apiKey
+      in: query
+      name: Signature
 
   schemas:
     LoginConfig:
@@ -2155,8 +2178,6 @@ paths:
                 $ref: "#/components/schemas/UserInfo"
         401:
           description: Unauthorized
-        403:
-          description: Forbiden
         default:
           description: Internal Server Error
 

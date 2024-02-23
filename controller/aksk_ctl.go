@@ -22,7 +22,7 @@ type AkSkController struct {
 	Repo models.IRepo
 }
 
-func (akskCtl AkSkController) CreateAksk(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, params api.CreateAkskParams) {
+func (akskCtl AkSkController) CreateAksk(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, params api.CreateAkskParams) {
 	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
@@ -48,10 +48,10 @@ func (akskCtl AkSkController) CreateAksk(ctx context.Context, w *api.JiaozifsRes
 		w.Error(err)
 		return
 	}
-	w.JSON(aksk, http.StatusCreated)
+	w.JSON(akskToDto(aksk), http.StatusCreated)
 }
 
-func (akskCtl AkSkController) GetAksk(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, params api.GetAkskParams) {
+func (akskCtl AkSkController) GetAksk(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, params api.GetAkskParams) {
 	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
@@ -72,10 +72,10 @@ func (akskCtl AkSkController) GetAksk(ctx context.Context, w *api.JiaozifsRespon
 		w.Error(err)
 		return
 	}
-	w.JSON(aksk)
+	w.JSON(akskToDto(aksk))
 }
 
-func (akskCtl AkSkController) DeleteAksk(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, params api.DeleteAkskParams) {
+func (akskCtl AkSkController) DeleteAksk(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, params api.DeleteAkskParams) {
 	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
@@ -91,15 +91,15 @@ func (akskCtl AkSkController) DeleteAksk(ctx context.Context, w *api.JiaozifsRes
 		delParams.SetAccessKey(utils.StringValue(params.AccessKey))
 	}
 
-	aksk, err := akskCtl.Repo.AkskRepo().Delete(ctx, delParams)
+	_, err = akskCtl.Repo.AkskRepo().Delete(ctx, delParams)
 	if err != nil {
 		w.Error(err)
 		return
 	}
-	w.JSON(aksk)
+	w.OK()
 }
 
-func (akskCtl AkSkController) ListAksks(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, params api.ListAksksParams) {
+func (akskCtl AkSkController) ListAksks(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, params api.ListAksksParams) {
 	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)

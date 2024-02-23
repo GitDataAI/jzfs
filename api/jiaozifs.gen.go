@@ -23,10 +23,14 @@ import (
 )
 
 const (
-	Ak_skScopes       = "ak_sk.Scopes"
-	Basic_authScopes  = "basic_auth.Scopes"
-	Cookie_authScopes = "cookie_auth.Scopes"
-	Jwt_tokenScopes   = "jwt_token.Scopes"
+	Access_key_idScopes     = "access_key_id.Scopes"
+	Basic_authScopes        = "basic_auth.Scopes"
+	Cookie_authScopes       = "cookie_auth.Scopes"
+	Jwt_tokenScopes         = "jwt_token.Scopes"
+	SignatureScopes         = "signature.Scopes"
+	Signature_methodScopes  = "signature_method.Scopes"
+	Signature_versionScopes = "signature_version.Scopes"
+	TimestampScopes         = "timestamp.Scopes"
 )
 
 // Defines values for ChangeAction.
@@ -6863,7 +6867,15 @@ func (siw *ServerInterfaceWrapper) Logout(w http.ResponseWriter, r *http.Request
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.Logout(r.Context(), &JiaozifsResponse{w}, r)
@@ -6915,7 +6927,15 @@ func (siw *ServerInterfaceWrapper) GetMergeRequest(w http.ResponseWriter, r *htt
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetMergeRequest(r.Context(), &JiaozifsResponse{w}, r, owner, repository, mrSeq)
@@ -6977,7 +6997,15 @@ func (siw *ServerInterfaceWrapper) UpdateMergeRequest(w http.ResponseWriter, r *
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UpdateMergeRequest(r.Context(), &JiaozifsResponse{w}, r, body, owner, repository, mrSeq)
@@ -7020,7 +7048,15 @@ func (siw *ServerInterfaceWrapper) ListMergeRequests(w http.ResponseWriter, r *h
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ListMergeRequestsParams
@@ -7100,7 +7136,15 @@ func (siw *ServerInterfaceWrapper) CreateMergeRequest(w http.ResponseWriter, r *
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateMergeRequest(r.Context(), &JiaozifsResponse{w}, r, body, owner, repository)
@@ -7162,7 +7206,15 @@ func (siw *ServerInterfaceWrapper) Merge(w http.ResponseWriter, r *http.Request)
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.Merge(r.Context(), &JiaozifsResponse{w}, r, body, owner, repository, mrSeq)
@@ -7205,7 +7257,15 @@ func (siw *ServerInterfaceWrapper) DeleteObject(w http.ResponseWriter, r *http.R
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params DeleteObjectParams
@@ -7281,7 +7341,15 @@ func (siw *ServerInterfaceWrapper) GetObject(w http.ResponseWriter, r *http.Requ
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetObjectParams
@@ -7393,7 +7461,15 @@ func (siw *ServerInterfaceWrapper) HeadObject(w http.ResponseWriter, r *http.Req
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params HeadObjectParams
@@ -7505,7 +7581,15 @@ func (siw *ServerInterfaceWrapper) UploadObject(w http.ResponseWriter, r *http.R
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params UploadObjectParams
@@ -7581,7 +7665,15 @@ func (siw *ServerInterfaceWrapper) DeleteRepository(w http.ResponseWriter, r *ht
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params DeleteRepositoryParams
@@ -7635,7 +7727,15 @@ func (siw *ServerInterfaceWrapper) GetRepository(w http.ResponseWriter, r *http.
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetRepository(r.Context(), &JiaozifsResponse{w}, r, owner, repository)
@@ -7688,7 +7788,15 @@ func (siw *ServerInterfaceWrapper) UpdateRepository(w http.ResponseWriter, r *ht
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UpdateRepository(r.Context(), &JiaozifsResponse{w}, r, body, owner, repository)
@@ -7731,7 +7839,15 @@ func (siw *ServerInterfaceWrapper) DeleteBranch(w http.ResponseWriter, r *http.R
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params DeleteBranchParams
@@ -7792,7 +7908,15 @@ func (siw *ServerInterfaceWrapper) GetBranch(w http.ResponseWriter, r *http.Requ
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetBranchParams
@@ -7863,7 +7987,15 @@ func (siw *ServerInterfaceWrapper) CreateBranch(w http.ResponseWriter, r *http.R
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateBranch(r.Context(), &JiaozifsResponse{w}, r, body, owner, repository)
@@ -7906,7 +8038,15 @@ func (siw *ServerInterfaceWrapper) ListBranches(w http.ResponseWriter, r *http.R
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ListBranchesParams
@@ -7985,7 +8125,15 @@ func (siw *ServerInterfaceWrapper) GetCommitChanges(w http.ResponseWriter, r *ht
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetCommitChangesParams
@@ -8039,7 +8187,15 @@ func (siw *ServerInterfaceWrapper) GetCommitsInRef(w http.ResponseWriter, r *htt
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetCommitsInRefParams
@@ -8118,7 +8274,15 @@ func (siw *ServerInterfaceWrapper) CompareCommit(w http.ResponseWriter, r *http.
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params CompareCommitParams
@@ -8172,7 +8336,15 @@ func (siw *ServerInterfaceWrapper) GetEntriesInRef(w http.ResponseWriter, r *htt
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetEntriesInRefParams
@@ -8246,7 +8418,15 @@ func (siw *ServerInterfaceWrapper) DeleteAksk(w http.ResponseWriter, r *http.Req
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params DeleteAkskParams
@@ -8290,7 +8470,15 @@ func (siw *ServerInterfaceWrapper) GetAksk(w http.ResponseWriter, r *http.Reques
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetAkskParams
@@ -8334,7 +8522,15 @@ func (siw *ServerInterfaceWrapper) CreateAksk(w http.ResponseWriter, r *http.Req
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params CreateAkskParams
@@ -8370,7 +8566,15 @@ func (siw *ServerInterfaceWrapper) ListAksks(w http.ResponseWriter, r *http.Requ
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ListAksksParams
@@ -8458,7 +8662,15 @@ func (siw *ServerInterfaceWrapper) ListRepositoryOfAuthenticatedUser(w http.Resp
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ListRepositoryOfAuthenticatedUserParams
@@ -8518,7 +8730,15 @@ func (siw *ServerInterfaceWrapper) CreateRepository(w http.ResponseWriter, r *ht
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateRepository(r.Context(), &JiaozifsResponse{w}, r, body)
@@ -8541,7 +8761,15 @@ func (siw *ServerInterfaceWrapper) GetUserInfo(w http.ResponseWriter, r *http.Re
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetUserInfo(r.Context(), &JiaozifsResponse{w}, r)
@@ -8575,7 +8803,15 @@ func (siw *ServerInterfaceWrapper) ListRepository(w http.ResponseWriter, r *http
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ListRepositoryParams
@@ -8660,7 +8896,15 @@ func (siw *ServerInterfaceWrapper) DeleteWip(w http.ResponseWriter, r *http.Requ
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params DeleteWipParams
@@ -8721,7 +8965,15 @@ func (siw *ServerInterfaceWrapper) GetWip(w http.ResponseWriter, r *http.Request
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetWipParams
@@ -8792,7 +9044,15 @@ func (siw *ServerInterfaceWrapper) UpdateWip(w http.ResponseWriter, r *http.Requ
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params UpdateWipParams
@@ -8853,7 +9113,15 @@ func (siw *ServerInterfaceWrapper) GetWipChanges(w http.ResponseWriter, r *http.
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetWipChangesParams
@@ -8922,7 +9190,15 @@ func (siw *ServerInterfaceWrapper) CommitWip(w http.ResponseWriter, r *http.Requ
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params CommitWipParams
@@ -8998,7 +9274,15 @@ func (siw *ServerInterfaceWrapper) ListWip(w http.ResponseWriter, r *http.Reques
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListWip(r.Context(), &JiaozifsResponse{w}, r, owner, repository)
@@ -9041,7 +9325,15 @@ func (siw *ServerInterfaceWrapper) RevertWipChanges(w http.ResponseWriter, r *ht
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
-	ctx = context.WithValue(ctx, Ak_skScopes, []string{})
+	ctx = context.WithValue(ctx, Access_key_idScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_methodScopes, []string{})
+
+	ctx = context.WithValue(ctx, Signature_versionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params RevertWipChangesParams
@@ -9328,90 +9620,92 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
-	"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",
+	"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",
+	"AP//KxKoD8WUAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
