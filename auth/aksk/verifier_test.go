@@ -148,11 +148,11 @@ type skGetter struct {
 	sk string
 }
 
-func (getter skGetter) Get(ak string) (string, error) {
+func (getter skGetter) Get(_ string) (string, error) {
 	return getter.sk, nil
 }
 
-func mockHttpRequest() *http.Request {
+func mockHttpRequest() *http.Request { //nolint
 	verbs := []string{"GET", "POST", "PUT", "Delete"}
 	req, _ := http.NewRequest(verbs[rand.Intn(3)], "http://www.xx.com/index.html", closerWraper{io.LimitReader(crand.Reader, 100)})
 
