@@ -35,6 +35,7 @@ type IRepo interface {
 	BranchRepo() IBranchRepo
 	RepositoryRepo() IRepositoryRepo
 	WipRepo() IWipRepo
+	AkskRepo() IAkskRepo
 }
 
 type PgRepo struct {
@@ -91,4 +92,8 @@ func (repo *PgRepo) RepositoryRepo() IRepositoryRepo {
 
 func (repo *PgRepo) WipRepo() IWipRepo {
 	return NewWipRepo(repo.db)
+}
+
+func (repo *PgRepo) AkskRepo() IAkskRepo {
+	return NewAkskRepo(repo.db)
 }

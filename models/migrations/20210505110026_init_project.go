@@ -80,6 +80,13 @@ func init() {
 		if err != nil {
 			return err
 		}
+		//aksk
+		_, err = db.NewCreateTable().
+			Model((*models.AkSk)(nil)).
+			Exec(ctx)
+		if err != nil {
+			return err
+		}
 		return err
 	}, nil)
 }
