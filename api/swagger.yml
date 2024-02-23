@@ -120,6 +120,42 @@ components:
           description: true if the comm prefs are missing.
         login_config:
           $ref: "#/components/schemas/LoginConfig"
+    AkskList:
+      type: object
+      required:
+        - pagination
+        - results
+      properties:
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/Aksk"
+    Aksk:
+      type: object
+      required:
+        - id
+        - access_key
+        - secret_key
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        access_key:
+          type: string
+        secret_key:
+          type: string
+        description:
+          type: string
+        created_at:
+          type: integer
+          format: int64
+        updated_at:
+          type: integer
+          format: int64
     BranchCreation:
       type: object
       required:
@@ -2148,5 +2184,118 @@ paths:
           description: Unauthorized ValidationError
         420:
           description: too many requests
+        default:
+          description: Internal Server Error
+
+  /users/aksk:
+    get:
+      tags:
+        - aksks
+      operationId: getAksk
+      summary: get aksk
+      parameters:
+        - in: query
+          name: id
+          allowEmptyValue: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: access_key
+          allowEmptyValue: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: aksk
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Aksk"
+        401:
+          description: Unauthorized
+        404:
+          description: Resource Not Found
+        420:
+          description: Too many requests
+        default:
+          description: Internal Server Error
+    post:
+      tags:
+        - aksks
+      operationId: createAksk
+      summary: create aksk
+      parameters:
+        - in: query
+          name: description
+          required: false
+          allowEmptyValue: true
+          schema:
+            type: string
+      responses:
+        201:
+          description: aksk
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Aksk"
+        401:
+          description: Unauthorized
+        404:
+          description: Resource Not Found
+        420:
+          description: Too many requests
+        default:
+          description: Internal Server Error
+    delete:
+      tags:
+        - aksks
+      operationId: deleteAksk
+      summary: delete aksk
+      parameters:
+        - in: query
+          name: id
+          allowEmptyValue: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: access_key
+          allowEmptyValue: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: aksk
+        401:
+          description: Unauthorized
+        404:
+          description: Resource Not Found
+        420:
+          description: Too many requests
+        default:
+          description: Internal Server Error
+  /users/aksks:
+    get:
+      tags:
+        - aksks
+      operationId: listAksks
+      summary: list aksks
+      parameters:
+        - $ref: "#/components/parameters/PaginationInt64After"
+        - $ref: "#/components/parameters/PaginationAmount"
+      responses:
+        200:
+          description: aksk list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AkskList"
+        401:
+          description: Unauthorized
+        404:
+          description: Resource Not Found
+        420:
+          description: Too many requests
         default:
           description: Internal Server Error

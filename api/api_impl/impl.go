@@ -19,4 +19,5 @@ type APIController struct {
 	controller.RepositoryController
 	controller.BranchController
 	controller.MergeRequestController
+	controller.AkSkController
 }
