@@ -205,7 +205,7 @@ func (repositoryCtl RepositoryController) CreateRepository(ctx context.Context, 
 		return
 	}
 
-	w.JSON(repositoryToDto(createdRepo))
+	w.JSON(repositoryToDto(createdRepo), http.StatusCreated)
 }
 
 func (repositoryCtl RepositoryController) DeleteRepository(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, params api.DeleteRepositoryParams) {

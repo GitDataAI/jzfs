@@ -386,12 +386,12 @@ func (mrCtl MergeRequestController) Merge(ctx context.Context, w *api.JiaozifsRe
 			return err
 		}
 
-		err = workRepo.CheckOut(ctx, versionmgr.InBranch, sourceBranch.Name)
+		err = workRepo.CheckOut(ctx, versionmgr.InBranch, targetBranch.Name)
 		if err != nil {
 			return err
 		}
 
-		commit, err = workRepo.Merge(ctx, targetBranch.CommitHash, body.Msg, versionmgr.ResolveFromSelector(utils.Map(body.ConflictResolve)))
+		commit, err = workRepo.Merge(ctx, sourceBranch.CommitHash, body.Msg, versionmgr.ResolveFromSelector(utils.Map(body.ConflictResolve)))
 		if err != nil {
 			return err
 		}

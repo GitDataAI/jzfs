@@ -350,7 +350,7 @@ func MergeRequestSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 		})
 
-		c.Convey(" merge request", func(c convey.C) {
+		c.Convey("merge request", func(c convey.C) {
 
 			c.Convey("no auth", func() {
 				re := client.RequestEditors

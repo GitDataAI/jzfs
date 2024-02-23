@@ -16,7 +16,7 @@ jzfs
 
 # Test binary, built with `go test -c`
 *.test
-
+examples/examples
 # Test coverage file
 coverage.out
 

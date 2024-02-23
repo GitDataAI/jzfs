@@ -159,7 +159,7 @@ func createRepo(ctx context.Context, c convey.C, client *api.Client, repoName st
 			Name: repoName,
 		})
 		convey.So(err, convey.ShouldBeNil)
-		convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+		convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
 	})
 }
 

@@ -17,11 +17,11 @@ security:
   - jwt_token: [] # Default security for the entire API
   - basic_auth: []
   - cookie_auth: []
-  - access_key_id: []
-    signature_version: []
-    signature_method: []
-    timestamp: []
-    signature: []
+  - JiaozifsAccessKeyId: []
+    SignatureVersion: []
+    SignatureMethod: []
+    Timestamp: []
+    Signature: []
 components:
   parameters:
     PaginationPrefix:
@@ -1400,7 +1400,7 @@ paths:
           schema:
             type: string
       responses:
-        200:
+        201:
           description: commit success and response with new wip
           content:
             application/json:
@@ -1947,9 +1947,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Repository"
+                $ref: "#/components/schemas/Repository"
         400:
           description: ValidationError
         401:
