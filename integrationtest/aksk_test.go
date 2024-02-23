@@ -141,6 +141,43 @@ func AkSkSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.ShouldHaveLength(result.JSON200, 6)
 			})
 		})
+
+		c.Convey("aksk usage", func(c convey.C) {
+			c.Convey("success", func(c convey.C) {
+				aksk, err := createAksk(ctx, client)
+				convey.So(err, convey.ShouldBeNil)
+
+				cli, err := api.NewClient(urlStr+apiimpl.APIV1Prefix, api.AkSkOption(aksk.AccessKey, aksk.SecretKey))
+				convey.So(err, convey.ShouldBeNil)
+
+				resp, err := cli.GetUserInfo(ctx)
+				convey.So(err, convey.ShouldBeNil)
+
+				user, err := api.ParseGetUserInfoResponse(resp)
+				convey.So(err, convey.ShouldBeNil)
+				convey.ShouldEqual(user.JSON200.Name, userName)
+			})
+			c.Convey("wrong sk", func(c convey.C) {
+				aksk, err := createAksk(ctx, client)
+				convey.So(err, convey.ShouldBeNil)
+
+				client, err := api.NewClient(urlStr+apiimpl.APIV1Prefix, api.AkSkOption(aksk.AccessKey, "fakesk"))
+				convey.So(err, convey.ShouldBeNil)
+
+				resp, err := client.GetUserInfo(ctx)
+				convey.So(err, convey.ShouldBeNil)
+				convey.ShouldEqual(resp.StatusCode, http.StatusUnauthorized)
+			})
+
+			c.Convey("ak not exit", func(c convey.C) {
+				client, err := api.NewClient(urlStr+apiimpl.APIV1Prefix, api.AkSkOption("fakesk", "fakesk"))
+				convey.So(err, convey.ShouldBeNil)
+
+				resp, err := client.GetUserInfo(ctx)
+				convey.So(err, convey.ShouldBeNil)
+				convey.ShouldEqual(resp.StatusCode, http.StatusUnauthorized)
+			})
+		})
 	}
 }
 
