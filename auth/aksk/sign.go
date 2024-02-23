@@ -12,6 +12,12 @@ import (
 )
 
 const (
+	AccessKeykey        = "JiaozifsAccessKeyId"
+	SignatureVersionKey = "SignatureVersion"
+	SignatureMethodKey  = "SignatureMethod"
+	TimestampKey        = "Timestamp"
+	SignatureKey        = "Signature"
+
 	signatureVersion = "0"
 	signatureMethod  = "HmacSHA256"
 	timeFormat       = "2006-01-02T15:04:05Z"
@@ -37,10 +43,10 @@ func (voSigner V0Signer) Sign(req *http.Request) error {
 	curTime := time.Now()
 	// set query parameter
 	query := req.URL.Query()
-	query.Set("AWSAccessKeyId", voSigner.accessKey)
-	query.Set("SignatureVersion", signatureVersion)
-	query.Set("SignatureMethod", signatureMethod)
-	query.Set("Timestamp", curTime.UTC().Format(timeFormat))
+	query.Set(AccessKeykey, voSigner.accessKey)
+	query.Set(SignatureVersionKey, signatureVersion)
+	query.Set(SignatureVersionKey, signatureMethod)
+	query.Set(TimestampKey, curTime.UTC().Format(timeFormat))
 
 	req.Header.Del("Signature")
 
@@ -80,7 +86,7 @@ func (voSigner V0Signer) Sign(req *http.Request) error {
 	hash := hmac.New(sha256.New, []byte(voSigner.secretKey))
 	hash.Write([]byte(stringToSign))
 	signature := base64.StdEncoding.EncodeToString(hash.Sum(nil))
-	query.Set("Signature", signature)
+	query.Set(SignatureKey, signature)
 
 	req.URL.RawQuery = query.Encode()
 	return nil

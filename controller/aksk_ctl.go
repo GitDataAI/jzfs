@@ -19,7 +19,7 @@ import (
 type AkSkController struct {
 	fx.In
 
-	Repo models.IAkskRepo
+	Repo models.IRepo
 }
 
 func (akskCtl AkSkController) CreateAksk(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, params api.CreateAkskParams) {
@@ -43,7 +43,7 @@ func (akskCtl AkSkController) CreateAksk(ctx context.Context, w *api.JiaozifsRes
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}
-	aksk, err = akskCtl.Repo.Insert(ctx, aksk)
+	aksk, err = akskCtl.Repo.AkskRepo().Insert(ctx, aksk)
 	if err != nil {
 		w.Error(err)
 		return
@@ -67,7 +67,7 @@ func (akskCtl AkSkController) GetAksk(ctx context.Context, w *api.JiaozifsRespon
 		getParams.SetAccessKey(utils.StringValue(params.AccessKey))
 	}
 
-	aksk, err := akskCtl.Repo.Get(ctx, getParams)
+	aksk, err := akskCtl.Repo.AkskRepo().Get(ctx, getParams)
 	if err != nil {
 		w.Error(err)
 		return
@@ -91,7 +91,7 @@ func (akskCtl AkSkController) DeleteAksk(ctx context.Context, w *api.JiaozifsRes
 		delParams.SetAccessKey(utils.StringValue(params.AccessKey))
 	}
 
-	aksk, err := akskCtl.Repo.Delete(ctx, delParams)
+	aksk, err := akskCtl.Repo.AkskRepo().Delete(ctx, delParams)
 	if err != nil {
 		w.Error(err)
 		return
@@ -115,7 +115,7 @@ func (akskCtl AkSkController) ListAksks(ctx context.Context, w *api.JiaozifsResp
 		listParams.SetAmount(utils.IntValue(params.Amount))
 	}
 
-	aksks, hasMore, err := akskCtl.Repo.List(ctx, listParams)
+	aksks, hasMore, err := akskCtl.Repo.AkskRepo().List(ctx, listParams)
 	if err != nil {
 		w.Error(err)
 		return

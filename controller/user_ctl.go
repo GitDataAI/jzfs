@@ -19,7 +19,6 @@ import (
 	"github.com/jiaozifs/jiaozifs/models"
 	openapitypes "github.com/oapi-codegen/runtime/types"
 	"go.uber.org/fx"
-	"golang.org/x/crypto/bcrypt"
 )
 
 var userCtlLog = logging.Logger("user_ctl")
@@ -34,24 +33,17 @@ type UserController struct {
 	SessionStore sessions.Store
 	Repo         models.IRepo
 	Config       *config.AuthConfig
+
+	BasicAuthenticator *auth.BasicAuthenticator
 }
 
 func (userCtl UserController) Login(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, body api.LoginJSONRequestBody) {
-	// get user encryptedPassword by username
-	ep, err := userCtl.Repo.UserRepo().GetEPByName(ctx, body.Name)
+	user, err := userCtl.BasicAuthenticator.AuthenticateUser(ctx, body.Name, body.Password)
 	if err != nil {
 		w.Code(http.StatusUnauthorized)
 		return
 	}
-
-	// Compare ep and password
-	err = bcrypt.CompareHashAndPassword([]byte(ep), []byte(body.Password))
-	if err != nil {
-		w.Code(http.StatusUnauthorized)
-		return
-	}
-
-	userCtl.generateAndRespToken(w, r, body.Name)
+	userCtl.generateAndRespToken(w, r, user.Name)
 }
 
 func (userCtl UserController) RefreshToken(ctx context.Context, w *api.JiaozifsResponse, r *http.Request) {

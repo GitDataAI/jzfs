@@ -3,6 +3,8 @@ package cmd
 import (
 	"context"
 
+	"github.com/jiaozifs/jiaozifs/auth/aksk"
+
 	"github.com/pelletier/go-toml/v2"
 
 	"github.com/gorilla/sessions"
@@ -62,11 +64,16 @@ var daemonCmd = &cobra.Command{
 			fx_opt.Override(new(models.IRepo), func(db *bun.DB) models.IRepo {
 				return models.NewRepo(db)
 			}),
+			fx_opt.Override(new(models.IUserRepo), func(repo models.IRepo) models.IUserRepo {
+				return repo.UserRepo()
+			}),
 
 			fx_opt.Override(fx_opt.NextInvoke(), migrations.MigrateDatabase),
 			//api
 			fx_opt.Override(new(crypt.SecretStore), auth.NewSectetStore),
 			fx_opt.Override(new(sessions.Store), auth.NewSessionStore),
+			fx_opt.Override(new(*auth.BasicAuthenticator), auth.NewBasicAuthenticator),
+			fx_opt.Override(new(aksk.Verifier), auth.NewAkskVerifier),
 			fx_opt.Override(fx_opt.NextInvoke(), apiImpl.SetupAPI),
 		)
 		if err != nil {

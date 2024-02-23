@@ -17,6 +17,7 @@ security:
   - jwt_token: [] # Default security for the entire API
   - basic_auth: []
   - cookie_auth: []
+  - ak_sk: []
 components:
   parameters:
     PaginationPrefix:

@@ -1,13 +1,32 @@
 package auth
 
-import "context"
+import (
+	"context"
 
-// Authenticator authenticates users returning an identifier for the user.
-// (Currently it handles only username+password single-step authentication.
-// This interface will need to change significantly in order to support
-// challenge-response protocols.)
-type Authenticator interface {
-	// AuthenticateUser authenticates a user matching username and
-	// password and returns their ID.
-	AuthenticateUser(ctx context.Context, ak, sk string) (string, error)
+	"github.com/jiaozifs/jiaozifs/models"
+	"golang.org/x/crypto/bcrypt"
+)
+
+type BasicAuthenticator struct {
+	userRepo models.IUserRepo
+}
+
+func NewBasicAuthenticator(userRepo models.IUserRepo) *BasicAuthenticator {
+	return &BasicAuthenticator{userRepo: userRepo}
+}
+
+func (b BasicAuthenticator) AuthenticateUser(ctx context.Context, user, password string) (*models.User, error) {
+	// get user encryptedPassword by username
+	ep, err := b.userRepo.GetEPByName(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+
+	// Compare ep and password
+	err = bcrypt.CompareHashAndPassword([]byte(ep), []byte(password))
+	if err != nil {
+		return nil, err
+	}
+
+	return b.userRepo.Get(ctx, models.NewGetUserParams().SetName(user))
 }

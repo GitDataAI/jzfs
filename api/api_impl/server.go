@@ -9,6 +9,8 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/jiaozifs/jiaozifs/auth/aksk"
+
 	"github.com/hellofresh/health-go/v5"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -37,7 +39,14 @@ const (
 	extensionValidationExcludeBody = "x-validation-exclude-body"
 )
 
-func SetupAPI(lc fx.Lifecycle, apiConfig *config.APIConfig, secretStore crypt.SecretStore, sessionStore sessions.Store, repo models.IRepo, controller APIController) error {
+func SetupAPI(lc fx.Lifecycle,
+	authenticator *auth.BasicAuthenticator,
+	apiConfig *config.APIConfig,
+	secretStore crypt.SecretStore,
+	sessionStore sessions.Store,
+	repo models.IRepo,
+	verifier aksk.Verifier,
+	controller APIController) error {
 	swagger, err := api.GetSwagger()
 	if err != nil {
 		return err
@@ -66,7 +75,7 @@ func SetupAPI(lc fx.Lifecycle, apiConfig *config.APIConfig, secretStore crypt.Se
 		OapiRequestValidatorWithOptions(swagger, &openapi3filter.Options{
 			AuthenticationFunc: openapi3filter.NoopAuthenticationFunc,
 		}),
-		auth.Middleware(swagger, nil, secretStore, repo.UserRepo(), sessionStore),
+		auth.Middleware(swagger, authenticator, secretStore, repo.UserRepo(), repo.AkskRepo(), sessionStore, verifier),
 	)
 
 	raw, err := api.RawSpec()
