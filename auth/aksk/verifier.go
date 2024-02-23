@@ -12,15 +12,18 @@ import (
 	"time"
 )
 
-type V0Verifier interface {
-	Verify(req *http.Request) error
+type Verifier interface {
+	// IsAkskCredential check the requess is aksk credential, just check request have AccessKeykey
+	IsAkskCredential(req *http.Request) bool
+	// Verify verify the request and return access key
+	Verify(req *http.Request) (string, error)
 }
 
 type SkGetter interface {
 	Get(ak string) (string, error)
 }
 
-var _ V0Verifier = (*V0Verier)(nil)
+var _ Verifier = (*V0Verier)(nil)
 
 type V0Verier struct {
 	skGetter SkGetter
@@ -30,38 +33,43 @@ func NewV0Verier(skGetter SkGetter) *V0Verier {
 	return &V0Verier{skGetter: skGetter}
 }
 
-func (v *V0Verier) Verify(req *http.Request) error {
+func (v *V0Verier) IsAkskCredential(req *http.Request) bool {
+	accessKey := req.URL.Query().Get(AccessKeykey)
+	return len(accessKey) > 0
+}
+
+func (v *V0Verier) Verify(req *http.Request) (string, error) {
 	query := req.URL.Query()
-	accessKey := query.Get("AWSAccessKeyId")
+	accessKey := query.Get(AccessKeykey)
 	if len(accessKey) == 0 {
-		return fmt.Errorf("ak not found")
+		return "", fmt.Errorf("ak not found")
 	}
 
 	secretKey, err := v.skGetter.Get(accessKey)
 	if err != nil {
-		return fmt.Errorf("access key not correct")
+		return "", fmt.Errorf("access key not correct")
 	}
 
-	sigMethod := query.Get("SignatureMethod")
+	sigMethod := query.Get(SignatureMethodKey)
 	if sigMethod != signatureMethod {
-		return fmt.Errorf("invalid signature method %s", sigMethod)
+		return "", fmt.Errorf("invalid signature method %s", sigMethod)
 	}
 
-	sigVersion := query.Get("SignatureVersion")
+	sigVersion := query.Get(SignatureVersionKey)
 	if sigVersion != signatureVersion {
-		return fmt.Errorf("invalid signature method %s", sigMethod)
+		return "", fmt.Errorf("invalid signature method %s", sigMethod)
 	}
 
-	reqTime := query.Get("Timestamp")
+	reqTime := query.Get(TimestampKey)
 	t, err := time.Parse(timeFormat, reqTime)
 	if err != nil {
-		return fmt.Errorf("invalid timestamp %s", reqTime)
+		return "", fmt.Errorf("invalid timestamp %s", reqTime)
 	}
 	if t.Before(time.Now().Add(-5 * time.Minute)) {
-		return fmt.Errorf("request is out of data")
+		return "", fmt.Errorf("request is out of data")
 	}
-	expectSignature := query.Get("Signature")
-	query.Del("Signature")
+	expectSignature := query.Get(SignatureKey)
+	query.Del(SignatureKey)
 
 	method := req.Method
 	host := req.URL.Host
@@ -99,7 +107,7 @@ func (v *V0Verier) Verify(req *http.Request) error {
 	hash.Write([]byte(stringToSign))
 	actualSig := base64.StdEncoding.EncodeToString(hash.Sum(nil))
 	if actualSig != expectSignature {
-		return fmt.Errorf("signature not correct")
+		return "", fmt.Errorf("signature not correct")
 	}
-	return nil
+	return accessKey, nil
 }

@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/jiaozifs/jiaozifs/auth/aksk"
+
 	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -53,11 +55,19 @@ type CookieAuthConfig struct {
 	AuthSource              string
 }
 
-func Middleware(swagger *openapi3.T, authenticator Authenticator, secretStore crypt.SecretStore, userRepo models.IUserRepo, sessionStore sessions.Store) func(next http.Handler) http.Handler {
+func Middleware(swagger *openapi3.T,
+	authenticator *BasicAuthenticator,
+	secretStore crypt.SecretStore,
+	userRepo models.IUserRepo,
+	akskRepo models.IAkskRepo,
+	sessionStore sessions.Store,
+	verifier aksk.Verifier,
+) func(next http.Handler) http.Handler {
 	router, err := legacy.NewRouter(swagger)
 	if err != nil {
 		panic(err)
 	}
+
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// if request already authenticated
@@ -72,7 +82,7 @@ func Middleware(swagger *openapi3.T, authenticator Authenticator, secretStore cr
 				_, _ = w.Write([]byte(err.Error()))
 				return
 			}
-			user, err := checkSecurityRequirements(r, securityRequirements, authenticator, sessionStore, secretStore, userRepo)
+			user, err := checkSecurityRequirements(r, securityRequirements, authenticator, sessionStore, secretStore, verifier, userRepo, akskRepo)
 			if err != nil {
 				w.WriteHeader(http.StatusUnauthorized)
 				_, _ = w.Write([]byte(err.Error()))
@@ -90,10 +100,12 @@ func Middleware(swagger *openapi3.T, authenticator Authenticator, secretStore cr
 // it will return nil user and error in case of no security checks to match.
 func checkSecurityRequirements(r *http.Request,
 	securityRequirements openapi3.SecurityRequirements,
-	authenticator Authenticator,
+	authenticator *BasicAuthenticator,
 	sessionStore sessions.Store,
 	secretStore crypt.SecretStore,
+	verifier aksk.Verifier,
 	userRepo models.IUserRepo,
+	akskRepo models.IAkskRepo,
 ) (*models.User, error) {
 	ctx := r.Context()
 	var user *models.User
@@ -120,7 +132,8 @@ func checkSecurityRequirements(r *http.Request,
 				if !ok {
 					continue
 				}
-				user, err = userByAuth(ctx, authenticator, userRepo, userName, password)
+
+				user, err = userByAuth(ctx, authenticator, userName, password)
 			case "cookie_auth":
 				var internalAuthSession *sessions.Session
 				internalAuthSession, _ = sessionStore.Get(r, InternalAuthSessionName)
@@ -132,6 +145,12 @@ func checkSecurityRequirements(r *http.Request,
 					continue
 				}
 				user, err = userByToken(ctx, userRepo, secretStore.SharedSecret(), token)
+			case "ak_sk":
+				isAkskRequest := verifier.IsAkskCredential(r)
+				if !isAkskRequest {
+					continue
+				}
+				user, err = userByAKSK(ctx, akskRepo, userRepo, verifier, r)
 			default:
 				// unknown security requirement to check
 				log.With("provider", provider).Error("Authentication middleware unknown security requirement provider")
@@ -147,6 +166,24 @@ func checkSecurityRequirements(r *http.Request,
 		}
 	}
 	return nil, nil
+}
+
+func userByAKSK(ctx context.Context, akskRepo models.IAkskRepo, userRepo models.IUserRepo, verifier aksk.Verifier, r *http.Request) (*models.User, error) {
+	ak, err := verifier.Verify(r)
+	if err != nil {
+		return nil, err
+	}
+
+	akModel, err := akskRepo.Get(ctx, models.NewGetAkSkParams().SetAccessKey(ak))
+	if err != nil {
+		return nil, err
+	}
+
+	userModel, err := userRepo.Get(ctx, models.NewGetUserParams().SetID(akModel.UserID))
+	if err != nil {
+		return nil, err
+	}
+	return userModel, nil
 }
 
 func userByToken(ctx context.Context, userRepo models.IUserRepo, secret []byte, tokenString string) (*models.User, error) {
@@ -177,15 +214,10 @@ func userByToken(ctx context.Context, userRepo models.IUserRepo, secret []byte, 
 	return userData, nil
 }
 
-func userByAuth(ctx context.Context, authenticator Authenticator, userRepo models.IUserRepo, accessKey string, secretKey string) (*models.User, error) {
-	username, err := authenticator.AuthenticateUser(ctx, accessKey, secretKey)
+func userByAuth(ctx context.Context, authenticator *BasicAuthenticator, accessKey string, secretKey string) (*models.User, error) {
+	user, err := authenticator.AuthenticateUser(ctx, accessKey, secretKey)
 	if err != nil {
 		log.With("user", accessKey).Errorf("authenticate %v", err)
-		return nil, ErrAuthenticatingRequest
-	}
-	user, err := userRepo.Get(ctx, models.NewGetUserParams().SetName(username))
-	if err != nil {
-		log.With("user_name", username).Debugf("could not find user id by credentials %s", err)
 		return nil, ErrAuthenticatingRequest
 	}
 	return user, nil
