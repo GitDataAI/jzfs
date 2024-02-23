@@ -25,6 +25,7 @@ type AkSk struct {
 }
 
 type GetAkSkParams struct {
+	userID    uuid.UUID
 	id        uuid.UUID
 	accessKey *string
 }
@@ -37,7 +38,10 @@ func (gap *GetAkSkParams) SetID(id uuid.UUID) *GetAkSkParams {
 	gap.id = id
 	return gap
 }
-
+func (gap *GetAkSkParams) SetUserID(userID uuid.UUID) *GetAkSkParams {
+	gap.userID = userID
+	return gap
+}
 func (gap *GetAkSkParams) SetAccessKey(ak string) *GetAkSkParams {
 	gap.accessKey = &ak
 	return gap
@@ -69,6 +73,7 @@ func (lap *ListAkSkParams) SetAmount(amount int) *ListAkSkParams {
 }
 
 type DeleteAkSkParams struct {
+	userID    uuid.UUID
 	id        uuid.UUID
 	accessKey *string
 }
@@ -79,6 +84,10 @@ func NewDeleteAkSkParams() *DeleteAkSkParams {
 
 func (dap *DeleteAkSkParams) SetID(id uuid.UUID) *DeleteAkSkParams {
 	dap.id = id
+	return dap
+}
+func (dap *DeleteAkSkParams) SetUserID(userID uuid.UUID) *DeleteAkSkParams {
+	dap.userID = userID
 	return dap
 }
 
@@ -121,6 +130,10 @@ func (a AkskRepo) Get(ctx context.Context, params *GetAkSkParams) (*AkSk, error)
 		query = query.Where("id = ?", params.id)
 	}
 
+	if uuid.Nil != params.userID {
+		query = query.Where("user_id = ?", params.userID)
+	}
+
 	if params.accessKey != nil {
 		query = query.Where("access_key = ?", *params.accessKey)
 	}
@@ -154,6 +167,10 @@ func (a AkskRepo) Delete(ctx context.Context, params *DeleteAkSkParams) (int64, 
 
 	if uuid.Nil != params.id {
 		query = query.Where("id = ?", params.id)
+	}
+
+	if uuid.Nil != params.userID {
+		query = query.Where("user_id = ?", params.userID)
 	}
 
 	if params.accessKey != nil {

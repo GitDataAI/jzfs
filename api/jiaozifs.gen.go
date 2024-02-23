@@ -55,6 +55,22 @@ const (
 	NotInitialized SetupStateState = "not_initialized"
 )
 
+// Aksk defines model for Aksk.
+type Aksk struct {
+	AccessKey   string             `json:"access_key"`
+	CreatedAt   int64              `json:"created_at"`
+	Description *string            `json:"description,omitempty"`
+	Id          openapi_types.UUID `json:"id"`
+	SecretKey   string             `json:"secret_key"`
+	UpdatedAt   int64              `json:"updated_at"`
+}
+
+// AkskList defines model for AkskList.
+type AkskList struct {
+	Pagination Pagination `json:"pagination"`
+	Results    []Aksk     `json:"results"`
+}
+
 // AuthenticationToken defines model for AuthenticationToken.
 type AuthenticationToken struct {
 	// Token a JWT token that could be used to authenticate requests
@@ -505,6 +521,32 @@ type GetEntriesInRefParams struct {
 	Type RefType `form:"type" json:"type"`
 }
 
+// DeleteAkskParams defines parameters for DeleteAksk.
+type DeleteAkskParams struct {
+	Id        *openapi_types.UUID `form:"id,omitempty" json:"id,omitempty"`
+	AccessKey *string             `form:"access_key,omitempty" json:"access_key,omitempty"`
+}
+
+// GetAkskParams defines parameters for GetAksk.
+type GetAkskParams struct {
+	Id        *openapi_types.UUID `form:"id,omitempty" json:"id,omitempty"`
+	AccessKey *string             `form:"access_key,omitempty" json:"access_key,omitempty"`
+}
+
+// CreateAkskParams defines parameters for CreateAksk.
+type CreateAkskParams struct {
+	Description *string `form:"description,omitempty" json:"description,omitempty"`
+}
+
+// ListAksksParams defines parameters for ListAksks.
+type ListAksksParams struct {
+	// After return items after this value
+	After *PaginationInt64After `form:"after,omitempty" json:"after,omitempty"`
+
+	// Amount how many items to return
+	Amount *PaginationAmount `form:"amount,omitempty" json:"amount,omitempty"`
+}
+
 // ListRepositoryOfAuthenticatedUserParams defines parameters for ListRepositoryOfAuthenticatedUser.
 type ListRepositoryOfAuthenticatedUserParams struct {
 	// Prefix return items prefixed with this value
@@ -757,6 +799,18 @@ type ClientInterface interface {
 
 	// GetSetupState request
 	GetSetupState(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteAksk request
+	DeleteAksk(ctx context.Context, params *DeleteAkskParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetAksk request
+	GetAksk(ctx context.Context, params *GetAkskParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateAksk request
+	CreateAksk(ctx context.Context, params *CreateAkskParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListAksks request
+	ListAksks(ctx context.Context, params *ListAksksParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// RefreshToken request
 	RefreshToken(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -1145,6 +1199,54 @@ func (c *Client) GetEntriesInRef(ctx context.Context, owner string, repository s
 
 func (c *Client) GetSetupState(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetSetupStateRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteAksk(ctx context.Context, params *DeleteAkskParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteAkskRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetAksk(ctx context.Context, params *GetAkskParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetAkskRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateAksk(ctx context.Context, params *CreateAkskParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateAkskRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListAksks(ctx context.Context, params *ListAksksParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListAksksRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -2863,6 +2965,250 @@ func NewGetSetupStateRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
+// NewDeleteAkskRequest generates requests for DeleteAksk
+func NewDeleteAkskRequest(server string, params *DeleteAkskParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/users/aksk")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Id != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "id", runtime.ParamLocationQuery, *params.Id); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.AccessKey != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "access_key", runtime.ParamLocationQuery, *params.AccessKey); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetAkskRequest generates requests for GetAksk
+func NewGetAkskRequest(server string, params *GetAkskParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/users/aksk")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Id != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "id", runtime.ParamLocationQuery, *params.Id); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.AccessKey != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "access_key", runtime.ParamLocationQuery, *params.AccessKey); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateAkskRequest generates requests for CreateAksk
+func NewCreateAkskRequest(server string, params *CreateAkskParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/users/aksk")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Description != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "description", runtime.ParamLocationQuery, *params.Description); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListAksksRequest generates requests for ListAksks
+func NewListAksksRequest(server string, params *ListAksksParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/users/aksks")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.After != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "after", runtime.ParamLocationQuery, *params.After); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Amount != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "amount", runtime.ParamLocationQuery, *params.Amount); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewRefreshTokenRequest generates requests for RefreshToken
 func NewRefreshTokenRequest(server string) (*http.Request, error) {
 	var err error
@@ -3769,6 +4115,18 @@ type ClientWithResponsesInterface interface {
 	// GetSetupStateWithResponse request
 	GetSetupStateWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetSetupStateResponse, error)
 
+	// DeleteAkskWithResponse request
+	DeleteAkskWithResponse(ctx context.Context, params *DeleteAkskParams, reqEditors ...RequestEditorFn) (*DeleteAkskResponse, error)
+
+	// GetAkskWithResponse request
+	GetAkskWithResponse(ctx context.Context, params *GetAkskParams, reqEditors ...RequestEditorFn) (*GetAkskResponse, error)
+
+	// CreateAkskWithResponse request
+	CreateAkskWithResponse(ctx context.Context, params *CreateAkskParams, reqEditors ...RequestEditorFn) (*CreateAkskResponse, error)
+
+	// ListAksksWithResponse request
+	ListAksksWithResponse(ctx context.Context, params *ListAksksParams, reqEditors ...RequestEditorFn) (*ListAksksResponse, error)
+
 	// RefreshTokenWithResponse request
 	RefreshTokenWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*RefreshTokenResponse, error)
 
@@ -4310,6 +4668,93 @@ func (r GetSetupStateResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetSetupStateResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteAkskResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteAkskResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteAkskResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetAkskResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Aksk
+}
+
+// Status returns HTTPResponse.Status
+func (r GetAkskResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetAkskResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateAkskResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *Aksk
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateAkskResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateAkskResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListAksksResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *AkskList
+}
+
+// Status returns HTTPResponse.Status
+func (r ListAksksResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListAksksResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -4873,6 +5318,42 @@ func (c *ClientWithResponses) GetSetupStateWithResponse(ctx context.Context, req
 		return nil, err
 	}
 	return ParseGetSetupStateResponse(rsp)
+}
+
+// DeleteAkskWithResponse request returning *DeleteAkskResponse
+func (c *ClientWithResponses) DeleteAkskWithResponse(ctx context.Context, params *DeleteAkskParams, reqEditors ...RequestEditorFn) (*DeleteAkskResponse, error) {
+	rsp, err := c.DeleteAksk(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteAkskResponse(rsp)
+}
+
+// GetAkskWithResponse request returning *GetAkskResponse
+func (c *ClientWithResponses) GetAkskWithResponse(ctx context.Context, params *GetAkskParams, reqEditors ...RequestEditorFn) (*GetAkskResponse, error) {
+	rsp, err := c.GetAksk(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetAkskResponse(rsp)
+}
+
+// CreateAkskWithResponse request returning *CreateAkskResponse
+func (c *ClientWithResponses) CreateAkskWithResponse(ctx context.Context, params *CreateAkskParams, reqEditors ...RequestEditorFn) (*CreateAkskResponse, error) {
+	rsp, err := c.CreateAksk(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateAkskResponse(rsp)
+}
+
+// ListAksksWithResponse request returning *ListAksksResponse
+func (c *ClientWithResponses) ListAksksWithResponse(ctx context.Context, params *ListAksksParams, reqEditors ...RequestEditorFn) (*ListAksksResponse, error) {
+	rsp, err := c.ListAksks(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListAksksResponse(rsp)
 }
 
 // RefreshTokenWithResponse request returning *RefreshTokenResponse
@@ -5543,6 +6024,100 @@ func ParseGetSetupStateResponse(rsp *http.Response) (*GetSetupStateResponse, err
 	return response, nil
 }
 
+// ParseDeleteAkskResponse parses an HTTP response from a DeleteAkskWithResponse call
+func ParseDeleteAkskResponse(rsp *http.Response) (*DeleteAkskResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteAkskResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseGetAkskResponse parses an HTTP response from a GetAkskWithResponse call
+func ParseGetAkskResponse(rsp *http.Response) (*GetAkskResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetAkskResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Aksk
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateAkskResponse parses an HTTP response from a CreateAkskWithResponse call
+func ParseCreateAkskResponse(rsp *http.Response) (*CreateAkskResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateAkskResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest Aksk
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListAksksResponse parses an HTTP response from a ListAksksWithResponse call
+func ParseListAksksResponse(rsp *http.Response) (*ListAksksResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListAksksResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AkskList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseRefreshTokenResponse parses an HTTP response from a RefreshTokenWithResponse call
 func ParseRefreshTokenResponse(rsp *http.Response) (*RefreshTokenResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -5938,6 +6513,18 @@ type ServerInterface interface {
 	// check if jiaozifs setup
 	// (GET /setup)
 	GetSetupState(ctx context.Context, w *JiaozifsResponse, r *http.Request)
+	// delete aksk
+	// (DELETE /users/aksk)
+	DeleteAksk(ctx context.Context, w *JiaozifsResponse, r *http.Request, params DeleteAkskParams)
+	// get aksk
+	// (GET /users/aksk)
+	GetAksk(ctx context.Context, w *JiaozifsResponse, r *http.Request, params GetAkskParams)
+	// create aksk
+	// (POST /users/aksk)
+	CreateAksk(ctx context.Context, w *JiaozifsResponse, r *http.Request, params CreateAkskParams)
+	// list aksks
+	// (GET /users/aksks)
+	ListAksks(ctx context.Context, w *JiaozifsResponse, r *http.Request, params ListAksksParams)
 	// refresh token for more time
 	// (GET /users/refreshtoken)
 	RefreshToken(ctx context.Context, w *JiaozifsResponse, r *http.Request)
@@ -6120,6 +6707,30 @@ func (_ Unimplemented) GetEntriesInRef(ctx context.Context, w *JiaozifsResponse,
 // check if jiaozifs setup
 // (GET /setup)
 func (_ Unimplemented) GetSetupState(ctx context.Context, w *JiaozifsResponse, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// delete aksk
+// (DELETE /users/aksk)
+func (_ Unimplemented) DeleteAksk(ctx context.Context, w *JiaozifsResponse, r *http.Request, params DeleteAkskParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// get aksk
+// (GET /users/aksk)
+func (_ Unimplemented) GetAksk(ctx context.Context, w *JiaozifsResponse, r *http.Request, params GetAkskParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// create aksk
+// (POST /users/aksk)
+func (_ Unimplemented) CreateAksk(ctx context.Context, w *JiaozifsResponse, r *http.Request, params CreateAkskParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// list aksks
+// (GET /users/aksks)
+func (_ Unimplemented) ListAksks(ctx context.Context, w *JiaozifsResponse, r *http.Request, params ListAksksParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -7580,6 +8191,166 @@ func (siw *ServerInterfaceWrapper) GetSetupState(w http.ResponseWriter, r *http.
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
+// DeleteAksk operation middleware
+func (siw *ServerInterfaceWrapper) DeleteAksk(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteAkskParams
+
+	// ------------- Optional query parameter "id" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "id", r.URL.Query(), &params.Id)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "access_key" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "access_key", r.URL.Query(), &params.AccessKey)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "access_key", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteAksk(r.Context(), &JiaozifsResponse{w}, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// GetAksk operation middleware
+func (siw *ServerInterfaceWrapper) GetAksk(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetAkskParams
+
+	// ------------- Optional query parameter "id" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "id", r.URL.Query(), &params.Id)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "access_key" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "access_key", r.URL.Query(), &params.AccessKey)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "access_key", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAksk(r.Context(), &JiaozifsResponse{w}, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// CreateAksk operation middleware
+func (siw *ServerInterfaceWrapper) CreateAksk(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateAkskParams
+
+	// ------------- Optional query parameter "description" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "description", r.URL.Query(), &params.Description)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "description", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateAksk(r.Context(), &JiaozifsResponse{w}, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// ListAksks operation middleware
+func (siw *ServerInterfaceWrapper) ListAksks(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListAksksParams
+
+	// ------------- Optional query parameter "after" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "after", r.URL.Query(), &params.After)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "after", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "amount" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "amount", r.URL.Query(), &params.Amount)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "amount", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListAksks(r.Context(), &JiaozifsResponse{w}, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
 // RefreshToken operation middleware
 func (siw *ServerInterfaceWrapper) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -8424,6 +9195,18 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/setup", wrapper.GetSetupState)
 	})
 	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/users/aksk", wrapper.DeleteAksk)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/users/aksk", wrapper.GetAksk)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/users/aksk", wrapper.CreateAksk)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/users/aksks", wrapper.ListAksks)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/users/refreshtoken", wrapper.RefreshToken)
 	})
 	r.Group(func(r chi.Router) {
@@ -8472,87 +9255,90 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

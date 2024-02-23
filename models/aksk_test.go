@@ -27,7 +27,7 @@ func TestAkskRepo_Delete(t *testing.T) {
 		aksk, err := repo.Insert(ctx, akskModel)
 		require.NoError(t, err)
 
-		expectAksk, err := repo.Get(ctx, models.NewGetAkSkParams().SetAccessKey(aksk.AccessKey).SetID(aksk.ID))
+		expectAksk, err := repo.Get(ctx, models.NewGetAkSkParams().SetAccessKey(aksk.AccessKey).SetID(aksk.ID).SetUserID(aksk.UserID))
 		require.NoError(t, err)
 		require.True(t, cmp.Equal(expectAksk, aksk, dbTimeCmpOpt))
 	})
@@ -68,7 +68,7 @@ func TestAkskRepo_Delete(t *testing.T) {
 		aksk, err := repo.Insert(ctx, akskModel)
 		require.NoError(t, err)
 
-		deleteRows, err := repo.Delete(ctx, models.NewDeleteAkSkParams().SetID(aksk.ID))
+		deleteRows, err := repo.Delete(ctx, models.NewDeleteAkSkParams().SetUserID(aksk.UserID).SetID(aksk.ID))
 		require.NoError(t, err)
 		require.Equal(t, int64(1), deleteRows)
 	})
@@ -80,7 +80,7 @@ func TestAkskRepo_Delete(t *testing.T) {
 		aksk, err := repo.Insert(ctx, akskModel)
 		require.NoError(t, err)
 
-		deleteRows, err := repo.Delete(ctx, models.NewDeleteAkSkParams().SetAccessKey(aksk.AccessKey))
+		deleteRows, err := repo.Delete(ctx, models.NewDeleteAkSkParams().SetUserID(aksk.UserID).SetAccessKey(aksk.AccessKey))
 		require.NoError(t, err)
 		require.Equal(t, int64(1), deleteRows)
 	})
