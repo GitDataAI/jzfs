@@ -1,63 +1,17 @@
-# rbac设计方案
+//go:generate go run --tags generate ./codegen ./actions.go ./actions.gen.go
 
-rbac中引入resource_type, resource, statement, policy, group，user,的概念他们之间的关系如下图
+package rbac
 
-![image](https://github.com/jiaozifs/jiaozifs/assets/41407352/672a6d22-809c-49b0-9e04-7dd32700b551)
-
-## 类型组织
-整体上对于权限的组织情况如下
-- resource_type: 资源类型
-- resource: 资源种类
-- statement: 一组预定义的权限集合
-- poly: 结合了资源的权限
-- group： 用户可直接理解的权限组
-- user: 用户
-
-### 资源类型
-
-- repo 用户仓库相关功能
-- user 用户相关接口
-- auth 授权相关功能
-
-### action
-
-### statement
-- FSFullAccess     全访问权限
-- RepoRead         仓库读取权限
-- RepoReadWrite    仓库读写权限
-- RepoReadConfig   仓库读取配置权限
-- RepoWriteConfig  仓库写入配置权限
-- UserAccess       用户配置自己信息的权限
-
-### policy
-
-- FSFullAccess  全访问权限
-- RepoRead      仓库读取权限
-- RepoReadWrite 仓库读写权限
-- RepoConfig    仓库配置权限
-- UserAccess    用户配置自己信息的权限
-
-### group
-
-- SuperUsers 超级用户组
-- RepoAdmins 仓库管理权限
-- RepoWrite 写入权限
-- RepoRead 读取权限
-
-
-## 表设计
-
-资源类型
-```go
-const (
-	RepoRT ResourceType = "repo"
-	UserRT ResourceType = "user"
-	AuthRT ResourceType = "auth"
+import (
+	"errors"
+	"fmt"
+	"strings"
 )
-```
 
-action 列表
-```go
+var (
+	ErrInvalidAction      = errors.New("invalid action")
+	ErrInvalidServiceName = errors.New("invalid service name")
+)
 
 const (
 	ReadRepositoryAction    = "repo:ReadRepository"
@@ -102,4 +56,21 @@ const (
 	DeleteCredentialsDeleteCredentialsAction = "user:DeleteCredentials"
 	ListCredentialsAction                    = "user:ListCredentials"
 )
-```
+
+var serviceSet = map[string]struct{}{
+	"repo": {},
+	"auth": {},
+	"user": {},
+}
+
+func IsValidAction(name string) error {
+	parts := strings.Split(name, ":")
+	const actionParts = 2
+	if len(parts) != actionParts {
+		return fmt.Errorf("%s: %w", name, ErrInvalidAction)
+	}
+	if _, ok := serviceSet[parts[0]]; !ok {
+		return fmt.Errorf("%s: %w", name, ErrInvalidServiceName)
+	}
+	return nil
+}
