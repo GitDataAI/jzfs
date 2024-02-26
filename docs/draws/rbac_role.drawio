@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2024-02-26T09:17:02.651Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36" etag="lHsy2osVBBHJseY3MXEQ" version="23.1.1" type="github">
+<mxfile host="app.diagrams.net" modified="2024-02-26T11:16:22.223Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36" etag="FnsrTcUa0aZKCTXpaZq_" version="23.1.1" type="github">
   <diagram name="第 1 页" id="nxT7Srsqe-B9F_1n1DQQ">
     <mxGraphModel dx="1975" dy="2215" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
@@ -38,7 +38,7 @@
           <mxGeometry x="1733" y="90" width="77" height="30" as="geometry" />
         </mxCell>
         <mxCell id="G2X-WDeKZaXYeicsjy-L-13" value="" style="rounded=0;whiteSpace=wrap;html=1;hachureGap=4;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="610" y="90" width="660" height="1170" as="geometry" />
+          <mxGeometry x="610" y="90" width="660" height="1230" as="geometry" />
         </mxCell>
         <mxCell id="G2X-WDeKZaXYeicsjy-L-14" value="&lt;div style=&quot;background-color:#ffffff;color:#080808&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;&lt;div&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;repo:ReadRepository&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Helvetica;" vertex="1" parent="1">
           <mxGeometry x="623" y="130" width="160" height="40" as="geometry" />
@@ -252,10 +252,10 @@
           <mxGeometry x="623" y="290" width="160" height="40" as="geometry" />
         </mxCell>
         <mxCell id="G2X-WDeKZaXYeicsjy-L-228" value="&lt;div style=&quot;background-color:#ffffff;color:#080808&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;&lt;div&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;repo: AddGroupMember&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="630" y="1110" width="160" height="40" as="geometry" />
+          <mxGeometry x="623" y="1180" width="160" height="40" as="geometry" />
         </mxCell>
         <mxCell id="G2X-WDeKZaXYeicsjy-L-229" value="&lt;div style=&quot;background-color:#ffffff;color:#080808&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;&lt;div&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;repo: RemoveGroupMember&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="630" y="1169" width="160" height="40" as="geometry" />
+          <mxGeometry x="623" y="1239" width="160" height="40" as="geometry" />
         </mxCell>
         <mxCell id="G2X-WDeKZaXYeicsjy-L-230" value="&lt;div style=&quot;background-color:#ffffff;color:#080808&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;&lt;div&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;user:Register x&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Helvetica;" vertex="1" parent="1">
           <mxGeometry x="1050" y="130" width="160" height="40" as="geometry" />
@@ -289,6 +289,9 @@
         </mxCell>
         <mxCell id="G2X-WDeKZaXYeicsjy-L-244" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.25;exitDx=0;exitDy=0;entryX=0.393;entryY=1.024;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="G2X-WDeKZaXYeicsjy-L-110" target="G2X-WDeKZaXYeicsjy-L-97">
           <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="G2X-WDeKZaXYeicsjy-L-245" value="&lt;div style=&quot;background-color:#ffffff;color:#080808&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;&lt;div&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;repo:UpdateConfig&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="623" y="1110" width="160" height="40" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
