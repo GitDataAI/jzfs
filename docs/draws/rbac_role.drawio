@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2024-02-26T09:05:54.255Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36" etag="17dAuU_T4T_2lcTVFP5-" version="23.1.1" type="github">
+<mxfile host="app.diagrams.net" modified="2024-02-26T09:17:02.651Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36" etag="lHsy2osVBBHJseY3MXEQ" version="23.1.1" type="github">
   <diagram name="第 1 页" id="nxT7Srsqe-B9F_1n1DQQ">
     <mxGraphModel dx="1975" dy="2215" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
@@ -23,19 +23,16 @@
           <mxGeometry x="2090" y="90" width="60" height="30" as="geometry" />
         </mxCell>
         <mxCell id="G2X-WDeKZaXYeicsjy-L-7" value="" style="rounded=0;whiteSpace=wrap;html=1;hachureGap=4;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="1720" y="90" width="320" height="600" as="geometry" />
+          <mxGeometry x="1720" y="90" width="320" height="500" as="geometry" />
         </mxCell>
-        <mxCell id="G2X-WDeKZaXYeicsjy-L-8" value="&lt;div style=&quot;background-color:#ffffff;color:#080808&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;&lt;font&gt;FSFullAccess all&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Helvetica;" vertex="1" parent="1">
+        <mxCell id="G2X-WDeKZaXYeicsjy-L-8" value="&lt;div style=&quot;background-color:#ffffff;color:#080808&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;&lt;font&gt;FSFullAccess&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Helvetica;" vertex="1" parent="1">
           <mxGeometry x="1770" y="130" width="220" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="G2X-WDeKZaXYeicsjy-L-9" value="RepoFullAccess" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="1770" y="220" width="220" height="60" as="geometry" />
-        </mxCell>
         <mxCell id="G2X-WDeKZaXYeicsjy-L-10" value="&lt;div style=&quot;background-color:#ffffff;color:#080808&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;RepoReadWrite&lt;br&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="1765" y="320" width="220" height="60" as="geometry" />
+          <mxGeometry x="1770" y="230" width="220" height="60" as="geometry" />
         </mxCell>
         <mxCell id="G2X-WDeKZaXYeicsjy-L-11" value="&lt;div style=&quot;background-color:#ffffff;color:#080808&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;RepoConfig&lt;br&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="1765" y="420" width="230" height="60" as="geometry" />
+          <mxGeometry x="1770" y="320" width="230" height="60" as="geometry" />
         </mxCell>
         <mxCell id="G2X-WDeKZaXYeicsjy-L-12" value="&lt;b&gt;&lt;font style=&quot;font-size: 15px;&quot;&gt;policy&lt;/font&gt;&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontFamily=Helvetica;" vertex="1" parent="1">
           <mxGeometry x="1733" y="90" width="77" height="30" as="geometry" />
@@ -161,22 +158,19 @@
           <mxGeometry x="310" y="90" width="80" height="30" as="geometry" />
         </mxCell>
         <mxCell id="G2X-WDeKZaXYeicsjy-L-75" value="&lt;div style=&quot;background-color:#ffffff;color:#080808&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;RepoRead&lt;br&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="1765" y="520" width="230" height="60" as="geometry" />
+          <mxGeometry x="1770" y="410" width="230" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="G2X-WDeKZaXYeicsjy-L-76" value="&lt;div style=&quot;background-color:#ffffff;color:#080808&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;UserFullAccess&lt;br&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="1765" y="610" width="230" height="60" as="geometry" />
+        <mxCell id="G2X-WDeKZaXYeicsjy-L-76" value="&lt;div style=&quot;background-color:#ffffff;color:#080808&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;UserAccess&lt;br&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="1770" y="490" width="230" height="60" as="geometry" />
         </mxCell>
         <mxCell id="G2X-WDeKZaXYeicsjy-L-78" value="" style="rounded=0;whiteSpace=wrap;html=1;hachureGap=4;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="1350" y="90" width="310" height="600" as="geometry" />
+          <mxGeometry x="1350" y="90" width="310" height="590" as="geometry" />
         </mxCell>
-        <mxCell id="G2X-WDeKZaXYeicsjy-L-79" value="&lt;div style=&quot;background-color:#ffffff;color:#080808&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;&lt;div&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;AllAccess&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="1400" y="130" width="220" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="G2X-WDeKZaXYeicsjy-L-80" value="&lt;div style=&quot;background-color:#ffffff;color:#080808&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;RepoFullAccess&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="1400" y="220" width="220" height="60" as="geometry" />
+        <mxCell id="G2X-WDeKZaXYeicsjy-L-79" value="&lt;div style=&quot;background-color:#ffffff;color:#080808&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;FSFullAccess&amp;nbsp;&lt;br&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="1392.5" y="130" width="220" height="60" as="geometry" />
         </mxCell>
         <mxCell id="G2X-WDeKZaXYeicsjy-L-81" value="&lt;div style=&quot;background-color:#ffffff;color:#080808&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;&lt;div&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;RepoReadWrite&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="1395" y="320" width="220" height="60" as="geometry" />
+          <mxGeometry x="1392.5" y="480" width="220" height="60" as="geometry" />
         </mxCell>
         <mxCell id="G2X-WDeKZaXYeicsjy-L-83" value="&lt;b&gt;&lt;font style=&quot;font-size: 15px;&quot;&gt;statement&lt;/font&gt;&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontFamily=Helvetica;" vertex="1" parent="1">
           <mxGeometry x="1363" y="90" width="77" height="30" as="geometry" />
@@ -272,8 +266,8 @@
         <mxCell id="G2X-WDeKZaXYeicsjy-L-232" value="&lt;div style=&quot;background-color:#ffffff;color:#080808&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;user:UserProfile&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Helvetica;" vertex="1" parent="1">
           <mxGeometry x="1050" y="250" width="160" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="G2X-WDeKZaXYeicsjy-L-234" value="&lt;div style=&quot;background-color:#ffffff;color:#080808&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;UserFullAccess&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="1400" y="590" width="230" height="60" as="geometry" />
+        <mxCell id="G2X-WDeKZaXYeicsjy-L-234" value="&lt;div style=&quot;background-color:#ffffff;color:#080808&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;UserAccess&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="1387.5" y="570" width="230" height="60" as="geometry" />
         </mxCell>
         <mxCell id="G2X-WDeKZaXYeicsjy-L-235" value="&lt;div style=&quot;background-color:#ffffff;color:#080808&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;user:CreateAkSk&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Helvetica;" vertex="1" parent="1">
           <mxGeometry x="1050" y="450" width="160" height="40" as="geometry" />
@@ -285,10 +279,16 @@
           <mxGeometry x="1050" y="580" width="160" height="40" as="geometry" />
         </mxCell>
         <mxCell id="G2X-WDeKZaXYeicsjy-L-238" value="&lt;div style=&quot;background-color:#ffffff;color:#080808&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;&lt;div&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;RepoRead&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="1405" y="505" width="220" height="60" as="geometry" />
+          <mxGeometry x="1392.5" y="390" width="220" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="G2X-WDeKZaXYeicsjy-L-240" value="&lt;div style=&quot;background-color:#ffffff;color:#080808&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;&lt;div&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;RepoConfig&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Helvetica;" vertex="1" parent="1">
-          <mxGeometry x="1400" y="420" width="220" height="60" as="geometry" />
+        <mxCell id="G2X-WDeKZaXYeicsjy-L-240" value="&lt;div style=&quot;background-color:#ffffff;color:#080808&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;&lt;div&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;RepoReadConfig&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="1392.5" y="220" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="G2X-WDeKZaXYeicsjy-L-243" value="&lt;div style=&quot;background-color:#ffffff;color:#080808&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;&lt;div style=&quot;font-size: 9.8pt;&quot;&gt;RepoWriteConfig&lt;br&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Helvetica;" vertex="1" parent="1">
+          <mxGeometry x="1392.5" y="310" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="G2X-WDeKZaXYeicsjy-L-244" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.25;exitDx=0;exitDy=0;entryX=0.393;entryY=1.024;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="G2X-WDeKZaXYeicsjy-L-110" target="G2X-WDeKZaXYeicsjy-L-97">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
