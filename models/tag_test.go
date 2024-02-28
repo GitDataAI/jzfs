@@ -29,7 +29,7 @@ func TestTagRepo(t *testing.T) {
 	tagModel, err = tagRepo.Tag(ctx, tagModel.Hash)
 	require.NoError(t, err)
 
-	require.True(t, cmp.Equal(tagModel, newTagModel, dbTimeCmpOpt))
+	require.True(t, cmp.Equal(tagModel, newTagModel, testhelper.DbTimeCmpOpt))
 
 	t.Run("mis match repo id", func(t *testing.T) {
 		mistMatchModel := &models.Tag{}

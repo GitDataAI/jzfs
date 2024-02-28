@@ -3,6 +3,8 @@ package cmd
 import (
 	"context"
 
+	"github.com/jiaozifs/jiaozifs/auth/rbac"
+
 	"github.com/jiaozifs/jiaozifs/auth/aksk"
 
 	"github.com/pelletier/go-toml/v2"
@@ -69,6 +71,11 @@ var daemonCmd = &cobra.Command{
 			}),
 
 			fx_opt.Override(fx_opt.NextInvoke(), migrations.MigrateDatabase),
+			//permission
+			fx_opt.Override(new(rbac.PermissionCheck), func(repo models.IRepo) rbac.PermissionCheck {
+				return rbac.NewRbacAuth(repo)
+			}),
+
 			//api
 			fx_opt.Override(new(crypt.SecretStore), auth.NewSectetStore),
 			fx_opt.Override(new(sessions.Store), auth.NewSessionStore),

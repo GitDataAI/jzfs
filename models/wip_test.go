@@ -33,7 +33,7 @@ func TestWipRepo(t *testing.T) {
 		SetRefID(newWipModel.RefID)
 	user, err := repo.Get(ctx, getWipParams)
 	require.NoError(t, err)
-	require.True(t, cmp.Equal(newWipModel, user, dbTimeCmpOpt))
+	require.True(t, cmp.Equal(newWipModel, user, testhelper.DbTimeCmpOpt))
 
 	t.Run("list", func(t *testing.T) {
 		secWipModel := &models.WorkingInProcess{}

@@ -8,6 +8,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/jiaozifs/jiaozifs/auth/rbac"
+	"github.com/jiaozifs/jiaozifs/models/rbacModel"
+
 	"github.com/jiaozifs/jiaozifs/controller/validator"
 
 	"github.com/google/uuid"
@@ -30,6 +33,7 @@ var repoLog = logging.Logger("repo control")
 
 type RepositoryController struct {
 	fx.In
+	BaseController
 
 	Repo                models.IRepo
 	PublicStorageConfig params.AdapterConfig
@@ -39,6 +43,15 @@ func (repositoryCtl RepositoryController) ListRepositoryOfAuthenticatedUser(ctx 
 	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
+		return
+	}
+
+	if !repositoryCtl.authorize(ctx, w, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacModel.ListRepositoriesAction,
+			Resource: rbacModel.RepoUArn(operator.ID.String()),
+		},
+	}) {
 		return
 	}
 
@@ -86,13 +99,13 @@ func (repositoryCtl RepositoryController) ListRepository(ctx context.Context, w 
 		return
 	}
 
-	operator, err := auth.GetOperator(ctx)
-	if err != nil {
-		w.Error(err)
-		return
-	}
-	if owner.ID != operator.ID { //todo check public or private and allow  access public repos
-		w.Forbidden()
+	//TODO should get (private repo repositories has been granted)  and (public repositories)
+	if !repositoryCtl.authorize(ctx, w, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacModel.ListRepositoriesAction,
+			Resource: rbacModel.RepoUArn(owner.ID.String()),
+		},
+	}) {
 		return
 	}
 
@@ -142,6 +155,15 @@ func (repositoryCtl RepositoryController) CreateRepository(ctx context.Context, 
 	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
+		return
+	}
+
+	if !repositoryCtl.authorize(ctx, w, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacModel.CreateRepositoryAction,
+			Resource: rbacModel.RepoUArn(operator.ID.String()),
+		},
+	}) {
 		return
 	}
 
@@ -209,26 +231,24 @@ func (repositoryCtl RepositoryController) CreateRepository(ctx context.Context, 
 }
 
 func (repositoryCtl RepositoryController) DeleteRepository(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, params api.DeleteRepositoryParams) {
-	operator, err := auth.GetOperator(ctx)
-	if err != nil {
-		w.Error(err)
-		return
-	}
-
 	owner, err := repositoryCtl.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(ownerName))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	if operator.Name != owner.Name {
-		w.Forbidden()
-		return
-	}
-
 	repository, err := repositoryCtl.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetName(repositoryName).SetOwnerID(owner.ID))
 	if err != nil {
 		w.Error(err)
+		return
+	}
+
+	if !repositoryCtl.authorizeMember(ctx, w, repository.ID, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacModel.DeleteRepositoryAction,
+			Resource: rbacModel.RepoURArn(owner.ID.String(), repository.ID.String()),
+		},
+	}) {
 		return
 	}
 
@@ -310,26 +330,24 @@ func (repositoryCtl RepositoryController) DeleteRepository(ctx context.Context, 
 }
 
 func (repositoryCtl RepositoryController) GetRepository(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string) {
-	operator, err := auth.GetOperator(ctx)
-	if err != nil {
-		w.Error(err)
-		return
-	}
-
 	owner, err := repositoryCtl.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(ownerName))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	if operator.Name != owner.Name { //todo check public or private / and permission
-		w.Forbidden()
-		return
-	}
-
 	repo, err := repositoryCtl.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetName(repositoryName).SetOwnerID(owner.ID))
 	if err != nil {
 		w.Error(err)
+		return
+	}
+
+	if !repositoryCtl.authorizeMember(ctx, w, repo.ID, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacModel.ReadRepositoryAction,
+			Resource: rbacModel.RepoURArn(owner.ID.String(), repo.ID.String()),
+		},
+	}) {
 		return
 	}
 
@@ -337,26 +355,24 @@ func (repositoryCtl RepositoryController) GetRepository(ctx context.Context, w *
 }
 
 func (repositoryCtl RepositoryController) UpdateRepository(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, body api.UpdateRepositoryJSONRequestBody, ownerName string, repositoryName string) {
-	operator, err := auth.GetOperator(ctx)
-	if err != nil {
-		w.Error(err)
-		return
-	}
-
 	owner, err := repositoryCtl.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(ownerName))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	if operator.Name != ownerName { //todo check permission to modify owner repo
-		w.Forbidden()
-		return
-	}
-
 	repo, err := repositoryCtl.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetName(repositoryName).SetOwnerID(owner.ID))
 	if err != nil {
 		w.Error(err)
+		return
+	}
+
+	if !repositoryCtl.authorizeMember(ctx, w, repo.ID, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacModel.UpdateRepositoryAction,
+			Resource: rbacModel.RepoURArn(owner.ID.String(), repo.ID.String()),
+		},
+	}) {
 		return
 	}
 
@@ -384,26 +400,24 @@ func (repositoryCtl RepositoryController) UpdateRepository(ctx context.Context, 
 }
 
 func (repositoryCtl RepositoryController) GetCommitsInRef(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, params api.GetCommitsInRefParams) {
-	operator, err := auth.GetOperator(ctx)
-	if err != nil {
-		w.Error(err)
-		return
-	}
-
 	owner, err := repositoryCtl.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(ownerName))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	if operator.Name != ownerName { //todo check public or private
-		w.Forbidden()
-		return
-	}
-
 	repository, err := repositoryCtl.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
 	if err != nil {
 		w.Error(err)
+		return
+	}
+
+	if !repositoryCtl.authorizeMember(ctx, w, repository.ID, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacModel.ReadCommitAction,
+			Resource: rbacModel.RepoURArn(owner.ID.String(), repository.ID.String()),
+		},
+	}) {
 		return
 	}
 

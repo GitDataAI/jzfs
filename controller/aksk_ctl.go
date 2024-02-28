@@ -5,6 +5,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/jiaozifs/jiaozifs/models/rbacModel"
+
+	"github.com/jiaozifs/jiaozifs/auth/rbac"
+
 	"github.com/jiaozifs/jiaozifs/utils"
 
 	aksk2 "github.com/jiaozifs/jiaozifs/auth/aksk"
@@ -18,6 +22,7 @@ import (
 
 type AkSkController struct {
 	fx.In
+	BaseController
 
 	Repo models.IRepo
 }
@@ -26,6 +31,15 @@ func (akskCtl AkSkController) CreateAksk(ctx context.Context, w *api.JiaozifsRes
 	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
+		return
+	}
+
+	if !akskCtl.authorize(ctx, w, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacModel.CreateCredentialsAction,
+			Resource: rbacModel.UserAkskArn(operator.ID.String()),
+		},
+	}) {
 		return
 	}
 
@@ -58,6 +72,15 @@ func (akskCtl AkSkController) GetAksk(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
+	if !akskCtl.authorize(ctx, w, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacModel.ReadCredentialsAction,
+			Resource: rbacModel.UserAkskArn(operator.ID.String()),
+		},
+	}) {
+		return
+	}
+
 	getParams := models.NewGetAkSkParams().SetUserID(operator.ID)
 	if params.Id != nil {
 		getParams.SetID(*params.Id)
@@ -82,6 +105,15 @@ func (akskCtl AkSkController) DeleteAksk(ctx context.Context, w *api.JiaozifsRes
 		return
 	}
 
+	if !akskCtl.authorize(ctx, w, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacModel.DeleteCredentialsAction,
+			Resource: rbacModel.UserAkskArn(operator.ID.String()),
+		},
+	}) {
+		return
+	}
+
 	delParams := models.NewDeleteAkSkParams().SetUserID(operator.ID)
 	if params.Id != nil {
 		delParams.SetID(*params.Id)
@@ -103,6 +135,15 @@ func (akskCtl AkSkController) ListAksks(ctx context.Context, w *api.JiaozifsResp
 	operator, err := auth.GetOperator(ctx)
 	if err != nil {
 		w.Error(err)
+		return
+	}
+
+	if !akskCtl.authorize(ctx, w, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacModel.ListCredentialsAction,
+			Resource: rbacModel.UserAkskArn(operator.ID.String()),
+		},
+	}) {
 		return
 	}
 

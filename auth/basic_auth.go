@@ -7,7 +7,6 @@ import (
 
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/jiaozifs/jiaozifs/models"
-	"golang.org/x/crypto/bcrypt"
 )
 
 var log = logging.Logger("auth")
@@ -34,7 +33,7 @@ func (r *Register) Register(ctx context.Context, repo models.IUserRepo) error {
 	}
 
 	// reserve temporarily
-	password, err := bcrypt.GenerateFromPassword([]byte(r.Password), passwordCost)
+	password, err := HashPassword(r.Password)
 	if err != nil {
 		return fmt.Errorf("invalid password %w", err)
 	}

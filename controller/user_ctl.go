@@ -6,7 +6,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/jiaozifs/jiaozifs/auth/rbac"
 	"github.com/jiaozifs/jiaozifs/controller/validator"
+	"github.com/jiaozifs/jiaozifs/models/rbacModel"
 
 	"github.com/jiaozifs/jiaozifs/utils"
 
@@ -23,12 +25,9 @@ import (
 
 var userCtlLog = logging.Logger("user_ctl")
 
-const (
-	AuthHeader = "Authorization"
-)
-
 type UserController struct {
 	fx.In
+	BaseController
 
 	SessionStore sessions.Store
 	Repo         models.IRepo
@@ -118,6 +117,15 @@ func (userCtl UserController) GetUserInfo(ctx context.Context, w *api.JiaozifsRe
 		return
 	}
 
+	if !userCtl.authorize(ctx, w, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacModel.ListRepositoriesAction,
+			Resource: rbacModel.RepoUArn(user.ID.String()),
+		},
+	}) {
+		return
+	}
+
 	// perform GetUserInfo
 	userInfo := api.UserInfo{
 		Name:            user.Name,
@@ -132,12 +140,14 @@ func (userCtl UserController) GetUserInfo(ctx context.Context, w *api.JiaozifsRe
 	w.JSON(userInfo)
 }
 
-func (userCtl UserController) Logout(_ context.Context, w *api.JiaozifsResponse, r *http.Request) {
+func (userCtl UserController) Logout(ctx context.Context, w *api.JiaozifsResponse, r *http.Request) {
+	//todo only web credencial could logout
 	session, err := userCtl.SessionStore.Get(r, auth.InternalAuthSessionName)
 	if err != nil {
 		w.Error(err)
 		return
 	}
+
 	session.Options.MaxAge = -1
 	if session.Save(r, w) != nil {
 		userCtlLog.Errorf("Failed to save internal auth session %v", err)

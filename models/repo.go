@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/google/uuid"
+	"github.com/jiaozifs/jiaozifs/models/rbacModel"
 	"github.com/uptrace/bun"
 )
 
@@ -36,6 +37,11 @@ type IRepo interface {
 	RepositoryRepo() IRepositoryRepo
 	WipRepo() IWipRepo
 	AkskRepo() IAkskRepo
+
+	MemberRepo() IMemberRepo
+	GroupRepo() rbacModel.IGroupRepo
+	PolicyRepo() rbacModel.IPolicyRepo
+	UserGroupRepo() rbacModel.IUserGroupRepo
 }
 
 type PgRepo struct {
@@ -96,4 +102,20 @@ func (repo *PgRepo) WipRepo() IWipRepo {
 
 func (repo *PgRepo) AkskRepo() IAkskRepo {
 	return NewAkskRepo(repo.db)
+}
+
+func (repo *PgRepo) MemberRepo() IMemberRepo {
+	return NewMemberRepo(repo.db)
+}
+
+func (repo *PgRepo) GroupRepo() rbacModel.IGroupRepo {
+	return rbacModel.NewGroupRepo(repo.db)
+}
+
+func (repo *PgRepo) PolicyRepo() rbacModel.IPolicyRepo {
+	return rbacModel.NewPolicyRepo(repo.db)
+}
+
+func (repo *PgRepo) UserGroupRepo() rbacModel.IUserGroupRepo {
+	return rbacModel.NewUserGroupRepo(repo.db)
 }

@@ -58,7 +58,6 @@ const (
 
 action 列表
 ```go
-
 const (
 	ReadRepositoryAction    = "repo:ReadRepository"
 	CreateRepositoryAction  = "repo:CreateRepository"
