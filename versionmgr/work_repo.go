@@ -617,18 +617,6 @@ func (repository *WorkRepository) GetCommitChanges(ctx context.Context, pathPref
 	if err != nil {
 		return nil, err
 	}
-	files, _ := workTree.Ls(ctx, "g")
-	fmt.Println(files)
-	{
-		workTree2, err := NewWorkTree(ctx, repository.repo.FileTreeRepo(repository.repoModel.ID), models.NewRootTreeEntry(repository.commit.TreeHash))
-		if err != nil {
-			return nil, err
-		}
-		f2, _ := workTree2.Ls(ctx, "g")
-		fmt.Println(f2)
-	}
-	fmt.Println(repository.commit.Hash.Hex())
-	fmt.Println(commitHash.Hex())
 	return workTree.Diff(ctx, repository.commit.TreeHash, pathPrefix)
 }
 

@@ -296,8 +296,7 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
 
 				reader := hash.NewHashingReader(resp.Body, hash.Md5)
-				data, err := io.ReadAll(reader)
-				fmt.Println(data)
+				_, err = io.ReadAll(reader)
 				convey.So(err, convey.ShouldBeNil)
 				etag := resp.Header.Get("ETag")
 

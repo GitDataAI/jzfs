@@ -2,7 +2,6 @@ package integrationtest
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/jiaozifs/jiaozifs/api"
@@ -69,7 +68,6 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				grp, err := api.ParseCreateRepositoryResponse(resp)
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(grp.JSON201.Head, convey.ShouldEqual, controller.DefaultBranchName)
-				fmt.Println(grp.JSON201.Id)
 				//check default branch created
 				branchResp, err := client.GetBranch(ctx, userName, grp.JSON201.Name, &api.GetBranchParams{RefName: controller.DefaultBranchName})
 				convey.So(err, convey.ShouldBeNil)

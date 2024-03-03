@@ -81,7 +81,6 @@ func SetupDaemon(t *testing.T, ctx context.Context) (string, Closer) { //nolint
 			require.NoError(t, err)
 		}
 	}()
-	fmt.Println(connectString)
 
 	//wai for api ready
 	ticker := time.NewTicker(time.Second)

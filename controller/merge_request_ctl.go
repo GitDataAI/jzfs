@@ -147,9 +147,8 @@ func (mrCtl MergeRequestController) CreateMergeRequest(ctx context.Context, w *a
 	}
 
 	params := models.NewGetMergeRequestParams().SetTargetRepo(repository.ID).SetTargetBranch(targetBranch.ID).SetSourceBranch(sourceBranch.ID).SetState(models.MergeStateInit)
-	mr, err := mrCtl.Repo.MergeRequestRepo().Get(ctx, params)
+	_, err = mrCtl.Repo.MergeRequestRepo().Get(ctx, params)
 	if err == nil {
-		fmt.Println(mr)
 		w.BadRequest(fmt.Sprintf("repo %s merge request between %s and %s already exists", repositoryName, body.SourceBranchName, body.TargetBranchName))
 		return
 	}

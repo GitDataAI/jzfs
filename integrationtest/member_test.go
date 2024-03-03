@@ -2,7 +2,6 @@ package integrationtest
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/jiaozifs/jiaozifs/auth/rbac"
@@ -192,8 +191,6 @@ func MemberSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 
 			c.Convey("update success", func() {
-				fmt.Println(readGroup.Id.String())
-				fmt.Println(writeGroup.Id.String())
 				resp, err := client.UpdateMemberGroup(ctx, user2.Name, repo2.Name, &api.UpdateMemberGroupParams{
 					UserId:  user1.Id,
 					GroupId: writeGroup.Id,

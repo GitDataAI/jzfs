@@ -2,7 +2,6 @@ package integrationtest
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/jiaozifs/jiaozifs/utils/hash"
@@ -463,9 +462,6 @@ func GetCommitChangesSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 
 			c.Convey("success to get first changes", func() {
-				fmt.Println(commits[0].Hash)
-				fmt.Println(commits[1].Hash)
-				fmt.Println(commits[2].Hash)
 				resp, err := client.GetCommitChanges(ctx, userName, repoName, commits[0].Hash, &api.GetCommitChangesParams{
 					Path: utils.String("/"),
 				})
