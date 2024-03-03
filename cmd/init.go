@@ -53,7 +53,10 @@ var initCmd = &cobra.Command{
 		if cfg.Blockstore.Type == "local" {
 			_, err = os.Stat(cfg.Blockstore.Local.Path)
 			if os.IsNotExist(err) {
-				return os.MkdirAll(cfg.Blockstore.Local.Path, 0755)
+				err = os.MkdirAll(cfg.Blockstore.Local.Path, 0755)
+				if err != nil {
+					return err
+				}
 			}
 		}
 
@@ -109,7 +112,7 @@ func initRbac(cmd *cobra.Command, cfg *config.DatabaseConfig) error {
 		}
 		password = utils.StringValue(pwd)
 	}
-	fmt.Println("super user", userName, "password is", password)
+	fmt.Println("super user:", userName, password)
 	passwordHash, err := auth.HashPassword(password)
 	password = ""
 	if err != nil {

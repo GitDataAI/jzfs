@@ -29,7 +29,7 @@ func TestCommitRepo(t *testing.T) {
 	commitModel, err = commitRepo.Commit(ctx, commitModel.Hash)
 	require.NoError(t, err)
 
-	require.True(t, cmp.Equal(commitModel, newCommitModel, testhelper.DbTimeCmpOpt))
+	require.True(t, cmp.Equal(commitModel, newCommitModel, testhelper.DBTimeCmpOpt))
 
 	t.Run("mis match repo id", func(t *testing.T) {
 		mistMatchModel := &models.Commit{}

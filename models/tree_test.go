@@ -65,7 +65,7 @@ func TestObjectRepo_Insert(t *testing.T) {
 	ref, err := repo.Get(ctx, models.NewGetObjParams().SetHash(newObj.Hash))
 	require.NoError(t, err)
 
-	require.True(t, cmp.Equal(newObj, ref, testhelper.DbTimeCmpOpt))
+	require.True(t, cmp.Equal(newObj, ref, testhelper.DBTimeCmpOpt))
 	t.Run("mis match repo id", func(t *testing.T) {
 		mistMatchModel := &models.FileTree{}
 		require.NoError(t, gofakeit.Struct(mistMatchModel))

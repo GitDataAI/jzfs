@@ -144,6 +144,59 @@ components:
           description: true if the comm prefs are missing.
         login_config:
           $ref: "#/components/schemas/LoginConfig"
+    Group:
+      type: object
+      required:
+        - id
+        - name
+        - policies
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        policies:
+          type: array
+          items:
+            type: string
+            format: uuid
+        created_at:
+          type: integer
+          format: int64
+        updated_at:
+          type: integer
+          format: int64
+    Member:
+      type: object
+      required:
+        - id
+        - user_id
+        - group_id
+        - repo_id
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        repo_id:
+          type: string
+          format: uuid
+        group_id:
+          type: string
+          format: uuid
+        created_at:
+          type: integer
+          format: int64
+        updated_at:
+          type: integer
+          format: int64
     AkskList:
       type: object
       required:
@@ -1702,7 +1755,7 @@ paths:
         403:
           description: Forbidden
 
-  /mergerequest/{owner}/{repository}:
+  /repos/{owner}/{repository}/mergerequest:
     parameters:
       - in: path
         name: owner
@@ -1770,7 +1823,7 @@ paths:
         500:
           description: Internal Server Error
 
-  /mergerequest/{owner}/{repository}/{mrSeq}/merge:
+  /repos/{owner}/{repository}/mergerequest/{mrSeq}/merge:
     parameters:
       - in: path
         name: owner
@@ -1816,7 +1869,8 @@ paths:
           description: Too many requests
         500:
           description: Internal Server Error
-  /mergequest/{owner}/{repository}/{mrSeq}:
+
+  /repos/{owner}/{repository}/mergerequest/{mrSeq}:
     parameters:
       - in: path
         name: owner
@@ -1877,6 +1931,147 @@ paths:
         500:
           description: Internal Server Error
 
+  /repos/{owner}/{repository}/members:
+    parameters:
+      - in: path
+        name: owner
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: repository
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - listMembers
+      operationId: listMembers
+      summary: get list of members in repository
+      responses:
+        200:
+          description: array of member
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Member"
+        401:
+          description: Unauthorized
+        404:
+          description: Resource Not Found
+        420:
+          description: Too many requests
+        500:
+          description: Internal Server Error
+
+  /repos/{owner}/{repository}/member:
+    parameters:
+      - in: path
+        name: owner
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: repository
+        required: true
+        schema:
+          type: string
+    post:
+      tags:
+        - member
+      operationId: updateMemberGroup
+      summary: update member by user id and change group role
+      parameters:
+        - in: query
+          name: user_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: group_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Update member group success
+        401:
+          description: Unauthorized
+        404:
+          description: Resource Not Found
+        420:
+          description: Too many requests
+        500:
+          description: Internal Server Error
+    delete:
+      tags:
+        - member
+      operationId: revokeMember
+      summary: Revoke member in repository
+      parameters:
+        - in: query
+          name: user_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: revoke member success
+        401:
+          description: Unauthorized
+        404:
+          description: Resource Not Found
+        420:
+          description: Too many requests
+        500:
+          description: Internal Server Error
+  /repos/{owner}/{repository}/member/invite:
+    parameters:
+      - in: path
+        name: owner
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: repository
+        required: true
+        schema:
+          type: string
+    post:
+      tags:
+        - member
+      operationId: inviteMember
+      summary: invite member
+      parameters:
+        - in: query
+          name: user_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: group_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Invite member success
+        401:
+          description: Unauthorized
+        404:
+          description: Resource Not Found
+        420:
+          description: Too many requests
+        500:
+          description: Internal Server Error
+
   /users/{owner}/repos:
     parameters:
       - in: path
@@ -1907,6 +2102,27 @@ paths:
         403:
           description: Forbidden
 
+  /groups/repo:
+    get:
+      tags:
+        - group
+      operationId: listRepoGroup
+      summary: list groups for repo
+      responses:
+        200:
+          description: list repo's group
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Group"
+        400:
+          description: ValidationError
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden
   /users/repos:       # 必须授权
     get:
       tags:
@@ -2154,6 +2370,10 @@ paths:
       responses:
         201:
           description: registration success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserInfo"
         400:
           description: Bad Request - Validation Error
         420:

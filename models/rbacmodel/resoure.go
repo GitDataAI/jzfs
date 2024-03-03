@@ -1,4 +1,4 @@
-package rbacModel
+package rbacmodel
 
 import (
 	"fmt"

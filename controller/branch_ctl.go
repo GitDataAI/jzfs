@@ -6,10 +6,9 @@ import (
 	"net/http"
 
 	"github.com/jiaozifs/jiaozifs/auth/rbac"
-	"github.com/jiaozifs/jiaozifs/models/rbacModel"
-
 	"github.com/jiaozifs/jiaozifs/block/params"
 	"github.com/jiaozifs/jiaozifs/controller/validator"
+	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
 	"github.com/jiaozifs/jiaozifs/versionmgr"
 
 	"github.com/jiaozifs/jiaozifs/api"
@@ -42,8 +41,8 @@ func (bct BranchController) ListBranches(ctx context.Context, w *api.JiaozifsRes
 
 	if !bct.authorizeMember(ctx, w, repository.ID, rbac.Node{
 		Permission: rbac.Permission{
-			Action:   rbacModel.ListBranchesAction,
-			Resource: rbacModel.RepoURArn(owner.ID.String(), repository.ID.String()),
+			Action:   rbacmodel.ListBranchesAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
 		},
 	}) {
 		return
@@ -122,8 +121,8 @@ func (bct BranchController) CreateBranch(ctx context.Context, w *api.JiaozifsRes
 
 	if !bct.authorizeMember(ctx, w, repository.ID, rbac.Node{
 		Permission: rbac.Permission{
-			Action:   rbacModel.CreateBranchAction,
-			Resource: rbacModel.RepoURArn(owner.ID.String(), repository.ID.String()),
+			Action:   rbacmodel.CreateBranchAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
 		},
 	}) {
 		return
@@ -188,8 +187,8 @@ func (bct BranchController) DeleteBranch(ctx context.Context, w *api.JiaozifsRes
 
 	if !bct.authorizeMember(ctx, w, repository.ID, rbac.Node{
 		Permission: rbac.Permission{
-			Action:   rbacModel.DeleteBranchAction,
-			Resource: rbacModel.RepoURArn(owner.ID.String(), repository.ID.String()),
+			Action:   rbacmodel.DeleteBranchAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
 		},
 	}) {
 		return
@@ -236,8 +235,8 @@ func (bct BranchController) GetBranch(ctx context.Context, w *api.JiaozifsRespon
 
 	if !bct.authorizeMember(ctx, w, repository.ID, rbac.Node{
 		Permission: rbac.Permission{
-			Action:   rbacModel.ReadRepositoryAction,
-			Resource: rbacModel.RepoURArn(owner.ID.String(), repository.ID.String()),
+			Action:   rbacmodel.ReadRepositoryAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
 		},
 	}) {
 		return

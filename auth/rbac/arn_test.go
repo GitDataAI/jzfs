@@ -13,34 +13,34 @@ func TestParseARN(t *testing.T) {
 		Error bool
 	}{
 		{Input: "", Error: true},
-		{Input: "arn:jiaozifs:repo", Error: true},
-		{Input: "arn:jiaozifs:repos:a:b:myrepo", Arn: rbac.Arn{
-			Partition:  "jiaozifs",
-			Service:    "repos",
+		{Input: "arn:gitdata:jiaozifs", Error: true},
+		{Input: "arn:gitdata:jiaozifs:a:b:myrepo", Arn: rbac.Arn{
+			Partition:  "gitdata",
+			Service:    "jiaozifs",
 			Region:     "a",
 			AccountID:  "b",
 			ResourceID: "myrepo"}},
-		{Input: "arn:jiaozifs:repos:a::myrepo", Arn: rbac.Arn{
-			Partition:  "jiaozifs",
-			Service:    "repos",
+		{Input: "arn:gitdata:jiaozifs:a::myrepo", Arn: rbac.Arn{
+			Partition:  "gitdata",
+			Service:    "jiaozifs",
 			Region:     "a",
 			AccountID:  "",
 			ResourceID: "myrepo"}},
-		{Input: "arn:jiaozifs:repos::b:myrepo", Arn: rbac.Arn{
-			Partition:  "jiaozifs",
-			Service:    "repos",
+		{Input: "arn:gitdata:jiaozifs::b:myrepo", Arn: rbac.Arn{
+			Partition:  "gitdata",
+			Service:    "jiaozifs",
 			Region:     "",
 			AccountID:  "b",
 			ResourceID: "myrepo"}},
-		{Input: "arn:jiaozifs:repos:::myrepo", Arn: rbac.Arn{
-			Partition:  "jiaozifs",
-			Service:    "repos",
+		{Input: "arn:gitdata:jiaozifs:::myrepo", Arn: rbac.Arn{
+			Partition:  "gitdata",
+			Service:    "jiaozifs",
 			Region:     "",
 			AccountID:  "",
 			ResourceID: "myrepo"}},
-		{Input: "arn:jiaozifs:fs:::myrepo/branch/file:with:colon", Arn: rbac.Arn{
-			Partition:  "jiaozifs",
-			Service:    "fs",
+		{Input: "arn:gitdata:jiaozifs:::myrepo/branch/file:with:colon", Arn: rbac.Arn{
+			Partition:  "gitdata",
+			Service:    "jiaozifs",
 			Region:     "",
 			AccountID:  "",
 			ResourceID: "myrepo/branch/file:with:colon"}},
@@ -79,15 +79,15 @@ func TestArnMatch(t *testing.T) {
 		InputDestination string
 		Match            bool
 	}{
-		{"arn:jiaozifs:repos::b:myrepo", "arn:jiaozifs:repos::b:myrepo", true},
-		{"arn:jiaozifs:repos::b:*", "arn:jiaozifs:repos::b:myrepo", true},
-		{"arn:jiaozifs:repos::b:my*", "arn:jiaozifs:repos::b:myrepo", true},
-		{"arn:jiaozifs:repos::b:my*po", "arn:jiaozifs:repos::b:myrepo", true},
-		{"arn:jiaozifs:repos::b:our*", "arn:jiaozifs:repos::b:myrepo", false},
-		{"arn:jiaozifs:repos::b:my*own", "arn:jiaozifs:repos::b:myrepo", false},
-		{"arn:jiaozifs:repos::b:myrepo", "arn:jiaozifs:repos::b:*", false},
-		{"arn:jiaozifs:repo:::*", "arn:jiaozifs:repo:::*", true},
-		{"arn:jiaozifs:repo", "arn:jiaozifs:repo", false},
+		{"arn:gitdata:jiaozifs::b:myrepo", "arn:gitdata:jiaozifs::b:myrepo", true},
+		{"arn:gitdata:jiaozifs::b:*", "arn:gitdata:jiaozifs::b:myrepo", true},
+		{"arn:gitdata:jiaozifs::b:my*", "arn:gitdata:jiaozifs::b:myrepo", true},
+		{"arn:gitdata:jiaozifs::b:my*po", "arn:gitdata:jiaozifs::b:myrepo", true},
+		{"arn:gitdata:jiaozifs::b:our*", "arn:gitdata:jiaozifs::b:myrepo", false},
+		{"arn:gitdata:jiaozifs::b:my*own", "arn:gitdata:jiaozifs::b:myrepo", false},
+		{"arn:gitdata:jiaozifs::b:myrepo", "arn:gitdata:jiaozifs::b:*", false},
+		{"arn:gitdata:jiaozifs:::*", "arn:gitdata:jiaozifs:::*", true},
+		{"arn:gitdata:repo", "arn:gitdata:repo", false},
 	}
 
 	for _, c := range cases {

@@ -24,13 +24,15 @@ func MergeRequestSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		repoName := "mr_test"
 		branchName := "feat/obj_test"
 
-		createUser(ctx, c, client, userName)
-		loginAndSwitch(ctx, c, client, "molly login", userName, false)
-		createRepo(ctx, c, client, repoName)
-		createBranch(ctx, c, client, "create branch", userName, repoName, "main", branchName)
-		createWip(ctx, c, client, "feat get obj test", userName, repoName, branchName)
-		uploadObject(ctx, c, client, "update f1 to test branch", userName, repoName, branchName, "a.bin")
-		commitWip(ctx, c, client, "commit object", userName, repoName, branchName, "test")
+		c.Convey("init", func(c convey.C) {
+			createUser(ctx, client, userName)
+			loginAndSwitch(ctx, client, userName, false)
+			createRepo(ctx, client, repoName)
+			createBranch(ctx, client, userName, repoName, "main", branchName)
+			createWip(ctx, client, userName, repoName, branchName)
+			uploadObject(ctx, client, userName, repoName, branchName, "a.bin")
+			commitWip(ctx, client, userName, repoName, branchName, "test")
+		})
 
 		c.Convey("create merge request", func(c convey.C) {
 			c.Convey("no auth", func() {
@@ -88,7 +90,7 @@ func MergeRequestSpec(ctx context.Context, urlStr string) func(c convey.C) {
 					Title:            "Merge: test",
 				})
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 
 			c.Convey("fail to create mergerequest from non exit branch", func() {
@@ -176,7 +178,7 @@ func MergeRequestSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			c.Convey("fail to get merge request from others user", func() {
 				resp, err := client.GetMergeRequest(ctx, "jimmy", "happygo", *firstMrID)
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 
 			c.Convey("fail to get merge request with non exit mergerequest", func() {
@@ -230,7 +232,7 @@ func MergeRequestSpec(ctx context.Context, urlStr string) func(c convey.C) {
 					Title:       utils.String("Merge: test title"),
 				})
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 
 			c.Convey("success to update merge request", func() {
@@ -252,14 +254,16 @@ func MergeRequestSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 		})
 
-		for i := 0; i < 10; i++ {
-			branchName := fmt.Sprintf("feat/list_merge_test_%d", i)
-			createBranch(ctx, c, client, fmt.Sprintf("create branch %d", i), userName, repoName, "main", branchName)
-			createWip(ctx, c, client, "feat list merge test "+strconv.Itoa(i), userName, repoName, branchName)
-			uploadObject(ctx, c, client, "update f1 to test branch "+strconv.Itoa(i), userName, repoName, branchName, fmt.Sprintf("%d.txt", i))
-			commitWip(ctx, c, client, "commit object "+strconv.Itoa(i), userName, repoName, branchName, "test")
-			createMergeRequest(ctx, c, client, "create  merge request "+strconv.Itoa(i), userName, repoName, branchName, "main")
-		}
+		c.Convey("create many mergequests", func(c convey.C) {
+			for i := 0; i < 10; i++ {
+				branchName := fmt.Sprintf("feat/list_merge_test_%d", i)
+				createBranch(ctx, client, userName, repoName, "main", branchName)
+				createWip(ctx, client, userName, repoName, branchName)
+				uploadObject(ctx, client, userName, repoName, branchName, fmt.Sprintf("%d.txt", i))
+				commitWip(ctx, client, userName, repoName, branchName, "test")
+				createMergeRequest(ctx, client, userName, repoName, branchName, "main")
+			}
+		})
 
 		c.Convey("list merge request", func(c convey.C) {
 
@@ -287,7 +291,7 @@ func MergeRequestSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			c.Convey("fail to list merge request from others user", func() {
 				resp, err := client.ListMergeRequests(ctx, "jimmy", "happygo", &api.ListMergeRequestsParams{})
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 
 			c.Convey("success to list merge request", func() {
@@ -384,7 +388,7 @@ func MergeRequestSpec(ctx context.Context, urlStr string) func(c convey.C) {
 					Msg: "test merge",
 				})
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 			c.Convey("fail to update merge request from non exit mr", func() {
 				resp, err := client.Merge(ctx, userName, repoName, 100, api.MergeJSONRequestBody{

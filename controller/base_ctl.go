@@ -28,7 +28,7 @@ func (c *BaseController) authorize(ctx context.Context, w *api.JiaozifsResponse,
 	}
 
 	resp, err := c.PermissionCheck.Authorize(ctx, &rbac.AuthorizationRequest{
-		UserID:              operator.ID,
+		OperatorID:          operator.ID,
 		RequiredPermissions: perms,
 	})
 	if err != nil {
@@ -55,7 +55,7 @@ func (c *BaseController) authorizeMember(ctx context.Context, w *api.JiaozifsRes
 	}
 
 	resp, err := c.PermissionCheck.AuthorizeMember(ctx, repoID, &rbac.AuthorizationRequest{
-		UserID:              operator.ID,
+		OperatorID:          operator.ID,
 		RequiredPermissions: perms,
 	})
 	if err != nil {

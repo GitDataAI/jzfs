@@ -1,4 +1,4 @@
-package rbacModel
+package rbacmodel
 
 import (
 	"context"
@@ -40,9 +40,23 @@ func (gup *GetGroupParams) SetName(name string) *GetGroupParams {
 	return gup
 }
 
+type ListGroupParams struct {
+	names []string
+}
+
+func NewListGroupParams() *ListGroupParams {
+	return &ListGroupParams{}
+}
+
+func (gup *ListGroupParams) SetNames(names ...string) *ListGroupParams {
+	gup.names = names
+	return gup
+}
+
 type IGroupRepo interface {
 	GetGroupByUserID(ctx context.Context, userID uuid.UUID) (*Group, error)
 	Get(ctx context.Context, params *GetGroupParams) (*Group, error)
+	List(ctx context.Context, params *ListGroupParams) ([]*Group, error)
 	Insert(ctx context.Context, asSk *Group) (*Group, error)
 }
 
@@ -83,6 +97,23 @@ func (a GroupRepo) Get(ctx context.Context, params *GetGroupParams) (*Group, err
 		return nil, err
 	}
 	return ug, nil
+}
+
+func (a GroupRepo) List(ctx context.Context, params *ListGroupParams) ([]*Group, error) {
+	var groups []*Group
+	query := a.db.NewSelect().Model(&groups)
+
+	if len(params.names) > 0 {
+		query = query.Where("name IN (?)", bun.In(params.names))
+	}
+
+	query = query.Order("created_at DESC")
+
+	err := query.Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return groups, nil
 }
 
 func (a GroupRepo) Insert(ctx context.Context, group *Group) (*Group, error) {

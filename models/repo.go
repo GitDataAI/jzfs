@@ -5,7 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/google/uuid"
-	"github.com/jiaozifs/jiaozifs/models/rbacModel"
+	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
 	"github.com/uptrace/bun"
 )
 
@@ -39,9 +39,9 @@ type IRepo interface {
 	AkskRepo() IAkskRepo
 
 	MemberRepo() IMemberRepo
-	GroupRepo() rbacModel.IGroupRepo
-	PolicyRepo() rbacModel.IPolicyRepo
-	UserGroupRepo() rbacModel.IUserGroupRepo
+	GroupRepo() rbacmodel.IGroupRepo
+	PolicyRepo() rbacmodel.IPolicyRepo
+	UserGroupRepo() rbacmodel.IUserGroupRepo
 }
 
 type PgRepo struct {
@@ -108,14 +108,14 @@ func (repo *PgRepo) MemberRepo() IMemberRepo {
 	return NewMemberRepo(repo.db)
 }
 
-func (repo *PgRepo) GroupRepo() rbacModel.IGroupRepo {
-	return rbacModel.NewGroupRepo(repo.db)
+func (repo *PgRepo) GroupRepo() rbacmodel.IGroupRepo {
+	return rbacmodel.NewGroupRepo(repo.db)
 }
 
-func (repo *PgRepo) PolicyRepo() rbacModel.IPolicyRepo {
-	return rbacModel.NewPolicyRepo(repo.db)
+func (repo *PgRepo) PolicyRepo() rbacmodel.IPolicyRepo {
+	return rbacmodel.NewPolicyRepo(repo.db)
 }
 
-func (repo *PgRepo) UserGroupRepo() rbacModel.IUserGroupRepo {
-	return rbacModel.NewUserGroupRepo(repo.db)
+func (repo *PgRepo) UserGroupRepo() rbacmodel.IUserGroupRepo {
+	return rbacmodel.NewUserGroupRepo(repo.db)
 }

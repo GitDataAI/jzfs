@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jiaozifs/jiaozifs/models/rbacModel"
+	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
 )
 
 var (
@@ -13,85 +13,87 @@ var (
 
 // statementForPolicyType holds the Statement for a policy by its name,
 // without the required ARN.
-var statementByName = map[string]rbacModel.Statement{
+var statementByName = map[string]rbacmodel.Statement{
 	"AllAccess": {
 		Action: []string{"repo:*", "auth:*", "user:*"},
-		Effect: rbacModel.StatementEffectAllow,
+		Effect: rbacmodel.StatementEffectAllow,
 	},
 	"RepoReadWrite": {
 		Action: []string{
-			rbacModel.ReadRepositoryAction,
-			rbacModel.UpdateRepositoryAction,
-			rbacModel.DeleteRepositoryAction,
-			rbacModel.ListRepositoriesAction,
+			rbacmodel.ReadRepositoryAction,
+			rbacmodel.UpdateRepositoryAction,
+			rbacmodel.DeleteRepositoryAction,
+			rbacmodel.ListRepositoriesAction,
 
-			rbacModel.ReadObjectAction,
-			rbacModel.WriteObjectAction,
-			rbacModel.DeleteObjectAction,
-			rbacModel.ListObjectsAction,
+			rbacmodel.ReadObjectAction,
+			rbacmodel.WriteObjectAction,
+			rbacmodel.DeleteObjectAction,
+			rbacmodel.ListObjectsAction,
 
-			rbacModel.CreateCommitAction,
-			rbacModel.ReadCommitAction,
-			rbacModel.ListCommitsAction,
+			rbacmodel.CreateCommitAction,
+			rbacmodel.ReadCommitAction,
+			rbacmodel.ListCommitsAction,
 
-			rbacModel.CreateBranchAction,
-			rbacModel.DeleteBranchAction,
-			rbacModel.ReadBranchAction,
-			rbacModel.ListBranchesAction,
-			rbacModel.WriteBranchAction,
-			rbacModel.DeleteWipAction,
+			rbacmodel.CreateBranchAction,
+			rbacmodel.DeleteBranchAction,
+			rbacmodel.ReadBranchAction,
+			rbacmodel.ListBranchesAction,
+			rbacmodel.WriteBranchAction,
+			rbacmodel.DeleteWipAction,
 
-			rbacModel.CreateMergeRequestAction,
-			rbacModel.ReadMergeRequestAction,
-			rbacModel.UpdateMergeRequestAction,
-			rbacModel.ListMergeRequestAction,
+			rbacmodel.CreateMergeRequestAction,
+			rbacmodel.ReadMergeRequestAction,
+			rbacmodel.UpdateMergeRequestAction,
+			rbacmodel.ListMergeRequestAction,
 
-			rbacModel.ReadConfigAction,
-			rbacModel.WriteConfigAction,
+			rbacmodel.ReadConfigAction,
+			rbacmodel.WriteConfigAction,
 
-			rbacModel.ReadWipAction,
-			rbacModel.ListWipAction,
-			rbacModel.WriteWipAction,
-			rbacModel.CreateWipAction,
+			rbacmodel.ReadWipAction,
+			rbacmodel.ListWipAction,
+			rbacmodel.WriteWipAction,
+			rbacmodel.CreateWipAction,
 		},
-		Effect: rbacModel.StatementEffectAllow,
+		Effect: rbacmodel.StatementEffectAllow,
 	},
 	"RepoRead": {
 		Action: []string{
 			"repo:Read*",
 			"repo:List*",
 		},
-		Effect: rbacModel.StatementEffectAllow,
+		Effect: rbacmodel.StatementEffectAllow,
 	},
 	"RepoReadConfig": {
 		Action: []string{
-			rbacModel.ReadConfigAction,
+			rbacmodel.ReadConfigAction,
 		},
-		Effect: rbacModel.StatementEffectAllow,
+		Effect: rbacmodel.StatementEffectAllow,
 	},
 	"RepoWriteConfig": {
 		Action: []string{
-			rbacModel.ReadConfigAction,
-			rbacModel.WriteConfigAction,
+			rbacmodel.ReadConfigAction,
+			rbacmodel.WriteConfigAction,
 
-			rbacModel.AddGroupMemberAction,
-			rbacModel.RemoveGroupMemberAction,
+			rbacmodel.AddGroupMemberAction,
+			rbacmodel.RemoveGroupMemberAction,
 		},
-		Effect: rbacModel.StatementEffectAllow,
+		Effect: rbacmodel.StatementEffectAllow,
 	},
 	"RepoMemberRead": {
 		Action: []string{
-			rbacModel.GetGroupMemberAction,
+			rbacmodel.GetGroupMemberAction,
+			rbacmodel.ListGroupMemberAction,
 		},
-		Effect: rbacModel.StatementEffectAllow,
+		Effect: rbacmodel.StatementEffectAllow,
 	},
 	"RepoMemberAccess": {
 		Action: []string{
-			rbacModel.GetGroupMemberAction,
-			rbacModel.AddGroupMemberAction,
-			rbacModel.RemoveGroupMemberAction,
+			rbacmodel.GetGroupMemberAction,
+			rbacmodel.ListGroupMemberAction,
+			rbacmodel.AddGroupMemberAction,
+			rbacmodel.RemoveGroupMemberAction,
 		},
-		Effect: rbacModel.StatementEffectAllow,
+		Effect: rbacmodel.StatementEffectAllow,
 	},
 	"UserFullAccess": {
 		Action: []string{
@@ -99,7 +101,7 @@ var statementByName = map[string]rbacModel.Statement{
 			"user:*",
 		},
 
-		Effect: rbacModel.StatementEffectAllow,
+		Effect: rbacmodel.StatementEffectAllow,
 	},
 }
 
@@ -124,12 +126,12 @@ func GetActionsForPolicyTypeOrDie(typ string) []string {
 
 // MakeStatementForPolicyType returns statements for policy type typ,
 // limited to resources.
-func MakeStatementForPolicyType(typ string, resources []rbacModel.Resource) (rbacModel.Statements, error) {
+func MakeStatementForPolicyType(typ string, resources []rbacmodel.Resource) (rbacmodel.Statements, error) {
 	statement, ok := statementByName[typ]
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", ErrStatementNotFound, typ)
 	}
-	statements := make(rbacModel.Statements, len(resources))
+	statements := make(rbacmodel.Statements, len(resources))
 	for i, resource := range resources {
 		if statement.Resource == "" {
 			statements[i] = statement
@@ -139,7 +141,7 @@ func MakeStatementForPolicyType(typ string, resources []rbacModel.Resource) (rba
 	return statements, nil
 }
 
-func MakeStatementForPolicyTypeOrDie(typ string, resources []rbacModel.Resource) rbacModel.Statements {
+func MakeStatementForPolicyTypeOrDie(typ string, resources []rbacmodel.Resource) rbacmodel.Statements {
 	statements, err := MakeStatementForPolicyType(typ, resources)
 	if err != nil {
 		panic(err)

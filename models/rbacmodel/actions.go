@@ -1,6 +1,6 @@
 //go:generate go run --tags generate ./codegen ./actions.go ./actions.gen.go
 
-package rbacModel
+package rbacmodel
 
 import (
 	"errors"
@@ -53,6 +53,7 @@ const (
 	AddGroupMemberAction    = "repo:AddGroupMember"
 	RemoveGroupMemberAction = "repo:RemoveGroupMember"
 	GetGroupMemberAction    = "repo:GetGroupMember"
+	ListGroupMemberAction   = "repo:GetGroupMember"
 
 	ReadGroupAction    = "auth:ReadGroup"
 	CreateGroupAction  = "auth:CreateGroup"

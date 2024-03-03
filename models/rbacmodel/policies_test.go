@@ -1,4 +1,4 @@
-package rbacModel_test
+package rbacmodel_test
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
-	"github.com/jiaozifs/jiaozifs/models/rbacModel"
+	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
 	"github.com/jiaozifs/jiaozifs/testhelper"
 	"github.com/stretchr/testify/require"
 )
@@ -18,27 +18,27 @@ func TestPolicyRepo(t *testing.T) {
 	closeDB, _, db := testhelper.SetupDatabase(ctx, t)
 	defer closeDB()
 
-	policyRepo := rbacModel.NewPolicyRepo(db)
+	policyRepo := rbacmodel.NewPolicyRepo(db)
 
 	t.Run("insert and get ", func(t *testing.T) {
-		policyModel := &rbacModel.Policy{}
+		policyModel := &rbacmodel.Policy{}
 		require.NoError(t, gofakeit.Struct(policyModel))
 
 		newPolicyModel, err := policyRepo.Insert(ctx, policyModel)
 		require.NoError(t, err)
 		require.NotEqual(t, uuid.Nil, newPolicyModel.ID)
 
-		getPloicyParams := rbacModel.NewGetPolicyParams().SetID(newPolicyModel.ID)
+		getPloicyParams := rbacmodel.NewGetPolicyParams().SetID(newPolicyModel.ID)
 		actualPolicy, err := policyRepo.Get(ctx, getPloicyParams)
 		require.NoError(t, err)
-		require.True(t, cmp.Equal(actualPolicy, newPolicyModel, testhelper.DbTimeCmpOpt))
+		require.True(t, cmp.Equal(actualPolicy, newPolicyModel, testhelper.DBTimeCmpOpt))
 	})
 
 	t.Run("list", func(t *testing.T) {
 		var ids []uuid.UUID
-		var policies []*rbacModel.Policy
+		var policies []*rbacmodel.Policy
 		for i := 0; i < 10; i++ {
-			policyModel := &rbacModel.Policy{}
+			policyModel := &rbacmodel.Policy{}
 			require.NoError(t, gofakeit.Struct(policyModel))
 
 			newPolicyModel, err := policyRepo.Insert(ctx, policyModel)
@@ -48,12 +48,12 @@ func TestPolicyRepo(t *testing.T) {
 			policies = append(policies, newPolicyModel)
 		}
 
-		actualPolicies, err := policyRepo.List(ctx, rbacModel.NewListPolicyParams().SetIDs(ids...))
+		actualPolicies, err := policyRepo.List(ctx, rbacmodel.NewListPolicyParams().SetIDs(ids...))
 		require.NoError(t, err)
 
 		sort.Slice(policies, func(i, j int) bool {
 			return policies[i].CreatedAt.Sub(policies[j].CreatedAt) > 0
 		})
-		require.True(t, cmp.Equal(actualPolicies, policies, testhelper.DbTimeCmpOpt))
+		require.True(t, cmp.Equal(actualPolicies, policies, testhelper.DBTimeCmpOpt))
 	})
 }

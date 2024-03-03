@@ -11,8 +11,6 @@ import (
 	"time"
 
 	"github.com/jiaozifs/jiaozifs/auth/rbac"
-	"github.com/jiaozifs/jiaozifs/models/rbacModel"
-
 	"github.com/jiaozifs/jiaozifs/controller/validator"
 
 	"github.com/go-openapi/swag"
@@ -22,6 +20,7 @@ import (
 	"github.com/jiaozifs/jiaozifs/block/params"
 	"github.com/jiaozifs/jiaozifs/models"
 	"github.com/jiaozifs/jiaozifs/models/filemode"
+	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
 	"github.com/jiaozifs/jiaozifs/utils"
 	"github.com/jiaozifs/jiaozifs/utils/hash"
 	"github.com/jiaozifs/jiaozifs/utils/httputil"
@@ -60,8 +59,8 @@ func (oct ObjectController) DeleteObject(ctx context.Context, w *api.JiaozifsRes
 
 	if !oct.authorizeMember(ctx, w, repository.ID, rbac.Node{
 		Permission: rbac.Permission{
-			Action:   rbacModel.DeleteObjectAction,
-			Resource: rbacModel.RepoURArn(owner.ID.String(), repository.ID.String()),
+			Action:   rbacmodel.DeleteObjectAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
 		},
 	}) {
 		return
@@ -125,8 +124,8 @@ func (oct ObjectController) GetObject(ctx context.Context, w *api.JiaozifsRespon
 
 	if !oct.authorizeMember(ctx, w, repository.ID, rbac.Node{
 		Permission: rbac.Permission{
-			Action:   rbacModel.ReadObjectAction,
-			Resource: rbacModel.RepoURArn(owner.ID.String(), repository.ID.String()),
+			Action:   rbacmodel.ReadObjectAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
 		},
 	}) {
 		return
@@ -223,8 +222,8 @@ func (oct ObjectController) HeadObject(ctx context.Context, w *api.JiaozifsRespo
 
 	if !oct.authorizeMember(ctx, w, repository.ID, rbac.Node{
 		Permission: rbac.Permission{
-			Action:   rbacModel.ReadObjectAction,
-			Resource: rbacModel.RepoURArn(owner.ID.String(), repository.ID.String()),
+			Action:   rbacmodel.ReadObjectAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
 		},
 	}) {
 		return
@@ -299,8 +298,8 @@ func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsRes
 
 	if !oct.authorizeMember(ctx, w, repository.ID, rbac.Node{
 		Permission: rbac.Permission{
-			Action:   rbacModel.ReadObjectAction,
-			Resource: rbacModel.RepoURArn(owner.ID.String(), repository.ID.String()),
+			Action:   rbacmodel.ReadObjectAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
 		},
 	}) {
 		return

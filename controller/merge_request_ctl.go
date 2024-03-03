@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/jiaozifs/jiaozifs/auth/rbac"
-	"github.com/jiaozifs/jiaozifs/models/rbacModel"
+	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
 	"github.com/jiaozifs/jiaozifs/utils/hash"
 
 	"github.com/jiaozifs/jiaozifs/utils"
@@ -45,8 +45,8 @@ func (mrCtl MergeRequestController) ListMergeRequests(ctx context.Context, w *ap
 
 	if !mrCtl.authorizeMember(ctx, w, repository.ID, rbac.Node{
 		Permission: rbac.Permission{
-			Action:   rbacModel.ListMergeRequestAction,
-			Resource: rbacModel.RepoURArn(owner.ID.String(), repository.ID.String()),
+			Action:   rbacmodel.ListMergeRequestAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
 		},
 	}) {
 		return
@@ -122,8 +122,8 @@ func (mrCtl MergeRequestController) CreateMergeRequest(ctx context.Context, w *a
 
 	if !mrCtl.authorizeMember(ctx, w, repository.ID, rbac.Node{
 		Permission: rbac.Permission{
-			Action:   rbacModel.CreateMergeRequestAction,
-			Resource: rbacModel.RepoURArn(owner.ID.String(), repository.ID.String()),
+			Action:   rbacmodel.CreateMergeRequestAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
 		},
 	}) {
 		return
@@ -239,8 +239,8 @@ func (mrCtl MergeRequestController) GetMergeRequest(ctx context.Context, w *api.
 
 	if !mrCtl.authorizeMember(ctx, w, repository.ID, rbac.Node{
 		Permission: rbac.Permission{
-			Action:   rbacModel.ReadMergeRequestAction,
-			Resource: rbacModel.RepoURArn(owner.ID.String(), repository.ID.String()),
+			Action:   rbacmodel.ReadMergeRequestAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
 		},
 	}) {
 		return
@@ -319,8 +319,8 @@ func (mrCtl MergeRequestController) UpdateMergeRequest(ctx context.Context, w *a
 
 	if !mrCtl.authorizeMember(ctx, w, repository.ID, rbac.Node{
 		Permission: rbac.Permission{
-			Action:   rbacModel.UpdateMergeRequestAction,
-			Resource: rbacModel.RepoURArn(owner.ID.String(), repository.ID.String()),
+			Action:   rbacmodel.UpdateMergeRequestAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
 		},
 	}) {
 		return
@@ -367,8 +367,8 @@ func (mrCtl MergeRequestController) Merge(ctx context.Context, w *api.JiaozifsRe
 
 	if !mrCtl.authorizeMember(ctx, w, repository.ID, rbac.Node{
 		Permission: rbac.Permission{
-			Action:   rbacModel.MergeMergeRequestAction,
-			Resource: rbacModel.RepoURArn(owner.ID.String(), repository.ID.String()),
+			Action:   rbacmodel.MergeMergeRequestAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
 		},
 	}) {
 		return

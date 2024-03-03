@@ -20,4 +20,7 @@ type APIController struct {
 	controller.BranchController
 	controller.MergeRequestController
 	controller.AkSkController
+
+	controller.GroupController
+	controller.MemberController
 }

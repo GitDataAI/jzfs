@@ -63,7 +63,7 @@ func TestRepositoryRepoInsert(t *testing.T) {
 
 	user, err := repo.Get(ctx, models.NewGetRepoParams().SetID(newRepo.ID))
 	require.NoError(t, err)
-	require.True(t, cmp.Equal(repoModel, user, testhelper.DbTimeCmpOpt))
+	require.True(t, cmp.Equal(repoModel, user, testhelper.DBTimeCmpOpt))
 
 	//insert secondary
 	secModel := &models.Repository{}

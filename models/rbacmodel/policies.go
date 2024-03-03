@@ -1,4 +1,4 @@
-package rbacModel
+package rbacmodel
 
 import (
 	"context"
@@ -102,7 +102,7 @@ func (p PolicyRepo) List(ctx context.Context, params *ListPolicyParams) ([]*Poli
 		query = query.Where("id IN (?)", bun.In(params.ids))
 	}
 
-	query = query.Order("created_at desc")
+	query = query.Order("created_at DESC")
 
 	err := query.Scan(ctx)
 	if err != nil {

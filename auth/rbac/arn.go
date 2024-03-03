@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/jiaozifs/jiaozifs/auth/rbac/wildcard"
-	"github.com/jiaozifs/jiaozifs/models/rbacModel"
+	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
 )
 
 var (
@@ -91,7 +91,7 @@ func ParseARN(arnString string) (*Arn, error) {
 }
 
 func ArnMatch(src, dst string) bool {
-	if src == string(rbacModel.All) {
+	if src == string(rbacmodel.All) {
 		return true
 	}
 	source, err := ParseARN(src)

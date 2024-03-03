@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/jiaozifs/jiaozifs/models/rbacModel"
+	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
 
 	"github.com/jiaozifs/jiaozifs/auth/rbac"
 
@@ -36,8 +36,8 @@ func (akskCtl AkSkController) CreateAksk(ctx context.Context, w *api.JiaozifsRes
 
 	if !akskCtl.authorize(ctx, w, rbac.Node{
 		Permission: rbac.Permission{
-			Action:   rbacModel.CreateCredentialsAction,
-			Resource: rbacModel.UserAkskArn(operator.ID.String()),
+			Action:   rbacmodel.CreateCredentialsAction,
+			Resource: rbacmodel.UserAkskArn(operator.ID.String()),
 		},
 	}) {
 		return
@@ -62,7 +62,7 @@ func (akskCtl AkSkController) CreateAksk(ctx context.Context, w *api.JiaozifsRes
 		w.Error(err)
 		return
 	}
-	w.JSON(akskToDto(aksk), http.StatusCreated)
+	w.JSON(utils.Silent(akskToDto(aksk)), http.StatusCreated)
 }
 
 func (akskCtl AkSkController) GetAksk(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, params api.GetAkskParams) {
@@ -74,8 +74,8 @@ func (akskCtl AkSkController) GetAksk(ctx context.Context, w *api.JiaozifsRespon
 
 	if !akskCtl.authorize(ctx, w, rbac.Node{
 		Permission: rbac.Permission{
-			Action:   rbacModel.ReadCredentialsAction,
-			Resource: rbacModel.UserAkskArn(operator.ID.String()),
+			Action:   rbacmodel.ReadCredentialsAction,
+			Resource: rbacmodel.UserAkskArn(operator.ID.String()),
 		},
 	}) {
 		return
@@ -95,7 +95,7 @@ func (akskCtl AkSkController) GetAksk(ctx context.Context, w *api.JiaozifsRespon
 		w.Error(err)
 		return
 	}
-	w.JSON(akskToDto(aksk))
+	w.JSON(utils.Silent(akskToDto(aksk)))
 }
 
 func (akskCtl AkSkController) DeleteAksk(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, params api.DeleteAkskParams) {
@@ -107,8 +107,8 @@ func (akskCtl AkSkController) DeleteAksk(ctx context.Context, w *api.JiaozifsRes
 
 	if !akskCtl.authorize(ctx, w, rbac.Node{
 		Permission: rbac.Permission{
-			Action:   rbacModel.DeleteCredentialsAction,
-			Resource: rbacModel.UserAkskArn(operator.ID.String()),
+			Action:   rbacmodel.DeleteCredentialsAction,
+			Resource: rbacmodel.UserAkskArn(operator.ID.String()),
 		},
 	}) {
 		return
@@ -140,8 +140,8 @@ func (akskCtl AkSkController) ListAksks(ctx context.Context, w *api.JiaozifsResp
 
 	if !akskCtl.authorize(ctx, w, rbac.Node{
 		Permission: rbac.Permission{
-			Action:   rbacModel.ListCredentialsAction,
-			Resource: rbacModel.UserAkskArn(operator.ID.String()),
+			Action:   rbacmodel.ListCredentialsAction,
+			Resource: rbacmodel.UserAkskArn(operator.ID.String()),
 		},
 	}) {
 		return
@@ -161,10 +161,7 @@ func (akskCtl AkSkController) ListAksks(ctx context.Context, w *api.JiaozifsResp
 		w.Error(err)
 		return
 	}
-	results := make([]api.Aksk, 0, len(aksks))
-	for _, repo := range aksks {
-		results = append(results, *akskToDto(repo))
-	}
+	results := utils.Silent(utils.ArrMap(aksks, akskToDto))
 	pagMag := utils.PaginationFor(hasMore, results, "UpdatedAt")
 	pagination := api.Pagination{
 		HasMore:    pagMag.HasMore,
@@ -178,13 +175,13 @@ func (akskCtl AkSkController) ListAksks(ctx context.Context, w *api.JiaozifsResp
 	})
 }
 
-func akskToDto(in *models.AkSk) *api.Aksk {
-	return &api.Aksk{
+func akskToDto(in *models.AkSk) (api.Aksk, error) {
+	return api.Aksk{
 		AccessKey:   in.AccessKey,
 		CreatedAt:   in.CreatedAt.UnixMilli(),
 		Description: in.Description,
 		Id:          in.ID,
 		SecretKey:   in.SecretKey,
 		UpdatedAt:   in.UpdatedAt.UnixMilli(),
-	}
+	}, nil
 }

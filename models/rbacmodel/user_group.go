@@ -1,4 +1,4 @@
-package rbacModel
+package rbacmodel
 
 import (
 	"context"
@@ -11,8 +11,8 @@ import (
 type UserGroup struct {
 	bun.BaseModel `bun:"table:usergroup"`
 	ID            uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()" json:"id"`
-	UserID        uuid.UUID `bun:"user_id,type:uuid,unique:user_group,notnull" json:"user_id"`
-	GroupID       uuid.UUID `bun:"group_id,type:uuid,unique:user_group,notnull" json:"group_id"`
+	UserID        uuid.UUID `bun:"user_id,type:uuid,unique:user_group_pk,notnull" json:"user_id"`
+	GroupID       uuid.UUID `bun:"group_id,type:uuid,unique:user_group_pk,notnull" json:"group_id"`
 	// CreatedAt
 	CreatedAt time.Time `bun:"created_at,type:timestamp,notnull" json:"created_at"`
 	// UpdatedAt
@@ -36,10 +36,6 @@ func (gup *GetUserGroupParams) SetUserID(userID uuid.UUID) *GetUserGroupParams {
 func (gup *GetUserGroupParams) SetGroupID(groupID uuid.UUID) *GetUserGroupParams {
 	gup.groupID = groupID
 	return gup
-}
-
-type ListUserGroupParams struct {
-	userID uuid.UUID
 }
 
 type IUserGroupRepo interface {

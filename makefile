@@ -15,7 +15,7 @@ GOFLAGS+=-ldflags="$(ldflags)"
 
 gen-api: ./api/swagger.yml ./api/tmpls/chi
 	$(GOGENERATE) ./api
-	$(GOGENERATE) ./models/rbacModel
+	$(GOGENERATE) ./models/rbacmodel
 install-go-swagger:
 	go install github.com/go-swagger/go-swagger/cmd/swagger@latest
 

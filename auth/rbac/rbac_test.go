@@ -7,11 +7,10 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/jiaozifs/jiaozifs/models/rbacModel"
-
 	"github.com/stretchr/testify/require"
 
 	"github.com/jiaozifs/jiaozifs/auth"
+	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
 
 	"github.com/jiaozifs/jiaozifs/auth/rbac"
 	"github.com/jiaozifs/jiaozifs/models"
@@ -54,15 +53,16 @@ func TestNewRbac(t *testing.T) {
 		commonUser, err = dbRepo.UserRepo().Insert(ctx, commonUser)
 		require.NoError(t, err)
 
-		userOwnGroup, err := dbRepo.GroupRepo().Get(ctx, rbacModel.NewGetGroupParams().SetName(rbac.UserOwnAccess))
+		userOwnGroup, err := dbRepo.GroupRepo().Get(ctx, rbacmodel.NewGetGroupParams().SetName(rbac.UserOwnAccess))
 		require.NoError(t, err)
 		//bind own user group
-		_, err = dbRepo.UserGroupRepo().Insert(ctx, &rbacModel.UserGroup{
+		_, err = dbRepo.UserGroupRepo().Insert(ctx, &rbacmodel.UserGroup{
 			UserID:    commonUser.ID,
 			GroupID:   userOwnGroup.ID,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		})
+		require.NoError(t, err)
 		return commonUser
 	}
 
@@ -78,11 +78,11 @@ func TestNewRbac(t *testing.T) {
 
 	t.Run("super user", func(t *testing.T) {
 		resp, err := rbacChecker.Authorize(ctx, &rbac.AuthorizationRequest{
-			UserID: superUser.ID,
+			OperatorID: superUser.ID,
 			RequiredPermissions: rbac.Node{
 				Permission: rbac.Permission{
-					Action:   rbacModel.ReadUserAction,
-					Resource: rbacModel.UserArn(superUser.ID.String()),
+					Action:   rbacmodel.ReadUserAction,
+					Resource: rbacmodel.UserArn(superUser.ID.String()),
 				},
 			},
 		})
@@ -105,11 +105,11 @@ func TestNewRbac(t *testing.T) {
 		require.NoError(t, err)
 
 		resp, err := rbacChecker.Authorize(ctx, &rbac.AuthorizationRequest{
-			UserID: superUser.ID,
+			OperatorID: superUser.ID,
 			RequiredPermissions: rbac.Node{
 				Permission: rbac.Permission{
-					Action:   rbacModel.ReadUserAction,
-					Resource: rbacModel.UserArn(commonUser.ID.String()),
+					Action:   rbacmodel.ReadUserAction,
+					Resource: rbacmodel.UserArn(commonUser.ID.String()),
 				},
 			},
 		})
@@ -121,11 +121,11 @@ func TestNewRbac(t *testing.T) {
 	t.Run("common user controller himself", func(t *testing.T) {
 		commonUser := addCommonUser("common1")
 		resp, err := rbacChecker.Authorize(ctx, &rbac.AuthorizationRequest{
-			UserID: commonUser.ID,
+			OperatorID: commonUser.ID,
 			RequiredPermissions: rbac.Node{
 				Permission: rbac.Permission{
-					Action:   rbacModel.ReadUserAction,
-					Resource: rbacModel.UserArn(commonUser.ID.String()),
+					Action:   rbacmodel.ReadUserAction,
+					Resource: rbacmodel.UserArn(commonUser.ID.String()),
 				},
 			},
 		})
@@ -137,11 +137,11 @@ func TestNewRbac(t *testing.T) {
 	t.Run("common user cannot controller himself", func(t *testing.T) {
 		commonUser := addCommonUser("common2")
 		resp, err := rbacChecker.Authorize(ctx, &rbac.AuthorizationRequest{
-			UserID: commonUser.ID,
+			OperatorID: commonUser.ID,
 			RequiredPermissions: rbac.Node{
 				Permission: rbac.Permission{
-					Action:   rbacModel.ReadUserAction,
-					Resource: rbacModel.UserArn(superUser.ID.String()),
+					Action:   rbacmodel.ReadUserAction,
+					Resource: rbacmodel.UserArn(superUser.ID.String()),
 				},
 			},
 		})
@@ -153,11 +153,11 @@ func TestNewRbac(t *testing.T) {
 	t.Run("create repo", func(t *testing.T) {
 		commonUser := addCommonUser("common3")
 		resp, err := rbacChecker.Authorize(ctx, &rbac.AuthorizationRequest{
-			UserID: commonUser.ID,
+			OperatorID: commonUser.ID,
 			RequiredPermissions: rbac.Node{
 				Permission: rbac.Permission{
-					Action:   rbacModel.CreateRepositoryAction,
-					Resource: rbacModel.RepoUArn(commonUser.ID.String()),
+					Action:   rbacmodel.CreateRepositoryAction,
+					Resource: rbacmodel.RepoUArn(commonUser.ID.String()),
 				},
 			},
 		})
@@ -171,11 +171,11 @@ func TestNewRbac(t *testing.T) {
 		commonUser := addCommonUser("common4")
 
 		resp, err := rbacChecker.Authorize(ctx, &rbac.AuthorizationRequest{
-			UserID: commonUser.ID,
+			OperatorID: commonUser.ID,
 			RequiredPermissions: rbac.Node{
 				Permission: rbac.Permission{
-					Action:   rbacModel.CreateBranchAction,
-					Resource: rbacModel.RepoURArn(commonUser.ID.String(), repoID.String()),
+					Action:   rbacmodel.CreateBranchAction,
+					Resource: rbacmodel.RepoURArn(commonUser.ID.String(), repoID.String()),
 				},
 			},
 		})
@@ -187,11 +187,11 @@ func TestNewRbac(t *testing.T) {
 	t.Run("super create others repo", func(t *testing.T) {
 		commonUser := addCommonUser("common5")
 		resp, err := rbacChecker.Authorize(ctx, &rbac.AuthorizationRequest{
-			UserID: superUser.ID,
+			OperatorID: superUser.ID,
 			RequiredPermissions: rbac.Node{
 				Permission: rbac.Permission{
-					Action:   rbacModel.CreateRepositoryAction,
-					Resource: rbacModel.RepoUArn(commonUser.ID.String()),
+					Action:   rbacmodel.CreateRepositoryAction,
+					Resource: rbacmodel.RepoUArn(commonUser.ID.String()),
 				},
 			},
 		})
@@ -204,23 +204,25 @@ func TestNewRbac(t *testing.T) {
 		commonUser := addCommonUser("common6")
 		other1User := addCommonUser("other1")
 		repo := addRepo("aaa", other1User.ID)
-		_, err := rbacChecker.AuthorizeMember(ctx, repo.ID, &rbac.AuthorizationRequest{
-			UserID: commonUser.ID,
+		resp, err := rbacChecker.AuthorizeMember(ctx, repo.ID, &rbac.AuthorizationRequest{
+			OperatorID: commonUser.ID,
 			RequiredPermissions: rbac.Node{
 				Permission: rbac.Permission{
-					Action:   rbacModel.CreateBranchAction,
-					Resource: rbacModel.RepoURArn(other1User.ID.String(), repo.ID.String()),
+					Action:   rbacmodel.CreateBranchAction,
+					Resource: rbacmodel.RepoURArn(other1User.ID.String(), repo.ID.String()),
 				},
 			},
 		})
-		require.Error(t, err)
+		require.NoError(t, err)
+		require.Equal(t, rbac.ErrInsufficientPermissions, resp.Error)
+		require.False(t, resp.Allowed)
 	})
 
 	t.Run("can create branch in other user after add in member", func(t *testing.T) {
 		commonUser := addCommonUser("common7")
 		other1User := addCommonUser("other2")
 		repo := addRepo("aaa", other1User.ID)
-		repoWriteGroup, err := dbRepo.GroupRepo().Get(ctx, rbacModel.NewGetGroupParams().SetName(rbac.RepoWrite))
+		repoWriteGroup, err := dbRepo.GroupRepo().Get(ctx, rbacmodel.NewGetGroupParams().SetName(rbac.RepoWrite))
 		require.NoError(t, err)
 		_, err = dbRepo.MemberRepo().Insert(ctx, &models.Member{
 			UserID:    commonUser.ID,
@@ -232,11 +234,11 @@ func TestNewRbac(t *testing.T) {
 		require.NoError(t, err)
 
 		resp, err := rbacChecker.AuthorizeMember(ctx, repo.ID, &rbac.AuthorizationRequest{
-			UserID: commonUser.ID,
+			OperatorID: commonUser.ID,
 			RequiredPermissions: rbac.Node{
 				Permission: rbac.Permission{
-					Action:   rbacModel.CreateBranchAction,
-					Resource: rbacModel.RepoURArn(other1User.ID.String(), repo.ID.String()),
+					Action:   rbacmodel.CreateBranchAction,
+					Resource: rbacmodel.RepoURArn(other1User.ID.String(), repo.ID.String()),
 				},
 			},
 		})
@@ -249,7 +251,7 @@ func TestNewRbac(t *testing.T) {
 		commonUser := addCommonUser("common8")
 		other1User := addCommonUser("other3")
 		repo := addRepo("aaa", other1User.ID)
-		repoWriteGroup, err := dbRepo.GroupRepo().Get(ctx, rbacModel.NewGetGroupParams().SetName(rbac.RepoRead))
+		repoWriteGroup, err := dbRepo.GroupRepo().Get(ctx, rbacmodel.NewGetGroupParams().SetName(rbac.RepoRead))
 		require.NoError(t, err)
 		_, err = dbRepo.MemberRepo().Insert(ctx, &models.Member{
 			UserID:    commonUser.ID,
@@ -261,16 +263,33 @@ func TestNewRbac(t *testing.T) {
 		require.NoError(t, err)
 
 		resp, err := rbacChecker.AuthorizeMember(ctx, repo.ID, &rbac.AuthorizationRequest{
-			UserID: commonUser.ID,
+			OperatorID: commonUser.ID,
 			RequiredPermissions: rbac.Node{
 				Permission: rbac.Permission{
-					Action:   rbacModel.CreateBranchAction,
-					Resource: rbacModel.RepoURArn(other1User.ID.String(), repo.ID.String()),
+					Action:   rbacmodel.CreateBranchAction,
+					Resource: rbacmodel.RepoURArn(other1User.ID.String(), repo.ID.String()),
 				},
 			},
 		})
 		require.NoError(t, err)
 		require.Equal(t, rbac.ErrInsufficientPermissions, resp.Error)
 		require.False(t, resp.Allowed)
+	})
+
+	t.Run("read own branch", func(t *testing.T) {
+		commonUser := addCommonUser("common9")
+		repo := addRepo("aaa", commonUser.ID)
+		resp, err := rbacChecker.AuthorizeMember(ctx, repo.ID, &rbac.AuthorizationRequest{
+			OperatorID: commonUser.ID,
+			RequiredPermissions: rbac.Node{
+				Permission: rbac.Permission{
+					Action:   rbacmodel.ReadBranchAction,
+					Resource: rbacmodel.RepoURArn(commonUser.ID.String(), repo.ID.String()),
+				},
+			},
+		})
+		require.NoError(t, err)
+		require.NoError(t, resp.Error)
+		require.True(t, resp.Allowed)
 	})
 }

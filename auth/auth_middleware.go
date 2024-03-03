@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strings"
 
+	logging "github.com/ipfs/go-log/v2"
+
 	"github.com/jiaozifs/jiaozifs/utils"
 
 	"github.com/jiaozifs/jiaozifs/auth/aksk"
@@ -27,6 +29,7 @@ const (
 	IDTokenClaimsSessionKey = "id_token_claims"
 )
 
+var log = logging.Logger("auth")
 var (
 	ErrFailedToAccessStorage = errors.New("failed to access storage")
 	ErrAuthenticatingRequest = errors.New("error authenticating request")

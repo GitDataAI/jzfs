@@ -38,7 +38,7 @@ func TestMergeRequestRepoInsert(t *testing.T) {
 		mrModel, err = mrRepo.Get(ctx, getMRParams)
 		require.NoError(t, err)
 
-		require.True(t, cmp.Equal(mrModel, newMrModel, testhelper.DbTimeCmpOpt))
+		require.True(t, cmp.Equal(mrModel, newMrModel, testhelper.DBTimeCmpOpt))
 	})
 
 	t.Run("delete", func(t *testing.T) {

@@ -6,13 +6,12 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/jiaozifs/jiaozifs/auth/rbac"
-	"github.com/jiaozifs/jiaozifs/models/rbacModel"
-
 	"github.com/jiaozifs/jiaozifs/api"
 	"github.com/jiaozifs/jiaozifs/auth"
+	"github.com/jiaozifs/jiaozifs/auth/rbac"
 	"github.com/jiaozifs/jiaozifs/block/params"
 	"github.com/jiaozifs/jiaozifs/models"
+	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
 	"github.com/jiaozifs/jiaozifs/utils"
 	"github.com/jiaozifs/jiaozifs/utils/hash"
 	"github.com/jiaozifs/jiaozifs/versionmgr"
@@ -52,14 +51,14 @@ func (wipCtl WipController) GetWip(ctx context.Context, w *api.JiaozifsResponse,
 		Nodes: []rbac.Node{
 			{
 				Permission: rbac.Permission{
-					Action:   rbacModel.ReadWipAction,
-					Resource: rbacModel.RepoURArn(owner.ID.String(), repository.ID.String()),
+					Action:   rbacmodel.ReadWipAction,
+					Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
 				},
 			},
 			{
 				Permission: rbac.Permission{
-					Action:   rbacModel.CreateWipAction,
-					Resource: rbacModel.RepoURArn(owner.ID.String(), repository.ID.String()),
+					Action:   rbacmodel.CreateWipAction,
+					Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
 				},
 			},
 		},
@@ -112,8 +111,8 @@ func (wipCtl WipController) ListWip(ctx context.Context, w *api.JiaozifsResponse
 
 	if !wipCtl.authorizeMember(ctx, w, repository.ID, rbac.Node{
 		Permission: rbac.Permission{
-			Action:   rbacModel.ListWipAction,
-			Resource: rbacModel.RepoURArn(owner.ID.String(), repository.ID.String()),
+			Action:   rbacmodel.ListWipAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
 		},
 	}) {
 		return
@@ -157,20 +156,20 @@ func (wipCtl WipController) CommitWip(ctx context.Context, w *api.JiaozifsRespon
 		Nodes: []rbac.Node{
 			{
 				Permission: rbac.Permission{
-					Action:   rbacModel.ReadWipAction,
-					Resource: rbacModel.RepoURArn(owner.ID.String(), repository.ID.String()),
+					Action:   rbacmodel.ReadWipAction,
+					Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
 				},
 			},
 			{
 				Permission: rbac.Permission{
-					Action:   rbacModel.WriteBranchAction,
-					Resource: rbacModel.RepoURArn(owner.ID.String(), repository.ID.String()),
+					Action:   rbacmodel.WriteBranchAction,
+					Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
 				},
 			},
 			{
 				Permission: rbac.Permission{
-					Action:   rbacModel.ReadCommitAction,
-					Resource: rbacModel.RepoURArn(owner.ID.String(), repository.ID.String()),
+					Action:   rbacmodel.ReadCommitAction,
+					Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
 				},
 			},
 		},
@@ -220,8 +219,8 @@ func (wipCtl WipController) UpdateWip(ctx context.Context, w *api.JiaozifsRespon
 
 	if !wipCtl.authorizeMember(ctx, w, repository.ID, rbac.Node{
 		Permission: rbac.Permission{
-			Action:   rbacModel.WriteWipAction,
-			Resource: rbacModel.RepoURArn(owner.ID.String(), repository.ID.String()),
+			Action:   rbacmodel.WriteWipAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
 		},
 	}) {
 		return
@@ -303,8 +302,8 @@ func (wipCtl WipController) DeleteWip(ctx context.Context, w *api.JiaozifsRespon
 
 	if !wipCtl.authorizeMember(ctx, w, repository.ID, rbac.Node{
 		Permission: rbac.Permission{
-			Action:   rbacModel.DeleteBranchAction,
-			Resource: rbacModel.RepoURArn(owner.ID.String(), repository.ID.String()),
+			Action:   rbacmodel.DeleteBranchAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
 		},
 	}) {
 		return
@@ -355,20 +354,20 @@ func (wipCtl WipController) GetWipChanges(ctx context.Context, w *api.JiaozifsRe
 		Nodes: []rbac.Node{
 			{
 				Permission: rbac.Permission{
-					Action:   rbacModel.ReadCommitAction,
-					Resource: rbacModel.RepoURArn(owner.ID.String(), repository.ID.String()),
+					Action:   rbacmodel.ReadCommitAction,
+					Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
 				},
 			},
 			{
 				Permission: rbac.Permission{
-					Action:   rbacModel.ReadWipAction,
-					Resource: rbacModel.RepoURArn(owner.ID.String(), repository.ID.String()),
+					Action:   rbacmodel.ReadWipAction,
+					Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
 				},
 			},
 			{
 				Permission: rbac.Permission{
-					Action:   rbacModel.ReadBranchAction,
-					Resource: rbacModel.RepoURArn(owner.ID.String(), repository.ID.String()),
+					Action:   rbacmodel.ReadBranchAction,
+					Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
 				},
 			},
 		},

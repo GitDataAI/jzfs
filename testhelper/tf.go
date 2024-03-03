@@ -6,6 +6,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-var DbTimeCmpOpt = cmp.Comparer(func(x, y time.Time) bool {
+var DBTimeCmpOpt = cmp.Comparer(func(x, y time.Time) bool {
 	return x.Unix() == y.Unix()
 })

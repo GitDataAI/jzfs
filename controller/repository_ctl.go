@@ -9,9 +9,8 @@ import (
 	"time"
 
 	"github.com/jiaozifs/jiaozifs/auth/rbac"
-	"github.com/jiaozifs/jiaozifs/models/rbacModel"
-
 	"github.com/jiaozifs/jiaozifs/controller/validator"
+	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
 
 	"github.com/google/uuid"
 	logging "github.com/ipfs/go-log/v2"
@@ -48,8 +47,8 @@ func (repositoryCtl RepositoryController) ListRepositoryOfAuthenticatedUser(ctx 
 
 	if !repositoryCtl.authorize(ctx, w, rbac.Node{
 		Permission: rbac.Permission{
-			Action:   rbacModel.ListRepositoriesAction,
-			Resource: rbacModel.RepoUArn(operator.ID.String()),
+			Action:   rbacmodel.ListRepositoriesAction,
+			Resource: rbacmodel.RepoUArn(operator.ID.String()),
 		},
 	}) {
 		return
@@ -102,8 +101,8 @@ func (repositoryCtl RepositoryController) ListRepository(ctx context.Context, w 
 	//TODO should get (private repo repositories has been granted)  and (public repositories)
 	if !repositoryCtl.authorize(ctx, w, rbac.Node{
 		Permission: rbac.Permission{
-			Action:   rbacModel.ListRepositoriesAction,
-			Resource: rbacModel.RepoUArn(owner.ID.String()),
+			Action:   rbacmodel.ListRepositoriesAction,
+			Resource: rbacmodel.RepoUArn(owner.ID.String()),
 		},
 	}) {
 		return
@@ -160,8 +159,8 @@ func (repositoryCtl RepositoryController) CreateRepository(ctx context.Context, 
 
 	if !repositoryCtl.authorize(ctx, w, rbac.Node{
 		Permission: rbac.Permission{
-			Action:   rbacModel.CreateRepositoryAction,
-			Resource: rbacModel.RepoUArn(operator.ID.String()),
+			Action:   rbacmodel.CreateRepositoryAction,
+			Resource: rbacmodel.RepoUArn(operator.ID.String()),
 		},
 	}) {
 		return
@@ -245,8 +244,8 @@ func (repositoryCtl RepositoryController) DeleteRepository(ctx context.Context, 
 
 	if !repositoryCtl.authorizeMember(ctx, w, repository.ID, rbac.Node{
 		Permission: rbac.Permission{
-			Action:   rbacModel.DeleteRepositoryAction,
-			Resource: rbacModel.RepoURArn(owner.ID.String(), repository.ID.String()),
+			Action:   rbacmodel.DeleteRepositoryAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
 		},
 	}) {
 		return
@@ -280,6 +279,7 @@ func (repositoryCtl RepositoryController) DeleteRepository(ctx context.Context, 
 		if err != nil {
 			return err
 		}
+
 		// delete tree
 		_, err = repositoryCtl.Repo.FileTreeRepo(repository.ID).Delete(ctx, models.NewDeleteTreeParams())
 		if err != nil {
@@ -288,6 +288,12 @@ func (repositoryCtl RepositoryController) DeleteRepository(ctx context.Context, 
 
 		//delete wip
 		_, err = repositoryCtl.Repo.WipRepo().Delete(ctx, models.NewDeleteWipParams().SetRepositoryID(repository.ID))
+		if err != nil {
+			return err
+		}
+
+		//delete all membership
+		_, err = repositoryCtl.Repo.MemberRepo().DeleteMember(ctx, models.NewDeleteMemberParams().SetRepoID(repository.ID))
 		return err
 	})
 	if err != nil {
@@ -344,8 +350,8 @@ func (repositoryCtl RepositoryController) GetRepository(ctx context.Context, w *
 
 	if !repositoryCtl.authorizeMember(ctx, w, repo.ID, rbac.Node{
 		Permission: rbac.Permission{
-			Action:   rbacModel.ReadRepositoryAction,
-			Resource: rbacModel.RepoURArn(owner.ID.String(), repo.ID.String()),
+			Action:   rbacmodel.ReadRepositoryAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repo.ID.String()),
 		},
 	}) {
 		return
@@ -369,8 +375,8 @@ func (repositoryCtl RepositoryController) UpdateRepository(ctx context.Context, 
 
 	if !repositoryCtl.authorizeMember(ctx, w, repo.ID, rbac.Node{
 		Permission: rbac.Permission{
-			Action:   rbacModel.UpdateRepositoryAction,
-			Resource: rbacModel.RepoURArn(owner.ID.String(), repo.ID.String()),
+			Action:   rbacmodel.UpdateRepositoryAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repo.ID.String()),
 		},
 	}) {
 		return
@@ -414,8 +420,8 @@ func (repositoryCtl RepositoryController) GetCommitsInRef(ctx context.Context, w
 
 	if !repositoryCtl.authorizeMember(ctx, w, repository.ID, rbac.Node{
 		Permission: rbac.Permission{
-			Action:   rbacModel.ReadCommitAction,
-			Resource: rbacModel.RepoURArn(owner.ID.String(), repository.ID.String()),
+			Action:   rbacmodel.ReadCommitAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
 		},
 	}) {
 		return
