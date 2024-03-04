@@ -61,7 +61,6 @@ func AkSkSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				akskResult, err := api.ParseGetAkskResponse(resp)
 				convey.So(err, convey.ShouldBeNil)
 				convey.ShouldEqual(akskResult.JSON200.AccessKey, aksk.AccessKey)
-				convey.ShouldEqual(akskResult.JSON200.SecretKey, aksk.SecretKey)
 				convey.ShouldEqual(akskResult.JSON200.Description, aksk.Description)
 			})
 
@@ -73,7 +72,6 @@ func AkSkSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				akskResult, err := api.ParseGetAkskResponse(resp)
 				convey.So(err, convey.ShouldBeNil)
 				convey.ShouldEqual(akskResult.JSON200.Id, aksk.Id)
-				convey.ShouldEqual(akskResult.JSON200.SecretKey, aksk.SecretKey)
 				convey.ShouldEqual(akskResult.JSON200.Description, aksk.Description)
 			})
 			c.Convey("get nothing by ak", func() {
@@ -134,7 +132,7 @@ func AkSkSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 
-			c.Convey("delete nothing by ak", func() {
+			c.Convey("list aksk success", func() {
 				resp, err := client.ListAksks(ctx, &api.ListAksksParams{})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
@@ -145,7 +143,7 @@ func AkSkSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 		})
 
-		c.Convey("aksk usage", func(c convey.C) {
+		c.Convey("aksk user", func(c convey.C) {
 			c.Convey("success", func(c convey.C) {
 				aksk, err := createAksk(ctx, client)
 				convey.So(err, convey.ShouldBeNil)
