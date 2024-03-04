@@ -208,7 +208,7 @@ components:
         results:
           type: array
           items:
-            $ref: "#/components/schemas/Aksk"
+            $ref: "#/components/schemas/SafeAksk"
     Aksk:
       type: object
       required:
@@ -224,6 +224,27 @@ components:
         access_key:
           type: string
         secret_key:
+          type: string
+        description:
+          type: string
+        created_at:
+          type: integer
+          format: int64
+        updated_at:
+          type: integer
+          format: int64
+    SafeAksk:
+      type: object
+      required:
+        - id
+        - access_key
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        access_key:
           type: string
         description:
           type: string
@@ -2451,7 +2472,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Aksk"
+                $ref: "#/components/schemas/SafeAksk"
         401:
           description: Unauthorized
         404:

@@ -95,7 +95,7 @@ func (akskCtl AkSkController) GetAksk(ctx context.Context, w *api.JiaozifsRespon
 		w.Error(err)
 		return
 	}
-	w.JSON(utils.Silent(akskToDto(aksk)))
+	w.JSON(utils.Silent(akskToSafeDto(aksk)))
 }
 
 func (akskCtl AkSkController) DeleteAksk(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, params api.DeleteAkskParams) {
@@ -161,7 +161,7 @@ func (akskCtl AkSkController) ListAksks(ctx context.Context, w *api.JiaozifsResp
 		w.Error(err)
 		return
 	}
-	results := utils.Silent(utils.ArrMap(aksks, akskToDto))
+	results := utils.Silent(utils.ArrMap(aksks, akskToSafeDto))
 	pagMag := utils.PaginationFor(hasMore, results, "UpdatedAt")
 	pagination := api.Pagination{
 		HasMore:    pagMag.HasMore,
@@ -182,6 +182,16 @@ func akskToDto(in *models.AkSk) (api.Aksk, error) {
 		Description: in.Description,
 		Id:          in.ID,
 		SecretKey:   in.SecretKey,
+		UpdatedAt:   in.UpdatedAt.UnixMilli(),
+	}, nil
+}
+
+func akskToSafeDto(in *models.AkSk) (api.SafeAksk, error) {
+	return api.SafeAksk{
+		AccessKey:   in.AccessKey,
+		CreatedAt:   in.CreatedAt.UnixMilli(),
+		Description: in.Description,
+		Id:          in.ID,
 		UpdatedAt:   in.UpdatedAt.UnixMilli(),
 	}, nil
 }
