@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
+
+	"github.com/jiaozifs/jiaozifs/auth/rbac/wildcard"
 
 	"github.com/google/uuid"
 
-	"github.com/jiaozifs/jiaozifs/auth/rbac/wildcard"
 	"github.com/jiaozifs/jiaozifs/models"
 	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
 )
@@ -29,6 +31,8 @@ const (
 	RepoWrite BuiltinGroupName = "RepoWrite"
 	// RepoRead only read in this repo
 	RepoRead BuiltinGroupName = "RepoRead"
+	// RepoViewer grant for viewer for public repository
+	RepoViewer BuiltinGroupName = "Viewer"
 	// UserOwnAccess could manage user, credential, create repo
 	UserOwnAccess BuiltinGroupName = "UserOwnAccess"
 )
@@ -71,6 +75,9 @@ var _ PermissionCheck = (*RbacAuth)(nil)
 
 type RbacAuth struct { //nolint
 	db models.IRepo
+
+	cacheLk        sync.Mutex
+	viewerPolicies []*rbacmodel.Policy
 }
 
 func NewRbacAuth(IRepo models.IRepo) *RbacAuth {
@@ -102,6 +109,13 @@ func (s *RbacAuth) InitRbac(ctx context.Context, adminUser *models.User) error {
 					Resource: rbacmodel.RepoURArn(rbacmodel.UserIDCapture, rbacmodel.RepoIDCapture),
 					Effect:   rbacmodel.StatementEffectAllow,
 				},
+				{
+					Action: []string{
+						rbacmodel.UpdateVisibleAction, //change visible only work for owner
+					},
+					Resource: rbacmodel.RepoUArn(rbacmodel.UserIDCapture),
+					Effect:   rbacmodel.StatementEffectDeny,
+				},
 			},
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -131,6 +145,19 @@ func (s *RbacAuth) InitRbac(ctx context.Context, adminUser *models.User) error {
 			return err
 		}
 
+		// add repo viewer
+		_, err = s.addGroupPolicy(ctx, repo, RepoViewer, &rbacmodel.Policy{
+			Name: RepoViewer,
+			//todo make viewer the same with repo read, but should decrease viewer permission in future
+			Statements: MakeStatementForPolicyTypeOrDie("RepoRead", []rbacmodel.Resource{rbacmodel.RepoURArn(rbacmodel.UserIDCapture, rbacmodel.RepoIDCapture)}),
+			CreatedAt:  time.Now(),
+			UpdatedAt:  time.Now(),
+		})
+		if err != nil {
+			return err
+		}
+
+		//add user owner
 		userOwner := MakeStatementForPolicyTypeOrDie("UserFullAccess", []rbacmodel.Resource{
 			rbacmodel.UserArn(rbacmodel.UserIDCapture),
 			rbacmodel.UserAkskArn(rbacmodel.UserIDCapture),
@@ -255,11 +282,31 @@ func (s *RbacAuth) getMemberPolicy(ctx context.Context, operatorID uuid.UUID, re
 		return nil, err
 	}
 
-	policy, err := s.db.PolicyRepo().List(ctx, rbacmodel.NewListPolicyParams().SetIDs(group.Policies...))
+	policies, err := s.db.PolicyRepo().List(ctx, rbacmodel.NewListPolicyParams().SetIDs(group.Policies...))
 	if err != nil {
 		return nil, err
 	}
-	return policy, err
+	return policies, err
+}
+
+func (s *RbacAuth) getViewerPolicy(ctx context.Context) ([]*rbacmodel.Policy, error) {
+	if s.viewerPolicies != nil {
+		return s.viewerPolicies, nil
+	}
+	s.cacheLk.Lock()
+	defer s.cacheLk.Unlock()
+
+	group, err := s.db.GroupRepo().Get(ctx, rbacmodel.NewGetGroupParams().SetName(RepoViewer))
+	if err != nil {
+		return nil, err
+	}
+
+	policies, err := s.db.PolicyRepo().List(ctx, rbacmodel.NewListPolicyParams().SetIDs(group.Policies...))
+	if err != nil {
+		return nil, err
+	}
+	s.viewerPolicies = policies
+	return policies, err
 }
 
 func (s *RbacAuth) AuthorizeMember(ctx context.Context, repoID uuid.UUID, req *AuthorizationRequest) (*AuthorizationResponse, error) {
@@ -273,15 +320,25 @@ func (s *RbacAuth) AuthorizeMember(ctx context.Context, repoID uuid.UUID, req *A
 		return &AuthorizationResponse{Allowed: true}, nil
 	}
 
-	policies, err := s.getMemberPolicy(ctx, req.OperatorID, repoID)
-	if err != nil {
-		if errors.Is(err, models.ErrNotFound) {
-			return &AuthorizationResponse{
-				Allowed: false,
-				Error:   ErrInsufficientPermissions,
-			}, nil
+	var policies []*rbacmodel.Policy
+	if repo.Visible {
+		policies, err = s.getViewerPolicy(ctx)
+		if err != nil {
+			return nil, err
 		}
+	}
+
+	memberPolicies, err := s.getMemberPolicy(ctx, req.OperatorID, repoID)
+	if err != nil && !errors.Is(err, models.ErrNotFound) {
 		return nil, err
+	}
+	policies = append(policies, memberPolicies...)
+
+	if len(policies) == 0 {
+		return &AuthorizationResponse{
+			Allowed: false,
+			Error:   ErrInsufficientPermissions,
+		}, nil
 	}
 
 	resourceParams := ResourceParams{UserID: repo.OwnerID, RepoID: repoID}

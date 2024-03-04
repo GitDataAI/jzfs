@@ -8,6 +8,7 @@ var Actions = []string{
 	"repo:UpdateRepository",
 	"repo:DeleteRepository",
 	"repo:ListRepositories",
+	"repo:UpdateVisible",
 	"repo:ReadObject",
 	"repo:WriteObject",
 	"repo:DeleteObject",

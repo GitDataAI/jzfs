@@ -22,11 +22,11 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		branchName := "feat/obj_test"
 
 		c.Convey("init", func(c convey.C) {
-			createUser(ctx, client, userName)
+			_ = createUser(ctx, client, userName)
 			loginAndSwitch(ctx, client, userName, false)
-			createRepo(ctx, client, repoName)
-			createBranch(ctx, client, userName, repoName, "main", branchName)
-			createWip(ctx, client, userName, repoName, branchName)
+			_ = createRepo(ctx, client, repoName)
+			_ = createBranch(ctx, client, userName, repoName, "main", branchName)
+			_ = createWip(ctx, client, userName, repoName, branchName)
 		})
 		c.Convey("upload object", func(c convey.C) {
 			c.Convey("no auth", func() {

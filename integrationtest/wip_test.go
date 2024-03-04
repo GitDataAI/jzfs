@@ -18,11 +18,11 @@ func WipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		branchNameForDelete := "feat/wip_test2"
 
 		c.Convey("init", func(c convey.C) {
-			createUser(ctx, client, userName)
+			_ = createUser(ctx, client, userName)
 			loginAndSwitch(ctx, client, userName, false)
-			createRepo(ctx, client, repoName)
-			createBranch(ctx, client, userName, repoName, "main", branchName)
-			createBranch(ctx, client, userName, repoName, "main", branchNameForDelete)
+			_ = createRepo(ctx, client, repoName)
+			_ = createBranch(ctx, client, userName, repoName, "main", branchName)
+			_ = createBranch(ctx, client, userName, repoName, "main", branchNameForDelete)
 		})
 
 		c.Convey("list non exit wip", func(c convey.C) {
@@ -36,7 +36,7 @@ func WipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		})
 
 		c.Convey("create wip", func() {
-			createWip(ctx, client, userName, repoName, "main")
+			_ = createWip(ctx, client, userName, repoName, "main")
 		})
 
 		c.Convey("get wip", func(c convey.C) {
@@ -180,7 +180,7 @@ func WipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 
 			c.Convey("creat wip for test delete", func() {
-				createWip(ctx, client, userName, repoName, branchNameForDelete)
+				_ = createWip(ctx, client, userName, repoName, branchNameForDelete)
 			})
 
 			c.Convey("delete branch successful", func() {

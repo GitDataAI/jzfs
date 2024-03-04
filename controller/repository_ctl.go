@@ -200,6 +200,7 @@ func (repositoryCtl RepositoryController) CreateRepository(ctx context.Context, 
 	repository := &models.Repository{
 		ID:                   repoID,
 		Name:                 body.Name,
+		Visible:              utils.BoolValue(body.Visible),
 		UsePublicStorage:     usePublicStorage,
 		StorageAdapterParams: &storageConfig,
 		StorageNamespace:     storageNamespace,
@@ -474,6 +475,37 @@ func (repositoryCtl RepositoryController) GetCommitsInRef(ctx context.Context, w
 		return
 	}
 	w.JSON(commits)
+}
+
+func (repositoryCtl RepositoryController) ChangeVisible(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, params api.ChangeVisibleParams) {
+	owner, err := repositoryCtl.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(ownerName))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	repo, err := repositoryCtl.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetName(repositoryName).SetOwnerID(owner.ID))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	if !repositoryCtl.authorizeMember(ctx, w, repo.ID, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacmodel.UpdateVisibleAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repo.ID.String()),
+		},
+	}) {
+		return
+	}
+
+	updateParams := models.NewUpdateRepoParams(repo.ID).SetVisible(params.Visible)
+	err = repositoryCtl.Repo.RepositoryRepo().UpdateByID(ctx, updateParams)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+	w.OK()
 }
 
 func repositoryToDto(repository *models.Repository) *api.Repository {

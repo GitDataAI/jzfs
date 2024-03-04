@@ -475,6 +475,8 @@ components:
           type: string
         name:
           type: string
+        visible:
+          type: boolean
         blockstore_config:
           description: block storage config url encoded json
           type: string
@@ -504,6 +506,7 @@ components:
         - id
         - name
         - owner_id
+        - visible
         - head
         - use_public_storage
         - creator_id
@@ -518,6 +521,8 @@ components:
         owner_id:
           type: string
           format: uuid
+        visible:
+          type: boolean
         head:
           type: string
         use_public_storage:
@@ -1952,6 +1957,40 @@ paths:
         500:
           description: Internal Server Error
 
+  /repos/{owner}/{repository}/visible:
+    parameters:
+      - in: path
+        name: owner
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: repository
+        required: true
+        schema:
+          type: string
+    post:
+      tags:
+        - repo
+      operationId: changeVisible
+      summary: change repository visible(true for public, false for private)
+      parameters:
+        - in: query
+          name: visible
+          required: true
+          schema:
+            type: boolean
+      responses:
+        200:
+          description: Change repository visible success
+        401:
+          description: Unauthorized
+        404:
+          description: Resource Not Found
+        420:
+          description: Too many requests
+        500:
+          description: Internal Server Error
   /repos/{owner}/{repository}/members:
     parameters:
       - in: path
@@ -2051,6 +2090,7 @@ paths:
           description: Too many requests
         500:
           description: Internal Server Error
+
   /repos/{owner}/{repository}/member/invite:
     parameters:
       - in: path
@@ -2123,27 +2163,8 @@ paths:
         403:
           description: Forbidden
 
-  /groups/repo:
-    get:
-      tags:
-        - group
-      operationId: listRepoGroup
-      summary: list groups for repo
-      responses:
-        200:
-          description: list repo's group
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Group"
-        400:
-          description: ValidationError
-        401:
-          description: Unauthorized
-        403:
-          description: Forbidden
+
+
   /users/repos:       # 必须授权
     get:
       tags:
@@ -2229,7 +2250,6 @@ paths:
         default:
           description: Internal Server Error
 
-
   /repos/{owner}/{repository}/branch:
     parameters:
       - in: path
@@ -2307,7 +2327,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/BranchCreation"
+                $ref: "#/components/schemas/Branch"
         400:
           description: ValidationError
         404:
@@ -2319,7 +2339,27 @@ paths:
         default:
           description: Internal Server Error
 
-
+  /groups/repo:
+    get:
+      tags:
+        - group
+      operationId: listRepoGroup
+      summary: list groups for repo
+      responses:
+        200:
+          description: list repo's group
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Group"
+        400:
+          description: ValidationError
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden
 
   /auth/login:
     post:

@@ -33,6 +33,18 @@ func TestRepositoryUpdate(t *testing.T) {
 		require.Equal(t, newRepo.HEAD, user.HEAD)
 	})
 
+	t.Run("only update visible", func(t *testing.T) {
+		repoModel := &models.Repository{}
+		require.NoError(t, gofakeit.Struct(repoModel))
+		newRepo, err := repo.Insert(ctx, repoModel)
+		require.NoError(t, err)
+		err = repo.UpdateByID(ctx, models.NewUpdateRepoParams(newRepo.ID).SetVisible(!newRepo.Visible))
+		require.NoError(t, err)
+		user, err := repo.Get(ctx, models.NewGetRepoParams().SetID(newRepo.ID))
+		require.NoError(t, err)
+		require.Equal(t, !newRepo.Visible, user.Visible)
+	})
+
 	t.Run("update all fields", func(t *testing.T) {
 		repoModel := &models.Repository{}
 		require.NoError(t, gofakeit.Struct(repoModel))

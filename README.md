@@ -4,14 +4,14 @@ A version control file system for data centric applications & teams.
 <p align="left">
   <a href="https://codecov.io/gh/jiaozifs/jiaozifs"><img src="https://codecov.io/gh/jiaozifs/jiaozifs/branch/main/graph/badge.svg"></a>
   <a href="https://goreportcard.com/report/github.com/jiaozifs/jiaozifs"><img src="https://goreportcard.com/badge/github.com/jiaozifs/jiaozifs" /></a>  
-  <a href=""><img src="https://img.shields.io/badge/golang-%3E%3D1.20.10-blue.svg" /></a>
+  <a href=""><img src="https://img.shields.io/badge/golang-%3E%3D1.22.0-blue.svg" /></a>
   <br>
 </p>
 
 ### Basic Build And Usage
 
 #### Requirement
-1. To build JiaoziFS, you need a working installation of   [Go 1.20.10 or higher](https://golang.org/dl/)
+1. To build JiaoziFS, you need a working installation of   [Go 1.22.0 or higher](https://golang.org/dl/)
 2. JiaoziFS use postgres to store running data, you can install at  [postgres install installation guide](https://www.postgresql.org/docs/current/installation.html)
 
 #### Build And Running

@@ -21,14 +21,14 @@ func GetEntriesInRefSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		branchName := "feat/get_entries_test"
 
 		c.Convey("init", func(c convey.C) {
-			createUser(ctx, client, userName)
+			_ = createUser(ctx, client, userName)
 			loginAndSwitch(ctx, client, userName, false)
-			createRepo(ctx, client, repoName)
-			createBranch(ctx, client, userName, repoName, "main", branchName)
-			createWip(ctx, client, userName, repoName, branchName)
-			uploadObject(ctx, client, userName, repoName, branchName, "m.dat")
-			uploadObject(ctx, client, userName, repoName, branchName, "g/x.dat")
-			uploadObject(ctx, client, userName, repoName, branchName, "g/m.dat")
+			_ = createRepo(ctx, client, repoName)
+			_ = createBranch(ctx, client, userName, repoName, "main", branchName)
+			_ = createWip(ctx, client, userName, repoName, branchName)
+			_ = uploadObject(ctx, client, userName, repoName, branchName, "m.dat")
+			_ = uploadObject(ctx, client, userName, repoName, branchName, "g/x.dat")
+			_ = uploadObject(ctx, client, userName, repoName, branchName, "g/m.dat")
 		})
 
 		c.Convey("get wip entries", func(c convey.C) {

@@ -17,7 +17,7 @@ func UserSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		userName := "admin2"
 
 		c.Convey("init user", func(c convey.C) {
-			createUser(ctx, client, userName)
+			_ = createUser(ctx, client, userName)
 		})
 
 		c.Convey("invalid username", func() {
