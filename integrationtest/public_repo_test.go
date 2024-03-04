@@ -69,7 +69,7 @@ func PublicRepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 				resp, err := client.ChangeVisible(ctx, user1Name, testRepoName, &api.ChangeVisibleParams{Visible: true})
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
 
 				repoAfterUpdated := getRepo(ctx, client, user1Name, testRepoName)
 				convey.ShouldBeTrue(repoAfterUpdated.Head)
@@ -80,7 +80,7 @@ func PublicRepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			c.Convey("init", func() {
 				resp, err := client.ChangeVisible(ctx, user1Name, testRepoName, &api.ChangeVisibleParams{Visible: false})
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
 
 				client.RequestEditors = user2Token
 			})
@@ -95,7 +95,7 @@ func PublicRepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				client.RequestEditors = user1Token
 				resp, err := client.ChangeVisible(ctx, user1Name, testRepoName, &api.ChangeVisibleParams{Visible: true})
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
 				client.RequestEditors = user2Token
 			})
 

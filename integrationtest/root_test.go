@@ -27,4 +27,5 @@ func TestSpec(t *testing.T) {
 	convey.Convey("merge request test", t, MergeRequestSpec(ctx, urlStr))
 	convey.Convey("group test", t, GroupSpec(ctx, urlStr))
 	convey.Convey("member test", t, MemberSpec(ctx, urlStr))
+	convey.Convey("public repo test", t, PublicRepoSpec(ctx, urlStr))
 }
