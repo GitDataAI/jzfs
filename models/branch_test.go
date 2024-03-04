@@ -34,7 +34,7 @@ func TestRefRepoInsert(t *testing.T) {
 	branch, err := repo.Get(ctx, getBranchParams)
 	require.NoError(t, err)
 
-	require.True(t, cmp.Equal(branchModel, branch, dbTimeCmpOpt))
+	require.True(t, cmp.Equal(branchModel, branch, testhelper.DBTimeCmpOpt))
 
 	mockHash := hash.Hash("mock hash")
 	err = repo.UpdateByID(ctx, models.NewUpdateBranchParams(newBranch.ID).SetCommitHash(mockHash))
@@ -64,7 +64,7 @@ func TestRefRepoInsert(t *testing.T) {
 	sRef, err := repo.Get(ctx, getSecRefParams)
 	require.NoError(t, err)
 
-	require.True(t, cmp.Equal(secModel, sRef, dbTimeCmpOpt))
+	require.True(t, cmp.Equal(secModel, sRef, testhelper.DBTimeCmpOpt))
 
 	// ExactMatch
 	list1, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetName(secModel.Name, models.ExactMatch).SetAmount(1))

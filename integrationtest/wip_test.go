@@ -17,11 +17,14 @@ func WipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		branchName := "feat/wip_test"
 		branchNameForDelete := "feat/wip_test2"
 
-		createUser(ctx, c, client, userName)
-		loginAndSwitch(ctx, c, client, "july login", userName, false)
-		createRepo(ctx, c, client, repoName)
-		createBranch(ctx, c, client, "create branch", userName, repoName, "main", branchName)
-		createBranch(ctx, c, client, "create branch for delete", userName, repoName, "main", branchNameForDelete)
+		c.Convey("init", func(c convey.C) {
+			createUser(ctx, client, userName)
+			loginAndSwitch(ctx, client, userName, false)
+			createRepo(ctx, client, repoName)
+			createBranch(ctx, client, userName, repoName, "main", branchName)
+			createBranch(ctx, client, userName, repoName, "main", branchNameForDelete)
+		})
+
 		c.Convey("list non exit wip", func(c convey.C) {
 			resp, err := client.ListWip(ctx, userName, repoName)
 			convey.So(err, convey.ShouldBeNil)
@@ -32,7 +35,9 @@ func WipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			convey.So(respResult.JSON200, convey.ShouldHaveLength, 0)
 		})
 
-		createWip(ctx, c, client, "create main wip", userName, repoName, "main")
+		c.Convey("create wip", func() {
+			createWip(ctx, client, userName, repoName, "main")
+		})
 
 		c.Convey("get wip", func(c convey.C) {
 			c.Convey("no auth", func() {
@@ -97,7 +102,7 @@ func WipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 					RefName: "main",
 				})
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 		})
 
@@ -136,7 +141,7 @@ func WipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			c.Convey("fail to list wip in others's repo", func() {
 				resp, err := client.ListWip(ctx, "jimmy", "happygo")
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 		})
 
@@ -171,10 +176,13 @@ func WipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			c.Convey("delete wip in other's repo", func() {
 				resp, err := client.DeleteWip(ctx, "jimmy", "happygo", &api.DeleteWipParams{RefName: "main"})
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 
-			createWip(ctx, c, client, "creat wip for test delete", userName, repoName, branchNameForDelete)
+			c.Convey("creat wip for test delete", func() {
+				createWip(ctx, client, userName, repoName, branchNameForDelete)
+			})
+
 			c.Convey("delete branch successful", func() {
 				//delete
 				resp, err := client.DeleteWip(ctx, userName, repoName, &api.DeleteWipParams{RefName: branchNameForDelete})

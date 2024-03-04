@@ -5,8 +5,10 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/jiaozifs/jiaozifs/auth/rbac"
 	"github.com/jiaozifs/jiaozifs/block/params"
 	"github.com/jiaozifs/jiaozifs/controller/validator"
+	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
 	"github.com/jiaozifs/jiaozifs/versionmgr"
 
 	"github.com/jiaozifs/jiaozifs/api"
@@ -18,32 +20,31 @@ import (
 
 type BranchController struct {
 	fx.In
+	BaseController
 
 	Repo                models.IRepo
 	PublicStorageConfig params.AdapterConfig
 }
 
 func (bct BranchController) ListBranches(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, params api.ListBranchesParams) {
-	operator, err := auth.GetOperator(ctx)
-	if err != nil {
-		w.Error(err)
-		return
-	}
-
 	owner, err := bct.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(ownerName))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	if operator.Name != owner.Name {
-		w.Forbidden()
-		return
-	}
-
 	repository, err := bct.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetName(repositoryName).SetOwnerID(owner.ID))
 	if err != nil {
 		w.Error(err)
+		return
+	}
+
+	if !bct.authorizeMember(ctx, w, repository.ID, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacmodel.ListBranchesAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
+		},
+	}) {
 		return
 	}
 
@@ -111,15 +112,19 @@ func (bct BranchController) CreateBranch(ctx context.Context, w *api.JiaozifsRes
 		return
 	}
 
-	if operator.Name != owner.Name {
-		w.Forbidden()
-		return
-	}
-
 	// Get repo
 	repository, err := bct.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
 	if err != nil {
 		w.Error(err)
+		return
+	}
+
+	if !bct.authorizeMember(ctx, w, repository.ID, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacmodel.CreateBranchAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
+		},
+	}) {
 		return
 	}
 
@@ -173,15 +178,19 @@ func (bct BranchController) DeleteBranch(ctx context.Context, w *api.JiaozifsRes
 		return
 	}
 
-	if operator.Name != owner.Name {
-		w.Forbidden()
-		return
-	}
-
 	// Get repo
 	repository, err := bct.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
 	if err != nil {
 		w.Error(err)
+		return
+	}
+
+	if !bct.authorizeMember(ctx, w, repository.ID, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacmodel.DeleteBranchAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
+		},
+	}) {
 		return
 	}
 
@@ -211,20 +220,9 @@ func (bct BranchController) DeleteBranch(ctx context.Context, w *api.JiaozifsRes
 }
 
 func (bct BranchController) GetBranch(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, params api.GetBranchParams) {
-	operator, err := auth.GetOperator(ctx)
-	if err != nil {
-		w.Error(err)
-		return
-	}
-
 	owner, err := bct.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(ownerName))
 	if err != nil {
 		w.Error(err)
-		return
-	}
-
-	if operator.Name != owner.Name {
-		w.Forbidden()
 		return
 	}
 
@@ -232,6 +230,15 @@ func (bct BranchController) GetBranch(ctx context.Context, w *api.JiaozifsRespon
 	repository, err := bct.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
 	if err != nil {
 		w.Error(err)
+		return
+	}
+
+	if !bct.authorizeMember(ctx, w, repository.ID, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacmodel.ReadRepositoryAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
+		},
+	}) {
 		return
 	}
 

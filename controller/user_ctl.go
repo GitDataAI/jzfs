@@ -3,11 +3,13 @@ package controller
 import (
 	"context"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/jiaozifs/jiaozifs/auth/rbac"
 	"github.com/jiaozifs/jiaozifs/controller/validator"
-
+	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
 	"github.com/jiaozifs/jiaozifs/utils"
 
 	"github.com/go-openapi/swag"
@@ -23,12 +25,9 @@ import (
 
 var userCtlLog = logging.Logger("user_ctl")
 
-const (
-	AuthHeader = "Authorization"
-)
-
 type UserController struct {
 	fx.In
+	BaseController
 
 	SessionStore sessions.Store
 	Repo         models.IRepo
@@ -94,20 +93,68 @@ func (userCtl UserController) Register(ctx context.Context, w *api.JiaozifsRespo
 		w.BadRequest(err.Error())
 		return
 	}
-
-	register := auth.Register{
-		Username: body.Name,
-		Email:    string(body.Email),
-		Password: body.Password,
-	}
-
-	// perform register
-	err = register.Register(ctx, userCtl.Repo.UserRepo())
+	// check username, email
+	count1, err := userCtl.Repo.UserRepo().Count(ctx, models.NewCountUserParam().SetName(body.Name))
 	if err != nil {
 		w.Error(err)
 		return
 	}
-	w.OK()
+	count2, err := userCtl.Repo.UserRepo().Count(ctx, models.NewCountUserParam().SetEmail(string(body.Email)))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	if count1+count2 > 0 {
+		w.BadRequest(fmt.Sprintf("username %s or email %s not found ", body.Name, body.Email))
+	}
+
+	// reserve temporarily
+	password, err := auth.HashPassword(body.Password)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	// insert db
+	user := &models.User{
+		Name:              body.Name,
+		Email:             string(body.Email),
+		EncryptedPassword: string(password),
+		CurrentSignInAt:   time.Time{},
+		LastSignInAt:      time.Time{},
+		CurrentSignInIP:   "",
+		LastSignInIP:      "",
+		CreatedAt:         time.Now(),
+		UpdatedAt:         time.Now(),
+	}
+
+	var insertUser *models.User
+	err = userCtl.Repo.Transaction(ctx, func(repo models.IRepo) error {
+		insertUser, err = repo.UserRepo().Insert(ctx, user)
+		if err != nil {
+			return fmt.Errorf("inser user %s user error %w", body.Name, err)
+		}
+
+		userOwnGroup, err := repo.GroupRepo().Get(ctx, rbacmodel.NewGetGroupParams().SetName(rbac.UserOwnAccess))
+		if err != nil {
+			return err
+		}
+		//bind own user group
+		_, err = repo.UserGroupRepo().Insert(ctx, &rbacmodel.UserGroup{
+			UserID:    insertUser.ID,
+			GroupID:   userOwnGroup.ID,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		})
+		return err
+	})
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	w.JSON(userInfoToDto(insertUser), http.StatusCreated)
 }
 
 func (userCtl UserController) GetUserInfo(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request) {
@@ -118,8 +165,38 @@ func (userCtl UserController) GetUserInfo(ctx context.Context, w *api.JiaozifsRe
 		return
 	}
 
-	// perform GetUserInfo
-	userInfo := api.UserInfo{
+	if !userCtl.authorize(ctx, w, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacmodel.ListRepositoriesAction,
+			Resource: rbacmodel.RepoUArn(user.ID.String()),
+		},
+	}) {
+		return
+	}
+
+	w.JSON(userInfoToDto(user))
+}
+
+func (userCtl UserController) Logout(_ context.Context, w *api.JiaozifsResponse, r *http.Request) {
+	//todo only web credencial could logout
+	session, err := userCtl.SessionStore.Get(r, auth.InternalAuthSessionName)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	session.Options.MaxAge = -1
+	if session.Save(r, w) != nil {
+		userCtlLog.Errorf("Failed to save internal auth session %v", err)
+		w.Error(err)
+		return
+	}
+	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+}
+
+func userInfoToDto(user *models.User) *api.UserInfo {
+	return &api.UserInfo{
+		Id:              user.ID,
 		Name:            user.Name,
 		Email:           openapitypes.Email(user.Email),
 		CurrentSignInAt: utils.Int64(user.CurrentSignInAt.UnixMilli()),
@@ -129,20 +206,4 @@ func (userCtl UserController) GetUserInfo(ctx context.Context, w *api.JiaozifsRe
 		UpdatedAt:       user.UpdatedAt.UnixMilli(),
 		CreatedAt:       user.CreatedAt.UnixMilli(),
 	}
-	w.JSON(userInfo)
-}
-
-func (userCtl UserController) Logout(_ context.Context, w *api.JiaozifsResponse, r *http.Request) {
-	session, err := userCtl.SessionStore.Get(r, auth.InternalAuthSessionName)
-	if err != nil {
-		w.Error(err)
-		return
-	}
-	session.Options.MaxAge = -1
-	if session.Save(r, w) != nil {
-		userCtlLog.Errorf("Failed to save internal auth session %v", err)
-		w.Error(err)
-		return
-	}
-	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }

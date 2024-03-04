@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/jiaozifs/jiaozifs/auth/rbac"
+	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
 	"github.com/jiaozifs/jiaozifs/utils/hash"
 
 	"github.com/jiaozifs/jiaozifs/utils"
@@ -22,18 +24,13 @@ import (
 
 type MergeRequestController struct {
 	fx.In
+	BaseController
 
 	Repo                models.IRepo
 	PublicStorageConfig params.AdapterConfig
 }
 
 func (mrCtl MergeRequestController) ListMergeRequests(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, params api.ListMergeRequestsParams) {
-	operator, err := auth.GetOperator(ctx)
-	if err != nil {
-		w.Error(err)
-		return
-	}
-
 	owner, err := mrCtl.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(ownerName))
 	if err != nil {
 		w.Error(err)
@@ -46,8 +43,12 @@ func (mrCtl MergeRequestController) ListMergeRequests(ctx context.Context, w *ap
 		return
 	}
 
-	if operator.Name != owner.Name {
-		w.Forbidden()
+	if !mrCtl.authorizeMember(ctx, w, repository.ID, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacmodel.ListMergeRequestAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
+		},
+	}) {
 		return
 	}
 
@@ -112,16 +113,19 @@ func (mrCtl MergeRequestController) CreateMergeRequest(ctx context.Context, w *a
 		w.Error(err)
 		return
 	}
-
-	if operator.Name != owner.Name {
-		w.Forbidden()
-		return
-	}
-
 	// Get repo
 	repository, err := mrCtl.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
 	if err != nil {
 		w.Error(err)
+		return
+	}
+
+	if !mrCtl.authorizeMember(ctx, w, repository.ID, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacmodel.CreateMergeRequestAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
+		},
+	}) {
 		return
 	}
 
@@ -143,9 +147,8 @@ func (mrCtl MergeRequestController) CreateMergeRequest(ctx context.Context, w *a
 	}
 
 	params := models.NewGetMergeRequestParams().SetTargetRepo(repository.ID).SetTargetBranch(targetBranch.ID).SetSourceBranch(sourceBranch.ID).SetState(models.MergeStateInit)
-	mr, err := mrCtl.Repo.MergeRequestRepo().Get(ctx, params)
+	_, err = mrCtl.Repo.MergeRequestRepo().Get(ctx, params)
 	if err == nil {
-		fmt.Println(mr)
 		w.BadRequest(fmt.Sprintf("repo %s merge request between %s and %s already exists", repositoryName, body.SourceBranchName, body.TargetBranchName))
 		return
 	}
@@ -227,14 +230,18 @@ func (mrCtl MergeRequestController) GetMergeRequest(ctx context.Context, w *api.
 		return
 	}
 
-	if operator.Name != owner.Name {
-		w.Forbidden()
-		return
-	}
-
 	repository, err := mrCtl.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
 	if err != nil {
 		w.Error(err)
+		return
+	}
+
+	if !mrCtl.authorizeMember(ctx, w, repository.ID, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacmodel.ReadMergeRequestAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
+		},
+	}) {
 		return
 	}
 
@@ -297,25 +304,24 @@ func (mrCtl MergeRequestController) GetMergeRequest(ctx context.Context, w *api.
 }
 
 func (mrCtl MergeRequestController) UpdateMergeRequest(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, body api.UpdateMergeRequestJSONRequestBody, ownerName string, repositoryName string, mrSeq uint64) {
-	operator, err := auth.GetOperator(ctx)
-	if err != nil {
-		w.Error(err)
-		return
-	}
-
 	owner, err := mrCtl.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(ownerName))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	if operator.Name != owner.Name {
-		w.Forbidden()
-		return
-	}
 	repository, err := mrCtl.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
 	if err != nil {
 		w.Error(err)
+		return
+	}
+
+	if !mrCtl.authorizeMember(ctx, w, repository.ID, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacmodel.UpdateMergeRequestAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
+		},
+	}) {
 		return
 	}
 
@@ -351,15 +357,19 @@ func (mrCtl MergeRequestController) Merge(ctx context.Context, w *api.JiaozifsRe
 		return
 	}
 
-	if operator.Name != owner.Name {
-		w.Forbidden()
-		return
-	}
-
 	// Get repo
 	repository, err := mrCtl.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
 	if err != nil {
 		w.Error(err)
+		return
+	}
+
+	if !mrCtl.authorizeMember(ctx, w, repository.ID, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacmodel.MergeMergeRequestAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
+		},
+	}) {
 		return
 	}
 

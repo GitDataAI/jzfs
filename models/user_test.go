@@ -3,7 +3,6 @@ package models_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/google/go-cmp/cmp"
@@ -12,10 +11,6 @@ import (
 	"github.com/jiaozifs/jiaozifs/testhelper"
 	"github.com/stretchr/testify/require"
 )
-
-var dbTimeCmpOpt = cmp.Comparer(func(x, y time.Time) bool {
-	return x.Unix() == y.Unix()
-})
 
 func TestNewUserRepo(t *testing.T) {
 	ctx := context.Background()
@@ -33,7 +28,7 @@ func TestNewUserRepo(t *testing.T) {
 	user, err := repo.Get(ctx, models.NewGetUserParams().SetID(newUser.ID))
 	require.NoError(t, err)
 
-	require.True(t, cmp.Equal(userModel, user, dbTimeCmpOpt))
+	require.True(t, cmp.Equal(userModel, user, testhelper.DBTimeCmpOpt))
 
 	ep, err := repo.GetEPByName(ctx, newUser.Name)
 	require.NoError(t, err)
@@ -41,11 +36,11 @@ func TestNewUserRepo(t *testing.T) {
 
 	userByEmail, err := repo.Get(ctx, models.NewGetUserParams().SetEmail(newUser.Email))
 	require.NoError(t, err)
-	require.True(t, cmp.Equal(userModel, userByEmail, dbTimeCmpOpt))
+	require.True(t, cmp.Equal(userModel, userByEmail, testhelper.DBTimeCmpOpt))
 
 	userByName, err := repo.Get(ctx, models.NewGetUserParams().SetName(newUser.Name))
 	require.NoError(t, err)
-	require.True(t, cmp.Equal(userModel, userByName, dbTimeCmpOpt))
+	require.True(t, cmp.Equal(userModel, userByName, testhelper.DBTimeCmpOpt))
 }
 
 func TestCount(t *testing.T) {

@@ -23,10 +23,12 @@ func BranchSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		newAmount := 0
 		prefix := "feat/"
 
-		createUser(ctx, c, client, userName)
-		loginAndSwitch(ctx, c, client, "mike login", userName, false)
-		createRepo(ctx, c, client, repoName)
+		c.Convey("init", func(c convey.C) {
+			createUser(ctx, client, userName)
+			loginAndSwitch(ctx, client, userName, false)
+			createRepo(ctx, client, repoName)
 
+		})
 		c.Convey("create branch", func(c convey.C) {
 			c.Convey("no auth", func() {
 				re := client.RequestEditors
@@ -91,7 +93,7 @@ func BranchSpec(ctx context.Context, urlStr string) func(c convey.C) {
 					Source: "main",
 				})
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 		})
 
@@ -148,13 +150,15 @@ func BranchSpec(ctx context.Context, urlStr string) func(c convey.C) {
 					RefName: "main",
 				})
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 		})
 
-		createBranch(ctx, c, client, "create sec branch", userName, repoName, "main", "feat/sec_branch")
-
 		c.Convey("list branch", func(c convey.C) {
+			c.Convey("create second branch", func() {
+				createBranch(ctx, client, userName, repoName, "main", "feat/sec_branch")
+			})
+
 			c.Convey("no auth", func() {
 				re := client.RequestEditors
 				client.RequestEditors = nil
@@ -227,7 +231,7 @@ func BranchSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			c.Convey("fail to list branches in others repo", func() {
 				resp, err := client.ListBranches(ctx, "jimmy", "happygo", &api.ListBranchesParams{})
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 		})
 
@@ -255,15 +259,16 @@ func BranchSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			c.Convey("delete branch in other's repo", func() {
 				resp, err := client.DeleteBranch(ctx, "jimmy", "happygo", &api.DeleteBranchParams{RefName: "main"})
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 			c.Convey("fail to delete default branch", func() {
 				resp, err := client.DeleteBranch(ctx, userName, repoName, &api.DeleteBranchParams{RefName: "main"})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)
 			})
-			createWip(ctx, c, client, "creat wip for delete", userName, repoName, "feat/sec_branch")
+
 			c.Convey("delete branch successful", func() {
+				createWip(ctx, client, userName, repoName, "feat/sec_branch")
 				resp, err := client.DeleteBranch(ctx, userName, repoName, &api.DeleteBranchParams{RefName: "feat/sec_branch"})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)

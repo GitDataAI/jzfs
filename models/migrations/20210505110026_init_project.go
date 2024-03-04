@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/jiaozifs/jiaozifs/models"
+	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
 	"github.com/uptrace/bun"
 )
 
@@ -87,6 +88,35 @@ func init() {
 		if err != nil {
 			return err
 		}
+
+		_, err = db.NewCreateTable().
+			Model((*models.Member)(nil)).
+			Exec(ctx)
+		if err != nil {
+			return err
+		}
+
+		_, err = db.NewCreateTable().
+			Model((*rbacmodel.Group)(nil)).
+			Exec(ctx)
+		if err != nil {
+			return err
+		}
+
+		_, err = db.NewCreateTable().
+			Model((*rbacmodel.Policy)(nil)).
+			Exec(ctx)
+		if err != nil {
+			return err
+		}
+
+		_, err = db.NewCreateTable().
+			Model((*rbacmodel.UserGroup)(nil)).
+			Exec(ctx)
+		if err != nil {
+			return err
+		}
+
 		return err
 	}, nil)
 }

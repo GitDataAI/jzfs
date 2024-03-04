@@ -16,8 +16,11 @@ func AkSkSpec(ctx context.Context, urlStr string) func(c convey.C) {
 	var aksk *api.Aksk
 	return func(c convey.C) {
 		userName := "muly"
-		createUser(ctx, c, client, userName)
-		loginAndSwitch(ctx, c, client, "muly login", userName, false)
+
+		c.Convey("init", func(c convey.C) {
+			createUser(ctx, client, userName)
+			loginAndSwitch(ctx, client, userName, false)
+		})
 
 		c.Convey("create aksk", func(c convey.C) {
 			c.Convey("no auth", func() {
@@ -179,17 +182,4 @@ func AkSkSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 		})
 	}
-}
-
-func createAksk(ctx context.Context, client *api.Client) (*api.Aksk, error) {
-	resp, err := client.CreateAksk(ctx, &api.CreateAkskParams{Description: utils.String("create ak sk")})
-	if err != nil {
-		return nil, err
-	}
-
-	akskResult, err := api.ParseCreateAkskResponse(resp)
-	if err != nil {
-		return nil, err
-	}
-	return akskResult.JSON201, nil
 }

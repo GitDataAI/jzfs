@@ -10,14 +10,16 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
+
+	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/jiaozifs/jiaozifs/api"
 	"github.com/jiaozifs/jiaozifs/cmd"
 	"github.com/jiaozifs/jiaozifs/testhelper"
 	"github.com/jiaozifs/jiaozifs/utils"
-	openapi_types "github.com/oapi-codegen/runtime/types"
 	"github.com/phayes/freeport"
 	"github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/require"
@@ -41,11 +43,14 @@ func Daemon(ctx context.Context, writer io.Writer, jzHome string, listen string)
 }
 
 func TestDoubleInit(t *testing.T) { //nolint
-	url := "http://127.0.0.1:1234"
 	ctx := context.Background()
+	closeDB, connectString, _ := testhelper.SetupDatabase(ctx, t)
+	defer closeDB()
+
+	url := "http://127.0.0.1:1234"
 	tmpDir, err := os.MkdirTemp(os.TempDir(), "*")
 	require.NoError(t, err)
-	require.NoError(t, InitCmd(ctx, tmpDir, url, ""))
+	require.NoError(t, InitCmd(ctx, tmpDir, url, connectString))
 	err = InitCmd(ctx, tmpDir, url, "")
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "config already exit")
@@ -76,7 +81,6 @@ func SetupDaemon(t *testing.T, ctx context.Context) (string, Closer) { //nolint
 			require.NoError(t, err)
 		}
 	}()
-	fmt.Println(connectString)
 
 	//wai for api ready
 	ticker := time.NewTicker(time.Second)
@@ -102,122 +106,114 @@ func SetupDaemon(t *testing.T, ctx context.Context) (string, Closer) { //nolint
 	}
 }
 
-var count int
+var count atomic.Int32
 
-func createUser(ctx context.Context, c convey.C, client *api.Client, userName string) {
-	c.Convey("register "+userName, func() {
-		count++
-		resp, err := client.Register(ctx, api.RegisterJSONRequestBody{
-			Name:     userName,
-			Password: "12345678",
-			Email:    openapi_types.Email(fmt.Sprintf("mock%d@gmail.com", count)),
-		})
-		convey.So(err, convey.ShouldBeNil)
-		convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+func createUser(ctx context.Context, client *api.Client, userName string) {
+	resp, err := client.Register(ctx, api.RegisterJSONRequestBody{
+		Name:     userName,
+		Password: "12345678",
+		Email:    openapi_types.Email(fmt.Sprintf("mock%d@gmail.com", count.Add(1))),
 	})
+	convey.So(err, convey.ShouldBeNil)
+	convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
 }
 
-func loginAndSwitch(ctx context.Context, c convey.C, client *api.Client, title, userName string, useCookie bool) {
-	c.Convey("login "+title, func() {
-		resp, err := client.Login(ctx, api.LoginJSONRequestBody{
-			Name:     userName,
-			Password: "12345678",
-		})
-		convey.So(err, convey.ShouldBeNil)
-		convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
-		loginResult, err := api.ParseLoginResponse(resp)
-		convey.So(err, convey.ShouldBeNil)
+func loginAndSwitch(ctx context.Context, client *api.Client, userName string, useCookie bool) {
+	resp, err := client.Login(ctx, api.LoginJSONRequestBody{
+		Name:     userName,
+		Password: "12345678",
+	})
+	convey.So(err, convey.ShouldBeNil)
+	convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+	loginResult, err := api.ParseLoginResponse(resp)
+	convey.So(err, convey.ShouldBeNil)
 
-		client.RequestEditors = nil
-		client.RequestEditors = append(client.RequestEditors, func(ctx context.Context, req *http.Request) error {
-			if useCookie {
-				for _, cookie := range resp.Cookies() {
-					req.AddCookie(cookie)
-				}
-			} else {
-				req.Header.Add("Authorization", "Bearer "+loginResult.JSON200.Token)
+	client.RequestEditors = nil
+	client.RequestEditors = append(client.RequestEditors, func(ctx context.Context, req *http.Request) error {
+		if useCookie {
+			for _, cookie := range resp.Cookies() {
+				req.AddCookie(cookie)
 			}
-			return nil
-		})
+		} else {
+			req.Header.Add("Authorization", "Bearer "+loginResult.JSON200.Token)
+		}
+		return nil
 	})
 }
 
-func createBranch(ctx context.Context, c convey.C, client *api.Client, title string, user string, repoName string, source, refName string) {
-	c.Convey("create branch "+title, func() {
-		resp, err := client.CreateBranch(ctx, user, repoName, api.CreateBranchJSONRequestBody{
-			Source: source,
-			Name:   refName,
-		})
-		convey.So(err, convey.ShouldBeNil)
-		convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
+func createBranch(ctx context.Context, client *api.Client, user string, repoName string, source, refName string) {
+	resp, err := client.CreateBranch(ctx, user, repoName, api.CreateBranchJSONRequestBody{
+		Source: source,
+		Name:   refName,
 	})
+	convey.So(err, convey.ShouldBeNil)
+	convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
 }
 
-func createRepo(ctx context.Context, c convey.C, client *api.Client, repoName string) {
-	c.Convey("create repo "+repoName, func() {
-		resp, err := client.CreateRepository(ctx, api.CreateRepositoryJSONRequestBody{
-			Name: repoName,
-		})
-		convey.So(err, convey.ShouldBeNil)
-		convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
+func createRepo(ctx context.Context, client *api.Client, repoName string) {
+	resp, err := client.CreateRepository(ctx, api.CreateRepositoryJSONRequestBody{
+		Name: repoName,
 	})
+	convey.So(err, convey.ShouldBeNil)
+	convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
 }
 
-func uploadObject(ctx context.Context, c convey.C, client *api.Client, title string, user string, repoName string, refName string, path string) { //nolint
-	c.Convey("upload object "+title, func(c convey.C) {
-		resp, err := client.UploadObjectWithBody(ctx, user, repoName, &api.UploadObjectParams{
-			RefName: refName,
-			Path:    path,
-		}, "application/octet-stream", io.LimitReader(rand.Reader, 50))
-		convey.So(err, convey.ShouldBeNil)
-		convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
-	})
+func uploadObject(ctx context.Context, client *api.Client, user string, repoName string, refName string, path string) { //nolint
+	resp, err := client.UploadObjectWithBody(ctx, user, repoName, &api.UploadObjectParams{
+		RefName: refName,
+		Path:    path,
+	}, "application/octet-stream", io.LimitReader(rand.Reader, 50))
+	convey.So(err, convey.ShouldBeNil)
+	convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
 }
 
-func deleteObject(ctx context.Context, c convey.C, client *api.Client, title string, user string, repoName string, refName string, path string) { //nolint
-	c.Convey("upload object  "+title, func(c convey.C) {
-		c.Convey("success upload object", func() {
-			resp, err := client.DeleteObject(ctx, user, repoName, &api.DeleteObjectParams{
-				RefName: refName,
-				Path:    path,
-			})
-			convey.So(err, convey.ShouldBeNil)
-			convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
-		})
+func deleteObject(ctx context.Context, client *api.Client, user string, repoName string, refName string, path string) { //nolint
+	resp, err := client.DeleteObject(ctx, user, repoName, &api.DeleteObjectParams{
+		RefName: refName,
+		Path:    path,
 	})
+	convey.So(err, convey.ShouldBeNil)
+	convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
 }
 
-func createWip(ctx context.Context, c convey.C, client *api.Client, title string, user string, repoName string, refName string) {
-	c.Convey("create wip "+title, func() {
-		resp, err := client.GetWip(ctx, user, repoName, &api.GetWipParams{
-			RefName: refName,
-		})
-		convey.So(err, convey.ShouldBeNil)
-		convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
+func createWip(ctx context.Context, client *api.Client, user string, repoName string, refName string) {
+	resp, err := client.GetWip(ctx, user, repoName, &api.GetWipParams{
+		RefName: refName,
 	})
+	convey.So(err, convey.ShouldBeNil)
+	convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
 }
 
-func commitWip(ctx context.Context, c convey.C, client *api.Client, title string, user string, repoName string, refName string, msg string) {
-	c.Convey("commit wip "+title, func() {
-		resp, err := client.CommitWip(ctx, user, repoName, &api.CommitWipParams{
-			RefName: refName,
-			Msg:     msg,
-		})
-
-		convey.So(err, convey.ShouldBeNil)
-		convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
+func commitWip(ctx context.Context, client *api.Client, user string, repoName string, refName string, msg string) {
+	resp, err := client.CommitWip(ctx, user, repoName, &api.CommitWipParams{
+		RefName: refName,
+		Msg:     msg,
 	})
+
+	convey.So(err, convey.ShouldBeNil)
+	convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
 }
 
-func createMergeRequest(ctx context.Context, c convey.C, client *api.Client, title string, user string, repoName string, sourceBranch string, targetBranch string) {
-	c.Convey("create mr "+title, func() {
-		resp, err := client.CreateMergeRequest(ctx, user, repoName, api.CreateMergeRequestJSONRequestBody{
-			Description:      utils.String("create merge request test"),
-			SourceBranchName: sourceBranch,
-			TargetBranchName: targetBranch,
-			Title:            "Merge: test",
-		})
-		convey.So(err, convey.ShouldBeNil)
-		convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
+func createMergeRequest(ctx context.Context, client *api.Client, user string, repoName string, sourceBranch string, targetBranch string) {
+	resp, err := client.CreateMergeRequest(ctx, user, repoName, api.CreateMergeRequestJSONRequestBody{
+		Description:      utils.String("create merge request test"),
+		SourceBranchName: sourceBranch,
+		TargetBranchName: targetBranch,
+		Title:            "Merge: test",
 	})
+	convey.So(err, convey.ShouldBeNil)
+	convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
+}
+
+func createAksk(ctx context.Context, client *api.Client) (*api.Aksk, error) {
+	resp, err := client.CreateAksk(ctx, &api.CreateAkskParams{Description: utils.String("create ak sk")})
+	if err != nil {
+		return nil, err
+	}
+
+	akskResult, err := api.ParseCreateAkskResponse(resp)
+	if err != nil {
+		return nil, err
+	}
+	return akskResult.JSON201, nil
 }

@@ -157,7 +157,6 @@ func (l *Adapter) Path() string {
 
 func (l *Adapter) Put(_ context.Context, obj block.ObjectPointer, _ int64, reader io.Reader, _ block.PutOpts) error {
 	p, err := l.extractParamsFromObj(obj)
-	fmt.Println(p)
 	if err != nil {
 		return err
 	}

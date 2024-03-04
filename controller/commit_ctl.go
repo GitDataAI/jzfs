@@ -11,8 +11,10 @@ import (
 
 	"github.com/jiaozifs/jiaozifs/api"
 	"github.com/jiaozifs/jiaozifs/auth"
+	"github.com/jiaozifs/jiaozifs/auth/rbac"
 	"github.com/jiaozifs/jiaozifs/block/params"
 	"github.com/jiaozifs/jiaozifs/models"
+	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
 	"github.com/jiaozifs/jiaozifs/utils"
 	"github.com/jiaozifs/jiaozifs/utils/hash"
 	"github.com/jiaozifs/jiaozifs/versionmgr"
@@ -21,6 +23,7 @@ import (
 
 type CommitController struct {
 	fx.In
+	BaseController
 
 	Repo                models.IRepo
 	PublicStorageConfig params.AdapterConfig
@@ -45,8 +48,12 @@ func (commitCtl CommitController) GetEntriesInRef(ctx context.Context, w *api.Ji
 		return
 	}
 
-	if operator.Name != ownerName { //todo check permission
-		w.Forbidden()
+	if !commitCtl.authorizeMember(ctx, w, repository.ID, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacmodel.ReadObjectAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
+		},
+	}) {
 		return
 	}
 
@@ -158,8 +165,12 @@ func (commitCtl CommitController) CompareCommit(ctx context.Context, w *api.Jiao
 		return
 	}
 
-	if operator.ID != owner.ID { //todo check permission
-		w.Forbidden()
+	if !commitCtl.authorizeMember(ctx, w, repository.ID, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacmodel.ReadCommitAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
+		},
+	}) {
 		return
 	}
 
@@ -220,8 +231,12 @@ func (commitCtl CommitController) GetCommitChanges(ctx context.Context, w *api.J
 		return
 	}
 
-	if operator.ID != owner.ID { //todo check permission
-		w.Forbidden()
+	if !commitCtl.authorizeMember(ctx, w, repository.ID, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacmodel.ReadCommitAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
+		},
+	}) {
 		return
 	}
 

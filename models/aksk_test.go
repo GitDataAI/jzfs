@@ -29,7 +29,7 @@ func TestAkskRepo_Delete(t *testing.T) {
 
 		expectAksk, err := repo.Get(ctx, models.NewGetAkSkParams().SetAccessKey(aksk.AccessKey).SetID(aksk.ID).SetUserID(aksk.UserID))
 		require.NoError(t, err)
-		require.True(t, cmp.Equal(expectAksk, aksk, dbTimeCmpOpt))
+		require.True(t, cmp.Equal(expectAksk, aksk, testhelper.DBTimeCmpOpt))
 	})
 	t.Run("list", func(t *testing.T) {
 		userID := uuid.New()

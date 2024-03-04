@@ -21,12 +21,13 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		repoName := "dataspace"
 		branchName := "feat/obj_test"
 
-		createUser(ctx, c, client, userName)
-		loginAndSwitch(ctx, c, client, "molly login", userName, false)
-		createRepo(ctx, c, client, repoName)
-		createBranch(ctx, c, client, "create branch", userName, repoName, "main", branchName)
-		createWip(ctx, c, client, "feat get obj test", userName, repoName, branchName)
-
+		c.Convey("init", func(c convey.C) {
+			createUser(ctx, client, userName)
+			loginAndSwitch(ctx, client, userName, false)
+			createRepo(ctx, client, repoName)
+			createBranch(ctx, client, userName, repoName, "main", branchName)
+			createWip(ctx, client, userName, repoName, branchName)
+		})
 		c.Convey("upload object", func(c convey.C) {
 			c.Convey("no auth", func() {
 				re := client.RequestEditors
@@ -82,7 +83,7 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 					Path:    "a.bin",
 				}, "application/octet-stream", bytes.NewReader([]byte{1, 2, 3, 4, 5, 6, 7, 8}))
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 
 			c.Convey("empty path", func() {
@@ -122,7 +123,9 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		})
 
 		//commit object to branch
-		commitWip(ctx, c, client, "commit wip", userName, repoName, branchName, "test commit msg")
+		c.Convey("commit object to branch", func(c convey.C) {
+			commitWip(ctx, client, userName, repoName, branchName, "test commit msg")
+		})
 
 		c.Convey("head object", func(c convey.C) {
 			c.Convey("no auth", func() {
@@ -175,7 +178,7 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 					Type:    api.RefTypeBranch,
 				})
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 
 			c.Convey("empty path", func() {
@@ -261,7 +264,7 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 					Type:    api.RefTypeBranch,
 				})
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 
 			c.Convey("empty path", func() {
@@ -293,8 +296,7 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
 
 				reader := hash.NewHashingReader(resp.Body, hash.Md5)
-				data, err := io.ReadAll(reader)
-				fmt.Println(data)
+				_, err = io.ReadAll(reader)
 				convey.So(err, convey.ShouldBeNil)
 				etag := resp.Header.Get("ETag")
 

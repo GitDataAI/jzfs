@@ -24,5 +24,7 @@ func TestSpec(t *testing.T) {
 	convey.Convey("update wip test", t, UpdateWipSpec(ctx, urlStr))
 	convey.Convey("get entries test", t, GetEntriesInRefSpec(ctx, urlStr))
 	convey.Convey("commit changes test", t, GetCommitChangesSpec(ctx, urlStr))
-	convey.Convey("mergee request test", t, MergeRequestSpec(ctx, urlStr))
+	convey.Convey("merge request test", t, MergeRequestSpec(ctx, urlStr))
+	convey.Convey("group test", t, GroupSpec(ctx, urlStr))
+	convey.Convey("member test", t, MemberSpec(ctx, urlStr))
 }

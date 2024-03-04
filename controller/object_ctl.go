@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/jiaozifs/jiaozifs/auth/rbac"
 	"github.com/jiaozifs/jiaozifs/controller/validator"
 
 	"github.com/go-openapi/swag"
@@ -19,6 +20,7 @@ import (
 	"github.com/jiaozifs/jiaozifs/block/params"
 	"github.com/jiaozifs/jiaozifs/models"
 	"github.com/jiaozifs/jiaozifs/models/filemode"
+	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
 	"github.com/jiaozifs/jiaozifs/utils"
 	"github.com/jiaozifs/jiaozifs/utils/hash"
 	"github.com/jiaozifs/jiaozifs/utils/httputil"
@@ -30,6 +32,7 @@ var objLog = logging.Logger("object_ctl")
 
 type ObjectController struct {
 	fx.In
+	BaseController
 
 	PublicStorageConfig params.AdapterConfig
 	Repo                models.IRepo
@@ -48,14 +51,18 @@ func (oct ObjectController) DeleteObject(ctx context.Context, w *api.JiaozifsRes
 		return
 	}
 
-	if operator.Name != ownerName { //todo check permission
-		w.Forbidden()
-		return
-	}
-
 	repository, err := oct.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
 	if err != nil {
 		w.Error(err)
+		return
+	}
+
+	if !oct.authorizeMember(ctx, w, repository.ID, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacmodel.DeleteObjectAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
+		},
+	}) {
 		return
 	}
 
@@ -109,18 +116,22 @@ func (oct ObjectController) GetObject(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
-	if operator.Name != ownerName { //todo check permission
-		w.Forbidden()
-		return
-	}
-
-	repoModel, err := oct.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
+	repository, err := oct.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	workRepo, err := versionmgr.NewWorkRepositoryFromConfig(ctx, operator, repoModel, oct.Repo, oct.PublicStorageConfig)
+	if !oct.authorizeMember(ctx, w, repository.ID, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacmodel.ReadObjectAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
+		},
+	}) {
+		return
+	}
+
+	workRepo, err := versionmgr.NewWorkRepositoryFromConfig(ctx, operator, repository, oct.Repo, oct.PublicStorageConfig)
 	if err != nil {
 		w.Error(err)
 		return
@@ -203,18 +214,22 @@ func (oct ObjectController) HeadObject(ctx context.Context, w *api.JiaozifsRespo
 		return
 	}
 
-	if operator.Name != ownerName { //todo check permission
-		w.Forbidden()
-		return
-	}
-
-	repoModel, err := oct.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
+	repository, err := oct.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	workRepo, err := versionmgr.NewWorkRepositoryFromConfig(ctx, operator, repoModel, oct.Repo, oct.PublicStorageConfig)
+	if !oct.authorizeMember(ctx, w, repository.ID, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacmodel.ReadObjectAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
+		},
+	}) {
+		return
+	}
+
+	workRepo, err := versionmgr.NewWorkRepositoryFromConfig(ctx, operator, repository, oct.Repo, oct.PublicStorageConfig)
 	if err != nil {
 		w.Error(err)
 		return
@@ -269,6 +284,27 @@ func (oct ObjectController) HeadObject(ctx context.Context, w *api.JiaozifsRespo
 }
 
 func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsResponse, r *http.Request, ownerName string, repositoryName string, params api.UploadObjectParams) { //nolint
+	owner, err := oct.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(ownerName))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	repository, err := oct.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	if !oct.authorizeMember(ctx, w, repository.ID, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacmodel.ReadObjectAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
+		},
+	}) {
+		return
+	}
+
 	// read request body parse multipart for "content" and upload the data
 	contentType := r.Header.Get("Content-Type")
 	mediaType, p, err := mime.ParseMediaType(contentType)
@@ -326,24 +362,7 @@ func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsRes
 		return
 	}
 
-	owner, err := oct.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(ownerName))
-	if err != nil {
-		w.Error(err)
-		return
-	}
-
-	if operator.Name != ownerName { //todo check permission
-		w.Forbidden()
-		return
-	}
-
-	repoModel, err := oct.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
-	if err != nil {
-		w.Error(err)
-		return
-	}
-
-	workRepo, err := versionmgr.NewWorkRepositoryFromConfig(ctx, operator, repoModel, oct.Repo, oct.PublicStorageConfig)
+	workRepo, err := versionmgr.NewWorkRepositoryFromConfig(ctx, operator, repository, oct.Repo, oct.PublicStorageConfig)
 	if err != nil {
 		w.Error(err)
 		return
