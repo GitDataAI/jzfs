@@ -1,0 +1,37 @@
+# Authorization
+
+jiaozifs支持 basic_auth, cookie_auth, jwt_token, aksk四种认证方式
+
+# basic_auth
+
+采用基础的用户名密码认证方式, 在header中加入Authorization头用来传送用户名密码，用户名密码部分的形式是base64(username:password),
+基础授权用户名密码几乎是明文传送的，因此使用的时候确保传输环境是安全的
+
+```go
+Authorization:Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
+```
+
+# cookie_auth
+
+cookie认证方式通常用于网页开发中，用户调用登录接口后会返回一个cookie内容，用户需要再以后得请求中携带这个cookie,试试上由于跨域问题用的相对较少
+
+```go
+internal_auth_session:MTcwOTUyNjgzM3xEWDhFQVFMX2dBQUJFQUVRQUFELUFRSF9nQUFCQm5OMGNtbHVad3dIQUFWMGIydGxiZ1p6ZEhKcGJtY01fLU1BXy1CbGVVcG9Za2RqYVU5cFNrbFZla2t4VG1sSmMwbHVValZqUTBrMlNXdHdXRlpEU2prdVpYbEthR1JYVVdsUGFVcHpZakprY0dKcFNYTkpiVlkwWTBOSk5rMVVZM2RQVkZWNlRVUlJlVTVEZDJsaFYwWXdTV3B2ZUU1NlFUVk9WRWt5VDBSSk1FeERTbkJhUTBrMlNXcHJlVTlFVFRWT1ZGbDZURlJyTkUxVVkzUk9SRkV6VFhrd05FMXRXbTFNVkd4cVRsZEdhRnBIVlRCUFJGbDNUMU5KYzBsdVRqRlphVWsyU1cxd2NHSlhNVFZKYmpBdVpscFdYMDlITFdnM1NHOHlXamhTYkVsTFdFNVNTbGsyVEVjMFowUjBSM0JKZG5wRlVXWnRRalp0UlE9PXxUDjorrE1rTgIEFNBfPr-1EdctnN7NxpOJBuSgyEZXvg==
+```
+
+# jwt_token
+
+token认证方式现在用于前后端分离的前端页面开发过程，用户调用登录接口后会返回一个包含token信息的结构体，用户在后续请求中需要携带这个token信息
+
+```go
+Authorization:Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJsb2dpbiIsImV4cCI6MTcwOTUzMDQyNCwiaWF0IjoxNzA5NTI2ODI0LCJpZCI6IjkyODM5NTYzLTk4MTctNDQ3My04MmZmLTljNWFhZGU0ODYwOSIsInN1YiI6ImppbW15In0.fZV_OG-h7Ho2Z8RlIKXNRJY6LG4gDtGpIvzEQfmB6mE
+```
+
+## aksk认证
+
+aksk认证常用于接口开发，在jiaozifs中需要调用创建aksk的接口获取accesskey和secretkey，目前aksk还不支持权限配置和生命周期设置，日后会增强这一块的功能
+
+```go
+access_key:02c7d19c15a712779cacaf54bd24499d
+secret_key:dc05e65dfafe987ff26e66ffb7036684
+```

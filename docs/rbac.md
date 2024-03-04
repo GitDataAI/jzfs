@@ -2,7 +2,7 @@
 
 rbac中引入resource_type, resource, statement, policy, group，user,的概念他们之间的关系如下图
 
-![image](https://github.com/jiaozifs/jiaozifs/assets/41407352/672a6d22-809c-49b0-9e04-7dd32700b551)
+![image](https://github.com/jiaozifs/jiaozifs/assets/41407352/632d8b90-25d4-423e-bcea-5114c339ddf8)
 
 ## 类型组织
 整体上对于权限的组织情况如下
@@ -21,13 +21,63 @@ rbac中引入resource_type, resource, statement, policy, group，user,的概念�
 
 ### action
 
-### statement
-- FSFullAccess     全访问权限
-- RepoRead         仓库读取权限
-- RepoReadWrite    仓库读写权限
-- RepoReadConfig   仓库读取配置权限
-- RepoWriteConfig  仓库写入配置权限
-- UserAccess       用户配置自己信息的权限
+action 列表
+```go
+var Actions = []string{
+"repo:ReadRepository",
+"repo:CreateRepository",
+"repo:UpdateRepository",
+"repo:DeleteRepository",
+"repo:ListRepositories",
+"repo:ReadObject",
+"repo:WriteObject",
+"repo:DeleteObject",
+"repo:ListObjects",
+"repo:CreateCommit",
+"repo:ReadCommit",
+"repo:ListCommits",
+"repo:CreateBranch",
+"repo:DeleteBranch",
+"repo:ReadBranch",
+"repo:ReadBranch",
+"repo:ListBranches",
+"repo:GetWip",
+"repo:ListWip",
+"repo:WriteWip",
+"repo:CreateWip",
+"repo:DeleteWip",
+"repo:ReadConfig",
+"repo:WriteConfig",
+"repo:CreateMergeRequest",
+"repo:ReadMergeRequest",
+"repo:UpdateMergeRequest",
+"repo:ListMergeRequest",
+"repo:MergeMergeRequest",
+"repo:AddGroupMember",
+"repo:RemoveGroupMember",
+"repo:GetGroupMember",
+"repo:GetGroupMember",
+"auth:ReadGroup",
+"auth:CreateGroup",
+"auth:DeleteGroup",
+"auth:ListGroups",
+"auth:ReadPolicy",
+"auth:CreatePolicy",
+"auth:UpdatePolicy",
+"auth:DeletePolicy",
+"auth:ListPolicies",
+"auth:AttachPolicy",
+"auth:DetachPolicy",
+"user:UserProfile",
+"user:ReadUser",
+"user:ListUsers",
+"user:DeleteUser",
+"user:ReadCredentials",
+"user:CreateCredentials",
+"user:DeleteCredentials",
+"user:ListCredentials",
+}
+```
 
 ### policy
 
@@ -46,59 +96,71 @@ rbac中引入resource_type, resource, statement, policy, group，user,的概念�
 
 
 ## 表设计
+数据库设计基于postgres
 
-资源类型
+策略表
 ```go
-const (
-	RepoRT ResourceType = "repo"
-	UserRT ResourceType = "user"
-	AuthRT ResourceType = "auth"
-)
+type Statement struct {
+	Effect   string   `json:"effect"`
+	Action   []string `json:"action"`
+	Resource Resource `json:"resource"`
+}
+
+type Policy struct {
+	bun.BaseModel `bun:"table:policies"`
+	ID            uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()" json:"id"`
+	// Name policy name
+	Name string `bun:"name,unique,notnull" json:"name"`
+	// Actions
+	Statements []Statement `bun:"statements,type:jsonb,notnull" json:"statements"`
+	// CreatedAt
+	CreatedAt time.Time `bun:"created_at,type:timestamp,notnull" json:"created_at"`
+	// UpdatedAt
+	UpdatedAt time.Time `bun:"updated_at,type:timestamp,notnull" json:"updated_at"`
+}
 ```
 
-action 列表
+group 表
 ```go
-const (
-	ReadRepositoryAction    = "repo:ReadRepository"
-	CreateRepositoryAction  = "repo:CreateRepository"
-	UpdateRepositoryAction  = "repo:UpdateRepository"
-	DeleteRepositoryAction  = "repo:DeleteRepository"
-	ListRepositoriesAction  = "repo:ListRepositories"
-	ReadObjectAction        = "repo:ReadObject"
-	WriteObjectAction       = "repo:WriteObject"
-	DeleteObjectAction      = "repo:DeleteObject"
-	ListObjectsAction       = "repo:ListObjects"
-	CreateCommitAction      = "repo:CreateCommit"
-	ReadCommitAction        = "repo:ReadCommit"
-	ListCommitsAction       = "repo:ListCommits"
-	CreateBranchAction      = "repo:CreateBranch"
-	DeleteBranchAction      = "repo:DeleteBranch"
-	ReadBranchAction        = "repo:ReadBranch"
-	ListBranchesAction      = "repo:ListBranches"
-	ReadConfigAction        = "repo:ReadConfig"
-	UpdateConfigAction      = "repo:UpdateConfig"
-	AddGroupMemberAction    = "repo:AddGroupMember"
-	RemoveGroupMemberAction = "repo:RemoveGroupMember"
+type Group struct {
+	bun.BaseModel `bun:"table:groups"`
+	ID            uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()" json:"id"`
+	// Name policy name
+	Name string `bun:"name,unique,notnull" json:"secret_key"`
+	// Policies
+	Policies []uuid.UUID `bun:"policies,type:jsonb,notnull" json:"policies"`
+	// CreatedAt
+	CreatedAt time.Time `bun:"created_at,type:timestamp,notnull" json:"created_at"`
+	// UpdatedAt
+	UpdatedAt time.Time `bun:"updated_at,type:timestamp,notnull" json:"updated_at"`
+}
+```
 
-	ListUsersAction    = "auth:ListUsers"
-	ReadGroupAction    = "auth:ReadGroup"
-	CreateGroupAction  = "auth:CreateGroup"
-	DeleteGroupAction  = "auth:DeleteGroup"
-	ListGroupsAction   = "auth:ListGroups"
-	ReadPolicyAction   = "auth:ReadPolicy"
-	CreatePolicyAction = "auth:CreatePolicy"
-	UpdatePolicyAction = "auth:UpdatePolicy"
-	DeletePolicyAction = "auth:DeletePolicy"
-	ListPoliciesAction = "auth:ListPolicies"
-	AttachPolicyAction = "auth:AttachPolicy"
-	DetachPolicyAction = "auth:DetachPolicy"
+用户组表
+```go
+type UserGroup struct {
+	bun.BaseModel `bun:"table:usergroup"`
+	ID            uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()" json:"id"`
+	UserID        uuid.UUID `bun:"user_id,type:uuid,unique:user_group_pk,notnull" json:"user_id"`
+	GroupID       uuid.UUID `bun:"group_id,type:uuid,unique:user_group_pk,notnull" json:"group_id"`
+	// CreatedAt
+	CreatedAt time.Time `bun:"created_at,type:timestamp,notnull" json:"created_at"`
+	// UpdatedAt
+	UpdatedAt time.Time `bun:"updated_at,type:timestamp,notnull" json:"updated_at"`
+}
+```
 
-	UserProfileAction                        = "user:UserProfile"
-	ReadUserAction                           = "user:ReadUser"
-	DeleteUserAction                         = "user:DeleteUser"
-	ReadCredentialsAction                    = "user:ReadCredentials"
-	CreateCredentialsAction                  = "user:CreateCredentials"
-	DeleteCredentialsDeleteCredentialsAction = "user:DeleteCredentials"
-	ListCredentialsAction                    = "user:ListCredentials"
-)
+仓库成员表
+```go
+type Member struct {
+	bun.BaseModel `bun:"table:members"`
+	ID            uuid.UUID `bun:"id,pk,type:uuid,default:uuid_generate_v4()" json:"id"`
+	UserID        uuid.UUID `bun:"user_id,type:uuid,unique:user_repo_pk,notnull" json:"user_id"`
+	RepoID        uuid.UUID `bun:"repo_id,type:uuid,unique:user_repo_pk,notnull" json:"repo_id"`
+	GroupID       uuid.UUID `bun:"group_id,type:uuid,notnull" json:"group_id"`
+	// CreatedAt
+	CreatedAt time.Time `bun:"created_at,type:timestamp,notnull" json:"created_at"`
+	// UpdatedAt
+	UpdatedAt time.Time `bun:"updated_at,type:timestamp,notnull" json:"updated_at"`
+}
 ```
