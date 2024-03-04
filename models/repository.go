@@ -15,13 +15,16 @@ type Repository struct {
 	OwnerID       uuid.UUID `bun:"owner_id,unique:name_owner_unique,type:uuid,notnull" json:"owner_id"`
 	HEAD          string    `bun:"head,notnull" json:"head"`
 
+	// Visible indicate if this repo is public, false for private, true for public
+	Visible          bool    `bun:"visible,notnull" json:"visible"`
 	UsePublicStorage bool    `bun:"use_public_storage,notnull" json:"use_public_storage"`
 	StorageNamespace *string `bun:"storage_namespace" json:"storage_namespace,omitempty"`
 
 	StorageAdapterParams *string `bun:"storage_adapter_params" json:"storage_adapter_params,omitempty"`
 
-	Description *string   `bun:"description" json:"description,omitempty"`
-	CreatorID   uuid.UUID `bun:"creator_id,type:uuid,notnull" json:"creator_id"`
+	Description *string `bun:"description" json:"description,omitempty"`
+
+	CreatorID uuid.UUID `bun:"creator_id,type:uuid,notnull" json:"creator_id"`
 
 	CreatedAt time.Time `bun:"created_at,type:timestamp,notnull" json:"created_at"`
 	UpdatedAt time.Time `bun:"updated_at,type:timestamp,notnull" json:"updated_at"`
@@ -64,8 +67,10 @@ type ListRepoParams struct {
 	ownerID   uuid.UUID
 	name      *string
 	nameMatch MatchMode
-	after     *time.Time
-	amount    int
+	visible   *bool
+
+	after  *time.Time
+	amount int
 }
 
 func NewListRepoParams() *ListRepoParams {
@@ -89,6 +94,11 @@ func (lrp *ListRepoParams) SetName(name string, match MatchMode) *ListRepoParams
 
 func (lrp *ListRepoParams) SetCreatorID(creatorID uuid.UUID) *ListRepoParams {
 	lrp.creatorID = creatorID
+	return lrp
+}
+
+func (lrp *ListRepoParams) SetVisible(visible bool) *ListRepoParams {
+	lrp.visible = &visible
 	return lrp
 }
 
@@ -130,6 +140,7 @@ func (drp *DeleteRepoParams) SetName(name string) *DeleteRepoParams {
 type UpdateRepoParams struct {
 	id          uuid.UUID
 	description *string
+	visible     *bool
 	head        *string
 }
 
@@ -146,6 +157,11 @@ func (up *UpdateRepoParams) SetDescription(description string) *UpdateRepoParams
 
 func (up *UpdateRepoParams) SetHead(head string) *UpdateRepoParams {
 	up.head = &head
+	return up
+}
+
+func (up *UpdateRepoParams) SetVisible(visible bool) *UpdateRepoParams {
+	up.visible = &visible
 	return up
 }
 
@@ -215,6 +231,10 @@ func (r *RepositoryRepo) List(ctx context.Context, params *ListRepoParams) ([]*R
 		query = query.Where("owner_id = ?", params.ownerID)
 	}
 
+	if params.visible != nil {
+		query = query.Where("visible = ?", *params.visible)
+	}
+
 	if params.name != nil {
 		switch params.nameMatch {
 		case ExactMatch:
@@ -228,7 +248,7 @@ func (r *RepositoryRepo) List(ctx context.Context, params *ListRepoParams) ([]*R
 		}
 	}
 
-	query = query.Order("updated_at DESC")
+	query = query.Order("updated_at DESC") // from new to old
 	if params.after != nil {
 		query = query.Where("updated_at < ?", *params.after)
 	}
@@ -264,12 +284,19 @@ func (r *RepositoryRepo) Delete(ctx context.Context, params *DeleteRepoParams) (
 
 func (r *RepositoryRepo) UpdateByID(ctx context.Context, updateModel *UpdateRepoParams) error {
 	updateQuery := r.db.NewUpdate().Model((*Repository)(nil)).Where("id = ?", updateModel.id)
+
 	if updateModel.description != nil {
 		updateQuery.Set("description = ?", *updateModel.description)
 	}
+
 	if updateModel.head != nil {
 		updateQuery.Set("head = ?", *updateModel.head)
 	}
+
+	if updateModel.visible != nil {
+		updateQuery.Set("visible = ?", *updateModel.visible)
+	}
+
 	_, err := updateQuery.Exec(ctx)
 	return err
 }

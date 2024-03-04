@@ -20,6 +20,8 @@ const (
 	DeleteRepositoryAction = "repo:DeleteRepository"
 	ListRepositoriesAction = "repo:ListRepositories"
 
+	UpdateVisibleAction = "repo:UpdateVisible"
+
 	ReadObjectAction   = "repo:ReadObject"
 	WriteObjectAction  = "repo:WriteObject"
 	DeleteObjectAction = "repo:DeleteObject"

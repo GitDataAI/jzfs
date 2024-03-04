@@ -25,12 +25,12 @@ func MergeRequestSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		branchName := "feat/obj_test"
 
 		c.Convey("init", func(c convey.C) {
-			createUser(ctx, client, userName)
+			_ = createUser(ctx, client, userName)
 			loginAndSwitch(ctx, client, userName, false)
-			createRepo(ctx, client, repoName)
-			createBranch(ctx, client, userName, repoName, "main", branchName)
-			createWip(ctx, client, userName, repoName, branchName)
-			uploadObject(ctx, client, userName, repoName, branchName, "a.bin")
+			_ = createRepo(ctx, client, repoName, false)
+			_ = createBranch(ctx, client, userName, repoName, "main", branchName)
+			_ = createWip(ctx, client, userName, repoName, branchName)
+			_ = uploadObject(ctx, client, userName, repoName, branchName, "a.bin")
 			commitWip(ctx, client, userName, repoName, branchName, "test")
 		})
 
@@ -266,7 +266,6 @@ func MergeRequestSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		})
 
 		c.Convey("list merge request", func(c convey.C) {
-
 			c.Convey("no auth", func() {
 				re := client.RequestEditors
 				client.RequestEditors = nil
@@ -355,7 +354,6 @@ func MergeRequestSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		})
 
 		c.Convey("merge request", func(c convey.C) {
-
 			c.Convey("no auth", func() {
 				re := client.RequestEditors
 				client.RequestEditors = nil

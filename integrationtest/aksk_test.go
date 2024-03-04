@@ -92,8 +92,7 @@ func AkSkSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 
 			c.Convey("delete ak by id", func() {
-				aksk, err := createAksk(ctx, client)
-				convey.So(err, convey.ShouldBeNil)
+				aksk := createAksk(ctx, client)
 
 				resp, err := client.DeleteAksk(ctx, &api.DeleteAkskParams{Id: &aksk.Id})
 				convey.So(err, convey.ShouldBeNil)
@@ -101,8 +100,7 @@ func AkSkSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 
 			c.Convey("delete ak by ak", func() {
-				aksk, err := createAksk(ctx, client)
-				convey.So(err, convey.ShouldBeNil)
+				aksk := createAksk(ctx, client)
 
 				resp, err := client.DeleteAksk(ctx, &api.DeleteAkskParams{AccessKey: &aksk.AccessKey})
 				convey.So(err, convey.ShouldBeNil)
@@ -117,11 +115,11 @@ func AkSkSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 		c.Convey("list aksk", func(c convey.C) {
 			c.Convey("prepare aksk", func() {
-				_, _ = createAksk(ctx, client)
-				_, _ = createAksk(ctx, client)
-				_, _ = createAksk(ctx, client)
-				_, _ = createAksk(ctx, client)
-				_, _ = createAksk(ctx, client)
+				_ = createAksk(ctx, client)
+				_ = createAksk(ctx, client)
+				_ = createAksk(ctx, client)
+				_ = createAksk(ctx, client)
+				_ = createAksk(ctx, client)
 			})
 			c.Convey("no auth", func() {
 				re := client.RequestEditors
@@ -145,8 +143,7 @@ func AkSkSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 		c.Convey("aksk user", func(c convey.C) {
 			c.Convey("success", func(c convey.C) {
-				aksk, err := createAksk(ctx, client)
-				convey.So(err, convey.ShouldBeNil)
+				aksk := createAksk(ctx, client)
 
 				cli, err := api.NewClient(urlStr+apiimpl.APIV1Prefix, api.AkSkOption(aksk.AccessKey, aksk.SecretKey))
 				convey.So(err, convey.ShouldBeNil)
@@ -159,8 +156,7 @@ func AkSkSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.ShouldEqual(user.JSON200.Name, userName)
 			})
 			c.Convey("wrong sk", func(c convey.C) {
-				aksk, err := createAksk(ctx, client)
-				convey.So(err, convey.ShouldBeNil)
+				aksk := createAksk(ctx, client)
 
 				client, err := api.NewClient(urlStr+apiimpl.APIV1Prefix, api.AkSkOption(aksk.AccessKey, "fakesk"))
 				convey.So(err, convey.ShouldBeNil)

@@ -108,7 +108,7 @@ func SetupDaemon(t *testing.T, ctx context.Context) (string, Closer) { //nolint
 
 var count atomic.Int32
 
-func createUser(ctx context.Context, client *api.Client, userName string) {
+func createUser(ctx context.Context, client *api.Client, userName string) *api.UserInfo {
 	resp, err := client.Register(ctx, api.RegisterJSONRequestBody{
 		Name:     userName,
 		Password: "12345678",
@@ -116,6 +116,10 @@ func createUser(ctx context.Context, client *api.Client, userName string) {
 	})
 	convey.So(err, convey.ShouldBeNil)
 	convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
+
+	result, err := api.ParseRegisterResponse(resp)
+	convey.So(err, convey.ShouldBeNil)
+	return result.JSON201
 }
 
 func loginAndSwitch(ctx context.Context, client *api.Client, userName string, useCookie bool) {
@@ -141,30 +145,43 @@ func loginAndSwitch(ctx context.Context, client *api.Client, userName string, us
 	})
 }
 
-func createBranch(ctx context.Context, client *api.Client, user string, repoName string, source, refName string) {
+func createBranch(ctx context.Context, client *api.Client, user string, repoName string, source, refName string) *api.Branch {
 	resp, err := client.CreateBranch(ctx, user, repoName, api.CreateBranchJSONRequestBody{
 		Source: source,
 		Name:   refName,
 	})
 	convey.So(err, convey.ShouldBeNil)
 	convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
+
+	result, err := api.ParseCreateBranchResponse(resp)
+	convey.So(err, convey.ShouldBeNil)
+	return result.JSON201
 }
 
-func createRepo(ctx context.Context, client *api.Client, repoName string) {
+func createRepo(ctx context.Context, client *api.Client, repoName string, visible bool) *api.Repository {
 	resp, err := client.CreateRepository(ctx, api.CreateRepositoryJSONRequestBody{
-		Name: repoName,
+		Name:    repoName,
+		Visible: utils.Bool(visible),
 	})
 	convey.So(err, convey.ShouldBeNil)
 	convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
+
+	result, err := api.ParseCreateRepositoryResponse(resp)
+	convey.So(err, convey.ShouldBeNil)
+	return result.JSON201
 }
 
-func uploadObject(ctx context.Context, client *api.Client, user string, repoName string, refName string, path string) { //nolint
+func uploadObject(ctx context.Context, client *api.Client, user string, repoName string, refName string, path string) *api.ObjectStats { //nolint
 	resp, err := client.UploadObjectWithBody(ctx, user, repoName, &api.UploadObjectParams{
 		RefName: refName,
 		Path:    path,
 	}, "application/octet-stream", io.LimitReader(rand.Reader, 50))
 	convey.So(err, convey.ShouldBeNil)
 	convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
+
+	result, err := api.ParseUploadObjectResponse(resp)
+	convey.So(err, convey.ShouldBeNil)
+	return result.JSON201
 }
 
 func deleteObject(ctx context.Context, client *api.Client, user string, repoName string, refName string, path string) { //nolint
@@ -176,12 +193,16 @@ func deleteObject(ctx context.Context, client *api.Client, user string, repoName
 	convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
 }
 
-func createWip(ctx context.Context, client *api.Client, user string, repoName string, refName string) {
+func createWip(ctx context.Context, client *api.Client, user string, repoName string, refName string) *api.Wip {
 	resp, err := client.GetWip(ctx, user, repoName, &api.GetWipParams{
 		RefName: refName,
 	})
 	convey.So(err, convey.ShouldBeNil)
 	convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
+
+	result, err := api.ParseGetWipResponse(resp)
+	convey.So(err, convey.ShouldBeNil)
+	return result.JSON200
 }
 
 func commitWip(ctx context.Context, client *api.Client, user string, repoName string, refName string, msg string) {
@@ -194,7 +215,7 @@ func commitWip(ctx context.Context, client *api.Client, user string, repoName st
 	convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
 }
 
-func createMergeRequest(ctx context.Context, client *api.Client, user string, repoName string, sourceBranch string, targetBranch string) {
+func createMergeRequest(ctx context.Context, client *api.Client, user string, repoName string, sourceBranch string, targetBranch string) *api.MergeRequest {
 	resp, err := client.CreateMergeRequest(ctx, user, repoName, api.CreateMergeRequestJSONRequestBody{
 		Description:      utils.String("create merge request test"),
 		SourceBranchName: sourceBranch,
@@ -203,17 +224,17 @@ func createMergeRequest(ctx context.Context, client *api.Client, user string, re
 	})
 	convey.So(err, convey.ShouldBeNil)
 	convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
+
+	result, err := api.ParseCreateMergeRequestResponse(resp)
+	convey.So(err, convey.ShouldBeNil)
+	return result.JSON201
 }
 
-func createAksk(ctx context.Context, client *api.Client) (*api.Aksk, error) {
+func createAksk(ctx context.Context, client *api.Client) *api.Aksk {
 	resp, err := client.CreateAksk(ctx, &api.CreateAkskParams{Description: utils.String("create ak sk")})
-	if err != nil {
-		return nil, err
-	}
+	convey.So(err, convey.ShouldBeNil)
 
 	akskResult, err := api.ParseCreateAkskResponse(resp)
-	if err != nil {
-		return nil, err
-	}
-	return akskResult.JSON201, nil
+	convey.So(err, convey.ShouldBeNil)
+	return akskResult.JSON201
 }

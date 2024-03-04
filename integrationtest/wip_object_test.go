@@ -20,13 +20,13 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		branchName := "feat/wip_obj_test"
 
 		c.Convey("init", func(c convey.C) {
-			createUser(ctx, client, userName)
+			_ = createUser(ctx, client, userName)
 			loginAndSwitch(ctx, client, userName, false)
-			createRepo(ctx, client, repoName)
-			createBranch(ctx, client, userName, repoName, "main", branchName)
-			createWip(ctx, client, userName, repoName, branchName)
-			uploadObject(ctx, client, userName, repoName, branchName, "m.dat")
-			uploadObject(ctx, client, userName, repoName, branchName, "g/m.dat")
+			_ = createRepo(ctx, client, repoName, false)
+			_ = createBranch(ctx, client, userName, repoName, "main", branchName)
+			_ = createWip(ctx, client, userName, repoName, branchName)
+			_ = uploadObject(ctx, client, userName, repoName, branchName, "m.dat")
+			_ = uploadObject(ctx, client, userName, repoName, branchName, "g/m.dat")
 		})
 
 		c.Convey("head object", func(c convey.C) {
@@ -475,17 +475,17 @@ func UpdateWipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		branchName := "main"
 
 		c.Convey("create wip", func(c convey.C) {
-			createUser(ctx, client, userName)
+			_ = createUser(ctx, client, userName)
 			loginAndSwitch(ctx, client, userName, false)
-			createRepo(ctx, client, repoName)
-			createWip(ctx, client, userName, repoName, branchName)
+			_ = createRepo(ctx, client, repoName, false)
+			_ = createWip(ctx, client, userName, repoName, branchName)
 
 			//make wip base commit has value
-			uploadObject(ctx, client, userName, repoName, branchName, "a.txt")
+			_ = uploadObject(ctx, client, userName, repoName, branchName, "a.txt")
 			commitWip(ctx, client, userName, repoName, branchName, "test")
 
-			uploadObject(ctx, client, userName, repoName, branchName, "m.dat")
-			uploadObject(ctx, client, userName, repoName, branchName, "g/m.dat")
+			_ = uploadObject(ctx, client, userName, repoName, branchName, "m.dat")
+			_ = uploadObject(ctx, client, userName, repoName, branchName, "g/m.dat")
 		})
 
 		c.Convey("get wip", func(c convey.C) {

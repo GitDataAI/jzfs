@@ -28,28 +28,18 @@ func MemberSpec(ctx context.Context, urlStr string) func(c convey.C) {
 	return func(c convey.C) {
 		c.Convey("init test", func(c convey.C) {
 			var err error
-			createUser(ctx, client, user1Name)
-			user1Token, err = getToken(ctx, client, user1Name)
-			convey.ShouldBeNil(c, err)
+			user1 = createUser(ctx, client, user1Name)
+			user1Token = getToken(ctx, client, user1Name)
 			client.RequestEditors = user1Token
 
-			createRepo(ctx, client, testRepoName)
-			user1, err = getUser(ctx, client)
-			convey.ShouldBeNil(c, err)
-			repo1, err = getRepo(ctx, client, user1Name, testRepoName)
-			convey.ShouldBeNil(c, err)
+			repo1 = createRepo(ctx, client, testRepoName, false)
 
 			client.RequestEditors = nil
-			createUser(ctx, client, user2Name)
-			user2Token, err = getToken(ctx, client, user2Name)
-			convey.ShouldBeNil(c, err)
+			user2 = createUser(ctx, client, user2Name)
+			user2Token = getToken(ctx, client, user2Name)
 			client.RequestEditors = user2Token
 
-			createRepo(ctx, client, testRepo2Name)
-			user2, err = getUser(ctx, client)
-			convey.ShouldBeNil(c, err)
-			repo2, err = getRepo(ctx, client, user2Name, testRepo2Name)
-			convey.ShouldBeNil(c, err)
+			repo2 = createRepo(ctx, client, testRepo2Name, false)
 
 			readGroup, writeGroup, adminGroup, err = getGroup(ctx, client)
 			convey.ShouldNotBeNil(adminGroup)
@@ -315,18 +305,6 @@ func MemberSpec(ctx context.Context, urlStr string) func(c convey.C) {
 	}
 }
 
-func getUser(ctx context.Context, client *api.Client) (*api.UserInfo, error) {
-	resp, err := client.GetUserInfo(ctx)
-	if err != nil {
-		return nil, err
-	}
-	result, err := api.ParseGetUserInfoResponse(resp)
-	if err != nil {
-		return nil, err
-	}
-	return result.JSON200, nil
-}
-
 func getGroup(ctx context.Context, client *api.Client) (*api.Group, *api.Group, *api.Group, error) {
 	resp, err := client.ListRepoGroup(ctx)
 	if err != nil {
@@ -354,32 +332,24 @@ func getGroup(ctx context.Context, client *api.Client) (*api.Group, *api.Group, 
 	return &readGroup, &writeGroup, &adminGroup, nil
 }
 
-func getRepo(ctx context.Context, client *api.Client, owner, repoName string) (*api.Repository, error) {
+func getRepo(ctx context.Context, client *api.Client, owner, repoName string) *api.Repository {
 	resp, err := client.GetRepository(ctx, owner, repoName)
-	if err != nil {
-		return nil, err
-	}
+	convey.So(err, convey.ShouldBeNil)
 	result, err := api.ParseGetRepositoryResponse(resp)
-	if err != nil {
-		return nil, err
-	}
-	return result.JSON200, nil
+	convey.So(err, convey.ShouldBeNil)
+	return result.JSON200
 }
-func getToken(ctx context.Context, client *api.Client, userName string) ([]api.RequestEditorFn, error) {
+func getToken(ctx context.Context, client *api.Client, userName string) []api.RequestEditorFn {
 	resp, err := client.Login(ctx, api.LoginJSONRequestBody{
 		Name:     userName,
 		Password: "12345678",
 	})
-	if err != nil {
-		return nil, err
-	}
+	convey.So(err, convey.ShouldBeNil)
 	loginResult, err := api.ParseLoginResponse(resp)
-	if err != nil {
-		return nil, err
-	}
+	convey.So(err, convey.ShouldBeNil)
 
 	return []api.RequestEditorFn{func(ctx context.Context, req *http.Request) error {
 		req.Header.Add("Authorization", "Bearer "+loginResult.JSON200.Token)
 		return nil
-	}}, nil
+	}}
 }

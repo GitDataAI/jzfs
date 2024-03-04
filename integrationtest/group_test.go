@@ -12,7 +12,7 @@ func GroupSpec(ctx context.Context, urlStr string) func(c convey.C) {
 	client, _ := api.NewClient(urlStr + apiimpl.APIV1Prefix)
 	return func(c convey.C) {
 		userName := "grouptest"
-		createUser(ctx, client, userName)
+		_ = createUser(ctx, client, userName)
 		loginAndSwitch(ctx, client, userName, false)
 
 		resp, err := client.ListRepoGroup(ctx)
