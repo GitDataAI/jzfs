@@ -23,7 +23,7 @@ func GetEntriesInRefSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		c.Convey("init", func(c convey.C) {
 			_ = createUser(ctx, client, userName)
 			loginAndSwitch(ctx, client, userName, false)
-			_ = createRepo(ctx, client, repoName)
+			_ = createRepo(ctx, client, repoName, false)
 			_ = createBranch(ctx, client, userName, repoName, "main", branchName)
 			_ = createWip(ctx, client, userName, repoName, branchName)
 			_ = uploadObject(ctx, client, userName, repoName, branchName, "m.dat")
@@ -387,7 +387,7 @@ func GetCommitChangesSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		c.Convey("init", func(c convey.C) {
 			createUser(ctx, client, userName)
 			loginAndSwitch(ctx, client, userName, false)
-			createRepo(ctx, client, repoName)
+			createRepo(ctx, client, repoName, false)
 			createWip(ctx, client, userName, repoName, "main")
 			uploadObject(ctx, client, userName, repoName, "main", "m.dat")
 			commitWip(ctx, client, userName, repoName, "main", "test")

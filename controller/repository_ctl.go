@@ -144,6 +144,43 @@ func (repositoryCtl RepositoryController) ListRepository(ctx context.Context, w 
 	})
 }
 
+func (repositoryCtl RepositoryController) ListPublicRepository(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, params api.ListPublicRepositoryParams) {
+	listRepoParams := models.NewListRepoParams().SetVisible(true)
+	if params.Prefix != nil && len(*params.Prefix) > 0 {
+		listRepoParams.SetName(*params.Prefix, models.PrefixMatch)
+	}
+	if params.After != nil {
+		listRepoParams.SetAfter(time.UnixMilli(*params.After))
+	}
+	pageAmount := utils.IntValue(params.Amount)
+	if pageAmount > utils.DefaultMaxPerPage || pageAmount <= 0 {
+		listRepoParams.SetAmount(utils.DefaultMaxPerPage)
+	} else {
+		listRepoParams.SetAmount(pageAmount)
+	}
+
+	repositories, hasMore, err := repositoryCtl.Repo.RepositoryRepo().List(ctx, listRepoParams)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+	results := make([]api.Repository, 0, len(repositories))
+	for _, repo := range repositories {
+		results = append(results, *repositoryToDto(repo))
+	}
+	pagMag := utils.PaginationFor(hasMore, results, "UpdatedAt")
+	pagination := api.Pagination{
+		HasMore:    pagMag.HasMore,
+		MaxPerPage: pagMag.MaxPerPage,
+		NextOffset: pagMag.NextOffset,
+		Results:    pagMag.Results,
+	}
+	w.JSON(api.RepositoryList{
+		Pagination: pagination,
+		Results:    results,
+	})
+}
+
 func (repositoryCtl RepositoryController) CreateRepository(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, body api.CreateRepositoryJSONRequestBody) {
 	err := validator.ValidateRepoName(body.Name)
 	if err != nil {

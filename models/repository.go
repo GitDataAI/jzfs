@@ -67,8 +67,10 @@ type ListRepoParams struct {
 	ownerID   uuid.UUID
 	name      *string
 	nameMatch MatchMode
-	after     *time.Time
-	amount    int
+	visible   *bool
+
+	after  *time.Time
+	amount int
 }
 
 func NewListRepoParams() *ListRepoParams {
@@ -92,6 +94,11 @@ func (lrp *ListRepoParams) SetName(name string, match MatchMode) *ListRepoParams
 
 func (lrp *ListRepoParams) SetCreatorID(creatorID uuid.UUID) *ListRepoParams {
 	lrp.creatorID = creatorID
+	return lrp
+}
+
+func (lrp *ListRepoParams) SetVisible(visible bool) *ListRepoParams {
+	lrp.visible = &visible
 	return lrp
 }
 
@@ -224,6 +231,10 @@ func (r *RepositoryRepo) List(ctx context.Context, params *ListRepoParams) ([]*R
 		query = query.Where("owner_id = ?", params.ownerID)
 	}
 
+	if params.visible != nil {
+		query = query.Where("visible = ?", *params.visible)
+	}
+
 	if params.name != nil {
 		switch params.nameMatch {
 		case ExactMatch:
@@ -237,7 +248,7 @@ func (r *RepositoryRepo) List(ctx context.Context, params *ListRepoParams) ([]*R
 		}
 	}
 
-	query = query.Order("updated_at DESC")
+	query = query.Order("updated_at DESC") // from new to old
 	if params.after != nil {
 		query = query.Where("updated_at < ?", *params.after)
 	}

@@ -22,7 +22,7 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		c.Convey("init", func(c convey.C) {
 			_ = createUser(ctx, client, userName)
 			loginAndSwitch(ctx, client, userName, false)
-			_ = createRepo(ctx, client, repoName)
+			_ = createRepo(ctx, client, repoName, false)
 			_ = createBranch(ctx, client, userName, repoName, "main", branchName)
 			_ = createWip(ctx, client, userName, repoName, branchName)
 			_ = uploadObject(ctx, client, userName, repoName, branchName, "m.dat")
@@ -477,7 +477,7 @@ func UpdateWipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		c.Convey("create wip", func(c convey.C) {
 			_ = createUser(ctx, client, userName)
 			loginAndSwitch(ctx, client, userName, false)
-			_ = createRepo(ctx, client, repoName)
+			_ = createRepo(ctx, client, repoName, false)
 			_ = createWip(ctx, client, userName, repoName, branchName)
 
 			//make wip base commit has value

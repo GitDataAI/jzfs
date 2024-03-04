@@ -2,7 +2,11 @@ package integrationtest
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"strconv"
+
+	"github.com/jiaozifs/jiaozifs/utils"
 
 	"github.com/jiaozifs/jiaozifs/api"
 	apiimpl "github.com/jiaozifs/jiaozifs/api/api_impl"
@@ -27,10 +31,10 @@ func PublicRepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			user2Token = getToken(ctx, client, user2Name)
 
 			client.RequestEditors = user1Token
-			_ = createRepo(ctx, client, testRepoName)
+			_ = createRepo(ctx, client, testRepoName, false)
 
 			client.RequestEditors = user2Token
-			_ = createRepo(ctx, client, testRepo2Name)
+			_ = createRepo(ctx, client, testRepo2Name, false)
 
 			client.RequestEditors = user1Token
 		})
@@ -76,7 +80,7 @@ func PublicRepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 		})
 
-		c.Convey("", func(c convey.C) {
+		c.Convey("check permission", func(c convey.C) {
 			c.Convey("init", func() {
 				resp, err := client.ChangeVisible(ctx, user1Name, testRepoName, &api.ChangeVisibleParams{Visible: false})
 				convey.So(err, convey.ShouldBeNil)
@@ -104,6 +108,49 @@ func PublicRepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
 			})
+		})
+
+		c.Convey("list public repo", func() {
+			resp, err := client.ListPublicRepository(ctx, &api.ListPublicRepositoryParams{})
+			convey.So(err, convey.ShouldBeNil)
+			convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+			result, err := api.ParseListPublicRepositoryResponse(resp)
+			convey.So(err, convey.ShouldBeNil)
+			convey.ShouldHaveLength(1, result.JSON200.Results)
+		})
+
+		c.Convey("list many repo", func() {
+			for i := 0; i < 20; i++ {
+				_ = createRepo(ctx, client, fmt.Sprintf("aa%d", i), true)
+			}
+			repo := createRepo(ctx, client, "aa21", true)
+			_ = createRepo(ctx, client, "aa22", true)
+
+			after := repo.UpdatedAt
+			count := 0
+			for {
+				resp, err := client.ListPublicRepository(ctx, &api.ListPublicRepositoryParams{
+					Prefix: utils.String("aa"),
+					After:  utils.Int64(after),
+					Amount: utils.Int(2),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				result, err := api.ParseListPublicRepositoryResponse(resp)
+				convey.So(err, convey.ShouldBeNil)
+				convey.ShouldHaveLength(1, result.JSON200.Results)
+
+				count = count + len(result.JSON200.Results)
+				if !result.JSON200.Pagination.HasMore {
+					break
+				}
+				convey.ShouldHaveLength(2, result.JSON200.Results)
+				after, err = strconv.ParseInt(result.JSON200.Pagination.NextOffset, 10, 64)
+				convey.So(err, convey.ShouldBeNil)
+			}
+			convey.ShouldEqual(21, count)
 		})
 	}
 }

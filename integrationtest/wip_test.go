@@ -20,7 +20,7 @@ func WipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		c.Convey("init", func(c convey.C) {
 			_ = createUser(ctx, client, userName)
 			loginAndSwitch(ctx, client, userName, false)
-			_ = createRepo(ctx, client, repoName)
+			_ = createRepo(ctx, client, repoName, false)
 			_ = createBranch(ctx, client, userName, repoName, "main", branchName)
 			_ = createBranch(ctx, client, userName, repoName, "main", branchNameForDelete)
 		})

@@ -158,9 +158,10 @@ func createBranch(ctx context.Context, client *api.Client, user string, repoName
 	return result.JSON201
 }
 
-func createRepo(ctx context.Context, client *api.Client, repoName string) *api.Repository {
+func createRepo(ctx context.Context, client *api.Client, repoName string, visible bool) *api.Repository {
 	resp, err := client.CreateRepository(ctx, api.CreateRepositoryJSONRequestBody{
-		Name: repoName,
+		Name:    repoName,
+		Visible: utils.Bool(visible),
 	})
 	convey.So(err, convey.ShouldBeNil)
 	convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)

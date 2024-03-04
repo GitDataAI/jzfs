@@ -26,7 +26,7 @@ func BranchSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		c.Convey("init", func(c convey.C) {
 			_ = createUser(ctx, client, userName)
 			loginAndSwitch(ctx, client, userName, false)
-			_ = createRepo(ctx, client, repoName)
+			_ = createRepo(ctx, client, repoName, false)
 		})
 		c.Convey("create branch", func(c convey.C) {
 			c.Convey("no auth", func() {

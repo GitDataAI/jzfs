@@ -32,14 +32,14 @@ func MemberSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			user1Token = getToken(ctx, client, user1Name)
 			client.RequestEditors = user1Token
 
-			repo1 = createRepo(ctx, client, testRepoName)
+			repo1 = createRepo(ctx, client, testRepoName, false)
 
 			client.RequestEditors = nil
 			user2 = createUser(ctx, client, user2Name)
 			user2Token = getToken(ctx, client, user2Name)
 			client.RequestEditors = user2Token
 
-			repo2 = createRepo(ctx, client, testRepo2Name)
+			repo2 = createRepo(ctx, client, testRepo2Name, false)
 
 			readGroup, writeGroup, adminGroup, err = getGroup(ctx, client)
 			convey.ShouldNotBeNil(adminGroup)

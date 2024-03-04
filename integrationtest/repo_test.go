@@ -19,7 +19,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 		c.Convey("init", func(c convey.C) {
 			loginAndSwitch(ctx, client, "admin2", true)
-			_ = createRepo(ctx, client, "admin2_repo")
+			_ = createRepo(ctx, client, "admin2_repo", false)
 
 			_ = createUser(ctx, client, userName)
 			loginAndSwitch(ctx, client, userName, false)
