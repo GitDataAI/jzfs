@@ -8,7 +8,7 @@ A version control file system for data centric applications & teams.
   <br>
 </p>
 
-<img src="https://github.com/jiaozifs/jiaozifs/docs/logo/jiaozifs.png" width="100">
+<img src="https://github.com/jiaozifs/jiaozifs/blob/main/docs/logo/jiaozifs.png" width="100">
 
 ----
 ### What is JiaoziFS?
