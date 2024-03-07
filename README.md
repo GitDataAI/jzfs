@@ -19,9 +19,7 @@ Note:
 * JiaoziFS is yet another implementation of [IPFS (InterPlanetary File System)](https://ipfs.tech/) as JiaoziFS will be compatible with the [implementation requirements](https://specs.ipfs.tech/architecture/principles/#ipfs-implementation-requirements) of IPFS.
 * As a filesystem of data versioning at scale, although JiaoziFS is built for machine learning, It has a wide range of use scenarios (refer A Universe of Uses) and can be seamlessly integrated into all your data stack.
 
-Data-centric AI is about the practice of iterating and collaborating on data, used to build AI systems, programmatically. Machine learning pioneer Andrew Ng argues that focusing on the quality of data fueling AI systems will help unlock its full power.  
-
-<video src="https://youtu.be/TU6u_T-s68Y" width="320" height="240" controls></video>
+Data-centric AI is about the practice of iterating and collaborating on data, used to build AI systems, programmatically. Machine learning pioneer Andrew Ng [argues that focusing on the quality of data fueling AI systems will help unlock its full power](https://youtu.be/TU6u_T-s68Y).  
 
 ----
 ### Why JiaoziFS?
@@ -36,15 +34,14 @@ In production systems with machine learning components, updates and experiments 
 JiaoziFS's versatility shines across different industries – making it the multi-purpose tool for the **data centric applications and teams**.
 
 * **Enterprise DataHub & Data Collaboration**: Depending on your operating scale, you may even be managing multiple team members, who may be spread across different locations. JiaoziFS enable Collaborative Datasets Version Management at Scale,Share & collaborate easily: Instantly share insights and co-edit with your team.
-* **DataOps**: Augmenting Enterprise Data Development and Operations,JiaoziFS ensures Responsible DataOps/AIOps/MLOps by improving Data Versioning, Provenance, and Reproducibility.
-* **Data Mesh**: Versioning data products in a maturing Data Mesh environment via standard processes, data consumers can be informed about both breaking and non-breaking changes in a data product, as well as retirement of data products.
-* **Data Products**: JiaoziFS makes a fusion of data science and product development and allows data to be containerized into shareable, tradeable, and trackable assets(data products or data NFTs).
-* **Digital Twins for Manufacturing**: Developing digital twins for manufacturing involves managing tons of large files and multiple iterations of a project. All of the data collected and created in the digital twin process (and there is a lot of it) needs to be managed carefully. JiaoziFS allows you to manage changes to files over time and store these modifications in a right place.
+* **DataOps & Data Products & Data Mesh**: Augmenting Enterprise Data Development and Operations,JiaoziFS ensures Responsible DataOps/AIOps/MLOps by improving Data Versioning, Provenance, and Reproducibility. JiaoziFS makes a fusion of data science and product development and allows data to be containerized into shareable, tradeable, and trackable assets(data products or data NFTs). Versioning data products in a maturing Data Mesh environment via standard processes, data consumers can be informed about both breaking and non-breaking changes in a data product, as well as retirement of data products.
+* **Digital Twins for Manufacturing**: Developing digital twins for manufacturing involves managing tons of large files and multiple iterations of a project. All of the data collected and created in the digital twin process (and there is a lot of it) needs to be managed carefully. JiaoziFS allows you to manage changes to files over time and store these modifications in a database.
 
 ----
 ### Spec
 [JiaoziFS Specification](https://github.com/jiaozifs/Spec)
 
+----
 ### Basic Build And Usage
 
 #### Requirement
@@ -77,12 +74,13 @@ docker run -v <data>:/app -p 34913:34913 gitdatateam/jzfs:latest  --db "postgres
 ### Cloud
 [Try without installing](https://cloud.jiaozifs.com)
 
+----
 ### Contributors
 
-<a href="https://github.com/hunjixin" target="_blank"><img src="https://avatars.githubusercontent.com/u/41407352?v=4" width="5%" height="5%"/></a> <a href="https://github.com/Brownjy" target="_blank"><img src="https://avatars.githubusercontent.com/u/54040689?v=4" width="5%" height="5%"/></a> <a href="https://github.com/TsumikiQAQ" target="_blank"><img src="https://avatars.githubusercontent.com/u/116857998?v=4" width="5%" height="5%"/></a> <a href="https://github.com/taoshengshi" target="_blank"><img src="https://avatars.githubusercontent.com/u/33315004?v=4" width="5%" height="5%"/> <img src="https://avatars.githubusercontent.com/u/157772574?v=4" width="5%" height="5%"/></a>
-  
+<a href="https://github.com/hunjixin" target="_blank"><img src="https://avatars.githubusercontent.com/u/41407352?v=4" width="5%" height="5%"/></a> <a href="https://github.com/Brownjy" target="_blank"><img src="https://avatars.githubusercontent.com/u/54040689?v=4" width="5%" height="5%"/></a> <a href="https://github.com/TsumikiQAQ" target="_blank"><img src="https://avatars.githubusercontent.com/u/116857998?v=4" width="5%" height="5%"/></a> <a href="https://github.com/taoshengshi" target="_blank"><img src="https://avatars.githubusercontent.com/u/33315004?v=4" width="5%" height="5%"/></a> <a href="https://github.com/gitdata001" target="_blank"><img src="https://avatars.githubusercontent.com/u/157772574?v=4" width="5%" height="5%"/></a>
 
 ----
 ### License
 
 Dual-licensed under [MIT](https://github.com/jiaozifs/jiaozifs/blob/main/LICENSE-MIT) + [Apache 2.0](https://github.com/jiaozifs/jiaozifs/blob/main/LICENSE-APACHE)
+
