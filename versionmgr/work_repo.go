@@ -152,7 +152,7 @@ func (repository *WorkRepository) rootTree(ctx context.Context, repo models.IRep
 		}
 
 		repository.branch = ref
-		treeHash := hash.EmptyHash
+		treeHash := hash.Empty
 		var commit *models.Commit
 		if !ref.CommitHash.IsEmpty() {
 			commit, err = repo.CommitRepo(repository.repoModel.ID).Commit(ctx, ref.CommitHash)
@@ -168,7 +168,7 @@ func (repository *WorkRepository) rootTree(ctx context.Context, repo models.IRep
 }
 
 func (repository *WorkRepository) CheckOut(ctx context.Context, refType WorkRepoState, refName string) error {
-	treeHash := hash.EmptyHash
+	treeHash := hash.Empty
 	if refType == InWip {
 		ref, err := repository.repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.repoModel.ID).SetName(refName))
 		if err != nil {
@@ -221,7 +221,7 @@ func (repository *WorkRepository) Revert(ctx context.Context, prefixPath string)
 		return fmt.Errorf("working repo not in wip state")
 	}
 
-	baseTreeHash := hash.EmptyHash
+	baseTreeHash := hash.Empty
 	if !repository.wip.BaseCommit.IsEmpty() {
 		commit, err := repository.repo.CommitRepo(repository.repoModel.ID).Commit(ctx, repository.wip.BaseCommit)
 		if err != nil {
@@ -490,7 +490,7 @@ func (repository *WorkRepository) CreateBranch(ctx context.Context, branchName s
 		return nil, err
 	}
 
-	commitHash := hash.EmptyHash
+	commitHash := hash.Empty
 	if repository.commit != nil {
 		commitHash = repository.commit.Hash
 	}
@@ -509,16 +509,31 @@ func (repository *WorkRepository) CreateBranch(ctx context.Context, branchName s
 // DeleteBranch delete branch also delete wip belong this branch
 func (repository *WorkRepository) DeleteBranch(ctx context.Context) error {
 	return repository.repo.Transaction(ctx, func(repo models.IRepo) error {
+		wips, err := repo.WipRepo().List(ctx, models.NewListWipParams().SetRepositoryID(repository.repoModel.ID).SetRefID(repository.branch.ID))
+		if err != nil {
+			return err
+		}
+		for _, wip := range wips {
+			_, err = repo.WipRepo().Delete(ctx, models.NewDeleteWipParams().SetID(wip.ID))
+			if err != nil {
+				return err
+			}
+		}
+
 		deleteBranchParams := models.NewDeleteBranchParams().
 			SetRepositoryID(repository.repoModel.ID).
 			SetName(repository.branch.Name)
-		_, err := repo.BranchRepo().Delete(ctx, deleteBranchParams)
+		_, err = repo.BranchRepo().Delete(ctx, deleteBranchParams)
 		if err != nil {
 			return err
 		}
 
 		deleteWipParams := models.NewDeleteWipParams().SetRepositoryID(repository.repoModel.ID).SetRefID(repository.branch.ID)
 		_, err = repo.WipRepo().Delete(ctx, deleteWipParams)
+		if err != nil {
+			return err
+		}
+
 		return err
 	})
 }
@@ -539,7 +554,7 @@ func (repository *WorkRepository) GetOrCreateWip(ctx context.Context) (*models.W
 	}
 
 	// if not found create a wip
-	currentTreeHash := hash.EmptyHash
+	currentTreeHash := hash.Empty
 	if !repository.branch.CommitHash.IsEmpty() {
 		baseCommit, err := repository.repo.CommitRepo(repository.repoModel.ID).Commit(ctx, repository.branch.CommitHash)
 		if err != nil {
@@ -582,20 +597,30 @@ func (repository *WorkRepository) DiffCommit(ctx context.Context, toCommitID has
 }
 
 func (repository *WorkRepository) GetCommitChanges(ctx context.Context, pathPrefix string) (*Changes, error) {
-	if len(repository.commit.ParentHashes) == 0 {
-		workTree, err := repository.RootTree(ctx)
+	commitHash := hash.Empty
+	if len(repository.commit.ParentHashes) == 1 {
+		commitHash = repository.commit.ParentHashes[0]
+	} else if len(repository.commit.ParentHashes) == 2 {
+		commitHash = repository.commit.ParentHashes[1]
+	}
+
+	treeHash := hash.Empty
+	if !commitHash.IsEmpty() {
+		commit, err := repository.repo.CommitRepo(repository.repoModel.ID).Commit(ctx, commitHash)
 		if err != nil {
 			return nil, err
 		}
-		return workTree.Diff(ctx, hash.EmptyHash, pathPrefix)
-	} else if len(repository.commit.ParentHashes) == 1 {
-		return repository.DiffCommit(ctx, repository.commit.ParentHashes[0], pathPrefix)
+		treeHash = commit.TreeHash
 	}
-	return repository.DiffCommit(ctx, repository.commit.ParentHashes[1], pathPrefix)
+
+	workTree, err := NewWorkTree(ctx, repository.repo.FileTreeRepo(repository.repoModel.ID), models.NewRootTreeEntry(treeHash))
+	if err != nil {
+		return nil, err
+	}
+	return workTree.Diff(ctx, repository.commit.TreeHash, pathPrefix)
 }
 
-// Merge implement merge like git, docs https://en.wikipedia.org/wiki/Merge_(version_control)
-func (repository *WorkRepository) Merge(ctx context.Context, merger *models.User, toMergeCommitHash hash.Hash, msg string, resolver ConflictResolver) (*models.Commit, error) {
+func (repository *WorkRepository) GetMergeState(ctx context.Context, toMergeCommitHash hash.Hash) ([]*ChangePair, error) {
 	if repository.state != InBranch {
 		return nil, errors.New("must merge on branch")
 	}
@@ -608,21 +633,97 @@ func (repository *WorkRepository) Merge(ctx context.Context, merger *models.User
 		}
 	}
 
-	newCommit, err := merge(ctx,
-		repository.repo.CommitRepo(repository.repoModel.ID),
-		repository.repo.FileTreeRepo(repository.repoModel.ID),
-		merger,
-		commit,
-		repository.repoModel,
-		toMergeCommitHash,
-		msg,
-		resolver)
+	var toMergeCommit *models.Commit
+	if !toMergeCommitHash.IsEmpty() {
+		toMergeCommit, err = repository.repo.CommitRepo(repository.repoModel.ID).Commit(ctx, toMergeCommitHash)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var bestAncestor *models.Commit
+	err = repository.repo.Transaction(ctx, func(repo models.IRepo) error {
+		commitRepo := repo.CommitRepo(repository.repoModel.ID)
+		fileTreeRepo := repo.FileTreeRepo(repository.repoModel.ID)
+		var err error
+		bestAncestor, err = findBestAncestor(ctx, commitRepo, fileTreeRepo, repository.operator, repository.repoModel, commit, toMergeCommit)
+		if err != nil {
+			return err
+		}
+
+		return ErrStop
+	})
+	if err != nil && !errors.Is(err, ErrStop) {
+		return nil, err
+	}
+
+	ancestorWorkTree, err := NewWorkTree(ctx, repository.repo.FileTreeRepo(repository.repoModel.ID), models.NewRootTreeEntry(bestAncestor.TreeHash))
 	if err != nil {
 		return nil, err
 	}
 
-	updateParams := models.NewUpdateBranchParams(repository.branch.ID).SetCommitHash(newCommit.Hash)
-	err = repository.repo.BranchRepo().UpdateByID(ctx, updateParams)
+	baseDiff, err := ancestorWorkTree.Diff(ctx, treeHashFromCommit(commit), "")
+	if err != nil {
+		return nil, err
+	}
+
+	mergeDiff, err := ancestorWorkTree.Diff(ctx, treeHashFromCommit(toMergeCommit), "")
+	if err != nil {
+		return nil, err
+	}
+
+	changePairs := make([]*ChangePair, 0)
+	iter := NewChangesPairIter(baseDiff, mergeDiff)
+	for iter.Has() {
+		changePair, err := iter.Next()
+		if err != nil {
+			return nil, err
+		}
+		changePairs = append(changePairs, changePair)
+	}
+	return changePairs, nil
+}
+
+// Merge implement merge like git, docs https://en.wikipedia.org/wiki/Merge_(version_control)
+func (repository *WorkRepository) Merge(ctx context.Context, toMergeCommitHash hash.Hash, msg string, resolver ConflictResolver) (*models.Commit, error) {
+	if repository.state != InBranch {
+		return nil, errors.New("must merge on branch")
+	}
+	var targetCommit *models.Commit
+	var err error
+	if !repository.branch.CommitHash.IsEmpty() {
+		//get branch commit
+		targetCommit, err = repository.repo.CommitRepo(repository.repoModel.ID).Commit(ctx, repository.branch.CommitHash)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var sourceCommit *models.Commit
+	if !toMergeCommitHash.IsEmpty() {
+		//get toMergeCommit
+		sourceCommit, err = repository.repo.CommitRepo(repository.repoModel.ID).Commit(ctx, toMergeCommitHash)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var newCommit *models.Commit
+	err = repository.repo.Transaction(ctx, func(repo models.IRepo) error {
+		commitRepo := repo.CommitRepo(repository.repoModel.ID)
+		fileTreeRepo := repo.FileTreeRepo(repository.repoModel.ID)
+		bestAncestor, err := findBestAncestor(ctx, commitRepo, fileTreeRepo, repository.operator, repository.repoModel, sourceCommit, targetCommit)
+		if err != nil {
+			return err
+		}
+		newCommit, err = merge(ctx, commitRepo, fileTreeRepo, repository.repoModel, repository.operator, bestAncestor, sourceCommit, targetCommit, msg, resolver)
+		if err != nil {
+			return err
+		}
+
+		updateParams := models.NewUpdateBranchParams(repository.branch.ID).SetCommitHash(newCommit.Hash)
+		return repo.BranchRepo().UpdateByID(ctx, updateParams)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -649,47 +750,28 @@ func (repository *WorkRepository) Reset() {
 	repository.setCurState("", nil, nil, nil)
 }
 
-func merge(ctx context.Context,
+func findBestAncestor(ctx context.Context,
 	commitRepo models.ICommitRepo,
 	fileTreeRepo models.IFileTreeRepo,
 	merger *models.User,
-	baseCommit *models.Commit,
 	repoModel *models.Repository,
-	toMergeCommitHash hash.Hash, msg string, resolver ConflictResolver) (*models.Commit, error) {
-	toMergeCommit, err := commitRepo.Commit(ctx, toMergeCommitHash)
-	if err != nil {
-		return nil, err
+	baseCommit *models.Commit,
+	toMergeCommit *models.Commit) (*models.Commit, error) {
+
+	if baseCommit == nil && toMergeCommit == nil {
+		return nil, errors.New("cannot find nil commit")
 	}
 
+	if baseCommit == nil && toMergeCommit != nil {
+		return toMergeCommit, nil
+	}
+
+	if baseCommit != nil && toMergeCommit == nil {
+		return baseCommit, nil
+	}
 	//find accessor
 	baseCommitNode := NewWrapCommitNode(commitRepo, baseCommit)
 	toMergeCommitNode := NewWrapCommitNode(commitRepo, toMergeCommit)
-
-	{
-		//do nothing while merge is ancestor of base
-		mergeIsAncestorOfBase, err := toMergeCommitNode.IsAncestor(ctx, baseCommitNode)
-		if err != nil {
-			return nil, err
-		}
-
-		if mergeIsAncestorOfBase {
-			workRepoLog.Warnf("merge commit %s is ancestor of base commit %s", toMergeCommitHash, baseCommit.Hash)
-			return baseCommit, nil
-		}
-	}
-
-	{
-		//try fast-forward merge no need to create new commit node
-		baseIsAncestorOfMerge, err := baseCommitNode.IsAncestor(ctx, toMergeCommitNode)
-		if err != nil {
-			return nil, err
-		}
-
-		if baseIsAncestorOfMerge {
-			workRepoLog.Warnf("base commit %s is ancestor of merge commit %s", toMergeCommitHash, baseCommit.Hash)
-			return toMergeCommit, nil
-		}
-	}
 
 	// three-way merge
 	bestAncestor, err := baseCommitNode.MergeBase(ctx, toMergeCommitNode)
@@ -704,36 +786,97 @@ func merge(ctx context.Context,
 	bestCommit := bestAncestor[0]
 	if len(bestAncestor) > 1 {
 		//merge cross merge create virtual commit
-		virtualCommit, err := merge(ctx, commitRepo, fileTreeRepo, merger, bestAncestor[0].Commit(), repoModel, bestAncestor[1].Commit().Hash, "virtual commit", resolver)
+		subBestAncestor, err := findBestAncestor(ctx, commitRepo, fileTreeRepo, merger, repoModel, bestAncestor[0].Commit(), bestAncestor[1].Commit())
+		if err != nil {
+			return nil, err
+		}
+
+		virtualCommit, err := merge(ctx, commitRepo, fileTreeRepo, repoModel, merger, subBestAncestor, bestAncestor[0].Commit(), bestAncestor[1].Commit(), "virtual commit", ForbidResolver)
 		if err != nil {
 			return nil, err
 		}
 
 		bestCommit = NewWrapCommitNode(commitRepo, virtualCommit)
 	}
+	return bestCommit.Commit(), nil
+}
 
-	ancestorWorkTree, err := NewWorkTree(ctx, fileTreeRepo, models.NewRootTreeEntry(bestAncestor[0].TreeHash()))
+// merge
+// todo too much arguments, need a better solution
+func merge(ctx context.Context,
+	commitRepo models.ICommitRepo,
+	fileTreeRepo models.IFileTreeRepo,
+	repoModel *models.Repository,
+	merger *models.User,
+	bestAncestor *models.Commit,
+	sourceCommit *models.Commit,
+	targetCommit *models.Commit,
+	msg string,
+	resolver ConflictResolver) (*models.Commit, error) {
+	if sourceCommit == nil && targetCommit == nil {
+		return nil, errors.New("cannot find nil commit")
+	}
+
+	if sourceCommit != nil && targetCommit == nil {
+		//do nothing
+		return sourceCommit, nil
+	}
+
+	if sourceCommit == nil && targetCommit != nil {
+		return targetCommit, nil
+	}
+
+	baseCommitNode := NewWrapCommitNode(commitRepo, sourceCommit)
+	targetMergeCommitNode := NewWrapCommitNode(commitRepo, targetCommit)
+
+	{
+		//do nothing while merge is ancestor of base
+		mergeIsAncestorOfBase, err := targetMergeCommitNode.IsAncestor(ctx, baseCommitNode)
+		if err != nil {
+			return nil, err
+		}
+
+		if mergeIsAncestorOfBase {
+			workRepoLog.Warnf("merge commit %s is ancestor of base commit %s", targetCommit.Hash, sourceCommit.Hash)
+			return sourceCommit, nil
+		}
+	}
+
+	{
+		//try fast-forward merge no need to create new commit node
+		baseIsAncestorOfMerge, err := baseCommitNode.IsAncestor(ctx, targetMergeCommitNode)
+		if err != nil {
+			return nil, err
+		}
+
+		if baseIsAncestorOfMerge {
+			workRepoLog.Warnf("base commit %s is ancestor of merge commit %s", targetCommit.Hash, sourceCommit.Hash)
+			return targetCommit, nil
+		}
+	}
+
+	ancestorWorkTree, err := NewWorkTree(ctx, fileTreeRepo, models.NewRootTreeEntry(bestAncestor.TreeHash))
 	if err != nil {
 		return nil, err
 	}
 
-	baseDiff, err := ancestorWorkTree.Diff(ctx, baseCommit.TreeHash, "")
+	sourceDiff, err := ancestorWorkTree.Diff(ctx, sourceCommit.TreeHash, "")
 	if err != nil {
 		return nil, err
 	}
 
-	mergeDiff, err := ancestorWorkTree.Diff(ctx, toMergeCommit.TreeHash, "")
+	targetDiff, err := ancestorWorkTree.Diff(ctx, targetCommit.TreeHash, "")
 	if err != nil {
 		return nil, err
 	}
 
 	//merge diff
-	baseWorkTree, err := NewWorkTree(ctx, fileTreeRepo, models.NewRootTreeEntry(bestCommit.Commit().TreeHash))
+	baseWorkTree, err := NewWorkTree(ctx, fileTreeRepo, models.NewRootTreeEntry(bestAncestor.TreeHash))
 	if err != nil {
 		return nil, err
 	}
 
-	cmw := NewChangesMergeIter(baseDiff, mergeDiff, resolver)
+	cmw := NewChangesMergeIter(sourceDiff, targetDiff, resolver)
 	for cmw.Has() {
 		change, err := cmw.Next()
 		if err != nil {
@@ -759,7 +902,7 @@ func merge(ctx context.Context,
 		MergeTag:     "",
 		Message:      msg,
 		TreeHash:     baseWorkTree.Root().Hash(),
-		ParentHashes: []hash.Hash{baseCommit.Hash, toMergeCommitHash},
+		ParentHashes: []hash.Hash{sourceCommit.Hash, targetCommit.Hash},
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
 	}
@@ -769,9 +912,23 @@ func merge(ctx context.Context,
 	}
 	mergeCommit.Hash = hash
 
-	mergeCommitResult, err := commitRepo.Insert(ctx, mergeCommit)
+	mergeCommit, err = commitRepo.Insert(ctx, mergeCommit)
 	if err != nil {
 		return nil, err
 	}
-	return mergeCommitResult, nil
+	return mergeCommit, nil
+}
+
+func treeHashFromCommit(commit *models.Commit) hash.Hash {
+	if commit != nil {
+		return commit.TreeHash
+	}
+	return hash.Empty
+}
+
+func commitHashFromCommit(commit *models.Commit) hash.Hash { //nolint
+	if commit != nil {
+		return commit.Hash
+	}
+	return hash.Empty
 }

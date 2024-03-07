@@ -3,12 +3,15 @@ package controller
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/jiaozifs/jiaozifs/api"
 	"github.com/jiaozifs/jiaozifs/auth"
+	"github.com/jiaozifs/jiaozifs/auth/rbac"
 	"github.com/jiaozifs/jiaozifs/block/params"
 	"github.com/jiaozifs/jiaozifs/models"
+	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
 	"github.com/jiaozifs/jiaozifs/utils"
 	"github.com/jiaozifs/jiaozifs/utils/hash"
 	"github.com/jiaozifs/jiaozifs/versionmgr"
@@ -17,6 +20,7 @@ import (
 
 type WipController struct {
 	fx.In
+	BaseController
 
 	Repo                models.IRepo
 	PublicStorageConfig params.AdapterConfig
@@ -42,8 +46,23 @@ func (wipCtl WipController) GetWip(ctx context.Context, w *api.JiaozifsResponse,
 		return
 	}
 
-	if operator.Name != owner.Name { //todo check permission to operator ownerRepo
-		w.Forbidden()
+	if !wipCtl.authorizeMember(ctx, w, repository.ID, rbac.Node{
+		Type: rbac.NodeTypeAnd,
+		Nodes: []rbac.Node{
+			{
+				Permission: rbac.Permission{
+					Action:   rbacmodel.ReadWipAction,
+					Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
+				},
+			},
+			{
+				Permission: rbac.Permission{
+					Action:   rbacmodel.CreateWipAction,
+					Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
+				},
+			},
+		},
+	}) {
 		return
 	}
 
@@ -65,9 +84,9 @@ func (wipCtl WipController) GetWip(ctx context.Context, w *api.JiaozifsResponse,
 		return
 	}
 	if isNew {
-		w.JSON(wip, http.StatusCreated)
+		w.JSON(wipToDto(wip), http.StatusCreated)
 	}
-	w.JSON(wip)
+	w.JSON(wipToDto(wip))
 }
 
 // ListWip return wips of branches, operator only see himself wips in specific repository
@@ -90,8 +109,12 @@ func (wipCtl WipController) ListWip(ctx context.Context, w *api.JiaozifsResponse
 		return
 	}
 
-	if operator.Name != owner.Name { //todo check permission to operator ownerRepo
-		w.Forbidden()
+	if !wipCtl.authorizeMember(ctx, w, repository.ID, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacmodel.ListWipAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
+		},
+	}) {
 		return
 	}
 
@@ -101,7 +124,11 @@ func (wipCtl WipController) ListWip(ctx context.Context, w *api.JiaozifsResponse
 		return
 	}
 
-	w.JSON(wips)
+	apiWips := make([]*api.Wip, len(wips))
+	for index, wip := range wips {
+		apiWips[index] = wipToDto(wip)
+	}
+	w.JSON(apiWips)
 }
 
 // CommitWip commit wip to branch, operator only could operator himself wip
@@ -124,8 +151,29 @@ func (wipCtl WipController) CommitWip(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
-	if operator.Name != owner.Name { //todo check permission to operator ownerRepo
-		w.Forbidden()
+	if !wipCtl.authorizeMember(ctx, w, repository.ID, rbac.Node{
+		Type: rbac.NodeTypeAnd,
+		Nodes: []rbac.Node{
+			{
+				Permission: rbac.Permission{
+					Action:   rbacmodel.ReadWipAction,
+					Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
+				},
+			},
+			{
+				Permission: rbac.Permission{
+					Action:   rbacmodel.WriteBranchAction,
+					Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
+				},
+			},
+			{
+				Permission: rbac.Permission{
+					Action:   rbacmodel.ReadCommitAction,
+					Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
+				},
+			},
+		},
+	}) {
 		return
 	}
 
@@ -147,7 +195,89 @@ func (wipCtl WipController) CommitWip(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
-	w.JSON(workRepo.CurWip(), http.StatusCreated)
+	w.JSON(wipToDto(workRepo.CurWip()), http.StatusCreated)
+}
+
+func (wipCtl WipController) UpdateWip(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, body api.UpdateWipJSONRequestBody, ownerName string, repositoryName string, params api.UpdateWipParams) {
+	operator, err := auth.GetOperator(ctx)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	owner, err := wipCtl.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(ownerName))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	repository, err := wipCtl.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetName(repositoryName).SetOwnerID(owner.ID))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	if !wipCtl.authorizeMember(ctx, w, repository.ID, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacmodel.WriteWipAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
+		},
+	}) {
+		return
+	}
+
+	ref, err := wipCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.ID).SetName(params.RefName))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	wip, err := wipCtl.Repo.WipRepo().Get(ctx, models.NewGetWipParams().SetCreatorID(operator.ID).SetRepositoryID(repository.ID).SetRefID(ref.ID))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	updateParams := models.NewUpdateWipParams(wip.ID)
+	if body.BaseCommit != nil {
+		baseCommitHash, err := hash.FromHex(utils.StringValue(body.BaseCommit))
+		if err != nil {
+			w.Error(err)
+			return
+		}
+
+		if !baseCommitHash.IsEmpty() {
+			_, err = wipCtl.Repo.CommitRepo(repository.ID).Commit(ctx, baseCommitHash)
+			if err != nil {
+				w.Error(fmt.Errorf("unable to get commit hash %s: %w", baseCommitHash, err))
+				return
+			}
+		}
+		updateParams.SetBaseCommit(baseCommitHash)
+	}
+	if body.CurrentTree != nil {
+		currentTreeHash, err := hash.FromHex(utils.StringValue(body.CurrentTree))
+		if err != nil {
+			w.Error(err)
+			return
+		}
+
+		if !currentTreeHash.IsEmpty() {
+			_, err = wipCtl.Repo.FileTreeRepo(repository.ID).TreeNode(ctx, currentTreeHash)
+			if err != nil {
+				w.Error(fmt.Errorf("unable to get tree root %s: %w", currentTreeHash, err))
+				return
+			}
+		}
+		updateParams.SetCurrentTree(currentTreeHash)
+	}
+
+	err = wipCtl.Repo.WipRepo().UpdateByID(ctx, updateParams)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+	w.OK()
 }
 
 // DeleteWip delete active working in process operator only can delete himself wip
@@ -170,8 +300,12 @@ func (wipCtl WipController) DeleteWip(ctx context.Context, w *api.JiaozifsRespon
 		return
 	}
 
-	if operator.Name != owner.Name { //todo check permission to operator ownerRepo
-		w.Forbidden()
+	if !wipCtl.authorizeMember(ctx, w, repository.ID, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacmodel.DeleteBranchAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
+		},
+	}) {
 		return
 	}
 
@@ -215,8 +349,29 @@ func (wipCtl WipController) GetWipChanges(ctx context.Context, w *api.JiaozifsRe
 		return
 	}
 
-	if operator.Name != owner.Name { //todo check permission to operator ownerRepo
-		w.Forbidden()
+	if !wipCtl.authorizeMember(ctx, w, repository.ID, rbac.Node{
+		Type: rbac.NodeTypeAnd,
+		Nodes: []rbac.Node{
+			{
+				Permission: rbac.Permission{
+					Action:   rbacmodel.ReadCommitAction,
+					Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
+				},
+			},
+			{
+				Permission: rbac.Permission{
+					Action:   rbacmodel.ReadWipAction,
+					Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
+				},
+			},
+			{
+				Permission: rbac.Permission{
+					Action:   rbacmodel.ReadBranchAction,
+					Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
+				},
+			},
+		},
+	}) {
 		return
 	}
 
@@ -232,7 +387,7 @@ func (wipCtl WipController) GetWipChanges(ctx context.Context, w *api.JiaozifsRe
 		return
 	}
 
-	treeHash := hash.EmptyHash
+	treeHash := hash.Empty
 	if !wip.BaseCommit.IsEmpty() {
 		commit, err := wipCtl.Repo.CommitRepo(repository.ID).Commit(ctx, wip.BaseCommit)
 		if err != nil {
@@ -311,4 +466,18 @@ func (wipCtl WipController) RevertWipChanges(ctx context.Context, w *api.Jiaozif
 	}
 
 	w.OK()
+}
+
+func wipToDto(wip *models.WorkingInProcess) *api.Wip {
+	return &api.Wip{
+		BaseCommit:   wip.BaseCommit.Hex(),
+		CreatedAt:    wip.CreatedAt.UnixMilli(),
+		CreatorId:    wip.CreatorID,
+		CurrentTree:  wip.CurrentTree.Hex(),
+		Id:           wip.ID,
+		RefId:        wip.RefID,
+		RepositoryId: wip.RepositoryID,
+		State:        int(wip.State),
+		UpdatedAt:    wip.UpdatedAt.UnixMilli(),
+	}
 }

@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/jiaozifs/jiaozifs/utils/hash"
+
 	"github.com/jiaozifs/jiaozifs/api"
 	apiimpl "github.com/jiaozifs/jiaozifs/api/api_impl"
 	"github.com/jiaozifs/jiaozifs/utils"
@@ -18,14 +20,16 @@ func GetEntriesInRefSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		repoName := "black"
 		branchName := "feat/get_entries_test"
 
-		createUser(ctx, c, client, userName)
-		loginAndSwitch(ctx, c, client, "kitty login", userName, false)
-		createRepo(ctx, c, client, repoName)
-		createBranch(ctx, c, client, userName, repoName, "main", branchName)
-		createWip(ctx, c, client, "feat get entries test0", userName, repoName, branchName)
-		uploadObject(ctx, c, client, "update f1 to test branch", userName, repoName, branchName, "m.dat")
-		uploadObject(ctx, c, client, "update f2 to test branch", userName, repoName, branchName, "g/x.dat")
-		uploadObject(ctx, c, client, "update f3 to test branch", userName, repoName, branchName, "g/m.dat")
+		c.Convey("init", func(c convey.C) {
+			_ = createUser(ctx, client, userName)
+			loginAndSwitch(ctx, client, userName, false)
+			_ = createRepo(ctx, client, repoName, false)
+			_ = createBranch(ctx, client, userName, repoName, "main", branchName)
+			_ = createWip(ctx, client, userName, repoName, branchName)
+			_ = uploadObject(ctx, client, userName, repoName, branchName, "m.dat")
+			_ = uploadObject(ctx, client, userName, repoName, branchName, "g/x.dat")
+			_ = uploadObject(ctx, client, userName, repoName, branchName, "g/m.dat")
+		})
 
 		c.Convey("get wip entries", func(c convey.C) {
 			c.Convey("no auth", func() {
@@ -78,7 +82,7 @@ func GetEntriesInRefSpec(ctx context.Context, urlStr string) func(c convey.C) {
 					Type: api.RefTypeWip,
 				})
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 
 			c.Convey("not exit path", func() {
@@ -123,7 +127,9 @@ func GetEntriesInRefSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 		})
 
-		commitWip(ctx, c, client, "commit kitty first changes", userName, repoName, branchName, "test")
+		c.Convey("commit kitty first changes", func(c convey.C) {
+			commitWip(ctx, client, userName, repoName, branchName, "test")
+		})
 
 		c.Convey("get branch entries", func(c convey.C) {
 			c.Convey("no auth", func() {
@@ -176,7 +182,7 @@ func GetEntriesInRefSpec(ctx context.Context, urlStr string) func(c convey.C) {
 					Type: api.RefTypeBranch,
 				})
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 
 			c.Convey("not exit path", func() {
@@ -222,10 +228,72 @@ func GetEntriesInRefSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 		})
 
-		createWip(ctx, c, client, "main wip", userName, repoName, "main")
-		uploadObject(ctx, c, client, "update f1 to main branch", userName, repoName, "main", "a.dat")   //delete\
-		uploadObject(ctx, c, client, "update f2 to main branch", userName, repoName, "main", "g/m.dat") //modify
-		commitWip(ctx, c, client, "commit branch change", userName, repoName, "main", "test")
+		c.Convey("prepare data for commit test", func(c convey.C) {
+			createWip(ctx, client, userName, repoName, "main")
+			uploadObject(ctx, client, userName, repoName, "main", "a.dat")   //delete\
+			uploadObject(ctx, client, userName, repoName, "main", "g/m.dat") //modify
+			commitWip(ctx, client, userName, repoName, "main", "test")
+		})
+
+		c.Convey("get commit entries", func(c convey.C) {
+			c.Convey("fail to get entries in uncorrected hash", func() {
+				resp, err := client.GetEntriesInRef(ctx, userName, repoName, &api.GetEntriesInRefParams{
+					Path: utils.String("/"),
+					Ref:  utils.String("123"),
+					Type: api.RefTypeCommit,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)
+			})
+
+			c.Convey("fail to get entries in not found", func() {
+				resp, err := client.GetEntriesInRef(ctx, userName, repoName, &api.GetEntriesInRefParams{
+					Path: utils.String("/"),
+					Ref:  utils.String("46780d412b4b3c71ba6cdfcb52105c7b"),
+					Type: api.RefTypeCommit,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
+			})
+
+			c.Convey("success to get entries in empty hash", func() {
+				resp, err := client.GetEntriesInRef(ctx, userName, repoName, &api.GetEntriesInRefParams{
+					Path: utils.String("/"),
+					Ref:  utils.String(hash.Empty.Hex()),
+					Type: api.RefTypeCommit,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				result, err := api.ParseGetEntriesInRefResponse(resp)
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(*result.JSON200, convey.ShouldHaveLength, 0)
+			})
+
+			c.Convey("success to get entries in commit", func() {
+				getCommitsResp, err := client.GetCommitsInRef(ctx, userName, repoName, &api.GetCommitsInRefParams{
+					RefName: utils.String(branchName),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				getCommitsResult, err := api.ParseGetCommitsInRefResponse(getCommitsResp)
+				convey.So(err, convey.ShouldBeNil)
+
+				commit := (*getCommitsResult.JSON200)[0]
+				resp, err := client.GetEntriesInRef(ctx, userName, repoName, &api.GetEntriesInRefParams{
+					Path: utils.String("/"),
+					Ref:  utils.String(commit.Hash),
+					Type: api.RefTypeCommit,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				result, err := api.ParseGetEntriesInRefResponse(resp)
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(*result.JSON200, convey.ShouldHaveLength, 2)
+				convey.So((*result.JSON200)[0].Name, convey.ShouldEqual, "g")
+				convey.So((*result.JSON200)[1].Name, convey.ShouldEqual, "m.dat")
+			})
+		})
 
 		c.Convey("compare commit", func(c convey.C) {
 			c.Convey("get base and head", func() {
@@ -275,7 +343,7 @@ func GetEntriesInRefSpec(ctx context.Context, urlStr string) func(c convey.C) {
 					Path: utils.String("/"),
 				})
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 
 			c.Convey("not exit path", func() {
@@ -316,25 +384,35 @@ func GetCommitChangesSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		userName := "kelly"
 		repoName := "gcc"
 
-		createUser(ctx, c, client, userName)
-		loginAndSwitch(ctx, c, client, "getCommitChanges login", userName, false)
-		createRepo(ctx, c, client, repoName)
-		createWip(ctx, c, client, "feat get entries test0", userName, repoName, "main")
-		uploadObject(ctx, c, client, "update f1 to test branch", userName, repoName, "main", "m.dat")
-		commitWip(ctx, c, client, "commit kelly first changes", userName, repoName, "main", "test")
+		c.Convey("init", func(c convey.C) {
+			createUser(ctx, client, userName)
+			loginAndSwitch(ctx, client, userName, false)
+			createRepo(ctx, client, repoName, false)
+			createWip(ctx, client, userName, repoName, "main")
+			uploadObject(ctx, client, userName, repoName, "main", "m.dat")
+			commitWip(ctx, client, userName, repoName, "main", "test")
 
-		uploadObject(ctx, c, client, "update f2 to test branch", userName, repoName, "main", "g/x.dat")
-		commitWip(ctx, c, client, "commit kelly second changes", userName, repoName, "main", "test")
+			uploadObject(ctx, client, userName, repoName, "main", "g/x.dat")
+			commitWip(ctx, client, userName, repoName, "main", "test")
 
-		uploadObject(ctx, c, client, "update f3 to test branch", userName, repoName, "main", "g/m.dat")
-		commitWip(ctx, c, client, "commit kelly third changes", userName, repoName, "main", "test")
+			//delete
+			deleteObject(ctx, client, userName, repoName, "main", "g/x.dat")
 
+			//modify
+			deleteObject(ctx, client, userName, repoName, "main", "m.dat")
+			uploadObject(ctx, client, userName, repoName, "main", "m.dat")
+
+			//insert
+			uploadObject(ctx, client, userName, repoName, "main", "g/m.dat")
+			commitWip(ctx, client, userName, repoName, "main", "test")
+
+		})
 		c.Convey("get commit change", func(c convey.C) {
 			c.Convey("list commit history", func() {
-				resp, err := client.GetCommitsInRepository(ctx, userName, repoName, &api.GetCommitsInRepositoryParams{RefName: utils.String("main")})
+				resp, err := client.GetCommitsInRef(ctx, userName, repoName, &api.GetCommitsInRefParams{RefName: utils.String("main")})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
-				result, err := api.ParseGetCommitsInRepositoryResponse(resp)
+				result, err := api.ParseGetCommitsInRefResponse(resp)
 				convey.So(err, convey.ShouldBeNil)
 
 				commits = *result.JSON200
@@ -372,7 +450,7 @@ func GetCommitChangesSpec(ctx context.Context, urlStr string) func(c convey.C) {
 					Path: utils.String("/"),
 				})
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 
 			c.Convey("not exit path", func() {
@@ -392,7 +470,16 @@ func GetCommitChangesSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 				result, err := api.ParseCompareCommitResponse(resp)
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(*result.JSON200, convey.ShouldHaveLength, 1)
+				convey.So(*result.JSON200, convey.ShouldHaveLength, 3)
+
+				convey.So((*result.JSON200)[0].Path, convey.ShouldEqual, "g/m.dat")
+				convey.So((*result.JSON200)[0].Action, convey.ShouldEqual, api.N1)
+
+				convey.So((*result.JSON200)[1].Path, convey.ShouldEqual, "g/x.dat")
+				convey.So((*result.JSON200)[1].Action, convey.ShouldEqual, api.N2)
+
+				convey.So((*result.JSON200)[2].Path, convey.ShouldEqual, "m.dat")
+				convey.So((*result.JSON200)[2].Action, convey.ShouldEqual, api.N3)
 			})
 
 			c.Convey("success to get first commit changes", func() {

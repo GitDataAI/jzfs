@@ -15,8 +15,8 @@ import (
 
 func TestRefRepoInsert(t *testing.T) {
 	ctx := context.Background()
-	postgres, _, db := testhelper.SetupDatabase(ctx, t)
-	defer postgres.Stop() //nolint
+	closeDB, _, db := testhelper.SetupDatabase(ctx, t)
+	defer closeDB()
 
 	repo := models.NewBranchRepo(db)
 
@@ -34,15 +34,13 @@ func TestRefRepoInsert(t *testing.T) {
 	branch, err := repo.Get(ctx, getBranchParams)
 	require.NoError(t, err)
 
-	require.True(t, cmp.Equal(branchModel, branch, dbTimeCmpOpt))
+	require.True(t, cmp.Equal(branchModel, branch, testhelper.DBTimeCmpOpt))
 
 	mockHash := hash.Hash("mock hash")
 	err = repo.UpdateByID(ctx, models.NewUpdateBranchParams(newBranch.ID).SetCommitHash(mockHash))
 	require.NoError(t, err)
 
-	branchAfterUpdated, err := repo.Get(ctx, &models.GetBranchParams{
-		ID: newBranch.ID,
-	})
+	branchAfterUpdated, err := repo.Get(ctx, models.NewGetBranchParams().SetID(newBranch.ID))
 	require.NoError(t, err)
 	require.Equal(t, mockHash, branchAfterUpdated.CommitHash)
 
@@ -66,7 +64,7 @@ func TestRefRepoInsert(t *testing.T) {
 	sRef, err := repo.Get(ctx, getSecRefParams)
 	require.NoError(t, err)
 
-	require.True(t, cmp.Equal(secModel, sRef, dbTimeCmpOpt))
+	require.True(t, cmp.Equal(secModel, sRef, testhelper.DBTimeCmpOpt))
 
 	// ExactMatch
 	list1, hasMore, err := repo.List(ctx, models.NewListBranchParams().SetRepositoryID(branch.RepositoryID).SetName(secModel.Name, models.ExactMatch).SetAmount(1))

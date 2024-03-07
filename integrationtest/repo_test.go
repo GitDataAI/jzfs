@@ -2,9 +2,7 @@ package integrationtest
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/jiaozifs/jiaozifs/api"
 	apiimpl "github.com/jiaozifs/jiaozifs/api/api_impl"
@@ -18,9 +16,15 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 	return func(c convey.C) {
 		userName := "jimmy"
 		repoName := "happyrun"
-		createUser(ctx, c, client, userName)
-		loginAndSwitch(ctx, c, client, "jimmy login", userName, false)
 
+		c.Convey("init", func(c convey.C) {
+			loginAndSwitch(ctx, client, "admin2", true)
+			_ = createRepo(ctx, client, "admin2_repo", false)
+
+			_ = createUser(ctx, client, userName)
+			loginAndSwitch(ctx, client, userName, false)
+
+		})
 		c.Convey("create repo", func(c convey.C) {
 			c.Convey("forbidden create repo name", func() {
 				resp, err := client.CreateRepository(ctx, api.CreateRepository{
@@ -59,14 +63,13 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 					Name:        repoName,
 				})
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
 
-				grp, err := api.ParseGetRepositoryResponse(resp)
+				grp, err := api.ParseCreateRepositoryResponse(resp)
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(grp.JSON200.Head, convey.ShouldEqual, controller.DefaultBranchName)
-				fmt.Println(grp.JSON200.Id)
+				convey.So(grp.JSON201.Head, convey.ShouldEqual, controller.DefaultBranchName)
 				//check default branch created
-				branchResp, err := client.GetBranch(ctx, userName, grp.JSON200.Name, &api.GetBranchParams{RefName: controller.DefaultBranchName})
+				branchResp, err := client.GetBranch(ctx, userName, grp.JSON201.Name, &api.GetBranchParams{RefName: controller.DefaultBranchName})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(branchResp.StatusCode, convey.ShouldEqual, http.StatusOK)
 
@@ -81,7 +84,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 					Name:        "happygo",
 				})
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
 			})
 
 			c.Convey("duplicate repo name", func() {
@@ -147,7 +150,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(len(listRepos.JSON200.Results), convey.ShouldEqual, 2)
 
 				newResp, err := client.ListRepositoryOfAuthenticatedUser(ctx, &api.ListRepositoryOfAuthenticatedUserParams{
-					After:  utils.Time(listRepos.JSON200.Results[0].UpdatedAt),
+					After:  utils.Int64(listRepos.JSON200.Results[0].UpdatedAt),
 					Amount: utils.Int(1),
 				})
 				convey.So(err, convey.ShouldBeNil)
@@ -205,7 +208,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(len(listRepos.JSON200.Results), convey.ShouldEqual, 2)
 
 				newResp, err := client.ListRepository(ctx, userName, &api.ListRepositoryParams{
-					After:  utils.Time(listRepos.JSON200.Results[0].UpdatedAt),
+					After:  utils.Int64(listRepos.JSON200.Results[0].UpdatedAt),
 					Amount: utils.Int(1),
 				})
 				convey.So(err, convey.ShouldBeNil)
@@ -242,9 +245,9 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 
 			c.Convey("list others repository", func() {
-				resp, err := client.ListRepository(ctx, "admin", &api.ListRepositoryParams{Prefix: utils.String("bad")})
+				resp, err := client.ListRepository(ctx, "admin2", &api.ListRepositoryParams{Prefix: utils.String("bad")})
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 		})
 
@@ -281,9 +284,9 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 
 			c.Convey("get other's repo", func() {
-				resp, err := client.GetRepository(ctx, "admin", repoName)
+				resp, err := client.GetRepository(ctx, "admin2", "admin2_repo")
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 		})
 
@@ -336,11 +339,11 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 			c.Convey("update repository in other's repo", func() {
 				description := ""
-				resp, err := client.UpdateRepository(ctx, "admin", repoName, api.UpdateRepositoryJSONRequestBody{
+				resp, err := client.UpdateRepository(ctx, "admin2", "admin2_repo", api.UpdateRepositoryJSONRequestBody{
 					Description: utils.String(description),
 				})
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 
 			c.Convey("update head to not exit", func() {
@@ -351,7 +354,10 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
 			})
 
-			createBranch(ctx, c, client, userName, repoName, "main", "feat/ano_branch")
+			c.Convey("create branch", func(c convey.C) {
+				createBranch(ctx, client, userName, repoName, "main", "feat/ano_branch")
+			})
+
 			c.Convey("update default head success", func() {
 				resp, err := client.UpdateRepository(ctx, userName, repoName, api.UpdateRepositoryJSONRequestBody{
 					Head: utils.String("feat/ano_branch"),
@@ -365,7 +371,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			c.Convey("no auth", func() {
 				re := client.RequestEditors
 				client.RequestEditors = nil
-				resp, err := client.GetCommitsInRepository(ctx, userName, repoName, &api.GetCommitsInRepositoryParams{
+				resp, err := client.GetCommitsInRef(ctx, userName, repoName, &api.GetCommitsInRefParams{
 					RefName: utils.String(controller.DefaultBranchName),
 				})
 				client.RequestEditors = re
@@ -373,7 +379,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 			c.Convey("update repository in not exit repo", func() {
-				resp, err := client.GetCommitsInRepository(ctx, userName, "happyrunfake", &api.GetCommitsInRepositoryParams{
+				resp, err := client.GetCommitsInRef(ctx, userName, "happyrunfake", &api.GetCommitsInRefParams{
 					RefName: utils.String(controller.DefaultBranchName),
 				})
 				convey.So(err, convey.ShouldBeNil)
@@ -381,7 +387,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 
 			c.Convey("update repository in non exit user", func() {
-				resp, err := client.GetCommitsInRepository(ctx, "telo", repoName, &api.GetCommitsInRepositoryParams{
+				resp, err := client.GetCommitsInRef(ctx, "telo", repoName, &api.GetCommitsInRefParams{
 					RefName: utils.String(controller.DefaultBranchName),
 				})
 				convey.So(err, convey.ShouldBeNil)
@@ -389,67 +395,64 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 
 			c.Convey("update repository in other's repo", func() {
-				resp, err := client.GetCommitsInRepository(ctx, "admin", repoName, &api.GetCommitsInRepositoryParams{
+				resp, err := client.GetCommitsInRef(ctx, "admin2", "admin2_repo", &api.GetCommitsInRefParams{
 					RefName: utils.String(controller.DefaultBranchName),
 				})
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 
 			})
 
-			createWip(ctx, c, client, "add commit to random branch", userName, repoName, controller.DefaultBranchName)
-			uploadObject(ctx, c, client, "add rand object", userName, repoName, controller.DefaultBranchName, "a.txt")
-			commitWip(ctx, c, client, "commit object", userName, repoName, controller.DefaultBranchName, "first commit")
+			c.Convey("add commit to branch", func(c convey.C) {
+				createWip(ctx, client, userName, repoName, controller.DefaultBranchName)
+				uploadObject(ctx, client, userName, repoName, controller.DefaultBranchName, "a.txt")
+				commitWip(ctx, client, userName, repoName, controller.DefaultBranchName, "first commit")
+			})
+
 			c.Convey("success get commits", func() {
-				resp, err := client.GetCommitsInRepository(ctx, userName, repoName, &api.GetCommitsInRepositoryParams{
+				resp, err := client.GetCommitsInRef(ctx, userName, repoName, &api.GetCommitsInRefParams{
 					RefName: utils.String(controller.DefaultBranchName),
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
 
-				result, err := api.ParseGetCommitsInRepositoryResponse(resp)
+				result, err := api.ParseGetCommitsInRefResponse(resp)
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(*result.JSON200, convey.ShouldHaveLength, 1)
 				convey.So((*result.JSON200)[0].Message, convey.ShouldEqual, "first commit")
 			})
 
-			uploadObject(ctx, c, client, "add sec object", userName, repoName, controller.DefaultBranchName, "b.txt")
-			commitWip(ctx, c, client, "commit sec object", userName, repoName, controller.DefaultBranchName, "second commit")
-			uploadObject(ctx, c, client, "add third object", userName, repoName, controller.DefaultBranchName, "c.txt")
-			commitWip(ctx, c, client, "commit third object", userName, repoName, controller.DefaultBranchName, "third commit")
+			c.Convey("add double commit to branch", func(c convey.C) {
+				uploadObject(ctx, client, userName, repoName, controller.DefaultBranchName, "b.txt")
+				commitWip(ctx, client, userName, repoName, controller.DefaultBranchName, "second commit")
+				uploadObject(ctx, client, userName, repoName, controller.DefaultBranchName, "c.txt")
+				commitWip(ctx, client, userName, repoName, controller.DefaultBranchName, "third commit")
+			})
+
 			c.Convey("success get commits by params", func() {
-				resp, err := client.GetCommitsInRepository(ctx, userName, repoName, &api.GetCommitsInRepositoryParams{
+				resp, err := client.GetCommitsInRef(ctx, userName, repoName, &api.GetCommitsInRefParams{
 					RefName: utils.String(controller.DefaultBranchName),
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
 
-				result, err := api.ParseGetCommitsInRepositoryResponse(resp)
+				result, err := api.ParseGetCommitsInRefResponse(resp)
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(*result.JSON200, convey.ShouldHaveLength, 3)
 				convey.So((*result.JSON200)[0].Message, convey.ShouldEqual, "third commit")
 
-				newResp, err := client.GetCommitsInRepository(ctx, userName, repoName, &api.GetCommitsInRepositoryParams{
-					After:   utils.String((*result.JSON200)[0].Committer.When.Format(time.RFC3339Nano)),
+				newResp, err := client.GetCommitsInRef(ctx, userName, repoName, &api.GetCommitsInRefParams{
+					After:   utils.Int64((*result.JSON200)[0].Committer.When),
 					Amount:  utils.Int(1),
 					RefName: utils.String(controller.DefaultBranchName),
 				})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
 
-				newResult, err := api.ParseGetCommitsInRepositoryResponse(newResp)
+				newResult, err := api.ParseGetCommitsInRefResponse(newResp)
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(*newResult.JSON200, convey.ShouldHaveLength, 1)
 				convey.So((*newResult.JSON200)[0].Message, convey.ShouldEqual, "second commit")
-			})
-
-			c.Convey("failed get commits by wrong params", func() {
-				resp, err := client.GetCommitsInRepository(ctx, userName, repoName, &api.GetCommitsInRepositoryParams{
-					After:   utils.String("123"),
-					RefName: utils.String(controller.DefaultBranchName),
-				})
-				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusInternalServerError)
 			})
 		})
 
@@ -457,31 +460,31 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			c.Convey("no auth", func() {
 				re := client.RequestEditors
 				client.RequestEditors = nil
-				resp, err := client.DeleteRepository(ctx, userName, repoName)
+				resp, err := client.DeleteRepository(ctx, userName, repoName, &api.DeleteRepositoryParams{})
 				client.RequestEditors = re
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 			c.Convey("delete repository in not exit repo", func() {
-				resp, err := client.DeleteRepository(ctx, userName, "happyrunfake")
+				resp, err := client.DeleteRepository(ctx, userName, "happyrunfake", &api.DeleteRepositoryParams{})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
 			})
 
 			c.Convey("delete repository in non exit user", func() {
-				resp, err := client.DeleteRepository(ctx, "telo", repoName)
+				resp, err := client.DeleteRepository(ctx, "telo", repoName, &api.DeleteRepositoryParams{})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
 			})
 
 			c.Convey("delete repository in other's repo", func() {
-				resp, err := client.DeleteRepository(ctx, "admin", repoName)
+				resp, err := client.DeleteRepository(ctx, "admin2", "admin2_repo", &api.DeleteRepositoryParams{})
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 
 			c.Convey("delete repository successful", func() {
-				resp, err := client.DeleteRepository(ctx, userName, repoName)
+				resp, err := client.DeleteRepository(ctx, userName, repoName, &api.DeleteRepositoryParams{})
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
 

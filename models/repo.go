@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/google/uuid"
+	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
 	"github.com/uptrace/bun"
 )
 
@@ -28,12 +29,19 @@ func IsolationLevelOption(level sql.IsolationLevel) TxOption {
 type IRepo interface {
 	Transaction(ctx context.Context, fn func(repo IRepo) error, opts ...TxOption) error
 	UserRepo() IUserRepo
+	MergeRequestRepo() IMergeRequestRepo
 	FileTreeRepo(repoID uuid.UUID) IFileTreeRepo
 	CommitRepo(repoID uuid.UUID) ICommitRepo
 	TagRepo(repoID uuid.UUID) ITagRepo
 	BranchRepo() IBranchRepo
 	RepositoryRepo() IRepositoryRepo
 	WipRepo() IWipRepo
+	AkskRepo() IAkskRepo
+
+	MemberRepo() IMemberRepo
+	GroupRepo() rbacmodel.IGroupRepo
+	PolicyRepo() rbacmodel.IPolicyRepo
+	UserGroupRepo() rbacmodel.IUserGroupRepo
 }
 
 type PgRepo struct {
@@ -60,6 +68,14 @@ func (repo *PgRepo) UserRepo() IUserRepo {
 	return NewUserRepo(repo.db)
 }
 
+// MergeRequestRepo returns an instance of the IMergeRequestRepo interface.
+//
+// It does not take any parameters.
+// It returns an IMergeRequestRepo.
+func (repo *PgRepo) MergeRequestRepo() IMergeRequestRepo {
+	return NewMergeRequestRepo(repo.db)
+}
+
 func (repo *PgRepo) FileTreeRepo(repoID uuid.UUID) IFileTreeRepo {
 	return NewFileTree(repo.db, repoID)
 }
@@ -82,4 +98,24 @@ func (repo *PgRepo) RepositoryRepo() IRepositoryRepo {
 
 func (repo *PgRepo) WipRepo() IWipRepo {
 	return NewWipRepo(repo.db)
+}
+
+func (repo *PgRepo) AkskRepo() IAkskRepo {
+	return NewAkskRepo(repo.db)
+}
+
+func (repo *PgRepo) MemberRepo() IMemberRepo {
+	return NewMemberRepo(repo.db)
+}
+
+func (repo *PgRepo) GroupRepo() rbacmodel.IGroupRepo {
+	return rbacmodel.NewGroupRepo(repo.db)
+}
+
+func (repo *PgRepo) PolicyRepo() rbacmodel.IPolicyRepo {
+	return rbacmodel.NewPolicyRepo(repo.db)
+}
+
+func (repo *PgRepo) UserGroupRepo() rbacmodel.IUserGroupRepo {
+	return rbacmodel.NewUserGroupRepo(repo.db)
 }

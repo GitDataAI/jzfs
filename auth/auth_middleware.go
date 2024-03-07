@@ -3,8 +3,17 @@ package auth
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
+
+	logging "github.com/ipfs/go-log/v2"
+
+	"github.com/jiaozifs/jiaozifs/utils"
+
+	"github.com/jiaozifs/jiaozifs/auth/aksk"
+
+	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/routers"
@@ -20,6 +29,7 @@ const (
 	IDTokenClaimsSessionKey = "id_token_claims"
 )
 
+var log = logging.Logger("auth")
 var (
 	ErrFailedToAccessStorage = errors.New("failed to access storage")
 	ErrAuthenticatingRequest = errors.New("error authenticating request")
@@ -50,11 +60,19 @@ type CookieAuthConfig struct {
 	AuthSource              string
 }
 
-func Middleware(swagger *openapi3.T, authenticator Authenticator, secretStore crypt.SecretStore, userRepo models.IUserRepo, sessionStore sessions.Store) func(next http.Handler) http.Handler {
+func Middleware(swagger *openapi3.T,
+	authenticator *BasicAuthenticator,
+	secretStore crypt.SecretStore,
+	userRepo models.IUserRepo,
+	akskRepo models.IAkskRepo,
+	sessionStore sessions.Store,
+	verifier aksk.Verifier,
+) func(next http.Handler) http.Handler {
 	router, err := legacy.NewRouter(swagger)
 	if err != nil {
 		panic(err)
 	}
+
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// if request already authenticated
@@ -69,7 +87,7 @@ func Middleware(swagger *openapi3.T, authenticator Authenticator, secretStore cr
 				_, _ = w.Write([]byte(err.Error()))
 				return
 			}
-			user, err := checkSecurityRequirements(r, securityRequirements, authenticator, sessionStore, secretStore, userRepo)
+			user, err := checkSecurityRequirements(r, securityRequirements, authenticator, sessionStore, secretStore, verifier, userRepo, akskRepo)
 			if err != nil {
 				w.WriteHeader(http.StatusUnauthorized)
 				_, _ = w.Write([]byte(err.Error()))
@@ -87,95 +105,131 @@ func Middleware(swagger *openapi3.T, authenticator Authenticator, secretStore cr
 // it will return nil user and error in case of no security checks to match.
 func checkSecurityRequirements(r *http.Request,
 	securityRequirements openapi3.SecurityRequirements,
-	authenticator Authenticator,
+	authenticator *BasicAuthenticator,
 	sessionStore sessions.Store,
 	secretStore crypt.SecretStore,
+	verifier aksk.Verifier,
 	userRepo models.IUserRepo,
+	akskRepo models.IAkskRepo,
 ) (*models.User, error) {
 	ctx := r.Context()
 	var user *models.User
 	var err error
 
 	for _, securityRequirement := range securityRequirements {
-		for provider := range securityRequirement {
-			switch provider {
-			case "jwt_token":
-				// validate jwt token from header
-				authHeaderValue := r.Header.Get("Authorization")
-				if authHeaderValue == "" {
-					continue
-				}
-				parts := strings.Fields(authHeaderValue)
-				if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
-					continue
-				}
-				token := parts[1]
-				user, err = userByToken(ctx, secretStore, userRepo, token)
-			case "basic_auth":
-				// validate using basic auth
-				accessKey, secretKey, ok := r.BasicAuth()
-				if !ok {
-					continue
-				}
-				user, err = userByAuth(ctx, authenticator, userRepo, accessKey, secretKey)
-			case "cookie_auth":
-				var internalAuthSession *sessions.Session
-				internalAuthSession, _ = sessionStore.Get(r, InternalAuthSessionName)
-				token := ""
-				if internalAuthSession != nil {
-					token, _ = internalAuthSession.Values[TokenSessionKeyName].(string)
-				}
-				if token == "" {
-					continue
-				}
-				user, err = userByToken(ctx, secretStore, userRepo, token)
-			default:
-				// unknown security requirement to check
-				log.With("provider", provider).Error("Authentication middleware unknown security requirement provider")
-				return nil, ErrAuthenticatingRequest
+		securityKeys := getSecurityKey(securityRequirement)
+		if utils.Contain(securityKeys, "jwt_token") {
+			// validate jwt token from header
+			authHeaderValue := r.Header.Get("Authorization")
+			if authHeaderValue == "" {
+				continue
+			}
+			parts := strings.Fields(authHeaderValue)
+			if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
+				continue
+			}
+			token := parts[1]
+			user, err = userByToken(ctx, userRepo, secretStore.SharedSecret(), token)
+		} else if utils.Contain(securityKeys, "basic_auth") {
+			// validate using basic auth
+			userName, password, ok := r.BasicAuth()
+			if !ok {
+				continue
 			}
 
-			if err != nil {
-				return nil, err
+			user, err = userByAuth(ctx, authenticator, userName, password)
+		} else if utils.Contain(securityKeys, "cookie_auth") {
+			var internalAuthSession *sessions.Session
+			internalAuthSession, _ = sessionStore.Get(r, InternalAuthSessionName)
+			token := ""
+			if internalAuthSession != nil {
+				token, _ = internalAuthSession.Values[TokenSessionKeyName].(string)
 			}
-			if user != nil {
-				return user, nil
+			if token == "" {
+				continue
 			}
+			user, err = userByToken(ctx, userRepo, secretStore.SharedSecret(), token)
+		} else if utils.Contain(securityKeys, aksk.AccessKeykey) {
+			isAkskRequest := verifier.IsAkskCredential(r)
+			if !isAkskRequest {
+				continue
+			}
+			user, err = userByAKSK(ctx, akskRepo, userRepo, verifier, r)
+		} else {
+			// unknown security requirement to check
+			log.With("provider", securityKeys).Error("Authentication middleware unknown security requirement provider")
+			return nil, ErrAuthenticatingRequest
+		}
+
+		if err != nil {
+			return nil, err
+		}
+		if user != nil {
+			return user, nil
 		}
 	}
 	return nil, nil
 }
 
-func userByToken(ctx context.Context, secretStore crypt.SecretStore, userRepo models.IUserRepo, tokenString string) (*models.User, error) {
-	claims, err := VerifyToken(secretStore.SharedSecret(), tokenString)
-	// make sure no audience is set for login token
-	if err != nil || !claims.VerifyAudience(LoginAudience, false) {
+func userByAKSK(ctx context.Context, akskRepo models.IAkskRepo, userRepo models.IUserRepo, verifier aksk.Verifier, r *http.Request) (*models.User, error) {
+	ak, err := verifier.Verify(r)
+	if err != nil {
+		return nil, err
+	}
+
+	akModel, err := akskRepo.Get(ctx, models.NewGetAkSkParams().SetAccessKey(ak))
+	if err != nil {
+		return nil, err
+	}
+
+	userModel, err := userRepo.Get(ctx, models.NewGetUserParams().SetID(akModel.UserID))
+	if err != nil {
+		return nil, err
+	}
+	return userModel, nil
+}
+
+func userByToken(ctx context.Context, userRepo models.IUserRepo, secret []byte, tokenString string) (*models.User, error) {
+	claims, err := VerifyToken(secret, tokenString)
+	if err != nil {
 		return nil, ErrAuthenticatingRequest
 	}
 
-	username := claims.Subject
+	// make sure no audience is set for login token
+	validator := jwt.NewValidator(jwt.WithAudience(LoginAudience))
+	if err = validator.Validate(claims); err != nil {
+		return nil, fmt.Errorf("invalid token: %s %w", err, ErrAuthenticatingRequest)
+	}
+
+	username, err := claims.GetSubject()
+	if err != nil {
+		return nil, err
+	}
 	userData, err := userRepo.Get(ctx, models.NewGetUserParams().SetName(username))
 	if err != nil {
 		log.With(
-			"token_id", claims.Id,
+			"token", tokenString,
 			"username", username,
-			"subject", claims.Subject,
+			"subject", username,
 		).Debugf("could not find user id by credentials %v", err)
 		return nil, ErrAuthenticatingRequest
 	}
 	return userData, nil
 }
 
-func userByAuth(ctx context.Context, authenticator Authenticator, userRepo models.IUserRepo, accessKey string, secretKey string) (*models.User, error) {
-	username, err := authenticator.AuthenticateUser(ctx, accessKey, secretKey)
+func userByAuth(ctx context.Context, authenticator *BasicAuthenticator, accessKey string, secretKey string) (*models.User, error) {
+	user, err := authenticator.AuthenticateUser(ctx, accessKey, secretKey)
 	if err != nil {
 		log.With("user", accessKey).Errorf("authenticate %v", err)
 		return nil, ErrAuthenticatingRequest
 	}
-	user, err := userRepo.Get(ctx, models.NewGetUserParams().SetName(username))
-	if err != nil {
-		log.With("user_name", username).Debugf("could not find user id by credentials %s", err)
-		return nil, ErrAuthenticatingRequest
-	}
 	return user, nil
+}
+
+func getSecurityKey(security openapi3.SecurityRequirement) []string {
+	var keys []string
+	for key := range security {
+		keys = append(keys, key)
+	}
+	return keys
 }

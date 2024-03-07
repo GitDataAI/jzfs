@@ -1,0 +1,58 @@
+name: test
+
+on:
+  workflow_call:
+    secrets:
+      DOCKERHUB_USERNAME:
+        required: true
+      DOCKERHUB_TOKEN:
+        required: true
+      KUBECONTENT:
+        required: true
+jobs:
+  deployment:
+    if: ${{ startsWith(github.ref, 'refs/heads/deployment/') || github.ref == 'refs/heads/main'  }}
+    runs-on: [self-hosted]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.22.0'
+          cache: false  #post setup fail in local runner , disable for now
+
+      - name: install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get -o Acquire::Retries=3 install make gcc git curl wget -y
+
+      - name: Build
+        env:
+          GOPROXY: "https://proxy.golang.org,direct"
+          GO111MODULE: "on"
+        run: |
+          make build
+
+      - name: Get version
+        id: version
+        run: |
+          if [[ -n "$GITHUB_REF" && "$GITHUB_REF" == "refs/tags/"* ]]; then
+            echo "tag version"
+            echo "::set-output name=version::${GITHUB_REF/refs\/tags\//}"
+          else
+            echo "commit version"    
+            echo "::set-output name=version::${{ github.sha }}"
+          fi
+
+      - name: Build and push
+        run: |
+          docker login -u  ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_TOKEN }}
+          make docker TAG=${{ steps.version.outputs.version }}
+
+      - name: Deploy
+        uses: WyriHaximus/github-action-helm3@v3
+        with:
+          exec: helm upgrade  jiaozifs-api --install  ./chart --wait --atomic --timeout 2m --namespace jiaozifs --set-string log_level=debug --set-string db='${{secrets.DBURL}}' --set-string tag=${{ steps.version.outputs.version }}
+          kubeconfig: ${{ secrets.KUBECONTENT }}
+          overrule_existing_kubeconfig: "true"

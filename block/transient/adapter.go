@@ -64,6 +64,11 @@ func (a *Adapter) Remove(_ context.Context, _ block.ObjectPointer) error {
 	return nil
 }
 
+func (a *Adapter) RemoveNameSpace(_ context.Context, _ string) error {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (a *Adapter) Copy(_ context.Context, _, _ block.ObjectPointer) error {
 	return nil
 }

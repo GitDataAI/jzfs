@@ -15,7 +15,6 @@ import (
 	"net/url"
 	"path"
 	"strings"
-	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
@@ -24,9 +23,14 @@ import (
 )
 
 const (
-	Basic_authScopes  = "basic_auth.Scopes"
-	Cookie_authScopes = "cookie_auth.Scopes"
-	Jwt_tokenScopes   = "jwt_token.Scopes"
+	JiaozifsAccessKeyIdScopes = "JiaozifsAccessKeyId.Scopes"
+	SignatureScopes           = "Signature.Scopes"
+	SignatureMethodScopes     = "SignatureMethod.Scopes"
+	SignatureVersionScopes    = "SignatureVersion.Scopes"
+	TimestampScopes           = "Timestamp.Scopes"
+	Basic_authScopes          = "basic_auth.Scopes"
+	Cookie_authScopes         = "cookie_auth.Scopes"
+	Jwt_tokenScopes           = "jwt_token.Scopes"
 )
 
 // Defines values for ChangeAction.
@@ -56,6 +60,22 @@ const (
 	NotInitialized SetupStateState = "not_initialized"
 )
 
+// Aksk defines model for Aksk.
+type Aksk struct {
+	AccessKey   string             `json:"access_key"`
+	CreatedAt   int64              `json:"created_at"`
+	Description *string            `json:"description,omitempty"`
+	Id          openapi_types.UUID `json:"id"`
+	SecretKey   string             `json:"secret_key"`
+	UpdatedAt   int64              `json:"updated_at"`
+}
+
+// AkskList defines model for AkskList.
+type AkskList struct {
+	Pagination Pagination `json:"pagination"`
+	Results    []SafeAksk `json:"results"`
+}
+
 // AuthenticationToken defines model for AuthenticationToken.
 type AuthenticationToken struct {
 	// Token a JWT token that could be used to authenticate requests
@@ -68,13 +88,13 @@ type AuthenticationToken struct {
 // Branch defines model for Branch.
 type Branch struct {
 	CommitHash   string             `json:"commit_hash"`
-	CreatedAt    time.Time          `json:"created_at"`
+	CreatedAt    int64              `json:"created_at"`
 	CreatorId    openapi_types.UUID `json:"creator_id"`
 	Description  *string            `json:"description,omitempty"`
 	Id           openapi_types.UUID `json:"id"`
 	Name         string             `json:"name"`
 	RepositoryId openapi_types.UUID `json:"repository_id"`
-	UpdatedAt    time.Time          `json:"updated_at"`
+	UpdatedAt    int64              `json:"updated_at"`
 }
 
 // BranchCreation defines model for BranchCreation.
@@ -100,18 +120,34 @@ type Change struct {
 // ChangeAction defines model for Change.Action.
 type ChangeAction int
 
+// ChangePair defines model for ChangePair.
+type ChangePair struct {
+	IsConflict bool    `json:"is_conflict"`
+	Left       *Change `json:"left,omitempty"`
+	Path       string  `json:"path"`
+	Right      *Change `json:"right,omitempty"`
+}
+
 // Commit defines model for Commit.
 type Commit struct {
 	Author       Signature          `json:"author"`
 	Committer    Signature          `json:"committer"`
-	CreatedAt    time.Time          `json:"created_at"`
+	CreatedAt    int64              `json:"created_at"`
 	Hash         string             `json:"hash"`
 	MergeTag     string             `json:"merge_tag"`
 	Message      string             `json:"message"`
 	ParentHashes []string           `json:"parent_hashes"`
 	RepositoryId openapi_types.UUID `json:"repository_id"`
 	TreeHash     string             `json:"tree_hash"`
-	UpdatedAt    time.Time          `json:"updated_at"`
+	UpdatedAt    int64              `json:"updated_at"`
+}
+
+// CreateMergeRequest defines model for CreateMergeRequest.
+type CreateMergeRequest struct {
+	Description      *string `json:"description,omitempty"`
+	SourceBranchName string  `json:"source_branch_name"`
+	TargetBranchName string  `json:"target_branch_name"`
+	Title            string  `json:"title"`
 }
 
 // CreateRepository defines model for CreateRepository.
@@ -120,16 +156,26 @@ type CreateRepository struct {
 	BlockstoreConfig *string `json:"blockstore_config,omitempty"`
 	Description      *string `json:"description,omitempty"`
 	Name             string  `json:"name"`
+	Visible          *bool   `json:"visible,omitempty"`
 }
 
 // FullTreeEntry defines model for FullTreeEntry.
 type FullTreeEntry struct {
-	CreatedAt time.Time `json:"created_at"`
-	Hash      string    `json:"hash"`
-	IsDir     bool      `json:"is_dir"`
-	Name      string    `json:"name"`
-	Size      int64     `json:"size"`
-	UpdatedAt time.Time `json:"updated_at"`
+	CreatedAt int64  `json:"created_at"`
+	Hash      string `json:"hash"`
+	IsDir     bool   `json:"is_dir"`
+	Name      string `json:"name"`
+	Size      int64  `json:"size"`
+	UpdatedAt int64  `json:"updated_at"`
+}
+
+// Group defines model for Group.
+type Group struct {
+	CreatedAt int64                `json:"created_at"`
+	Id        openapi_types.UUID   `json:"id"`
+	Name      string               `json:"name"`
+	Policies  []openapi_types.UUID `json:"policies"`
+	UpdatedAt int64                `json:"updated_at"`
 }
 
 // LoginConfig defines model for LoginConfig.
@@ -161,6 +207,62 @@ type LoginConfig struct {
 // LoginConfigRBAC RBAC will remain enabled on GUI if "external".  That only works
 // with an external auth service.
 type LoginConfigRBAC string
+
+// Member defines model for Member.
+type Member struct {
+	CreatedAt int64              `json:"created_at"`
+	GroupId   openapi_types.UUID `json:"group_id"`
+	Id        openapi_types.UUID `json:"id"`
+	RepoId    openapi_types.UUID `json:"repo_id"`
+	UpdatedAt int64              `json:"updated_at"`
+	UserId    openapi_types.UUID `json:"user_id"`
+}
+
+// MergeMergeRequest defines model for MergeMergeRequest.
+type MergeMergeRequest struct {
+	// ConflictResolve use to record the resolution of the conflict, example({"b/a.txt":"left"})
+	ConflictResolve *map[string]string `json:"conflict_resolve,omitempty"`
+	Msg             string             `json:"msg"`
+}
+
+// MergeRequest defines model for MergeRequest.
+type MergeRequest struct {
+	AuthorId     openapi_types.UUID `json:"author_id"`
+	CreatedAt    int64              `json:"created_at"`
+	Description  *string            `json:"description,omitempty"`
+	Id           openapi_types.UUID `json:"id"`
+	MergeStatus  int                `json:"merge_status"`
+	Sequence     uint64             `json:"sequence"`
+	SourceBranch openapi_types.UUID `json:"source_branch"`
+	SourceRepoId openapi_types.UUID `json:"source_repo_id"`
+	TargetBranch openapi_types.UUID `json:"target_branch"`
+	TargetRepoId openapi_types.UUID `json:"target_repo_id"`
+	Title        string             `json:"title"`
+	UpdatedAt    int64              `json:"updated_at"`
+}
+
+// MergeRequestFullState defines model for MergeRequestFullState.
+type MergeRequestFullState struct {
+	AuthorId     openapi_types.UUID `json:"author_id"`
+	Changes      []ChangePair       `json:"changes"`
+	CreatedAt    int64              `json:"created_at"`
+	Description  *string            `json:"description,omitempty"`
+	Id           openapi_types.UUID `json:"id"`
+	MergeStatus  int                `json:"merge_status"`
+	Sequence     uint64             `json:"sequence"`
+	SourceBranch openapi_types.UUID `json:"source_branch"`
+	SourceRepoId openapi_types.UUID `json:"source_repo_id"`
+	TargetBranch openapi_types.UUID `json:"target_branch"`
+	TargetRepoId openapi_types.UUID `json:"target_repo_id"`
+	Title        string             `json:"title"`
+	UpdatedAt    int64              `json:"updated_at"`
+}
+
+// MergeRequestList defines model for MergeRequestList.
+type MergeRequestList struct {
+	Pagination Pagination     `json:"pagination"`
+	Results    []MergeRequest `json:"results"`
+}
 
 // ObjectStats defines model for ObjectStats.
 type ObjectStats struct {
@@ -200,7 +302,7 @@ type RefType string
 
 // Repository defines model for Repository.
 type Repository struct {
-	CreatedAt            time.Time          `json:"created_at"`
+	CreatedAt            int64              `json:"created_at"`
 	CreatorId            openapi_types.UUID `json:"creator_id"`
 	Description          *string            `json:"description,omitempty"`
 	Head                 string             `json:"head"`
@@ -209,14 +311,24 @@ type Repository struct {
 	OwnerId              openapi_types.UUID `json:"owner_id"`
 	StorageAdapterParams *string            `json:"storage_adapter_params,omitempty"`
 	StorageNamespace     *string            `json:"storage_namespace,omitempty"`
-	UpdatedAt            time.Time          `json:"updated_at"`
+	UpdatedAt            int64              `json:"updated_at"`
 	UsePublicStorage     bool               `json:"use_public_storage"`
+	Visible              bool               `json:"visible"`
 }
 
 // RepositoryList defines model for RepositoryList.
 type RepositoryList struct {
 	Pagination Pagination   `json:"pagination"`
 	Results    []Repository `json:"results"`
+}
+
+// SafeAksk defines model for SafeAksk.
+type SafeAksk struct {
+	AccessKey   string             `json:"access_key"`
+	CreatedAt   int64              `json:"created_at"`
+	Description *string            `json:"description,omitempty"`
+	Id          openapi_types.UUID `json:"id"`
+	UpdatedAt   int64              `json:"updated_at"`
 }
 
 // SetupState defines model for SetupState.
@@ -234,7 +346,14 @@ type SetupStateState string
 type Signature struct {
 	Email openapi_types.Email `json:"email"`
 	Name  string              `json:"name"`
-	When  time.Time           `json:"when"`
+	When  int64               `json:"when"`
+}
+
+// UpdateMergeRequest defines model for UpdateMergeRequest.
+type UpdateMergeRequest struct {
+	Description *string `json:"description,omitempty"`
+	Status      *int    `json:"status,omitempty"`
+	Title       *string `json:"title,omitempty"`
 }
 
 // UpdateRepository defines model for UpdateRepository.
@@ -243,17 +362,23 @@ type UpdateRepository struct {
 	Head        *string `json:"head,omitempty"`
 }
 
+// UpdateWip defines model for UpdateWip.
+type UpdateWip struct {
+	BaseCommit  *string `json:"base_commit,omitempty"`
+	CurrentTree *string `json:"current_tree,omitempty"`
+}
+
 // UserInfo defines model for UserInfo.
 type UserInfo struct {
-	CreatedAt       time.Time           `json:"created_at"`
-	CurrentSignInAt *time.Time          `json:"current_sign_in_at,omitempty"`
+	CreatedAt       int64               `json:"created_at"`
+	CurrentSignInAt *int64              `json:"current_sign_in_at,omitempty"`
 	CurrentSignInIp *string             `json:"current_sign_in_ip,omitempty"`
 	Email           openapi_types.Email `json:"email"`
 	Id              openapi_types.UUID  `json:"id"`
-	LastSignInAt    *time.Time          `json:"last_sign_in_at,omitempty"`
+	LastSignInAt    *int64              `json:"last_sign_in_at,omitempty"`
 	LastSignInIp    *string             `json:"last_sign_in_ip,omitempty"`
 	Name            string              `json:"name"`
-	UpdatedAt       time.Time           `json:"updated_at"`
+	UpdatedAt       int64               `json:"updated_at"`
 }
 
 // UserRegisterInfo defines model for UserRegisterInfo.
@@ -276,30 +401,27 @@ type VersionResult struct {
 // Wip defines model for Wip.
 type Wip struct {
 	BaseCommit   string             `json:"base_commit"`
-	CreatedAt    time.Time          `json:"created_at"`
+	CreatedAt    int64              `json:"created_at"`
 	CreatorId    openapi_types.UUID `json:"creator_id"`
 	CurrentTree  string             `json:"current_tree"`
 	Id           openapi_types.UUID `json:"id"`
 	RefId        openapi_types.UUID `json:"ref_id"`
 	RepositoryId openapi_types.UUID `json:"repository_id"`
 	State        int                `json:"state"`
-	UpdatedAt    time.Time          `json:"updated_at"`
+	UpdatedAt    int64              `json:"updated_at"`
 }
 
 // PaginationAmount defines model for PaginationAmount.
 type PaginationAmount = int
 
-// PaginationBranchAfter defines model for PaginationBranchAfter.
-type PaginationBranchAfter = string
-
-// PaginationCommitAfter defines model for PaginationCommitAfter.
-type PaginationCommitAfter = string
+// PaginationInt64After defines model for PaginationInt64After.
+type PaginationInt64After = int64
 
 // PaginationPrefix defines model for PaginationPrefix.
 type PaginationPrefix = string
 
-// PaginationRepoAfter defines model for PaginationRepoAfter.
-type PaginationRepoAfter = time.Time
+// PaginationStringAfter defines model for PaginationStringAfter.
+type PaginationStringAfter = string
 
 // LoginJSONBody defines parameters for Login.
 type LoginJSONBody struct {
@@ -361,6 +483,23 @@ type UploadObjectParams struct {
 	Path string `form:"path" json:"path"`
 }
 
+// ListPublicRepositoryParams defines parameters for ListPublicRepository.
+type ListPublicRepositoryParams struct {
+	// Prefix return items prefixed with this value
+	Prefix *PaginationPrefix `form:"prefix,omitempty" json:"prefix,omitempty"`
+
+	// After return items after this value
+	After *PaginationInt64After `form:"after,omitempty" json:"after,omitempty"`
+
+	// Amount how many items to return
+	Amount *PaginationAmount `form:"amount,omitempty" json:"amount,omitempty"`
+}
+
+// DeleteRepositoryParams defines parameters for DeleteRepository.
+type DeleteRepositoryParams struct {
+	IsCleanData *bool `form:"is_clean_data,omitempty" json:"is_clean_data,omitempty"`
+}
+
 // DeleteBranchParams defines parameters for DeleteBranch.
 type DeleteBranchParams struct {
 	RefName string `form:"refName" json:"refName"`
@@ -377,7 +516,7 @@ type ListBranchesParams struct {
 	Prefix *PaginationPrefix `form:"prefix,omitempty" json:"prefix,omitempty"`
 
 	// After return items after this value
-	After *PaginationBranchAfter `form:"after,omitempty" json:"after,omitempty"`
+	After *PaginationStringAfter `form:"after,omitempty" json:"after,omitempty"`
 
 	// Amount how many items to return
 	Amount *PaginationAmount `form:"amount,omitempty" json:"amount,omitempty"`
@@ -389,10 +528,10 @@ type GetCommitChangesParams struct {
 	Path *string `form:"path,omitempty" json:"path,omitempty"`
 }
 
-// GetCommitsInRepositoryParams defines parameters for GetCommitsInRepository.
-type GetCommitsInRepositoryParams struct {
+// GetCommitsInRefParams defines parameters for GetCommitsInRef.
+type GetCommitsInRefParams struct {
 	// After return items after this value
-	After *PaginationCommitAfter `form:"after,omitempty" json:"after,omitempty"`
+	After *PaginationInt64After `form:"after,omitempty" json:"after,omitempty"`
 
 	// Amount how many items to return
 	Amount *PaginationAmount `form:"amount,omitempty" json:"amount,omitempty"`
@@ -412,11 +551,69 @@ type GetEntriesInRefParams struct {
 	// Path specific path, if not specific return entries in root
 	Path *string `form:"path,omitempty" json:"path,omitempty"`
 
-	// Ref specific branch,  default to repostiory default branch(HEAD)
+	// Ref specific( ref name, tag name, commit hash), for wip and branchm, branch name default to repository default branch(HEAD),
 	Ref *string `form:"ref,omitempty" json:"ref,omitempty"`
 
-	// Type type indicate to retrieve from wip/branch/tag, default branch
+	// Type type indicate to retrieve from wip/branch/tag/commit, default branch
 	Type RefType `form:"type" json:"type"`
+}
+
+// RevokeMemberParams defines parameters for RevokeMember.
+type RevokeMemberParams struct {
+	UserId openapi_types.UUID `form:"user_id" json:"user_id"`
+}
+
+// UpdateMemberGroupParams defines parameters for UpdateMemberGroup.
+type UpdateMemberGroupParams struct {
+	UserId  openapi_types.UUID `form:"user_id" json:"user_id"`
+	GroupId openapi_types.UUID `form:"group_id" json:"group_id"`
+}
+
+// InviteMemberParams defines parameters for InviteMember.
+type InviteMemberParams struct {
+	UserId  openapi_types.UUID `form:"user_id" json:"user_id"`
+	GroupId openapi_types.UUID `form:"group_id" json:"group_id"`
+}
+
+// ListMergeRequestsParams defines parameters for ListMergeRequests.
+type ListMergeRequestsParams struct {
+	// After return items after this value
+	After *PaginationInt64After `form:"after,omitempty" json:"after,omitempty"`
+
+	// Amount how many items to return
+	Amount *PaginationAmount `form:"amount,omitempty" json:"amount,omitempty"`
+	State  *int              `form:"state,omitempty" json:"state,omitempty"`
+}
+
+// ChangeVisibleParams defines parameters for ChangeVisible.
+type ChangeVisibleParams struct {
+	Visible bool `form:"visible" json:"visible"`
+}
+
+// DeleteAkskParams defines parameters for DeleteAksk.
+type DeleteAkskParams struct {
+	Id        *openapi_types.UUID `form:"id,omitempty" json:"id,omitempty"`
+	AccessKey *string             `form:"access_key,omitempty" json:"access_key,omitempty"`
+}
+
+// GetAkskParams defines parameters for GetAksk.
+type GetAkskParams struct {
+	Id        *openapi_types.UUID `form:"id,omitempty" json:"id,omitempty"`
+	AccessKey *string             `form:"access_key,omitempty" json:"access_key,omitempty"`
+}
+
+// CreateAkskParams defines parameters for CreateAksk.
+type CreateAkskParams struct {
+	Description *string `form:"description,omitempty" json:"description,omitempty"`
+}
+
+// ListAksksParams defines parameters for ListAksks.
+type ListAksksParams struct {
+	// After return items after this value
+	After *PaginationInt64After `form:"after,omitempty" json:"after,omitempty"`
+
+	// Amount how many items to return
+	Amount *PaginationAmount `form:"amount,omitempty" json:"amount,omitempty"`
 }
 
 // ListRepositoryOfAuthenticatedUserParams defines parameters for ListRepositoryOfAuthenticatedUser.
@@ -425,7 +622,7 @@ type ListRepositoryOfAuthenticatedUserParams struct {
 	Prefix *PaginationPrefix `form:"prefix,omitempty" json:"prefix,omitempty"`
 
 	// After return items after this value
-	After *PaginationRepoAfter `form:"after,omitempty" json:"after,omitempty"`
+	After *PaginationInt64After `form:"after,omitempty" json:"after,omitempty"`
 
 	// Amount how many items to return
 	Amount *PaginationAmount `form:"amount,omitempty" json:"amount,omitempty"`
@@ -437,7 +634,7 @@ type ListRepositoryParams struct {
 	Prefix *PaginationPrefix `form:"prefix,omitempty" json:"prefix,omitempty"`
 
 	// After return items after this value
-	After *PaginationRepoAfter `form:"after,omitempty" json:"after,omitempty"`
+	After *PaginationInt64After `form:"after,omitempty" json:"after,omitempty"`
 
 	// Amount how many items to return
 	Amount *PaginationAmount `form:"amount,omitempty" json:"amount,omitempty"`
@@ -451,6 +648,12 @@ type DeleteWipParams struct {
 
 // GetWipParams defines parameters for GetWip.
 type GetWipParams struct {
+	// RefName ref name
+	RefName string `form:"refName" json:"refName"`
+}
+
+// UpdateWipParams defines parameters for UpdateWip.
+type UpdateWipParams struct {
 	// RefName ref name
 	RefName string `form:"refName" json:"refName"`
 }
@@ -494,11 +697,23 @@ type UpdateRepositoryJSONRequestBody = UpdateRepository
 // CreateBranchJSONRequestBody defines body for CreateBranch for application/json ContentType.
 type CreateBranchJSONRequestBody = BranchCreation
 
+// CreateMergeRequestJSONRequestBody defines body for CreateMergeRequest for application/json ContentType.
+type CreateMergeRequestJSONRequestBody = CreateMergeRequest
+
+// UpdateMergeRequestJSONRequestBody defines body for UpdateMergeRequest for application/json ContentType.
+type UpdateMergeRequestJSONRequestBody = UpdateMergeRequest
+
+// MergeJSONRequestBody defines body for Merge for application/json ContentType.
+type MergeJSONRequestBody = MergeMergeRequest
+
 // RegisterJSONRequestBody defines body for Register for application/json ContentType.
 type RegisterJSONRequestBody = UserRegisterInfo
 
 // CreateRepositoryJSONRequestBody defines body for CreateRepository for application/json ContentType.
 type CreateRepositoryJSONRequestBody = CreateRepository
+
+// UpdateWipJSONRequestBody defines body for UpdateWip for application/json ContentType.
+type UpdateWipJSONRequestBody = UpdateWip
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -581,6 +796,9 @@ type ClientInterface interface {
 	// Logout request
 	Logout(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListRepoGroup request
+	ListRepoGroup(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// DeleteObject request
 	DeleteObject(ctx context.Context, owner string, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -593,8 +811,11 @@ type ClientInterface interface {
 	// UploadObjectWithBody request with any body
 	UploadObjectWithBody(ctx context.Context, owner string, repository string, params *UploadObjectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListPublicRepository request
+	ListPublicRepository(ctx context.Context, params *ListPublicRepositoryParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// DeleteRepository request
-	DeleteRepository(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteRepository(ctx context.Context, owner string, repository string, params *DeleteRepositoryParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetRepository request
 	GetRepository(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -621,8 +842,8 @@ type ClientInterface interface {
 	// GetCommitChanges request
 	GetCommitChanges(ctx context.Context, owner string, repository string, commitId string, params *GetCommitChangesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetCommitsInRepository request
-	GetCommitsInRepository(ctx context.Context, owner string, repository string, params *GetCommitsInRepositoryParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetCommitsInRef request
+	GetCommitsInRef(ctx context.Context, owner string, repository string, params *GetCommitsInRefParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CompareCommit request
 	CompareCommit(ctx context.Context, owner string, repository string, basehead string, params *CompareCommitParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -630,8 +851,59 @@ type ClientInterface interface {
 	// GetEntriesInRef request
 	GetEntriesInRef(ctx context.Context, owner string, repository string, params *GetEntriesInRefParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// RevokeMember request
+	RevokeMember(ctx context.Context, owner string, repository string, params *RevokeMemberParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateMemberGroup request
+	UpdateMemberGroup(ctx context.Context, owner string, repository string, params *UpdateMemberGroupParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// InviteMember request
+	InviteMember(ctx context.Context, owner string, repository string, params *InviteMemberParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListMembers request
+	ListMembers(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListMergeRequests request
+	ListMergeRequests(ctx context.Context, owner string, repository string, params *ListMergeRequestsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateMergeRequestWithBody request with any body
+	CreateMergeRequestWithBody(ctx context.Context, owner string, repository string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateMergeRequest(ctx context.Context, owner string, repository string, body CreateMergeRequestJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetMergeRequest request
+	GetMergeRequest(ctx context.Context, owner string, repository string, mrSeq uint64, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateMergeRequestWithBody request with any body
+	UpdateMergeRequestWithBody(ctx context.Context, owner string, repository string, mrSeq uint64, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateMergeRequest(ctx context.Context, owner string, repository string, mrSeq uint64, body UpdateMergeRequestJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// MergeWithBody request with any body
+	MergeWithBody(ctx context.Context, owner string, repository string, mrSeq uint64, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	Merge(ctx context.Context, owner string, repository string, mrSeq uint64, body MergeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ChangeVisible request
+	ChangeVisible(ctx context.Context, owner string, repository string, params *ChangeVisibleParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetSetupState request
 	GetSetupState(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteAksk request
+	DeleteAksk(ctx context.Context, params *DeleteAkskParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetAksk request
+	GetAksk(ctx context.Context, params *GetAkskParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateAksk request
+	CreateAksk(ctx context.Context, params *CreateAkskParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListAksks request
+	ListAksks(ctx context.Context, params *ListAksksParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RefreshToken request
+	RefreshToken(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// RegisterWithBody request with any body
 	RegisterWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -660,6 +932,11 @@ type ClientInterface interface {
 
 	// GetWip request
 	GetWip(ctx context.Context, owner string, repository string, params *GetWipParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateWipWithBody request with any body
+	UpdateWipWithBody(ctx context.Context, owner string, repository string, params *UpdateWipParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateWip(ctx context.Context, owner string, repository string, params *UpdateWipParams, body UpdateWipJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetWipChanges request
 	GetWipChanges(ctx context.Context, owner string, repository string, params *GetWipChangesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -700,6 +977,18 @@ func (c *Client) Login(ctx context.Context, body LoginJSONRequestBody, reqEditor
 
 func (c *Client) Logout(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewLogoutRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListRepoGroup(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListRepoGroupRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -758,8 +1047,20 @@ func (c *Client) UploadObjectWithBody(ctx context.Context, owner string, reposit
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteRepository(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteRepositoryRequest(c.Server, owner, repository)
+func (c *Client) ListPublicRepository(ctx context.Context, params *ListPublicRepositoryParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListPublicRepositoryRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteRepository(ctx context.Context, owner string, repository string, params *DeleteRepositoryParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteRepositoryRequest(c.Server, owner, repository, params)
 	if err != nil {
 		return nil, err
 	}
@@ -878,8 +1179,8 @@ func (c *Client) GetCommitChanges(ctx context.Context, owner string, repository 
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetCommitsInRepository(ctx context.Context, owner string, repository string, params *GetCommitsInRepositoryParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetCommitsInRepositoryRequest(c.Server, owner, repository, params)
+func (c *Client) GetCommitsInRef(ctx context.Context, owner string, repository string, params *GetCommitsInRefParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetCommitsInRefRequest(c.Server, owner, repository, params)
 	if err != nil {
 		return nil, err
 	}
@@ -914,8 +1215,224 @@ func (c *Client) GetEntriesInRef(ctx context.Context, owner string, repository s
 	return c.Client.Do(req)
 }
 
+func (c *Client) RevokeMember(ctx context.Context, owner string, repository string, params *RevokeMemberParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRevokeMemberRequest(c.Server, owner, repository, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateMemberGroup(ctx context.Context, owner string, repository string, params *UpdateMemberGroupParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateMemberGroupRequest(c.Server, owner, repository, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) InviteMember(ctx context.Context, owner string, repository string, params *InviteMemberParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewInviteMemberRequest(c.Server, owner, repository, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListMembers(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListMembersRequest(c.Server, owner, repository)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListMergeRequests(ctx context.Context, owner string, repository string, params *ListMergeRequestsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListMergeRequestsRequest(c.Server, owner, repository, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateMergeRequestWithBody(ctx context.Context, owner string, repository string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateMergeRequestRequestWithBody(c.Server, owner, repository, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateMergeRequest(ctx context.Context, owner string, repository string, body CreateMergeRequestJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateMergeRequestRequest(c.Server, owner, repository, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetMergeRequest(ctx context.Context, owner string, repository string, mrSeq uint64, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetMergeRequestRequest(c.Server, owner, repository, mrSeq)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateMergeRequestWithBody(ctx context.Context, owner string, repository string, mrSeq uint64, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateMergeRequestRequestWithBody(c.Server, owner, repository, mrSeq, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateMergeRequest(ctx context.Context, owner string, repository string, mrSeq uint64, body UpdateMergeRequestJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateMergeRequestRequest(c.Server, owner, repository, mrSeq, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) MergeWithBody(ctx context.Context, owner string, repository string, mrSeq uint64, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMergeRequestWithBody(c.Server, owner, repository, mrSeq, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) Merge(ctx context.Context, owner string, repository string, mrSeq uint64, body MergeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMergeRequest(c.Server, owner, repository, mrSeq, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ChangeVisible(ctx context.Context, owner string, repository string, params *ChangeVisibleParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewChangeVisibleRequest(c.Server, owner, repository, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) GetSetupState(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetSetupStateRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteAksk(ctx context.Context, params *DeleteAkskParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteAkskRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetAksk(ctx context.Context, params *GetAkskParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetAkskRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateAksk(ctx context.Context, params *CreateAkskParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateAkskRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListAksks(ctx context.Context, params *ListAksksParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListAksksRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) RefreshToken(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRefreshTokenRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -1046,6 +1563,30 @@ func (c *Client) GetWip(ctx context.Context, owner string, repository string, pa
 	return c.Client.Do(req)
 }
 
+func (c *Client) UpdateWipWithBody(ctx context.Context, owner string, repository string, params *UpdateWipParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateWipRequestWithBody(c.Server, owner, repository, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateWip(ctx context.Context, owner string, repository string, params *UpdateWipParams, body UpdateWipJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateWipRequest(c.Server, owner, repository, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) GetWipChanges(ctx context.Context, owner string, repository string, params *GetWipChangesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetWipChangesRequest(c.Server, owner, repository, params)
 	if err != nil {
@@ -1154,6 +1695,33 @@ func NewLogoutRequest(server string) (*http.Request, error) {
 	}
 
 	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListRepoGroupRequest generates requests for ListRepoGroup
+func NewListRepoGroupRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/groups/repo")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -1501,8 +2069,89 @@ func NewUploadObjectRequestWithBody(server string, owner string, repository stri
 	return req, nil
 }
 
+// NewListPublicRepositoryRequest generates requests for ListPublicRepository
+func NewListPublicRepositoryRequest(server string, params *ListPublicRepositoryParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/repos/public")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Prefix != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "prefix", runtime.ParamLocationQuery, *params.Prefix); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.After != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "after", runtime.ParamLocationQuery, *params.After); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Amount != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "amount", runtime.ParamLocationQuery, *params.Amount); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewDeleteRepositoryRequest generates requests for DeleteRepository
-func NewDeleteRepositoryRequest(server string, owner string, repository string) (*http.Request, error) {
+func NewDeleteRepositoryRequest(server string, owner string, repository string, params *DeleteRepositoryParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -1532,6 +2181,28 @@ func NewDeleteRepositoryRequest(server string, owner string, repository string) 
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.IsCleanData != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "is_clean_data", runtime.ParamLocationQuery, *params.IsCleanData); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
@@ -1974,8 +2645,8 @@ func NewGetCommitChangesRequest(server string, owner string, repository string, 
 	return req, nil
 }
 
-// NewGetCommitsInRepositoryRequest generates requests for GetCommitsInRepository
-func NewGetCommitsInRepositoryRequest(server string, owner string, repository string, params *GetCommitsInRepositoryParams) (*http.Request, error) {
+// NewGetCommitsInRefRequest generates requests for GetCommitsInRef
+func NewGetCommitsInRefRequest(server string, owner string, repository string, params *GetCommitsInRefParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -2230,6 +2901,626 @@ func NewGetEntriesInRefRequest(server string, owner string, repository string, p
 	return req, nil
 }
 
+// NewRevokeMemberRequest generates requests for RevokeMember
+func NewRevokeMemberRequest(server string, owner string, repository string, params *RevokeMemberParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/repos/%s/%s/member", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "user_id", runtime.ParamLocationQuery, params.UserId); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateMemberGroupRequest generates requests for UpdateMemberGroup
+func NewUpdateMemberGroupRequest(server string, owner string, repository string, params *UpdateMemberGroupParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/repos/%s/%s/member", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "user_id", runtime.ParamLocationQuery, params.UserId); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "group_id", runtime.ParamLocationQuery, params.GroupId); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewInviteMemberRequest generates requests for InviteMember
+func NewInviteMemberRequest(server string, owner string, repository string, params *InviteMemberParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/repos/%s/%s/member/invite", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "user_id", runtime.ParamLocationQuery, params.UserId); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "group_id", runtime.ParamLocationQuery, params.GroupId); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListMembersRequest generates requests for ListMembers
+func NewListMembersRequest(server string, owner string, repository string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/repos/%s/%s/members", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListMergeRequestsRequest generates requests for ListMergeRequests
+func NewListMergeRequestsRequest(server string, owner string, repository string, params *ListMergeRequestsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/repos/%s/%s/mergerequest", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.After != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "after", runtime.ParamLocationQuery, *params.After); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Amount != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "amount", runtime.ParamLocationQuery, *params.Amount); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.State != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "state", runtime.ParamLocationQuery, *params.State); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateMergeRequestRequest calls the generic CreateMergeRequest builder with application/json body
+func NewCreateMergeRequestRequest(server string, owner string, repository string, body CreateMergeRequestJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateMergeRequestRequestWithBody(server, owner, repository, "application/json", bodyReader)
+}
+
+// NewCreateMergeRequestRequestWithBody generates requests for CreateMergeRequest with any type of body
+func NewCreateMergeRequestRequestWithBody(server string, owner string, repository string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/repos/%s/%s/mergerequest", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetMergeRequestRequest generates requests for GetMergeRequest
+func NewGetMergeRequestRequest(server string, owner string, repository string, mrSeq uint64) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "mrSeq", runtime.ParamLocationPath, mrSeq)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/repos/%s/%s/mergerequest/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateMergeRequestRequest calls the generic UpdateMergeRequest builder with application/json body
+func NewUpdateMergeRequestRequest(server string, owner string, repository string, mrSeq uint64, body UpdateMergeRequestJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateMergeRequestRequestWithBody(server, owner, repository, mrSeq, "application/json", bodyReader)
+}
+
+// NewUpdateMergeRequestRequestWithBody generates requests for UpdateMergeRequest with any type of body
+func NewUpdateMergeRequestRequestWithBody(server string, owner string, repository string, mrSeq uint64, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "mrSeq", runtime.ParamLocationPath, mrSeq)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/repos/%s/%s/mergerequest/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewMergeRequest calls the generic Merge builder with application/json body
+func NewMergeRequest(server string, owner string, repository string, mrSeq uint64, body MergeJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewMergeRequestWithBody(server, owner, repository, mrSeq, "application/json", bodyReader)
+}
+
+// NewMergeRequestWithBody generates requests for Merge with any type of body
+func NewMergeRequestWithBody(server string, owner string, repository string, mrSeq uint64, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "mrSeq", runtime.ParamLocationPath, mrSeq)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/repos/%s/%s/mergerequest/%s/merge", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewChangeVisibleRequest generates requests for ChangeVisible
+func NewChangeVisibleRequest(server string, owner string, repository string, params *ChangeVisibleParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/repos/%s/%s/visible", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "visible", runtime.ParamLocationQuery, params.Visible); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGetSetupStateRequest generates requests for GetSetupState
 func NewGetSetupStateRequest(server string) (*http.Request, error) {
 	var err error
@@ -2240,6 +3531,277 @@ func NewGetSetupStateRequest(server string) (*http.Request, error) {
 	}
 
 	operationPath := fmt.Sprintf("/setup")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewDeleteAkskRequest generates requests for DeleteAksk
+func NewDeleteAkskRequest(server string, params *DeleteAkskParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/users/aksk")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Id != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "id", runtime.ParamLocationQuery, *params.Id); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.AccessKey != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "access_key", runtime.ParamLocationQuery, *params.AccessKey); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetAkskRequest generates requests for GetAksk
+func NewGetAkskRequest(server string, params *GetAkskParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/users/aksk")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Id != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "id", runtime.ParamLocationQuery, *params.Id); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.AccessKey != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "access_key", runtime.ParamLocationQuery, *params.AccessKey); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateAkskRequest generates requests for CreateAksk
+func NewCreateAkskRequest(server string, params *CreateAkskParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/users/aksk")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Description != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "description", runtime.ParamLocationQuery, *params.Description); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListAksksRequest generates requests for ListAksks
+func NewListAksksRequest(server string, params *ListAksksParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/users/aksks")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.After != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "after", runtime.ParamLocationQuery, *params.After); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Amount != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "amount", runtime.ParamLocationQuery, *params.Amount); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewRefreshTokenRequest generates requests for RefreshToken
+func NewRefreshTokenRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/users/refreshtoken")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -2678,6 +4240,78 @@ func NewGetWipRequest(server string, owner string, repository string, params *Ge
 	return req, nil
 }
 
+// NewUpdateWipRequest calls the generic UpdateWip builder with application/json body
+func NewUpdateWipRequest(server string, owner string, repository string, params *UpdateWipParams, body UpdateWipJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateWipRequestWithBody(server, owner, repository, params, "application/json", bodyReader)
+}
+
+// NewUpdateWipRequestWithBody generates requests for UpdateWip with any type of body
+func NewUpdateWipRequestWithBody(server string, owner string, repository string, params *UpdateWipParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/wip/%s/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "refName", runtime.ParamLocationQuery, params.RefName); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewGetWipChangesRequest generates requests for GetWipChanges
 func NewGetWipChangesRequest(server string, owner string, repository string, params *GetWipChangesParams) (*http.Request, error) {
 	var err error
@@ -2991,6 +4625,9 @@ type ClientWithResponsesInterface interface {
 	// LogoutWithResponse request
 	LogoutWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*LogoutResponse, error)
 
+	// ListRepoGroupWithResponse request
+	ListRepoGroupWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListRepoGroupResponse, error)
+
 	// DeleteObjectWithResponse request
 	DeleteObjectWithResponse(ctx context.Context, owner string, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*DeleteObjectResponse, error)
 
@@ -3003,8 +4640,11 @@ type ClientWithResponsesInterface interface {
 	// UploadObjectWithBodyWithResponse request with any body
 	UploadObjectWithBodyWithResponse(ctx context.Context, owner string, repository string, params *UploadObjectParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadObjectResponse, error)
 
+	// ListPublicRepositoryWithResponse request
+	ListPublicRepositoryWithResponse(ctx context.Context, params *ListPublicRepositoryParams, reqEditors ...RequestEditorFn) (*ListPublicRepositoryResponse, error)
+
 	// DeleteRepositoryWithResponse request
-	DeleteRepositoryWithResponse(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*DeleteRepositoryResponse, error)
+	DeleteRepositoryWithResponse(ctx context.Context, owner string, repository string, params *DeleteRepositoryParams, reqEditors ...RequestEditorFn) (*DeleteRepositoryResponse, error)
 
 	// GetRepositoryWithResponse request
 	GetRepositoryWithResponse(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*GetRepositoryResponse, error)
@@ -3031,8 +4671,8 @@ type ClientWithResponsesInterface interface {
 	// GetCommitChangesWithResponse request
 	GetCommitChangesWithResponse(ctx context.Context, owner string, repository string, commitId string, params *GetCommitChangesParams, reqEditors ...RequestEditorFn) (*GetCommitChangesResponse, error)
 
-	// GetCommitsInRepositoryWithResponse request
-	GetCommitsInRepositoryWithResponse(ctx context.Context, owner string, repository string, params *GetCommitsInRepositoryParams, reqEditors ...RequestEditorFn) (*GetCommitsInRepositoryResponse, error)
+	// GetCommitsInRefWithResponse request
+	GetCommitsInRefWithResponse(ctx context.Context, owner string, repository string, params *GetCommitsInRefParams, reqEditors ...RequestEditorFn) (*GetCommitsInRefResponse, error)
 
 	// CompareCommitWithResponse request
 	CompareCommitWithResponse(ctx context.Context, owner string, repository string, basehead string, params *CompareCommitParams, reqEditors ...RequestEditorFn) (*CompareCommitResponse, error)
@@ -3040,8 +4680,59 @@ type ClientWithResponsesInterface interface {
 	// GetEntriesInRefWithResponse request
 	GetEntriesInRefWithResponse(ctx context.Context, owner string, repository string, params *GetEntriesInRefParams, reqEditors ...RequestEditorFn) (*GetEntriesInRefResponse, error)
 
+	// RevokeMemberWithResponse request
+	RevokeMemberWithResponse(ctx context.Context, owner string, repository string, params *RevokeMemberParams, reqEditors ...RequestEditorFn) (*RevokeMemberResponse, error)
+
+	// UpdateMemberGroupWithResponse request
+	UpdateMemberGroupWithResponse(ctx context.Context, owner string, repository string, params *UpdateMemberGroupParams, reqEditors ...RequestEditorFn) (*UpdateMemberGroupResponse, error)
+
+	// InviteMemberWithResponse request
+	InviteMemberWithResponse(ctx context.Context, owner string, repository string, params *InviteMemberParams, reqEditors ...RequestEditorFn) (*InviteMemberResponse, error)
+
+	// ListMembersWithResponse request
+	ListMembersWithResponse(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*ListMembersResponse, error)
+
+	// ListMergeRequestsWithResponse request
+	ListMergeRequestsWithResponse(ctx context.Context, owner string, repository string, params *ListMergeRequestsParams, reqEditors ...RequestEditorFn) (*ListMergeRequestsResponse, error)
+
+	// CreateMergeRequestWithBodyWithResponse request with any body
+	CreateMergeRequestWithBodyWithResponse(ctx context.Context, owner string, repository string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateMergeRequestResponse, error)
+
+	CreateMergeRequestWithResponse(ctx context.Context, owner string, repository string, body CreateMergeRequestJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateMergeRequestResponse, error)
+
+	// GetMergeRequestWithResponse request
+	GetMergeRequestWithResponse(ctx context.Context, owner string, repository string, mrSeq uint64, reqEditors ...RequestEditorFn) (*GetMergeRequestResponse, error)
+
+	// UpdateMergeRequestWithBodyWithResponse request with any body
+	UpdateMergeRequestWithBodyWithResponse(ctx context.Context, owner string, repository string, mrSeq uint64, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateMergeRequestResponse, error)
+
+	UpdateMergeRequestWithResponse(ctx context.Context, owner string, repository string, mrSeq uint64, body UpdateMergeRequestJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateMergeRequestResponse, error)
+
+	// MergeWithBodyWithResponse request with any body
+	MergeWithBodyWithResponse(ctx context.Context, owner string, repository string, mrSeq uint64, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MergeResponse, error)
+
+	MergeWithResponse(ctx context.Context, owner string, repository string, mrSeq uint64, body MergeJSONRequestBody, reqEditors ...RequestEditorFn) (*MergeResponse, error)
+
+	// ChangeVisibleWithResponse request
+	ChangeVisibleWithResponse(ctx context.Context, owner string, repository string, params *ChangeVisibleParams, reqEditors ...RequestEditorFn) (*ChangeVisibleResponse, error)
+
 	// GetSetupStateWithResponse request
 	GetSetupStateWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetSetupStateResponse, error)
+
+	// DeleteAkskWithResponse request
+	DeleteAkskWithResponse(ctx context.Context, params *DeleteAkskParams, reqEditors ...RequestEditorFn) (*DeleteAkskResponse, error)
+
+	// GetAkskWithResponse request
+	GetAkskWithResponse(ctx context.Context, params *GetAkskParams, reqEditors ...RequestEditorFn) (*GetAkskResponse, error)
+
+	// CreateAkskWithResponse request
+	CreateAkskWithResponse(ctx context.Context, params *CreateAkskParams, reqEditors ...RequestEditorFn) (*CreateAkskResponse, error)
+
+	// ListAksksWithResponse request
+	ListAksksWithResponse(ctx context.Context, params *ListAksksParams, reqEditors ...RequestEditorFn) (*ListAksksResponse, error)
+
+	// RefreshTokenWithResponse request
+	RefreshTokenWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*RefreshTokenResponse, error)
 
 	// RegisterWithBodyWithResponse request with any body
 	RegisterWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RegisterResponse, error)
@@ -3070,6 +4761,11 @@ type ClientWithResponsesInterface interface {
 
 	// GetWipWithResponse request
 	GetWipWithResponse(ctx context.Context, owner string, repository string, params *GetWipParams, reqEditors ...RequestEditorFn) (*GetWipResponse, error)
+
+	// UpdateWipWithBodyWithResponse request with any body
+	UpdateWipWithBodyWithResponse(ctx context.Context, owner string, repository string, params *UpdateWipParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateWipResponse, error)
+
+	UpdateWipWithResponse(ctx context.Context, owner string, repository string, params *UpdateWipParams, body UpdateWipJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateWipResponse, error)
 
 	// GetWipChangesWithResponse request
 	GetWipChangesWithResponse(ctx context.Context, owner string, repository string, params *GetWipChangesParams, reqEditors ...RequestEditorFn) (*GetWipChangesResponse, error)
@@ -3121,6 +4817,28 @@ func (r LogoutResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r LogoutResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListRepoGroupResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]Group
+}
+
+// Status returns HTTPResponse.Status
+func (r ListRepoGroupResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListRepoGroupResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -3206,6 +4924,28 @@ func (r UploadObjectResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r UploadObjectResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListPublicRepositoryResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *RepositoryList
+}
+
+// Status returns HTTPResponse.Status
+func (r ListPublicRepositoryResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListPublicRepositoryResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -3322,7 +5062,7 @@ func (r GetBranchResponse) StatusCode() int {
 type CreateBranchResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON201      *BranchCreation
+	JSON201      *Branch
 }
 
 // Status returns HTTPResponse.Status
@@ -3385,14 +5125,14 @@ func (r GetCommitChangesResponse) StatusCode() int {
 	return 0
 }
 
-type GetCommitsInRepositoryResponse struct {
+type GetCommitsInRefResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *[]Commit
 }
 
 // Status returns HTTPResponse.Status
-func (r GetCommitsInRepositoryResponse) Status() string {
+func (r GetCommitsInRefResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -3400,7 +5140,7 @@ func (r GetCommitsInRepositoryResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetCommitsInRepositoryResponse) StatusCode() int {
+func (r GetCommitsInRefResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -3451,6 +5191,221 @@ func (r GetEntriesInRefResponse) StatusCode() int {
 	return 0
 }
 
+type RevokeMemberResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r RevokeMemberResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RevokeMemberResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateMemberGroupResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateMemberGroupResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateMemberGroupResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type InviteMemberResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r InviteMemberResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r InviteMemberResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListMembersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]Member
+}
+
+// Status returns HTTPResponse.Status
+func (r ListMembersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListMembersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListMergeRequestsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *MergeRequestList
+}
+
+// Status returns HTTPResponse.Status
+func (r ListMergeRequestsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListMergeRequestsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateMergeRequestResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *MergeRequest
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateMergeRequestResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateMergeRequestResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetMergeRequestResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *MergeRequestFullState
+}
+
+// Status returns HTTPResponse.Status
+func (r GetMergeRequestResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetMergeRequestResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateMergeRequestResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateMergeRequestResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateMergeRequestResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type MergeResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]Commit
+}
+
+// Status returns HTTPResponse.Status
+func (r MergeResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r MergeResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ChangeVisibleResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r ChangeVisibleResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ChangeVisibleResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetSetupStateResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -3473,9 +5428,119 @@ func (r GetSetupStateResponse) StatusCode() int {
 	return 0
 }
 
+type DeleteAkskResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteAkskResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteAkskResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetAkskResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *SafeAksk
+}
+
+// Status returns HTTPResponse.Status
+func (r GetAkskResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetAkskResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateAkskResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *Aksk
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateAkskResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateAkskResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListAksksResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *AkskList
+}
+
+// Status returns HTTPResponse.Status
+func (r ListAksksResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListAksksResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type RefreshTokenResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *AuthenticationToken
+}
+
+// Status returns HTTPResponse.Status
+func (r RefreshTokenResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RefreshTokenResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type RegisterResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON201      *UserInfo
 }
 
 // Status returns HTTPResponse.Status
@@ -3519,7 +5584,7 @@ func (r ListRepositoryOfAuthenticatedUserResponse) StatusCode() int {
 type CreateRepositoryResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON201      *[]Repository
+	JSON201      *Repository
 }
 
 // Status returns HTTPResponse.Status
@@ -3647,6 +5712,27 @@ func (r GetWipResponse) StatusCode() int {
 	return 0
 }
 
+type UpdateWipResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateWipResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateWipResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetWipChangesResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -3672,7 +5758,7 @@ func (r GetWipChangesResponse) StatusCode() int {
 type CommitWipResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Wip
+	JSON201      *Wip
 }
 
 // Status returns HTTPResponse.Status
@@ -3760,6 +5846,15 @@ func (c *ClientWithResponses) LogoutWithResponse(ctx context.Context, reqEditors
 	return ParseLogoutResponse(rsp)
 }
 
+// ListRepoGroupWithResponse request returning *ListRepoGroupResponse
+func (c *ClientWithResponses) ListRepoGroupWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListRepoGroupResponse, error) {
+	rsp, err := c.ListRepoGroup(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListRepoGroupResponse(rsp)
+}
+
 // DeleteObjectWithResponse request returning *DeleteObjectResponse
 func (c *ClientWithResponses) DeleteObjectWithResponse(ctx context.Context, owner string, repository string, params *DeleteObjectParams, reqEditors ...RequestEditorFn) (*DeleteObjectResponse, error) {
 	rsp, err := c.DeleteObject(ctx, owner, repository, params, reqEditors...)
@@ -3796,9 +5891,18 @@ func (c *ClientWithResponses) UploadObjectWithBodyWithResponse(ctx context.Conte
 	return ParseUploadObjectResponse(rsp)
 }
 
+// ListPublicRepositoryWithResponse request returning *ListPublicRepositoryResponse
+func (c *ClientWithResponses) ListPublicRepositoryWithResponse(ctx context.Context, params *ListPublicRepositoryParams, reqEditors ...RequestEditorFn) (*ListPublicRepositoryResponse, error) {
+	rsp, err := c.ListPublicRepository(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListPublicRepositoryResponse(rsp)
+}
+
 // DeleteRepositoryWithResponse request returning *DeleteRepositoryResponse
-func (c *ClientWithResponses) DeleteRepositoryWithResponse(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*DeleteRepositoryResponse, error) {
-	rsp, err := c.DeleteRepository(ctx, owner, repository, reqEditors...)
+func (c *ClientWithResponses) DeleteRepositoryWithResponse(ctx context.Context, owner string, repository string, params *DeleteRepositoryParams, reqEditors ...RequestEditorFn) (*DeleteRepositoryResponse, error) {
+	rsp, err := c.DeleteRepository(ctx, owner, repository, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -3884,13 +5988,13 @@ func (c *ClientWithResponses) GetCommitChangesWithResponse(ctx context.Context, 
 	return ParseGetCommitChangesResponse(rsp)
 }
 
-// GetCommitsInRepositoryWithResponse request returning *GetCommitsInRepositoryResponse
-func (c *ClientWithResponses) GetCommitsInRepositoryWithResponse(ctx context.Context, owner string, repository string, params *GetCommitsInRepositoryParams, reqEditors ...RequestEditorFn) (*GetCommitsInRepositoryResponse, error) {
-	rsp, err := c.GetCommitsInRepository(ctx, owner, repository, params, reqEditors...)
+// GetCommitsInRefWithResponse request returning *GetCommitsInRefResponse
+func (c *ClientWithResponses) GetCommitsInRefWithResponse(ctx context.Context, owner string, repository string, params *GetCommitsInRefParams, reqEditors ...RequestEditorFn) (*GetCommitsInRefResponse, error) {
+	rsp, err := c.GetCommitsInRef(ctx, owner, repository, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetCommitsInRepositoryResponse(rsp)
+	return ParseGetCommitsInRefResponse(rsp)
 }
 
 // CompareCommitWithResponse request returning *CompareCommitResponse
@@ -3911,6 +6015,120 @@ func (c *ClientWithResponses) GetEntriesInRefWithResponse(ctx context.Context, o
 	return ParseGetEntriesInRefResponse(rsp)
 }
 
+// RevokeMemberWithResponse request returning *RevokeMemberResponse
+func (c *ClientWithResponses) RevokeMemberWithResponse(ctx context.Context, owner string, repository string, params *RevokeMemberParams, reqEditors ...RequestEditorFn) (*RevokeMemberResponse, error) {
+	rsp, err := c.RevokeMember(ctx, owner, repository, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRevokeMemberResponse(rsp)
+}
+
+// UpdateMemberGroupWithResponse request returning *UpdateMemberGroupResponse
+func (c *ClientWithResponses) UpdateMemberGroupWithResponse(ctx context.Context, owner string, repository string, params *UpdateMemberGroupParams, reqEditors ...RequestEditorFn) (*UpdateMemberGroupResponse, error) {
+	rsp, err := c.UpdateMemberGroup(ctx, owner, repository, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateMemberGroupResponse(rsp)
+}
+
+// InviteMemberWithResponse request returning *InviteMemberResponse
+func (c *ClientWithResponses) InviteMemberWithResponse(ctx context.Context, owner string, repository string, params *InviteMemberParams, reqEditors ...RequestEditorFn) (*InviteMemberResponse, error) {
+	rsp, err := c.InviteMember(ctx, owner, repository, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseInviteMemberResponse(rsp)
+}
+
+// ListMembersWithResponse request returning *ListMembersResponse
+func (c *ClientWithResponses) ListMembersWithResponse(ctx context.Context, owner string, repository string, reqEditors ...RequestEditorFn) (*ListMembersResponse, error) {
+	rsp, err := c.ListMembers(ctx, owner, repository, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListMembersResponse(rsp)
+}
+
+// ListMergeRequestsWithResponse request returning *ListMergeRequestsResponse
+func (c *ClientWithResponses) ListMergeRequestsWithResponse(ctx context.Context, owner string, repository string, params *ListMergeRequestsParams, reqEditors ...RequestEditorFn) (*ListMergeRequestsResponse, error) {
+	rsp, err := c.ListMergeRequests(ctx, owner, repository, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListMergeRequestsResponse(rsp)
+}
+
+// CreateMergeRequestWithBodyWithResponse request with arbitrary body returning *CreateMergeRequestResponse
+func (c *ClientWithResponses) CreateMergeRequestWithBodyWithResponse(ctx context.Context, owner string, repository string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateMergeRequestResponse, error) {
+	rsp, err := c.CreateMergeRequestWithBody(ctx, owner, repository, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateMergeRequestResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateMergeRequestWithResponse(ctx context.Context, owner string, repository string, body CreateMergeRequestJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateMergeRequestResponse, error) {
+	rsp, err := c.CreateMergeRequest(ctx, owner, repository, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateMergeRequestResponse(rsp)
+}
+
+// GetMergeRequestWithResponse request returning *GetMergeRequestResponse
+func (c *ClientWithResponses) GetMergeRequestWithResponse(ctx context.Context, owner string, repository string, mrSeq uint64, reqEditors ...RequestEditorFn) (*GetMergeRequestResponse, error) {
+	rsp, err := c.GetMergeRequest(ctx, owner, repository, mrSeq, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetMergeRequestResponse(rsp)
+}
+
+// UpdateMergeRequestWithBodyWithResponse request with arbitrary body returning *UpdateMergeRequestResponse
+func (c *ClientWithResponses) UpdateMergeRequestWithBodyWithResponse(ctx context.Context, owner string, repository string, mrSeq uint64, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateMergeRequestResponse, error) {
+	rsp, err := c.UpdateMergeRequestWithBody(ctx, owner, repository, mrSeq, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateMergeRequestResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateMergeRequestWithResponse(ctx context.Context, owner string, repository string, mrSeq uint64, body UpdateMergeRequestJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateMergeRequestResponse, error) {
+	rsp, err := c.UpdateMergeRequest(ctx, owner, repository, mrSeq, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateMergeRequestResponse(rsp)
+}
+
+// MergeWithBodyWithResponse request with arbitrary body returning *MergeResponse
+func (c *ClientWithResponses) MergeWithBodyWithResponse(ctx context.Context, owner string, repository string, mrSeq uint64, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*MergeResponse, error) {
+	rsp, err := c.MergeWithBody(ctx, owner, repository, mrSeq, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMergeResponse(rsp)
+}
+
+func (c *ClientWithResponses) MergeWithResponse(ctx context.Context, owner string, repository string, mrSeq uint64, body MergeJSONRequestBody, reqEditors ...RequestEditorFn) (*MergeResponse, error) {
+	rsp, err := c.Merge(ctx, owner, repository, mrSeq, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMergeResponse(rsp)
+}
+
+// ChangeVisibleWithResponse request returning *ChangeVisibleResponse
+func (c *ClientWithResponses) ChangeVisibleWithResponse(ctx context.Context, owner string, repository string, params *ChangeVisibleParams, reqEditors ...RequestEditorFn) (*ChangeVisibleResponse, error) {
+	rsp, err := c.ChangeVisible(ctx, owner, repository, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseChangeVisibleResponse(rsp)
+}
+
 // GetSetupStateWithResponse request returning *GetSetupStateResponse
 func (c *ClientWithResponses) GetSetupStateWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetSetupStateResponse, error) {
 	rsp, err := c.GetSetupState(ctx, reqEditors...)
@@ -3918,6 +6136,51 @@ func (c *ClientWithResponses) GetSetupStateWithResponse(ctx context.Context, req
 		return nil, err
 	}
 	return ParseGetSetupStateResponse(rsp)
+}
+
+// DeleteAkskWithResponse request returning *DeleteAkskResponse
+func (c *ClientWithResponses) DeleteAkskWithResponse(ctx context.Context, params *DeleteAkskParams, reqEditors ...RequestEditorFn) (*DeleteAkskResponse, error) {
+	rsp, err := c.DeleteAksk(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteAkskResponse(rsp)
+}
+
+// GetAkskWithResponse request returning *GetAkskResponse
+func (c *ClientWithResponses) GetAkskWithResponse(ctx context.Context, params *GetAkskParams, reqEditors ...RequestEditorFn) (*GetAkskResponse, error) {
+	rsp, err := c.GetAksk(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetAkskResponse(rsp)
+}
+
+// CreateAkskWithResponse request returning *CreateAkskResponse
+func (c *ClientWithResponses) CreateAkskWithResponse(ctx context.Context, params *CreateAkskParams, reqEditors ...RequestEditorFn) (*CreateAkskResponse, error) {
+	rsp, err := c.CreateAksk(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateAkskResponse(rsp)
+}
+
+// ListAksksWithResponse request returning *ListAksksResponse
+func (c *ClientWithResponses) ListAksksWithResponse(ctx context.Context, params *ListAksksParams, reqEditors ...RequestEditorFn) (*ListAksksResponse, error) {
+	rsp, err := c.ListAksks(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListAksksResponse(rsp)
+}
+
+// RefreshTokenWithResponse request returning *RefreshTokenResponse
+func (c *ClientWithResponses) RefreshTokenWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*RefreshTokenResponse, error) {
+	rsp, err := c.RefreshToken(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRefreshTokenResponse(rsp)
 }
 
 // RegisterWithBodyWithResponse request with arbitrary body returning *RegisterResponse
@@ -4008,6 +6271,23 @@ func (c *ClientWithResponses) GetWipWithResponse(ctx context.Context, owner stri
 	return ParseGetWipResponse(rsp)
 }
 
+// UpdateWipWithBodyWithResponse request with arbitrary body returning *UpdateWipResponse
+func (c *ClientWithResponses) UpdateWipWithBodyWithResponse(ctx context.Context, owner string, repository string, params *UpdateWipParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateWipResponse, error) {
+	rsp, err := c.UpdateWipWithBody(ctx, owner, repository, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateWipResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateWipWithResponse(ctx context.Context, owner string, repository string, params *UpdateWipParams, body UpdateWipJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateWipResponse, error) {
+	rsp, err := c.UpdateWip(ctx, owner, repository, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateWipResponse(rsp)
+}
+
 // GetWipChangesWithResponse request returning *GetWipChangesResponse
 func (c *ClientWithResponses) GetWipChangesWithResponse(ctx context.Context, owner string, repository string, params *GetWipChangesParams, reqEditors ...RequestEditorFn) (*GetWipChangesResponse, error) {
 	rsp, err := c.GetWipChanges(ctx, owner, repository, params, reqEditors...)
@@ -4086,6 +6366,32 @@ func ParseLogoutResponse(rsp *http.Response) (*LogoutResponse, error) {
 	return response, nil
 }
 
+// ParseListRepoGroupResponse parses an HTTP response from a ListRepoGroupWithResponse call
+func ParseListRepoGroupResponse(rsp *http.Response) (*ListRepoGroupResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListRepoGroupResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []Group
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseDeleteObjectResponse parses an HTTP response from a DeleteObjectWithResponse call
 func ParseDeleteObjectResponse(rsp *http.Response) (*DeleteObjectResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -4154,6 +6460,32 @@ func ParseUploadObjectResponse(rsp *http.Response) (*UploadObjectResponse, error
 			return nil, err
 		}
 		response.JSON201 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListPublicRepositoryResponse parses an HTTP response from a ListPublicRepositoryWithResponse call
+func ParseListPublicRepositoryResponse(rsp *http.Response) (*ListPublicRepositoryResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListPublicRepositoryResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest RepositoryList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
 
 	}
 
@@ -4275,7 +6607,7 @@ func ParseCreateBranchResponse(rsp *http.Response) (*CreateBranchResponse, error
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
-		var dest BranchCreation
+		var dest Branch
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -4338,15 +6670,15 @@ func ParseGetCommitChangesResponse(rsp *http.Response) (*GetCommitChangesRespons
 	return response, nil
 }
 
-// ParseGetCommitsInRepositoryResponse parses an HTTP response from a GetCommitsInRepositoryWithResponse call
-func ParseGetCommitsInRepositoryResponse(rsp *http.Response) (*GetCommitsInRepositoryResponse, error) {
+// ParseGetCommitsInRefResponse parses an HTTP response from a GetCommitsInRefWithResponse call
+func ParseGetCommitsInRefResponse(rsp *http.Response) (*GetCommitsInRefResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetCommitsInRepositoryResponse{
+	response := &GetCommitsInRefResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -4416,6 +6748,216 @@ func ParseGetEntriesInRefResponse(rsp *http.Response) (*GetEntriesInRefResponse,
 	return response, nil
 }
 
+// ParseRevokeMemberResponse parses an HTTP response from a RevokeMemberWithResponse call
+func ParseRevokeMemberResponse(rsp *http.Response) (*RevokeMemberResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RevokeMemberResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseUpdateMemberGroupResponse parses an HTTP response from a UpdateMemberGroupWithResponse call
+func ParseUpdateMemberGroupResponse(rsp *http.Response) (*UpdateMemberGroupResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateMemberGroupResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseInviteMemberResponse parses an HTTP response from a InviteMemberWithResponse call
+func ParseInviteMemberResponse(rsp *http.Response) (*InviteMemberResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &InviteMemberResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseListMembersResponse parses an HTTP response from a ListMembersWithResponse call
+func ParseListMembersResponse(rsp *http.Response) (*ListMembersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListMembersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []Member
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListMergeRequestsResponse parses an HTTP response from a ListMergeRequestsWithResponse call
+func ParseListMergeRequestsResponse(rsp *http.Response) (*ListMergeRequestsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListMergeRequestsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest MergeRequestList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateMergeRequestResponse parses an HTTP response from a CreateMergeRequestWithResponse call
+func ParseCreateMergeRequestResponse(rsp *http.Response) (*CreateMergeRequestResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateMergeRequestResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest MergeRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetMergeRequestResponse parses an HTTP response from a GetMergeRequestWithResponse call
+func ParseGetMergeRequestResponse(rsp *http.Response) (*GetMergeRequestResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetMergeRequestResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest MergeRequestFullState
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateMergeRequestResponse parses an HTTP response from a UpdateMergeRequestWithResponse call
+func ParseUpdateMergeRequestResponse(rsp *http.Response) (*UpdateMergeRequestResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateMergeRequestResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseMergeResponse parses an HTTP response from a MergeWithResponse call
+func ParseMergeResponse(rsp *http.Response) (*MergeResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &MergeResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []Commit
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseChangeVisibleResponse parses an HTTP response from a ChangeVisibleWithResponse call
+func ParseChangeVisibleResponse(rsp *http.Response) (*ChangeVisibleResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ChangeVisibleResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
 // ParseGetSetupStateResponse parses an HTTP response from a GetSetupStateWithResponse call
 func ParseGetSetupStateResponse(rsp *http.Response) (*GetSetupStateResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -4442,6 +6984,126 @@ func ParseGetSetupStateResponse(rsp *http.Response) (*GetSetupStateResponse, err
 	return response, nil
 }
 
+// ParseDeleteAkskResponse parses an HTTP response from a DeleteAkskWithResponse call
+func ParseDeleteAkskResponse(rsp *http.Response) (*DeleteAkskResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteAkskResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseGetAkskResponse parses an HTTP response from a GetAkskWithResponse call
+func ParseGetAkskResponse(rsp *http.Response) (*GetAkskResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetAkskResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SafeAksk
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateAkskResponse parses an HTTP response from a CreateAkskWithResponse call
+func ParseCreateAkskResponse(rsp *http.Response) (*CreateAkskResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateAkskResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest Aksk
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListAksksResponse parses an HTTP response from a ListAksksWithResponse call
+func ParseListAksksResponse(rsp *http.Response) (*ListAksksResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListAksksResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AkskList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRefreshTokenResponse parses an HTTP response from a RefreshTokenWithResponse call
+func ParseRefreshTokenResponse(rsp *http.Response) (*RefreshTokenResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RefreshTokenResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AuthenticationToken
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseRegisterResponse parses an HTTP response from a RegisterWithResponse call
 func ParseRegisterResponse(rsp *http.Response) (*RegisterResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -4453,6 +7115,16 @@ func ParseRegisterResponse(rsp *http.Response) (*RegisterResponse, error) {
 	response := &RegisterResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest UserInfo
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
 	}
 
 	return response, nil
@@ -4499,7 +7171,7 @@ func ParseCreateRepositoryResponse(rsp *http.Response) (*CreateRepositoryRespons
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
-		var dest []Repository
+		var dest Repository
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -4630,6 +7302,22 @@ func ParseGetWipResponse(rsp *http.Response) (*GetWipResponse, error) {
 	return response, nil
 }
 
+// ParseUpdateWipResponse parses an HTTP response from a UpdateWipWithResponse call
+func ParseUpdateWipResponse(rsp *http.Response) (*UpdateWipResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateWipResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
 // ParseGetWipChangesResponse parses an HTTP response from a GetWipChangesWithResponse call
 func ParseGetWipChangesResponse(rsp *http.Response) (*GetWipChangesResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -4670,12 +7358,12 @@ func ParseCommitWipResponse(rsp *http.Response) (*CommitWipResponse, error) {
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
 		var dest Wip
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
-		response.JSON200 = &dest
+		response.JSON201 = &dest
 
 	}
 
@@ -4732,6 +7420,9 @@ type ServerInterface interface {
 	// perform a logout
 	// (POST /auth/logout)
 	Logout(ctx context.Context, w *JiaozifsResponse, r *http.Request)
+	// list groups for repo
+	// (GET /groups/repo)
+	ListRepoGroup(ctx context.Context, w *JiaozifsResponse, r *http.Request)
 	// delete object. Missing objects will not return a NotFound error.
 	// (DELETE /object/{owner}/{repository})
 	DeleteObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params DeleteObjectParams)
@@ -4744,9 +7435,12 @@ type ServerInterface interface {
 
 	// (POST /object/{owner}/{repository})
 	UploadObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params UploadObjectParams)
+	// list public repository in all system
+	// (GET /repos/public)
+	ListPublicRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, params ListPublicRepositoryParams)
 	// delete repository
 	// (DELETE /repos/{owner}/{repository})
-	DeleteRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string)
+	DeleteRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params DeleteRepositoryParams)
 	// get repository
 	// (GET /repos/{owner}/{repository})
 	GetRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string)
@@ -4768,18 +7462,63 @@ type ServerInterface interface {
 	// get changes in commit
 	// (GET /repos/{owner}/{repository}/changes/{commit_id})
 	GetCommitChanges(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, commitId string, params GetCommitChangesParams)
-	// get commits in repository
+	// get commits in ref
 	// (GET /repos/{owner}/{repository}/commits)
-	GetCommitsInRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params GetCommitsInRepositoryParams)
+	GetCommitsInRef(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params GetCommitsInRefParams)
 	// compare two commit
 	// (GET /repos/{owner}/{repository}/compare/{basehead})
 	CompareCommit(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, basehead string, params CompareCommitParams)
 	// list entries in ref
 	// (GET /repos/{owner}/{repository}/contents)
 	GetEntriesInRef(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params GetEntriesInRefParams)
+	// Revoke member in repository
+	// (DELETE /repos/{owner}/{repository}/member)
+	RevokeMember(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params RevokeMemberParams)
+	// update member by user id and change group role
+	// (POST /repos/{owner}/{repository}/member)
+	UpdateMemberGroup(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params UpdateMemberGroupParams)
+	// invite member
+	// (POST /repos/{owner}/{repository}/member/invite)
+	InviteMember(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params InviteMemberParams)
+	// get list of members in repository
+	// (GET /repos/{owner}/{repository}/members)
+	ListMembers(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string)
+	// get list of merge request in repository
+	// (GET /repos/{owner}/{repository}/mergerequest)
+	ListMergeRequests(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params ListMergeRequestsParams)
+	// create merge request
+	// (POST /repos/{owner}/{repository}/mergerequest)
+	CreateMergeRequest(ctx context.Context, w *JiaozifsResponse, r *http.Request, body CreateMergeRequestJSONRequestBody, owner string, repository string)
+	// get merge request
+	// (GET /repos/{owner}/{repository}/mergerequest/{mrSeq})
+	GetMergeRequest(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, mrSeq uint64)
+	// update merge request
+	// (POST /repos/{owner}/{repository}/mergerequest/{mrSeq})
+	UpdateMergeRequest(ctx context.Context, w *JiaozifsResponse, r *http.Request, body UpdateMergeRequestJSONRequestBody, owner string, repository string, mrSeq uint64)
+	// merge a mergerequest
+	// (POST /repos/{owner}/{repository}/mergerequest/{mrSeq}/merge)
+	Merge(ctx context.Context, w *JiaozifsResponse, r *http.Request, body MergeJSONRequestBody, owner string, repository string, mrSeq uint64)
+	// change repository visible(true for public, false for private)
+	// (POST /repos/{owner}/{repository}/visible)
+	ChangeVisible(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params ChangeVisibleParams)
 	// check if jiaozifs setup
 	// (GET /setup)
 	GetSetupState(ctx context.Context, w *JiaozifsResponse, r *http.Request)
+	// delete aksk
+	// (DELETE /users/aksk)
+	DeleteAksk(ctx context.Context, w *JiaozifsResponse, r *http.Request, params DeleteAkskParams)
+	// get aksk
+	// (GET /users/aksk)
+	GetAksk(ctx context.Context, w *JiaozifsResponse, r *http.Request, params GetAkskParams)
+	// create aksk
+	// (POST /users/aksk)
+	CreateAksk(ctx context.Context, w *JiaozifsResponse, r *http.Request, params CreateAkskParams)
+	// list aksks
+	// (GET /users/aksks)
+	ListAksks(ctx context.Context, w *JiaozifsResponse, r *http.Request, params ListAksksParams)
+	// refresh token for more time
+	// (GET /users/refreshtoken)
+	RefreshToken(ctx context.Context, w *JiaozifsResponse, r *http.Request)
 	// perform user registration
 	// (POST /users/register)
 	Register(ctx context.Context, w *JiaozifsResponse, r *http.Request, body RegisterJSONRequestBody)
@@ -4804,6 +7543,9 @@ type ServerInterface interface {
 	// get working in process
 	// (GET /wip/{owner}/{repository})
 	GetWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params GetWipParams)
+	// update wip
+	// (POST /wip/{owner}/{repository})
+	UpdateWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, body UpdateWipJSONRequestBody, owner string, repository string, params UpdateWipParams)
 	// get working in process changes
 	// (GET /wip/{owner}/{repository}/changes)
 	GetWipChanges(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params GetWipChangesParams)
@@ -4834,6 +7576,12 @@ func (_ Unimplemented) Logout(ctx context.Context, w *JiaozifsResponse, r *http.
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// list groups for repo
+// (GET /groups/repo)
+func (_ Unimplemented) ListRepoGroup(ctx context.Context, w *JiaozifsResponse, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // delete object. Missing objects will not return a NotFound error.
 // (DELETE /object/{owner}/{repository})
 func (_ Unimplemented) DeleteObject(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params DeleteObjectParams) {
@@ -4857,9 +7605,15 @@ func (_ Unimplemented) UploadObject(ctx context.Context, w *JiaozifsResponse, r 
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// list public repository in all system
+// (GET /repos/public)
+func (_ Unimplemented) ListPublicRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, params ListPublicRepositoryParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // delete repository
 // (DELETE /repos/{owner}/{repository})
-func (_ Unimplemented) DeleteRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string) {
+func (_ Unimplemented) DeleteRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params DeleteRepositoryParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -4905,9 +7659,9 @@ func (_ Unimplemented) GetCommitChanges(ctx context.Context, w *JiaozifsResponse
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// get commits in repository
+// get commits in ref
 // (GET /repos/{owner}/{repository}/commits)
-func (_ Unimplemented) GetCommitsInRepository(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params GetCommitsInRepositoryParams) {
+func (_ Unimplemented) GetCommitsInRef(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params GetCommitsInRefParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -4923,9 +7677,99 @@ func (_ Unimplemented) GetEntriesInRef(ctx context.Context, w *JiaozifsResponse,
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// Revoke member in repository
+// (DELETE /repos/{owner}/{repository}/member)
+func (_ Unimplemented) RevokeMember(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params RevokeMemberParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// update member by user id and change group role
+// (POST /repos/{owner}/{repository}/member)
+func (_ Unimplemented) UpdateMemberGroup(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params UpdateMemberGroupParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// invite member
+// (POST /repos/{owner}/{repository}/member/invite)
+func (_ Unimplemented) InviteMember(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params InviteMemberParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// get list of members in repository
+// (GET /repos/{owner}/{repository}/members)
+func (_ Unimplemented) ListMembers(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// get list of merge request in repository
+// (GET /repos/{owner}/{repository}/mergerequest)
+func (_ Unimplemented) ListMergeRequests(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params ListMergeRequestsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// create merge request
+// (POST /repos/{owner}/{repository}/mergerequest)
+func (_ Unimplemented) CreateMergeRequest(ctx context.Context, w *JiaozifsResponse, r *http.Request, body CreateMergeRequestJSONRequestBody, owner string, repository string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// get merge request
+// (GET /repos/{owner}/{repository}/mergerequest/{mrSeq})
+func (_ Unimplemented) GetMergeRequest(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, mrSeq uint64) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// update merge request
+// (POST /repos/{owner}/{repository}/mergerequest/{mrSeq})
+func (_ Unimplemented) UpdateMergeRequest(ctx context.Context, w *JiaozifsResponse, r *http.Request, body UpdateMergeRequestJSONRequestBody, owner string, repository string, mrSeq uint64) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// merge a mergerequest
+// (POST /repos/{owner}/{repository}/mergerequest/{mrSeq}/merge)
+func (_ Unimplemented) Merge(ctx context.Context, w *JiaozifsResponse, r *http.Request, body MergeJSONRequestBody, owner string, repository string, mrSeq uint64) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// change repository visible(true for public, false for private)
+// (POST /repos/{owner}/{repository}/visible)
+func (_ Unimplemented) ChangeVisible(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params ChangeVisibleParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // check if jiaozifs setup
 // (GET /setup)
 func (_ Unimplemented) GetSetupState(ctx context.Context, w *JiaozifsResponse, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// delete aksk
+// (DELETE /users/aksk)
+func (_ Unimplemented) DeleteAksk(ctx context.Context, w *JiaozifsResponse, r *http.Request, params DeleteAkskParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// get aksk
+// (GET /users/aksk)
+func (_ Unimplemented) GetAksk(ctx context.Context, w *JiaozifsResponse, r *http.Request, params GetAkskParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// create aksk
+// (POST /users/aksk)
+func (_ Unimplemented) CreateAksk(ctx context.Context, w *JiaozifsResponse, r *http.Request, params CreateAkskParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// list aksks
+// (GET /users/aksks)
+func (_ Unimplemented) ListAksks(ctx context.Context, w *JiaozifsResponse, r *http.Request, params ListAksksParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// refresh token for more time
+// (GET /users/refreshtoken)
+func (_ Unimplemented) RefreshToken(ctx context.Context, w *JiaozifsResponse, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -4974,6 +7818,12 @@ func (_ Unimplemented) DeleteWip(ctx context.Context, w *JiaozifsResponse, r *ht
 // get working in process
 // (GET /wip/{owner}/{repository})
 func (_ Unimplemented) GetWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params GetWipParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// update wip
+// (POST /wip/{owner}/{repository})
+func (_ Unimplemented) UpdateWip(ctx context.Context, w *JiaozifsResponse, r *http.Request, body UpdateWipJSONRequestBody, owner string, repository string, params UpdateWipParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -5045,8 +7895,49 @@ func (siw *ServerInterfaceWrapper) Logout(w http.ResponseWriter, r *http.Request
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.Logout(r.Context(), &JiaozifsResponse{w}, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// ListRepoGroup operation middleware
+func (siw *ServerInterfaceWrapper) ListRepoGroup(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListRepoGroup(r.Context(), &JiaozifsResponse{w}, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -5085,6 +7976,16 @@ func (siw *ServerInterfaceWrapper) DeleteObject(w http.ResponseWriter, r *http.R
 	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params DeleteObjectParams
@@ -5159,6 +8060,16 @@ func (siw *ServerInterfaceWrapper) GetObject(w http.ResponseWriter, r *http.Requ
 	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetObjectParams
@@ -5270,6 +8181,16 @@ func (siw *ServerInterfaceWrapper) HeadObject(w http.ResponseWriter, r *http.Req
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
 	// Parameter object where we will unmarshal all parameters from the context
 	var params HeadObjectParams
 
@@ -5380,6 +8301,16 @@ func (siw *ServerInterfaceWrapper) UploadObject(w http.ResponseWriter, r *http.R
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
 	// Parameter object where we will unmarshal all parameters from the context
 	var params UploadObjectParams
 
@@ -5424,6 +8355,66 @@ func (siw *ServerInterfaceWrapper) UploadObject(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
+// ListPublicRepository operation middleware
+func (siw *ServerInterfaceWrapper) ListPublicRepository(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListPublicRepositoryParams
+
+	// ------------- Optional query parameter "prefix" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "prefix", r.URL.Query(), &params.Prefix)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "prefix", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "after" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "after", r.URL.Query(), &params.After)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "after", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "amount" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "amount", r.URL.Query(), &params.Amount)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "amount", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListPublicRepository(r.Context(), &JiaozifsResponse{w}, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
 // DeleteRepository operation middleware
 func (siw *ServerInterfaceWrapper) DeleteRepository(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -5454,8 +8445,29 @@ func (siw *ServerInterfaceWrapper) DeleteRepository(w http.ResponseWriter, r *ht
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteRepositoryParams
+
+	// ------------- Optional query parameter "is_clean_data" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "is_clean_data", r.URL.Query(), &params.IsCleanData)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "is_clean_data", Err: err})
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteRepository(r.Context(), &JiaozifsResponse{w}, r, owner, repository)
+		siw.Handler.DeleteRepository(r.Context(), &JiaozifsResponse{w}, r, owner, repository, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -5494,6 +8506,16 @@ func (siw *ServerInterfaceWrapper) GetRepository(w http.ResponseWriter, r *http.
 	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetRepository(r.Context(), &JiaozifsResponse{w}, r, owner, repository)
@@ -5546,6 +8568,16 @@ func (siw *ServerInterfaceWrapper) UpdateRepository(w http.ResponseWriter, r *ht
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UpdateRepository(r.Context(), &JiaozifsResponse{w}, r, body, owner, repository)
 	}))
@@ -5586,6 +8618,16 @@ func (siw *ServerInterfaceWrapper) DeleteBranch(w http.ResponseWriter, r *http.R
 	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params DeleteBranchParams
@@ -5645,6 +8687,16 @@ func (siw *ServerInterfaceWrapper) GetBranch(w http.ResponseWriter, r *http.Requ
 	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetBranchParams
@@ -5715,6 +8767,16 @@ func (siw *ServerInterfaceWrapper) CreateBranch(w http.ResponseWriter, r *http.R
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateBranch(r.Context(), &JiaozifsResponse{w}, r, body, owner, repository)
 	}))
@@ -5755,6 +8817,16 @@ func (siw *ServerInterfaceWrapper) ListBranches(w http.ResponseWriter, r *http.R
 	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ListBranchesParams
@@ -5833,6 +8905,16 @@ func (siw *ServerInterfaceWrapper) GetCommitChanges(w http.ResponseWriter, r *ht
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetCommitChangesParams
 
@@ -5855,8 +8937,8 @@ func (siw *ServerInterfaceWrapper) GetCommitChanges(w http.ResponseWriter, r *ht
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
-// GetCommitsInRepository operation middleware
-func (siw *ServerInterfaceWrapper) GetCommitsInRepository(w http.ResponseWriter, r *http.Request) {
+// GetCommitsInRef operation middleware
+func (siw *ServerInterfaceWrapper) GetCommitsInRef(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var err error
@@ -5885,8 +8967,18 @@ func (siw *ServerInterfaceWrapper) GetCommitsInRepository(w http.ResponseWriter,
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
 	// Parameter object where we will unmarshal all parameters from the context
-	var params GetCommitsInRepositoryParams
+	var params GetCommitsInRefParams
 
 	// ------------- Optional query parameter "after" -------------
 
@@ -5913,7 +9005,7 @@ func (siw *ServerInterfaceWrapper) GetCommitsInRepository(w http.ResponseWriter,
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetCommitsInRepository(r.Context(), &JiaozifsResponse{w}, r, owner, repository, params)
+		siw.Handler.GetCommitsInRef(r.Context(), &JiaozifsResponse{w}, r, owner, repository, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -5961,6 +9053,16 @@ func (siw *ServerInterfaceWrapper) CompareCommit(w http.ResponseWriter, r *http.
 	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params CompareCommitParams
@@ -6014,6 +9116,16 @@ func (siw *ServerInterfaceWrapper) GetEntriesInRef(w http.ResponseWriter, r *htt
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetEntriesInRefParams
 
@@ -6059,12 +9171,927 @@ func (siw *ServerInterfaceWrapper) GetEntriesInRef(w http.ResponseWriter, r *htt
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
+// RevokeMember operation middleware
+func (siw *ServerInterfaceWrapper) RevokeMember(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params RevokeMemberParams
+
+	// ------------- Required query parameter "user_id" -------------
+
+	if paramValue := r.URL.Query().Get("user_id"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "user_id"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "user_id", r.URL.Query(), &params.UserId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RevokeMember(r.Context(), &JiaozifsResponse{w}, r, owner, repository, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// UpdateMemberGroup operation middleware
+func (siw *ServerInterfaceWrapper) UpdateMemberGroup(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateMemberGroupParams
+
+	// ------------- Required query parameter "user_id" -------------
+
+	if paramValue := r.URL.Query().Get("user_id"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "user_id"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "user_id", r.URL.Query(), &params.UserId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user_id", Err: err})
+		return
+	}
+
+	// ------------- Required query parameter "group_id" -------------
+
+	if paramValue := r.URL.Query().Get("group_id"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "group_id"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "group_id", r.URL.Query(), &params.GroupId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "group_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateMemberGroup(r.Context(), &JiaozifsResponse{w}, r, owner, repository, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// InviteMember operation middleware
+func (siw *ServerInterfaceWrapper) InviteMember(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params InviteMemberParams
+
+	// ------------- Required query parameter "user_id" -------------
+
+	if paramValue := r.URL.Query().Get("user_id"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "user_id"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "user_id", r.URL.Query(), &params.UserId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user_id", Err: err})
+		return
+	}
+
+	// ------------- Required query parameter "group_id" -------------
+
+	if paramValue := r.URL.Query().Get("group_id"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "group_id"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "group_id", r.URL.Query(), &params.GroupId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "group_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.InviteMember(r.Context(), &JiaozifsResponse{w}, r, owner, repository, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// ListMembers operation middleware
+func (siw *ServerInterfaceWrapper) ListMembers(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListMembers(r.Context(), &JiaozifsResponse{w}, r, owner, repository)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// ListMergeRequests operation middleware
+func (siw *ServerInterfaceWrapper) ListMergeRequests(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListMergeRequestsParams
+
+	// ------------- Optional query parameter "after" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "after", r.URL.Query(), &params.After)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "after", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "amount" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "amount", r.URL.Query(), &params.Amount)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "amount", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "state" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "state", r.URL.Query(), &params.State)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "state", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListMergeRequests(r.Context(), &JiaozifsResponse{w}, r, owner, repository, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// CreateMergeRequest operation middleware
+func (siw *ServerInterfaceWrapper) CreateMergeRequest(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Body parse -------------
+	var body CreateMergeRequestJSONRequestBody
+	parseBody := true
+	if parseBody {
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, "Error unmarshalling body 'CreateMergeRequest' as JSON", http.StatusBadRequest)
+			return
+		}
+	}
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateMergeRequest(r.Context(), &JiaozifsResponse{w}, r, body, owner, repository)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// GetMergeRequest operation middleware
+func (siw *ServerInterfaceWrapper) GetMergeRequest(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "mrSeq" -------------
+	var mrSeq uint64
+
+	err = runtime.BindStyledParameterWithOptions("simple", "mrSeq", chi.URLParam(r, "mrSeq"), &mrSeq, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "mrSeq", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetMergeRequest(r.Context(), &JiaozifsResponse{w}, r, owner, repository, mrSeq)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// UpdateMergeRequest operation middleware
+func (siw *ServerInterfaceWrapper) UpdateMergeRequest(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Body parse -------------
+	var body UpdateMergeRequestJSONRequestBody
+	parseBody := true
+	if parseBody {
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, "Error unmarshalling body 'UpdateMergeRequest' as JSON", http.StatusBadRequest)
+			return
+		}
+	}
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "mrSeq" -------------
+	var mrSeq uint64
+
+	err = runtime.BindStyledParameterWithOptions("simple", "mrSeq", chi.URLParam(r, "mrSeq"), &mrSeq, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "mrSeq", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateMergeRequest(r.Context(), &JiaozifsResponse{w}, r, body, owner, repository, mrSeq)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// Merge operation middleware
+func (siw *ServerInterfaceWrapper) Merge(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Body parse -------------
+	var body MergeJSONRequestBody
+	parseBody := true
+	if parseBody {
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, "Error unmarshalling body 'Merge' as JSON", http.StatusBadRequest)
+			return
+		}
+	}
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "mrSeq" -------------
+	var mrSeq uint64
+
+	err = runtime.BindStyledParameterWithOptions("simple", "mrSeq", chi.URLParam(r, "mrSeq"), &mrSeq, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "mrSeq", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.Merge(r.Context(), &JiaozifsResponse{w}, r, body, owner, repository, mrSeq)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// ChangeVisible operation middleware
+func (siw *ServerInterfaceWrapper) ChangeVisible(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ChangeVisibleParams
+
+	// ------------- Required query parameter "visible" -------------
+
+	if paramValue := r.URL.Query().Get("visible"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "visible"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "visible", r.URL.Query(), &params.Visible)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "visible", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ChangeVisible(r.Context(), &JiaozifsResponse{w}, r, owner, repository, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
 // GetSetupState operation middleware
 func (siw *ServerInterfaceWrapper) GetSetupState(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetSetupState(r.Context(), &JiaozifsResponse{w}, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// DeleteAksk operation middleware
+func (siw *ServerInterfaceWrapper) DeleteAksk(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteAkskParams
+
+	// ------------- Optional query parameter "id" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "id", r.URL.Query(), &params.Id)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "access_key" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "access_key", r.URL.Query(), &params.AccessKey)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "access_key", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteAksk(r.Context(), &JiaozifsResponse{w}, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// GetAksk operation middleware
+func (siw *ServerInterfaceWrapper) GetAksk(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetAkskParams
+
+	// ------------- Optional query parameter "id" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "id", r.URL.Query(), &params.Id)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "access_key" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "access_key", r.URL.Query(), &params.AccessKey)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "access_key", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAksk(r.Context(), &JiaozifsResponse{w}, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// CreateAksk operation middleware
+func (siw *ServerInterfaceWrapper) CreateAksk(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateAkskParams
+
+	// ------------- Optional query parameter "description" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "description", r.URL.Query(), &params.Description)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "description", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateAksk(r.Context(), &JiaozifsResponse{w}, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// ListAksks operation middleware
+func (siw *ServerInterfaceWrapper) ListAksks(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListAksksParams
+
+	// ------------- Optional query parameter "after" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "after", r.URL.Query(), &params.After)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "after", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "amount" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "amount", r.URL.Query(), &params.Amount)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "amount", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListAksks(r.Context(), &JiaozifsResponse{w}, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// RefreshToken operation middleware
+func (siw *ServerInterfaceWrapper) RefreshToken(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RefreshToken(r.Context(), &JiaozifsResponse{w}, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -6110,6 +10137,16 @@ func (siw *ServerInterfaceWrapper) ListRepositoryOfAuthenticatedUser(w http.Resp
 	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ListRepositoryOfAuthenticatedUserParams
@@ -6169,6 +10206,16 @@ func (siw *ServerInterfaceWrapper) CreateRepository(w http.ResponseWriter, r *ht
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateRepository(r.Context(), &JiaozifsResponse{w}, r, body)
 	}))
@@ -6189,6 +10236,16 @@ func (siw *ServerInterfaceWrapper) GetUserInfo(w http.ResponseWriter, r *http.Re
 	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetUserInfo(r.Context(), &JiaozifsResponse{w}, r)
@@ -6221,6 +10278,16 @@ func (siw *ServerInterfaceWrapper) ListRepository(w http.ResponseWriter, r *http
 	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ListRepositoryParams
@@ -6305,6 +10372,16 @@ func (siw *ServerInterfaceWrapper) DeleteWip(w http.ResponseWriter, r *http.Requ
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
 	// Parameter object where we will unmarshal all parameters from the context
 	var params DeleteWipParams
 
@@ -6364,6 +10441,16 @@ func (siw *ServerInterfaceWrapper) GetWip(w http.ResponseWriter, r *http.Request
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetWipParams
 
@@ -6384,6 +10471,85 @@ func (siw *ServerInterfaceWrapper) GetWip(w http.ResponseWriter, r *http.Request
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetWip(r.Context(), &JiaozifsResponse{w}, r, owner, repository, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// UpdateWip operation middleware
+func (siw *ServerInterfaceWrapper) UpdateWip(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Body parse -------------
+	var body UpdateWipJSONRequestBody
+	parseBody := true
+	if parseBody {
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, "Error unmarshalling body 'UpdateWip' as JSON", http.StatusBadRequest)
+			return
+		}
+	}
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateWipParams
+
+	// ------------- Required query parameter "refName" -------------
+
+	if paramValue := r.URL.Query().Get("refName"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "refName"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "refName", r.URL.Query(), &params.RefName)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "refName", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateWip(r.Context(), &JiaozifsResponse{w}, r, body, owner, repository, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -6422,6 +10588,16 @@ func (siw *ServerInterfaceWrapper) GetWipChanges(w http.ResponseWriter, r *http.
 	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetWipChangesParams
@@ -6489,6 +10665,16 @@ func (siw *ServerInterfaceWrapper) CommitWip(w http.ResponseWriter, r *http.Requ
 	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params CommitWipParams
@@ -6564,6 +10750,16 @@ func (siw *ServerInterfaceWrapper) ListWip(w http.ResponseWriter, r *http.Reques
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
 
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListWip(r.Context(), &JiaozifsResponse{w}, r, owner, repository)
 	}))
@@ -6604,6 +10800,16 @@ func (siw *ServerInterfaceWrapper) RevertWipChanges(w http.ResponseWriter, r *ht
 	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
 
 	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params RevertWipChangesParams
@@ -6767,6 +10973,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/auth/logout", wrapper.Logout)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/groups/repo", wrapper.ListRepoGroup)
+	})
+	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/object/{owner}/{repository}", wrapper.DeleteObject)
 	})
 	r.Group(func(r chi.Router) {
@@ -6777,6 +10986,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/object/{owner}/{repository}", wrapper.UploadObject)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/repos/public", wrapper.ListPublicRepository)
 	})
 	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/repos/{owner}/{repository}", wrapper.DeleteRepository)
@@ -6803,7 +11015,7 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/repos/{owner}/{repository}/changes/{commit_id}", wrapper.GetCommitChanges)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/repos/{owner}/{repository}/commits", wrapper.GetCommitsInRepository)
+		r.Get(options.BaseURL+"/repos/{owner}/{repository}/commits", wrapper.GetCommitsInRef)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/repos/{owner}/{repository}/compare/{basehead}", wrapper.CompareCommit)
@@ -6812,7 +11024,52 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/repos/{owner}/{repository}/contents", wrapper.GetEntriesInRef)
 	})
 	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/repos/{owner}/{repository}/member", wrapper.RevokeMember)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/repos/{owner}/{repository}/member", wrapper.UpdateMemberGroup)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/repos/{owner}/{repository}/member/invite", wrapper.InviteMember)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/repos/{owner}/{repository}/members", wrapper.ListMembers)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/repos/{owner}/{repository}/mergerequest", wrapper.ListMergeRequests)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/repos/{owner}/{repository}/mergerequest", wrapper.CreateMergeRequest)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/repos/{owner}/{repository}/mergerequest/{mrSeq}", wrapper.GetMergeRequest)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/repos/{owner}/{repository}/mergerequest/{mrSeq}", wrapper.UpdateMergeRequest)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/repos/{owner}/{repository}/mergerequest/{mrSeq}/merge", wrapper.Merge)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/repos/{owner}/{repository}/visible", wrapper.ChangeVisible)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/setup", wrapper.GetSetupState)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/users/aksk", wrapper.DeleteAksk)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/users/aksk", wrapper.GetAksk)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/users/aksk", wrapper.CreateAksk)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/users/aksks", wrapper.ListAksks)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/users/refreshtoken", wrapper.RefreshToken)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/users/register", wrapper.Register)
@@ -6839,6 +11096,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/wip/{owner}/{repository}", wrapper.GetWip)
 	})
 	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/wip/{owner}/{repository}", wrapper.UpdateWip)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/wip/{owner}/{repository}/changes", wrapper.GetWipChanges)
 	})
 	r.Group(func(r chi.Router) {
@@ -6857,76 +11117,98 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

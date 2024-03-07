@@ -3,6 +3,12 @@ package cmd
 import (
 	"context"
 
+	"github.com/jiaozifs/jiaozifs/auth/rbac"
+
+	"github.com/jiaozifs/jiaozifs/auth/aksk"
+
+	"github.com/pelletier/go-toml/v2"
+
 	"github.com/gorilla/sessions"
 	logging "github.com/ipfs/go-log/v2"
 	apiImpl "github.com/jiaozifs/jiaozifs/api/api_impl"
@@ -16,7 +22,6 @@ import (
 	"github.com/jiaozifs/jiaozifs/utils"
 	"github.com/jiaozifs/jiaozifs/version"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"github.com/uptrace/bun"
 )
 
@@ -38,6 +43,12 @@ var daemonCmd = &cobra.Command{
 			return err
 		}
 
+		cfgData, err := toml.Marshal(cfg)
+		if err != nil {
+			return err
+		}
+		log.Debug(string(cfgData))
+
 		shutdown := make(utils.Shutdown)
 		stop, err := fx_opt.New(cmd.Context(),
 			fx_opt.Override(new(context.Context), cmd.Context()),
@@ -55,11 +66,21 @@ var daemonCmd = &cobra.Command{
 			fx_opt.Override(new(models.IRepo), func(db *bun.DB) models.IRepo {
 				return models.NewRepo(db)
 			}),
+			fx_opt.Override(new(models.IUserRepo), func(repo models.IRepo) models.IUserRepo {
+				return repo.UserRepo()
+			}),
 
 			fx_opt.Override(fx_opt.NextInvoke(), migrations.MigrateDatabase),
+			//permission
+			fx_opt.Override(new(rbac.PermissionCheck), func(repo models.IRepo) rbac.PermissionCheck {
+				return rbac.NewRbacAuth(repo)
+			}),
+
 			//api
 			fx_opt.Override(new(crypt.SecretStore), auth.NewSectetStore),
 			fx_opt.Override(new(sessions.Store), auth.NewSessionStore),
+			fx_opt.Override(new(*auth.BasicAuthenticator), auth.NewBasicAuthenticator),
+			fx_opt.Override(new(aksk.Verifier), auth.NewAkskVerifier),
 			fx_opt.Override(fx_opt.NextInvoke(), apiImpl.SetupAPI),
 		)
 		if err != nil {
@@ -76,9 +97,4 @@ var daemonCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(daemonCmd)
-	daemonCmd.Flags().String("db", "", "pg connection string eg. postgres://user:pass@localhost:5432/jiaozifs?sslmode=disable")
-	daemonCmd.Flags().String("log-level", "INFO", "set log level eg. DEBUG INFO ERROR")
-
-	_ = viper.BindPFlag("database.connection", daemonCmd.Flags().Lookup("db"))
-	_ = viper.BindPFlag("log.level", daemonCmd.Flags().Lookup("log-level"))
 }

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/jiaozifs/jiaozifs/block/ipfs"
+
 	"cloud.google.com/go/storage"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	logging "github.com/ipfs/go-log/v2"
@@ -39,6 +41,12 @@ func BuildBlockAdapter(ctx context.Context, c params.AdapterConfig) (block.Adapt
 			return nil, err
 		}
 		return buildLocalAdapter(ctx, p)
+	case block.BlockstoreIPFS:
+		p, err := c.BlockstoreIpfsParams()
+		if err != nil {
+			return nil, err
+		}
+		return buildIpfsAdapter(ctx, p)
 	case block.BlockstoreTypeS3:
 		p, err := c.BlockstoreS3Params()
 		if err != nil {
@@ -65,6 +73,18 @@ func BuildBlockAdapter(ctx context.Context, c params.AdapterConfig) (block.Adapt
 		return nil, fmt.Errorf("%w '%s' please choose one of %s",
 			block.ErrInvalidAddress, blockstore, []string{block.BlockstoreTypeLocal, block.BlockstoreTypeS3, block.BlockstoreTypeAzure, block.BlockstoreTypeMem, block.BlockstoreTypeTransient, block.BlockstoreTypeGS})
 	}
+}
+
+func buildIpfsAdapter(_ context.Context, params params.Ipfs) (*ipfs.Adapter, error) {
+	adapter, err := ipfs.NewAdapter(params.URL)
+	if err != nil {
+		return nil, fmt.Errorf("got error opening a local block adapter with path %s: %w", params.URL, err)
+	}
+	log.With(
+		"type", "local",
+		"url", params.URL,
+	).Info("initialized blockstore adapter")
+	return adapter, nil
 }
 
 func buildLocalAdapter(_ context.Context, params params.Local) (*local.Adapter, error) {

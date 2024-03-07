@@ -13,6 +13,21 @@ import (
 )
 
 func SetupDatabase(ctx context.Context, lc fx.Lifecycle, dbConfig *config.DatabaseConfig) (*bun.DB, error) {
+	bunDB, err := NewBunDBFromConfig(ctx, dbConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	lc.Append(fx.Hook{
+		OnStop: func(ctx context.Context) error {
+			return bunDB.Close()
+		},
+	})
+
+	return bunDB, nil
+}
+
+func NewBunDBFromConfig(ctx context.Context, dbConfig *config.DatabaseConfig) (*bun.DB, error) {
 	sqlDB := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(dbConfig.Connection)))
 	_, err := sqlDB.Conn(ctx)
 	if err != nil {
@@ -24,12 +39,5 @@ func SetupDatabase(ctx context.Context, lc fx.Lifecycle, dbConfig *config.Databa
 	if dbConfig.Debug {
 		bunDB.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
 	}
-
-	lc.Append(fx.Hook{
-		OnStop: func(ctx context.Context) error {
-			return bunDB.Close()
-		},
-	})
-
-	return bunDB, nil
+	return bunDB, err
 }

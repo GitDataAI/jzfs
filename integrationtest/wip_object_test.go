@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/jiaozifs/jiaozifs/utils/hash"
+
 	"github.com/jiaozifs/jiaozifs/api"
 	apiimpl "github.com/jiaozifs/jiaozifs/api/api_impl"
 	"github.com/jiaozifs/jiaozifs/utils"
@@ -17,13 +19,15 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		repoName := "hash"
 		branchName := "feat/wip_obj_test"
 
-		createUser(ctx, c, client, userName)
-		loginAndSwitch(ctx, c, client, "jude login", userName, false)
-		createRepo(ctx, c, client, repoName)
-		createBranch(ctx, c, client, userName, repoName, "main", branchName)
-		createWip(ctx, c, client, "get wip obj test", userName, repoName, branchName)
-		uploadObject(ctx, c, client, "update f1 to test branch", userName, repoName, branchName, "m.dat")
-		uploadObject(ctx, c, client, "update f2 to test branch", userName, repoName, branchName, "g/m.dat")
+		c.Convey("init", func(c convey.C) {
+			_ = createUser(ctx, client, userName)
+			loginAndSwitch(ctx, client, userName, false)
+			_ = createRepo(ctx, client, repoName, false)
+			_ = createBranch(ctx, client, userName, repoName, "main", branchName)
+			_ = createWip(ctx, client, userName, repoName, branchName)
+			_ = uploadObject(ctx, client, userName, repoName, branchName, "m.dat")
+			_ = uploadObject(ctx, client, userName, repoName, branchName, "g/m.dat")
+		})
 
 		c.Convey("head object", func(c convey.C) {
 			c.Convey("no auth", func() {
@@ -76,7 +80,7 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 					Type:    api.RefTypeWip,
 				})
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 
 			c.Convey("empty path", func() {
@@ -160,7 +164,7 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 					Type:    api.RefTypeWip,
 				})
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 
 			c.Convey("empty path", func() {
@@ -239,7 +243,7 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 					Path:    "g/m.dat",
 				})
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 
 			c.Convey("empty path", func() {
@@ -277,7 +281,9 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
 
-				commitWip(ctx, c, client, "commit delete object", userName, repoName, branchName, "test")
+				c.Convey("commit changes", func() {
+					commitWip(ctx, client, userName, repoName, branchName, "test")
+				})
 
 				//ensure not exit
 				resp, err = client.HeadObject(ctx, userName, repoName, &api.HeadObjectParams{
@@ -289,15 +295,17 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusBadRequest)
 			})
 		})
-
-		uploadObject(ctx, c, client, "update f3 to test branch", userName, repoName, branchName, "a/m.dat")
-		uploadObject(ctx, c, client, "update f4 to test branch", userName, repoName, branchName, "a/b.dat")
-		uploadObject(ctx, c, client, "update f5 to test branch", userName, repoName, branchName, "b.dat")
-		uploadObject(ctx, c, client, "update f6 to test branch", userName, repoName, branchName, "c.dat")
-
 		testBranchName := "test/empty_branch"
-		createBranch(ctx, c, client, userName, repoName, "main", testBranchName)
-		createWip(ctx, c, client, "create empty_branch wip", userName, repoName, testBranchName)
+
+		c.Convey("update objects and create empty branch", func(c convey.C) {
+			uploadObject(ctx, client, userName, repoName, branchName, "a/m.dat")
+			uploadObject(ctx, client, userName, repoName, branchName, "a/b.dat")
+			uploadObject(ctx, client, userName, repoName, branchName, "b.dat")
+			uploadObject(ctx, client, userName, repoName, branchName, "c.dat")
+
+			createBranch(ctx, client, userName, repoName, "main", testBranchName)
+			createWip(ctx, client, userName, repoName, testBranchName)
+		})
 
 		c.Convey("get wip success on init", func(c convey.C) {
 			resp, err := client.GetWipChanges(ctx, userName, repoName, &api.GetWipChangesParams{
@@ -352,7 +360,7 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 					RefName: "main",
 				})
 				convey.So(err, convey.ShouldBeNil)
-				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusForbidden)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 			})
 
 			c.Convey("not exit path", func() {
@@ -455,5 +463,172 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 		})
 
+	}
+}
+
+func UpdateWipSpec(ctx context.Context, urlStr string) func(c convey.C) {
+	client, _ := api.NewClient(urlStr + apiimpl.APIV1Prefix)
+	var wip *api.Wip
+	return func(c convey.C) {
+		userName := "milly"
+		repoName := "update_wip_test"
+		branchName := "main"
+
+		c.Convey("create wip", func(c convey.C) {
+			_ = createUser(ctx, client, userName)
+			loginAndSwitch(ctx, client, userName, false)
+			_ = createRepo(ctx, client, repoName, false)
+			_ = createWip(ctx, client, userName, repoName, branchName)
+
+			//make wip base commit has value
+			_ = uploadObject(ctx, client, userName, repoName, branchName, "a.txt")
+			commitWip(ctx, client, userName, repoName, branchName, "test")
+
+			_ = uploadObject(ctx, client, userName, repoName, branchName, "m.dat")
+			_ = uploadObject(ctx, client, userName, repoName, branchName, "g/m.dat")
+		})
+
+		c.Convey("get wip", func(c convey.C) {
+			resp, err := client.GetWip(ctx, userName, repoName, &api.GetWipParams{
+				RefName: branchName,
+			})
+			convey.So(err, convey.ShouldBeNil)
+			convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+			result, err := api.ParseGetWipResponse(resp)
+			convey.So(err, convey.ShouldBeNil)
+			wip = result.JSON200
+		})
+
+		c.Convey("update wip", func(c convey.C) {
+			c.Convey("no auth", func() {
+				re := client.RequestEditors
+				client.RequestEditors = nil
+				resp, err := client.UpdateWip(ctx, userName, repoName, &api.UpdateWipParams{RefName: branchName}, api.UpdateWipJSONRequestBody{
+					CurrentTree: utils.String(hash.Empty.Hex()),
+					BaseCommit:  utils.String(hash.Empty.Hex()),
+				})
+				client.RequestEditors = re
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
+			})
+
+			c.Convey("update wip in not exit repo", func() {
+				resp, err := client.UpdateWip(ctx, userName, "mock_repo", &api.UpdateWipParams{RefName: branchName}, api.UpdateWipJSONRequestBody{
+					CurrentTree: utils.String(hash.Empty.Hex()),
+					BaseCommit:  utils.String(hash.Empty.Hex()),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
+			})
+
+			c.Convey("update wip in non exit user", func() {
+				resp, err := client.UpdateWip(ctx, "telo", repoName, &api.UpdateWipParams{RefName: branchName}, api.UpdateWipJSONRequestBody{
+					CurrentTree: utils.String(hash.Empty.Hex()),
+					BaseCommit:  utils.String(hash.Empty.Hex()),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
+			})
+
+			c.Convey("update wip in other's repo", func() {
+				resp, err := client.UpdateWip(ctx, "jimmy", "happygo", &api.UpdateWipParams{RefName: "main"}, api.UpdateWipJSONRequestBody{
+					CurrentTree: utils.String(hash.Empty.Hex()),
+					BaseCommit:  utils.String(hash.Empty.Hex()),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
+			})
+
+			c.Convey("update wip in non exit branch", func() {
+				//delete
+				resp, err := client.UpdateWip(ctx, userName, repoName, &api.UpdateWipParams{RefName: "feat/mock_ref"}, api.UpdateWipJSONRequestBody{
+					CurrentTree: utils.String(hash.Empty.Hex()),
+					BaseCommit:  utils.String(hash.Empty.Hex()),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
+			})
+
+			c.Convey("update wip with fail base commit", func() {
+				//delete
+				resp, err := client.UpdateWip(ctx, userName, repoName, &api.UpdateWipParams{RefName: branchName}, api.UpdateWipJSONRequestBody{
+					CurrentTree: utils.String(hash.Empty.Hex()),
+					BaseCommit:  utils.String("ddd"),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusInternalServerError)
+			})
+
+			c.Convey("update wip with fail tree hash", func() {
+				//delete
+				resp, err := client.UpdateWip(ctx, userName, repoName, &api.UpdateWipParams{RefName: branchName}, api.UpdateWipJSONRequestBody{
+					CurrentTree: utils.String("ddd"),
+					BaseCommit:  utils.String(hash.Empty.Hex()),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusInternalServerError)
+			})
+
+			c.Convey("update wip successful", func() {
+				//delete
+				resp, err := client.UpdateWip(ctx, userName, repoName, &api.UpdateWipParams{RefName: branchName}, api.UpdateWipJSONRequestBody{
+					CurrentTree: utils.String(hash.Empty.Hex()),
+					BaseCommit:  utils.String(hash.Empty.Hex()),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				//ensure delete work
+				getResp, err := client.GetWip(ctx, userName, repoName, &api.GetWipParams{RefName: branchName})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				updatedWip, err := api.ParseGetWipResponse(getResp)
+				convey.So(err, convey.ShouldBeNil)
+				convey.So((*updatedWip.JSON200).BaseCommit, convey.ShouldEqual, "")
+				convey.So((*updatedWip.JSON200).CurrentTree, convey.ShouldEqual, "")
+			})
+
+			c.Convey("fail to update non exit tree hash", func() {
+				//delete
+				resp, err := client.UpdateWip(ctx, userName, repoName, &api.UpdateWipParams{RefName: branchName}, api.UpdateWipJSONRequestBody{
+					CurrentTree: utils.String("6161616161"),
+					BaseCommit:  utils.String(wip.BaseCommit),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
+			})
+
+			c.Convey("fail to update non exit base commit", func() {
+				//delete
+				resp, err := client.UpdateWip(ctx, userName, repoName, &api.UpdateWipParams{RefName: branchName}, api.UpdateWipJSONRequestBody{
+					CurrentTree: utils.String(wip.CurrentTree),
+					BaseCommit:  utils.String("6161616161"),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
+			})
+
+			c.Convey("update wip to non empty successful", func() {
+				//delete
+				resp, err := client.UpdateWip(ctx, userName, repoName, &api.UpdateWipParams{RefName: branchName}, api.UpdateWipJSONRequestBody{
+					CurrentTree: utils.String(wip.CurrentTree),
+					BaseCommit:  utils.String(wip.BaseCommit),
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				//ensure delete work
+				getResp, err := client.GetWip(ctx, userName, repoName, &api.GetWipParams{RefName: branchName})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				updatedWip, err := api.ParseGetWipResponse(getResp)
+				convey.So(err, convey.ShouldBeNil)
+				convey.So((*updatedWip.JSON200).BaseCommit, convey.ShouldEqual, wip.BaseCommit)
+				convey.So((*updatedWip.JSON200).CurrentTree, convey.ShouldEqual, wip.CurrentTree)
+			})
+		})
 	}
 }

@@ -17,6 +17,11 @@ security:
   - jwt_token: [] # Default security for the entire API
   - basic_auth: []
   - cookie_auth: []
+  - JiaozifsAccessKeyId: []
+    SignatureVersion: []
+    SignatureMethod: []
+    Timestamp: []
+    Signature: []
 components:
   parameters:
     PaginationPrefix:
@@ -26,28 +31,21 @@ components:
       schema:
         type: string
 
-    PaginationBranchAfter:
+    PaginationStringAfter:
       in: query
       name: after
       description: return items after this value
       schema:
         type: string
     
-    PaginationRepoAfter:
+    PaginationInt64After:
       in: query
       name: after
       description: return items after this value
       schema:
-        type: string
-        format: date-time 
-    
-    PaginationCommitAfter:
-      in: query
-      name: after
-      description: return items after this value
-      schema:
-        type: string
-        format: date-time-ns
+        type: integer
+        format: int64
+
 
     PaginationAmount:
       in: query
@@ -78,7 +76,26 @@ components:
       type: apiKey
       in: cookie
       name: internal_auth_session
-
+    access_key_id:
+      type: apiKey
+      in: query
+      name: JiaozifsAccessKeyId
+    signature_version:
+      type: apiKey
+      in: query
+      name: SignatureVersion
+    signature_method:
+      type: apiKey
+      in: query
+      name: SignatureMethod
+    timestamp:
+      type: apiKey
+      in: query
+      name: Timestamp
+    signature:
+      type: apiKey
+      in: query
+      name: Signature
 
   schemas:
     LoginConfig:
@@ -127,6 +144,116 @@ components:
           description: true if the comm prefs are missing.
         login_config:
           $ref: "#/components/schemas/LoginConfig"
+    Group:
+      type: object
+      required:
+        - id
+        - name
+        - policies
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        policies:
+          type: array
+          items:
+            type: string
+            format: uuid
+        created_at:
+          type: integer
+          format: int64
+        updated_at:
+          type: integer
+          format: int64
+    Member:
+      type: object
+      required:
+        - id
+        - user_id
+        - group_id
+        - repo_id
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        repo_id:
+          type: string
+          format: uuid
+        group_id:
+          type: string
+          format: uuid
+        created_at:
+          type: integer
+          format: int64
+        updated_at:
+          type: integer
+          format: int64
+    AkskList:
+      type: object
+      required:
+        - pagination
+        - results
+      properties:
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/SafeAksk"
+    Aksk:
+      type: object
+      required:
+        - id
+        - access_key
+        - secret_key
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        access_key:
+          type: string
+        secret_key:
+          type: string
+        description:
+          type: string
+        created_at:
+          type: integer
+          format: int64
+        updated_at:
+          type: integer
+          format: int64
+    SafeAksk:
+      type: object
+      required:
+        - id
+        - access_key
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        access_key:
+          type: string
+        description:
+          type: string
+        created_at:
+          type: integer
+          format: int64
+        updated_at:
+          type: integer
+          format: int64
     BranchCreation:
       type: object
       required:
@@ -140,6 +267,161 @@ components:
     RefType:
       type: string
       enum: ["branch", "wip","tag", "commit"]
+    CreateMergeRequest:
+      type: object
+      required:
+        - target_branch_name
+        - source_branch_name
+        - title
+      properties:
+        target_branch_name:
+          type: string
+        source_branch_name:
+          type: string
+        title:
+          type: string
+          maximum: 50
+        description:
+          type: string
+          maximum: 500
+    UpdateMergeRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: integer
+          format: int
+    MergeMergeRequest:
+      type: object
+      required:
+        - msg
+      properties:
+        msg:
+          type: string
+          allowEmptyValue: true
+        conflict_resolve:
+          description: use to record the resolution of the conflict, example({"b/a.txt":"left"})
+          type: object
+          additionalProperties:
+            type: string
+    MergeRequest:
+      type: object
+      required:
+        - id
+        - sequence
+        - target_branch
+        - source_branch
+        - source_repo_id
+        - target_repo_id
+        - title
+        - merge_status
+        - author_id
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        sequence:
+          type: integer
+          format: uint64
+        target_branch:
+          type: string
+          format: uuid
+        source_branch:
+          type: string
+          format: uuid
+        source_repo_id:
+          type: string
+          format: uuid
+        target_repo_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        merge_status:
+          type: integer
+          format: int
+        description:
+          type: string
+        author_id:
+          type: string
+          format: uuid
+        created_at:
+          type: integer
+          format: int64
+        updated_at:
+          type: integer
+          format: int64
+    MergeRequestFullState:
+      type: object
+      required:
+        - id
+        - sequence
+        - target_branch
+        - source_branch
+        - source_repo_id
+        - target_repo_id
+        - title
+        - changes
+        - merge_status
+        - author_id
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        sequence:
+          type: integer
+          format: uint64
+        target_branch:
+          type: string
+          format: uuid
+        source_branch:
+          type: string
+          format: uuid
+        source_repo_id:
+          type: string
+          format: uuid
+        target_repo_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        merge_status:
+          type: integer
+          format: int
+        description:
+          type: string
+        author_id:
+          type: string
+          format: uuid
+        changes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChangePair"
+        created_at:
+          type: integer
+          format: int64
+        updated_at:
+          type: integer
+          format: int64
+    MergeRequestList:
+      type: object
+      required:
+        - pagination
+        - results
+      properties:
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/MergeRequest"
     Branch:
       type: object
       required:
@@ -167,11 +449,11 @@ components:
           type: string
           format: uuid
         created_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         updated_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
     BranchList:
       type: object
       required:
@@ -193,6 +475,8 @@ components:
           type: string
         name:
           type: string
+        visible:
+          type: boolean
         blockstore_config:
           description: block storage config url encoded json
           type: string
@@ -222,6 +506,7 @@ components:
         - id
         - name
         - owner_id
+        - visible
         - head
         - use_public_storage
         - creator_id
@@ -236,6 +521,8 @@ components:
         owner_id:
           type: string
           format: uuid
+        visible:
+          type: boolean
         head:
           type: string
         use_public_storage:
@@ -250,11 +537,11 @@ components:
           type: string
           format: uuid
         created_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         updated_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
     Blob:
       type: object
       required:
@@ -285,11 +572,11 @@ components:
           additionalProperties:
             type: string
         created_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         updated_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
     Signature:
       type: object
       required:
@@ -303,8 +590,8 @@ components:
           type: string
           format: email
         when:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
     Commit:
       type: object
       required:
@@ -339,11 +626,11 @@ components:
           items:
             type: string
         created_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         updated_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
     TreeEntry:
       type: object
       required:
@@ -377,11 +664,11 @@ components:
           type: integer
           format: int64
         created_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         updated_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
     TreeNode:
       type: object
       required:
@@ -410,11 +697,11 @@ components:
           items:
             $ref: "#/components/schemas/TreeEntry"
         created_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         updated_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
     Wip:
       type: object
       required:
@@ -448,11 +735,18 @@ components:
           type: string
           format: uuid
         created_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         updated_at:
+          type: integer
+          format: int64
+    UpdateWip:
+      type: object
+      properties:
+        base_commit:
           type: string
-          format: date-time
+        current_tree:
+          type: string
     Change:
       type: object
       required:
@@ -468,6 +762,20 @@ components:
           type: string
         to_hash:
           type: string
+    ChangePair:
+      type: object
+      required:
+        - path
+        - is_conflict
+      properties:
+        path:
+          type: string
+        left:
+          $ref: "#/components/schemas/Change"
+        right:
+          $ref: "#/components/schemas/Change"
+        is_conflict:
+          type: boolean
     UserUpdate:
       type: object
       required:
@@ -500,11 +808,11 @@ components:
           type: string
           format: email
         current_sign_in_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         last_sign_in_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         current_sign_in_ip:
           type: string
           format: ipv4
@@ -512,11 +820,11 @@ components:
           type: string
           format: ipv4
         created_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
         updated_at:
-          type: string
-          format: date-time
+          type: integer
+          format: int64
     UserRegisterInfo:
       type: object
       required:
@@ -1018,6 +1326,26 @@ paths:
           description: Unauthorized
         403:
           description: Forbidden
+    post:
+      tags:
+        - wip
+      operationId: updateWip
+      summary: update wip
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateWip"
+      responses:
+        200:
+          description: update working in process success
+        400:
+          description: ValidationError
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden
     delete:
       tags:
         - wip
@@ -1101,6 +1429,7 @@ paths:
           name: path
           description: path
           required: false
+          allowEmptyValue: true
           schema:
             type: string
       responses:
@@ -1150,7 +1479,7 @@ paths:
           schema:
             type: string
       responses:
-        200:
+        201:
           description: commit success and response with new wip
           content:
             application/json:
@@ -1220,17 +1549,19 @@ paths:
           name: path
           description: specific path, if not specific return entries in root
           required: false
+          allowEmptyValue: true
           schema:
             type: string
         - in: query
           name: ref
-          description: specific branch,  default to repostiory default branch(HEAD)
+          description: specific( ref name, tag name, commit hash), for wip and branchm, branch name default to repository default branch(HEAD),
           required: false
+          allowEmptyValue: true
           schema:
             type: string
         - in: query
           name: type
-          description: type indicate to retrieve from wip/branch/tag, default branch
+          description: type indicate to retrieve from wip/branch/tag/commit, default branch
           required: true
           schema:
             $ref: "#/components/schemas/RefType"
@@ -1279,6 +1610,7 @@ paths:
           name: path
           description: specific path, if not specific return entries in root
           required: false
+          allowEmptyValue: true
           schema:
             type: string
       responses:
@@ -1324,6 +1656,7 @@ paths:
           name: path
           description: specific path, if not specific return entries in root
           required: false
+          allowEmptyValue: true
           schema:
             type: string
       responses:
@@ -1356,15 +1689,16 @@ paths:
     get:
       tags:
         - repo
-      operationId: getCommitsInRepository
-      summary: get commits in repository
+      operationId: getCommitsInRef
+      summary: get commits in ref
       parameters:
-        - $ref: "#/components/parameters/PaginationCommitAfter"
+        - $ref: "#/components/parameters/PaginationInt64After"
         - $ref: "#/components/parameters/PaginationAmount"
         - in: query
           name: refName
           description: ref(branch/tag) name
           required: false
+          allowEmptyValue: true
           schema:
             type: string
       responses:
@@ -1412,6 +1746,11 @@ paths:
         - repo
       operationId: deleteRepository
       summary: delete repository
+      parameters:
+        - in: query
+          name: is_clean_data
+          schema:
+            type: boolean
       responses:
         200:
           description: success to delete repository
@@ -1442,6 +1781,381 @@ paths:
         403:
           description: Forbidden
 
+  /repos/{owner}/{repository}/mergerequest:
+    parameters:
+      - in: path
+        name: owner
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: repository
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - mergerequest
+      operationId: listMergeRequests
+      summary: get list of merge request in repository
+      parameters:
+        - $ref: "#/components/parameters/PaginationInt64After"
+        - $ref: "#/components/parameters/PaginationAmount"
+        - in: query
+          name: state
+          required: false
+          schema:
+            type: integer
+            format: int
+      responses:
+        200:
+          description: merge request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MergeRequestList"
+        401:
+          description: Unauthorized
+        404:
+          description: Resource Not Found
+        420:
+          description: Too many requests
+        500:
+          description: Internal Server Error
+    post:
+      tags:
+        - mergerequest
+      operationId: createMergeRequest
+      summary: create merge request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMergeRequest"
+      responses:
+        201:
+          description: merge request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MergeRequest"
+        401:
+          description: Unauthorized
+        404:
+          description: Resource Not Found
+        420:
+          description: Too many requests
+        500:
+          description: Internal Server Error
+
+  /repos/{owner}/{repository}/mergerequest/{mrSeq}/merge:
+    parameters:
+      - in: path
+        name: owner
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: repository
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: mrSeq
+        required: true
+        schema:
+          type: integer
+          format: uint64
+    post:
+      tags:
+        - mergerequest
+      operationId: merge
+      summary: merge a mergerequest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MergeMergeRequest"
+      responses:
+        200:
+          description: merge mergerequest success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Commit"
+        401:
+          description: Unauthorized
+        404:
+          description: Resource Not Found
+        420:
+          description: Too many requests
+        500:
+          description: Internal Server Error
+
+  /repos/{owner}/{repository}/mergerequest/{mrSeq}:
+    parameters:
+      - in: path
+        name: owner
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: repository
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: mrSeq
+        required: true
+        schema:
+          type: integer
+          format: uint64
+    get:
+      tags:
+        - mergerequest
+      operationId: getMergeRequest
+      summary: get merge request
+      responses:
+        200:
+          description: merge request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MergeRequestFullState"
+        401:
+          description: Unauthorized
+        404:
+          description: Resource Not Found
+        420:
+          description: Too many requests
+        500:
+          description: Internal Server Error
+    post:
+      tags:
+        - mergerequest
+      operationId: updateMergeRequest
+      summary: update merge request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMergeRequest"
+      responses:
+        200:
+          description: update merge request success
+        401:
+          description: Unauthorized
+        404:
+          description: Resource Not Found
+        420:
+          description: Too many requests
+        500:
+          description: Internal Server Error
+
+  /repos/{owner}/{repository}/visible:
+    parameters:
+      - in: path
+        name: owner
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: repository
+        required: true
+        schema:
+          type: string
+    post:
+      tags:
+        - repo
+      operationId: changeVisible
+      summary: change repository visible(true for public, false for private)
+      parameters:
+        - in: query
+          name: visible
+          required: true
+          schema:
+            type: boolean
+      responses:
+        200:
+          description: Change repository visible success
+        401:
+          description: Unauthorized
+        404:
+          description: Resource Not Found
+        420:
+          description: Too many requests
+        500:
+          description: Internal Server Error
+  /repos/{owner}/{repository}/members:
+    parameters:
+      - in: path
+        name: owner
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: repository
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - listMembers
+      operationId: listMembers
+      summary: get list of members in repository
+      responses:
+        200:
+          description: array of member
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Member"
+        401:
+          description: Unauthorized
+        404:
+          description: Resource Not Found
+        420:
+          description: Too many requests
+        500:
+          description: Internal Server Error
+
+  /repos/{owner}/{repository}/member:
+    parameters:
+      - in: path
+        name: owner
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: repository
+        required: true
+        schema:
+          type: string
+    post:
+      tags:
+        - member
+      operationId: updateMemberGroup
+      summary: update member by user id and change group role
+      parameters:
+        - in: query
+          name: user_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: group_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Update member group success
+        401:
+          description: Unauthorized
+        404:
+          description: Resource Not Found
+        420:
+          description: Too many requests
+        500:
+          description: Internal Server Error
+    delete:
+      tags:
+        - member
+      operationId: revokeMember
+      summary: Revoke member in repository
+      parameters:
+        - in: query
+          name: user_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: revoke member success
+        401:
+          description: Unauthorized
+        404:
+          description: Resource Not Found
+        420:
+          description: Too many requests
+        500:
+          description: Internal Server Error
+
+  /repos/{owner}/{repository}/member/invite:
+    parameters:
+      - in: path
+        name: owner
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: repository
+        required: true
+        schema:
+          type: string
+    post:
+      tags:
+        - member
+      operationId: inviteMember
+      summary: invite member
+      parameters:
+        - in: query
+          name: user_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: group_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Invite member success
+        401:
+          description: Unauthorized
+        404:
+          description: Resource Not Found
+        420:
+          description: Too many requests
+        500:
+          description: Internal Server Error
+
+  /repos/public:
+    get:
+      tags:
+        - repo
+      operationId: listPublicRepository
+      summary: list public repository in all system
+      parameters:
+        - $ref: "#/components/parameters/PaginationPrefix"
+        - $ref: "#/components/parameters/PaginationInt64After"
+        - $ref: "#/components/parameters/PaginationAmount"
+      responses:
+        200:
+          description: repository list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RepositoryList"
+        400:
+          description: ValidationError
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden
   /users/{owner}/repos:
     parameters:
       - in: path
@@ -1456,7 +2170,7 @@ paths:
       summary: list repository in specific owner
       parameters:
         - $ref: "#/components/parameters/PaginationPrefix"
-        - $ref: "#/components/parameters/PaginationRepoAfter"
+        - $ref: "#/components/parameters/PaginationInt64After"
         - $ref: "#/components/parameters/PaginationAmount"
       responses:
         200:
@@ -1472,6 +2186,8 @@ paths:
         403:
           description: Forbidden
 
+
+
   /users/repos:       # 必须授权
     get:
       tags:
@@ -1480,7 +2196,7 @@ paths:
       summary: list repository
       parameters:
         - $ref: "#/components/parameters/PaginationPrefix"
-        - $ref: "#/components/parameters/PaginationRepoAfter"
+        - $ref: "#/components/parameters/PaginationInt64After"
         - $ref: "#/components/parameters/PaginationAmount"
       responses:
         200:
@@ -1512,9 +2228,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Repository"
+                $ref: "#/components/schemas/Repository"
         400:
           description: ValidationError
         401:
@@ -1541,7 +2255,7 @@ paths:
       summary: list branches
       parameters:
         - $ref: "#/components/parameters/PaginationPrefix"
-        - $ref: "#/components/parameters/PaginationBranchAfter"
+        - $ref: "#/components/parameters/PaginationStringAfter"
         - $ref: "#/components/parameters/PaginationAmount"
       responses:
         200:
@@ -1558,7 +2272,6 @@ paths:
           description: Too many requests
         default:
           description: Internal Server Error
-
 
   /repos/{owner}/{repository}/branch:
     parameters:
@@ -1637,7 +2350,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/BranchCreation"
+                $ref: "#/components/schemas/Branch"
         400:
           description: ValidationError
         404:
@@ -1649,7 +2362,27 @@ paths:
         default:
           description: Internal Server Error
 
-
+  /groups/repo:
+    get:
+      tags:
+        - group
+      operationId: listRepoGroup
+      summary: list groups for repo
+      responses:
+        200:
+          description: list repo's group
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Group"
+        400:
+          description: ValidationError
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden
 
   /auth/login:
     post:
@@ -1721,6 +2454,10 @@ paths:
       responses:
         201:
           description: registration success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserInfo"
         400:
           description: Bad Request - Validation Error
         420:
@@ -1743,7 +2480,146 @@ paths:
                 $ref: "#/components/schemas/UserInfo"
         401:
           description: Unauthorized
-        403:
-          description: Forbiden
+        default:
+          description: Internal Server Error
+
+  /users/refreshtoken:
+    get:
+      tags:
+        - auth
+      operationId: refreshToken
+      summary: refresh token for more time
+      security:
+        - jwt_token: [ ]
+        - cookie_auth: [ ]
+      responses:
+        200:
+          description: successful refresh token
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: "internal_auth_session=abcde12356; Path=/; HttpOnly"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationToken"
+        401:
+          description: Unauthorized ValidationError
+        420:
+          description: too many requests
+        default:
+          description: Internal Server Error
+
+  /users/aksk:
+    get:
+      tags:
+        - aksks
+      operationId: getAksk
+      summary: get aksk
+      parameters:
+        - in: query
+          name: id
+          allowEmptyValue: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: access_key
+          allowEmptyValue: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: aksk
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SafeAksk"
+        401:
+          description: Unauthorized
+        404:
+          description: Resource Not Found
+        420:
+          description: Too many requests
+        default:
+          description: Internal Server Error
+    post:
+      tags:
+        - aksks
+      operationId: createAksk
+      summary: create aksk
+      parameters:
+        - in: query
+          name: description
+          required: false
+          allowEmptyValue: true
+          schema:
+            type: string
+      responses:
+        201:
+          description: aksk
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Aksk"
+        401:
+          description: Unauthorized
+        404:
+          description: Resource Not Found
+        420:
+          description: Too many requests
+        default:
+          description: Internal Server Error
+    delete:
+      tags:
+        - aksks
+      operationId: deleteAksk
+      summary: delete aksk
+      parameters:
+        - in: query
+          name: id
+          allowEmptyValue: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: access_key
+          allowEmptyValue: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: aksk
+        401:
+          description: Unauthorized
+        404:
+          description: Resource Not Found
+        420:
+          description: Too many requests
+        default:
+          description: Internal Server Error
+  /users/aksks:
+    get:
+      tags:
+        - aksks
+      operationId: listAksks
+      summary: list aksks
+      parameters:
+        - $ref: "#/components/parameters/PaginationInt64After"
+        - $ref: "#/components/parameters/PaginationAmount"
+      responses:
+        200:
+          description: aksk list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AkskList"
+        401:
+          description: Unauthorized
+        404:
+          description: Resource Not Found
+        420:
+          description: Too many requests
         default:
           description: Internal Server Error

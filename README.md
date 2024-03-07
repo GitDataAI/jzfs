@@ -7,6 +7,7 @@ A version control file system for data centric applications & teams.
   <a href=""><img src="https://img.shields.io/badge/golang-%3E%3D1.22.0-blue.svg" /></a>
   <br>
 </p>
+
 <img src="https://github.com/jiaozifs/jiaozifs/docs/logo/jiaozifs.png" width="100">
 
 ----
@@ -14,7 +15,7 @@ A version control file system for data centric applications & teams.
 JiaoziFS is an industry-leading **Data-Centric Version Control** File System, helps ensure Responsible AI Engineering by improving **Data Versioning**, **Provenance**, and **Reproducibility**.
 
 Note:
-* The name Jiaozi pays tribute to the world's earliest paper money: Song Dynasty Jiaozi.
+* The name Jiaozi pays tribute to the world's earliest paper money: [Song Dynasty Jiaozi](https://en.wikipedia.org/wiki/Jiaozi_(currency)).
 * JiaoziFS is yet another implementation of [IPFS (InterPlanetary File System)](https://ipfs.tech/) as JiaoziFS will be compatible with the [implementation requirements](https://specs.ipfs.tech/architecture/principles/#ipfs-implementation-requirements) of IPFS.
 * As a filesystem of data versioning at scale, although JiaoziFS is built for machine learning, It has a wide range of use scenarios (refer A Universe of Uses) and can be seamlessly integrated into all your data stack.
 
@@ -44,7 +45,6 @@ JiaoziFS's versatility shines across different industries – making it the mult
 ### Spec
 [JiaoziFS Specification](https://github.com/jiaozifs/Spec)
 
-----
 ### Basic Build And Usage
 
 #### Requirement
@@ -56,21 +56,33 @@ JiaoziFS's versatility shines across different industries – making it the mult
 1. clone and build
 ```bash
 git clone https://github.com/jiaozifs/jiaozifs.git
+cd jiaozifs
 make build
 ```
 
-init and running
-```bash
-./jzfs init  --db postgres://li:li123@localhost:5432/jiaozifs?sslmode=disable
+After following the above steps, you should be able to see an executable file named "jzfs."
 
+2. init program and running
+```bash
+./jzfs init  --db postgres://<username>:<password>@localhost:5432/jiaozifs?sslmode=disable
 ./jzfs daemon
 ```
+
+#### run with docker
+```bash
+docker run -v <data>:/app -p 34913:34913 gitdatateam/jzfs:latest  --db "postgres://<user>:<password>@192.168.1.16:5432/jiaozifs?sslmode=disable" --bs_path /app/data --listen http://0.0.0.0:34913 --config /app/config.toml
+```
+
 ----
 ### Cloud
 [Try without installing](https://cloud.jiaozifs.com)
+
+### Contributors
+
+<a href="https://github.com/hunjixin" target="_blank"><img src="https://avatars.githubusercontent.com/u/41407352?v=4" width="5%" height="5%"/></a> <a href="https://github.com/Brownjy" target="_blank"><img src="https://avatars.githubusercontent.com/u/54040689?v=4" width="5%" height="5%"/></a> <a href="https://github.com/TsumikiQAQ" target="_blank"><img src="https://avatars.githubusercontent.com/u/116857998?v=4" width="5%" height="5%"/></a> <a href="https://github.com/taoshengshi" target="_blank"><img src="https://avatars.githubusercontent.com/u/33315004?v=4" width="5%" height="5%"/> <img src="https://avatars.githubusercontent.com/u/157772574?v=4" width="5%" height="5%"/></a>
+  
 
 ----
 ### License
 
 Dual-licensed under [MIT](https://github.com/jiaozifs/jiaozifs/blob/main/LICENSE-MIT) + [Apache 2.0](https://github.com/jiaozifs/jiaozifs/blob/main/LICENSE-APACHE)
-

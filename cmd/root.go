@@ -3,7 +3,6 @@ package cmd
 import (
 	"os"
 
-	"github.com/jiaozifs/jiaozifs/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -31,7 +30,9 @@ func RootCmd() *cobra.Command {
 }
 func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "~/.jiaozifs/config.toml", "config file (default is $HOME/.jiaozifs/config.toml)")
-	rootCmd.PersistentFlags().String("listen", config.DefaultLocalBSPath, "config blockstore path")
+	rootCmd.PersistentFlags().String("listen", "http://127.0.0.1:34913", "config list url")
+	rootCmd.PersistentFlags().String("log-level", "INFO", "set log level eg. DEBUG INFO ERROR")
 	_ = viper.BindPFlag("api.listen", rootCmd.PersistentFlags().Lookup("listen"))
 	_ = viper.BindPFlag("config", rootCmd.PersistentFlags().Lookup("config"))
+	_ = viper.BindPFlag("log.level", rootCmd.PersistentFlags().Lookup("log-level"))
 }

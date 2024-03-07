@@ -19,7 +19,7 @@ import (
 	gonanoid "github.com/matoous/go-nanoid/v2"
 )
 
-const cacheDirName = "_lakefs_cache"
+const cacheDirName = "_jiaozfs_cache"
 
 type Walker struct {
 	mark            block.Mark

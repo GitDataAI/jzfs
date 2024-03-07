@@ -7,10 +7,14 @@ import (
 	"net/http"
 	"strings"
 
+	openapi_types "github.com/oapi-codegen/runtime/types"
+
 	"github.com/jiaozifs/jiaozifs/api"
 	"github.com/jiaozifs/jiaozifs/auth"
+	"github.com/jiaozifs/jiaozifs/auth/rbac"
 	"github.com/jiaozifs/jiaozifs/block/params"
 	"github.com/jiaozifs/jiaozifs/models"
+	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
 	"github.com/jiaozifs/jiaozifs/utils"
 	"github.com/jiaozifs/jiaozifs/utils/hash"
 	"github.com/jiaozifs/jiaozifs/versionmgr"
@@ -19,6 +23,7 @@ import (
 
 type CommitController struct {
 	fx.In
+	BaseController
 
 	Repo                models.IRepo
 	PublicStorageConfig params.AdapterConfig
@@ -43,18 +48,22 @@ func (commitCtl CommitController) GetEntriesInRef(ctx context.Context, w *api.Ji
 		return
 	}
 
-	refName := repository.HEAD
-	if params.Ref != nil {
-		refName = *params.Ref
-	}
-
-	if operator.Name != ownerName { //todo check permission
-		w.Forbidden()
+	if !commitCtl.authorizeMember(ctx, w, repository.ID, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacmodel.ReadObjectAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
+		},
+	}) {
 		return
 	}
 
-	treeHash := hash.EmptyHash
+	treeHash := hash.Empty
 	if params.Type == api.RefTypeWip {
+		refName := repository.HEAD
+		if params.Ref != nil {
+			refName = *params.Ref
+		}
+
 		//todo maybe from tag reference
 		ref, err := commitCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.ID).SetName(refName))
 		if err != nil {
@@ -68,6 +77,11 @@ func (commitCtl CommitController) GetEntriesInRef(ctx context.Context, w *api.Ji
 		}
 		treeHash = wip.CurrentTree
 	} else if params.Type == api.RefTypeBranch {
+		refName := repository.HEAD
+		if params.Ref != nil {
+			refName = *params.Ref
+		}
+
 		ref, err := commitCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.ID).SetName(refName))
 		if err != nil {
 			w.Error(err)
@@ -75,6 +89,21 @@ func (commitCtl CommitController) GetEntriesInRef(ctx context.Context, w *api.Ji
 		}
 		if !ref.CommitHash.IsEmpty() {
 			commit, err := commitCtl.Repo.CommitRepo(repository.ID).Commit(ctx, ref.CommitHash)
+			if err != nil {
+				w.Error(err)
+				return
+			}
+			treeHash = commit.TreeHash
+		}
+	} else if params.Type == api.RefTypeCommit {
+		commitHash, err := hash.FromHex(utils.StringValue(params.Ref))
+		if err != nil {
+			w.BadRequest(err.Error())
+			return
+		}
+
+		if !commitHash.IsEmpty() {
+			commit, err := commitCtl.Repo.CommitRepo(repository.ID).Commit(ctx, commitHash)
 			if err != nil {
 				w.Error(err)
 				return
@@ -103,7 +132,18 @@ func (commitCtl CommitController) GetEntriesInRef(ctx context.Context, w *api.Ji
 		w.Error(err)
 		return
 	}
-	w.JSON(treeEntry)
+	apiTreeEntries := make([]api.FullTreeEntry, len(treeEntry))
+	for index, entry := range treeEntry {
+		apiTreeEntries[index] = api.FullTreeEntry{
+			CreatedAt: entry.CreatedAt.UnixMilli(),
+			Hash:      entry.Hash.Hex(),
+			IsDir:     entry.IsDir,
+			Name:      entry.Name,
+			Size:      entry.Size,
+			UpdatedAt: entry.UpdatedAt.UnixMilli(),
+		}
+	}
+	w.JSON(apiTreeEntries)
 }
 
 func (commitCtl CommitController) CompareCommit(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, basehead string, params api.CompareCommitParams) {
@@ -125,8 +165,12 @@ func (commitCtl CommitController) CompareCommit(ctx context.Context, w *api.Jiao
 		return
 	}
 
-	if operator.ID != owner.ID { //todo check permission
-		w.Forbidden()
+	if !commitCtl.authorizeMember(ctx, w, repository.ID, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacmodel.ReadCommitAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
+		},
+	}) {
 		return
 	}
 
@@ -187,8 +231,12 @@ func (commitCtl CommitController) GetCommitChanges(ctx context.Context, w *api.J
 		return
 	}
 
-	if operator.ID != owner.ID { //todo check permission
-		w.Forbidden()
+	if !commitCtl.authorizeMember(ctx, w, repository.ID, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacmodel.ReadCommitAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
+		},
+	}) {
 		return
 	}
 
@@ -216,4 +264,27 @@ func (commitCtl CommitController) GetCommitChanges(ctx context.Context, w *api.J
 		return
 	}
 	w.JSON(changesResp)
+}
+
+func commitToDto(commit *models.Commit) *api.Commit {
+	return &api.Commit{
+		Author: api.Signature{
+			Email: openapi_types.Email(commit.Author.Email),
+			Name:  commit.Author.Name,
+			When:  commit.Author.When.UnixMilli(),
+		},
+		Committer: api.Signature{
+			Email: openapi_types.Email(commit.Committer.Email),
+			Name:  commit.Committer.Name,
+			When:  commit.Committer.When.UnixMilli(),
+		},
+		CreatedAt:    commit.CreatedAt.UnixMilli(),
+		Hash:         commit.Hash.Hex(),
+		MergeTag:     commit.MergeTag,
+		Message:      commit.Message,
+		ParentHashes: hash.HexArrayOfHashes(commit.ParentHashes...),
+		RepositoryId: commit.RepositoryID,
+		TreeHash:     commit.TreeHash.Hex(),
+		UpdatedAt:    commit.UpdatedAt.UnixMilli(),
+	}
 }

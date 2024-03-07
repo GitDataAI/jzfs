@@ -14,8 +14,8 @@ import (
 
 func TestCommitRepo(t *testing.T) {
 	ctx := context.Background()
-	postgres, _, db := testhelper.SetupDatabase(ctx, t)
-	defer postgres.Stop() //nolint
+	closeDB, _, db := testhelper.SetupDatabase(ctx, t)
+	defer closeDB()
 
 	repoID := uuid.New()
 	commitRepo := models.NewCommitRepo(db, repoID)
@@ -29,7 +29,7 @@ func TestCommitRepo(t *testing.T) {
 	commitModel, err = commitRepo.Commit(ctx, commitModel.Hash)
 	require.NoError(t, err)
 
-	require.True(t, cmp.Equal(commitModel, newCommitModel, dbTimeCmpOpt))
+	require.True(t, cmp.Equal(commitModel, newCommitModel, testhelper.DBTimeCmpOpt))
 
 	t.Run("mis match repo id", func(t *testing.T) {
 		mistMatchModel := &models.Commit{}
@@ -41,8 +41,8 @@ func TestCommitRepo(t *testing.T) {
 
 func TestDeleteCommit(t *testing.T) {
 	ctx := context.Background()
-	postgres, _, db := testhelper.SetupDatabase(ctx, t)
-	defer postgres.Stop() //nolint
+	closeDB, _, db := testhelper.SetupDatabase(ctx, t)
+	defer closeDB()
 	t.Run("delete commit", func(t *testing.T) {
 		repoID := uuid.New()
 		commitRepo := models.NewCommitRepo(db, repoID)
