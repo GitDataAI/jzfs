@@ -7,8 +7,6 @@ import (
 	"github.com/GitDataAI/jiaozifs/block/ipfs"
 
 	"cloud.google.com/go/storage"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
-	logging "github.com/ipfs/go-log/v2"
 	"github.com/GitDataAI/jiaozifs/block"
 	"github.com/GitDataAI/jiaozifs/block/azure"
 	"github.com/GitDataAI/jiaozifs/block/gs"
@@ -17,6 +15,8 @@ import (
 	"github.com/GitDataAI/jiaozifs/block/params"
 	s3a "github.com/GitDataAI/jiaozifs/block/s3"
 	"github.com/GitDataAI/jiaozifs/block/transient"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	logging "github.com/ipfs/go-log/v2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
 )

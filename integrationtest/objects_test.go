@@ -21,7 +21,7 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		repoName := "dataspace"
 		branchName := "feat/obj_test"
 
-		c.Convey("init", func(c convey.C) {
+		c.Convey("init", func(_ convey.C) {
 			_ = createUser(ctx, client, userName)
 			loginAndSwitch(ctx, client, userName, false)
 			_ = createRepo(ctx, client, repoName, false)
@@ -123,7 +123,7 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		})
 
 		//commit object to branch
-		c.Convey("commit object to branch", func(c convey.C) {
+		c.Convey("commit object to branch", func(_ convey.C) {
 			commitWip(ctx, client, userName, repoName, branchName, "test commit msg")
 		})
 

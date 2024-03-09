@@ -8,8 +8,8 @@ import (
 	"github.com/GitDataAI/jiaozifs/models/rbacmodel"
 	"github.com/GitDataAI/jiaozifs/utils"
 
-	"github.com/brianvoe/gofakeit/v6"
 	"github.com/GitDataAI/jiaozifs/testhelper"
+	"github.com/brianvoe/gofakeit/v6"
 	"github.com/stretchr/testify/require"
 
 	"github.com/google/go-cmp/cmp"

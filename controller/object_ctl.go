@@ -13,8 +13,6 @@ import (
 	"github.com/GitDataAI/jiaozifs/auth/rbac"
 	"github.com/GitDataAI/jiaozifs/controller/validator"
 
-	"github.com/go-openapi/swag"
-	logging "github.com/ipfs/go-log/v2"
 	"github.com/GitDataAI/jiaozifs/api"
 	"github.com/GitDataAI/jiaozifs/auth"
 	"github.com/GitDataAI/jiaozifs/block/params"
@@ -25,6 +23,8 @@ import (
 	"github.com/GitDataAI/jiaozifs/utils/hash"
 	"github.com/GitDataAI/jiaozifs/utils/httputil"
 	"github.com/GitDataAI/jiaozifs/versionmgr"
+	"github.com/go-openapi/swag"
+	logging "github.com/ipfs/go-log/v2"
 	"go.uber.org/fx"
 )
 

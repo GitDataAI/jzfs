@@ -13,7 +13,6 @@ import (
 
 	"github.com/GitDataAI/jiaozifs/utils"
 
-	logging "github.com/ipfs/go-log/v2"
 	"github.com/GitDataAI/jiaozifs/block"
 	"github.com/GitDataAI/jiaozifs/block/factory"
 	"github.com/GitDataAI/jiaozifs/block/params"
@@ -21,6 +20,7 @@ import (
 	"github.com/GitDataAI/jiaozifs/utils/hash"
 	"github.com/GitDataAI/jiaozifs/utils/httputil"
 	"github.com/GitDataAI/jiaozifs/utils/pathutil"
+	logging "github.com/ipfs/go-log/v2"
 )
 
 var workRepoLog = logging.Logger("work_repo")

@@ -14,8 +14,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/GitDataAI/jiaozifs/block"
+	"github.com/google/uuid"
 )
 
 var (

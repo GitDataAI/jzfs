@@ -12,8 +12,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/go-test/deep"
 	"github.com/GitDataAI/jiaozifs/block"
+	"github.com/go-test/deep"
 	"github.com/stretchr/testify/require"
 	"github.com/thanhpk/randstr"
 )

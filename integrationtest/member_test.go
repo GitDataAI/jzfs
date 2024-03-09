@@ -348,7 +348,7 @@ func getToken(ctx context.Context, client *api.Client, userName string) []api.Re
 	loginResult, err := api.ParseLoginResponse(resp)
 	convey.So(err, convey.ShouldBeNil)
 
-	return []api.RequestEditorFn{func(ctx context.Context, req *http.Request) error {
+	return []api.RequestEditorFn{func(_ context.Context, req *http.Request) error {
 		req.Header.Add("Authorization", "Bearer "+loginResult.JSON200.Token)
 		return nil
 	}}

@@ -25,7 +25,7 @@ var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "init jiaozifs ",
 	Long:  `create default config file for jiaoozifs`,
-	PreRunE: func(cmd *cobra.Command, args []string) error {
+	PreRunE: func(cmd *cobra.Command, _ []string) error {
 		//protect duplicate bind flag with daemon
 		err := viper.BindPFlag("blockstore.local.path", cmd.Flags().Lookup("bs_path"))
 		if err != nil {
@@ -39,7 +39,7 @@ var initCmd = &cobra.Command{
 
 		return viper.BindPFlag("database.connection", cmd.Flags().Lookup("db"))
 	},
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(cmd *cobra.Command, _ []string) error {
 		err := config.InitConfig(cfgFile)
 		if err != nil {
 			return err

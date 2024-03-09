@@ -381,17 +381,17 @@ func (mrCtl MergeRequestController) Merge(ctx context.Context, w *api.JiaozifsRe
 
 	var commit *models.Commit
 	err = mrCtl.Repo.Transaction(ctx, func(repo models.IRepo) error {
-		workRepo, err := versionmgr.NewWorkRepositoryFromConfig(ctx, operator, repository, mrCtl.Repo, mrCtl.PublicStorageConfig)
+		workRepo, err := versionmgr.NewWorkRepositoryFromConfig(ctx, operator, repository, repo, mrCtl.PublicStorageConfig)
 		if err != nil {
 			return err
 		}
 
-		sourceBranch, err := mrCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetID(mergeRequest.SourceBranchID))
+		sourceBranch, err := repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetID(mergeRequest.SourceBranchID))
 		if err != nil {
 			return err
 		}
 
-		targetBranch, err := mrCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetID(mergeRequest.TargetBranchID))
+		targetBranch, err := repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetID(mergeRequest.TargetBranchID))
 		if err != nil {
 			return err
 		}
@@ -406,7 +406,7 @@ func (mrCtl MergeRequestController) Merge(ctx context.Context, w *api.JiaozifsRe
 			return err
 		}
 
-		return mrCtl.Repo.MergeRequestRepo().UpdateByID(ctx, models.NewUpdateMergeRequestParams(repository.ID, mergeRequest.Sequence).SetState(models.MergeStateMerged))
+		return repo.MergeRequestRepo().UpdateByID(ctx, models.NewUpdateMergeRequestParams(repository.ID, mergeRequest.Sequence).SetState(models.MergeStateMerged))
 	})
 	if err != nil {
 		w.Error(err)

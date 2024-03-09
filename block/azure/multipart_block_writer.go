@@ -11,15 +11,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/GitDataAI/jiaozifs/utils/hash"
-
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/streaming"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/blob"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/blockblob"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/container"
+	"github.com/GitDataAI/jiaozifs/block"
+	"github.com/GitDataAI/jiaozifs/utils/hash"
 	"github.com/google/uuid"
 	logging "github.com/ipfs/go-log/v2"
-	"github.com/GitDataAI/jiaozifs/block"
 )
 
 var log = logging.Logger("azure")

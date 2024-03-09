@@ -133,7 +133,7 @@ func loginAndSwitch(ctx context.Context, client *api.Client, userName string, us
 	convey.So(err, convey.ShouldBeNil)
 
 	client.RequestEditors = nil
-	client.RequestEditors = append(client.RequestEditors, func(ctx context.Context, req *http.Request) error {
+	client.RequestEditors = append(client.RequestEditors, func(_ context.Context, req *http.Request) error {
 		if useCookie {
 			for _, cookie := range resp.Cookies() {
 				req.AddCookie(cookie)

@@ -9,8 +9,6 @@ import (
 
 	"github.com/pelletier/go-toml/v2"
 
-	"github.com/gorilla/sessions"
-	logging "github.com/ipfs/go-log/v2"
 	apiImpl "github.com/GitDataAI/jiaozifs/api/api_impl"
 	"github.com/GitDataAI/jiaozifs/auth"
 	"github.com/GitDataAI/jiaozifs/auth/crypt"
@@ -21,6 +19,8 @@ import (
 	"github.com/GitDataAI/jiaozifs/models/migrations"
 	"github.com/GitDataAI/jiaozifs/utils"
 	"github.com/GitDataAI/jiaozifs/version"
+	"github.com/gorilla/sessions"
+	logging "github.com/ipfs/go-log/v2"
 	"github.com/spf13/cobra"
 	"github.com/uptrace/bun"
 )
@@ -32,7 +32,7 @@ var daemonCmd = &cobra.Command{
 	Use:   "daemon",
 	Short: "daemon program of jiaozifs",
 	Long:  ``,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(cmd *cobra.Command, _ []string) error {
 		cfg, err := config.LoadConfig(cfgFile)
 		if err != nil {
 			return err

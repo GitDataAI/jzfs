@@ -19,7 +19,7 @@ func SetupDatabase(ctx context.Context, lc fx.Lifecycle, dbConfig *config.Databa
 	}
 
 	lc.Append(fx.Hook{
-		OnStop: func(ctx context.Context) error {
+		OnStop: func(_ context.Context) error {
 			return bunDB.Close()
 		},
 	})

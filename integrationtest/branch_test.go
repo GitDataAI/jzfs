@@ -23,7 +23,7 @@ func BranchSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		newAmount := 0
 		prefix := "feat/"
 
-		c.Convey("init", func(c convey.C) {
+		c.Convey("init", func(_ convey.C) {
 			_ = createUser(ctx, client, userName)
 			loginAndSwitch(ctx, client, userName, false)
 			_ = createRepo(ctx, client, repoName, false)

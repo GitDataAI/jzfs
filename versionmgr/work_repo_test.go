@@ -12,8 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brianvoe/gofakeit/v6"
-	"github.com/google/uuid"
 	"github.com/GitDataAI/jiaozifs/block/mem"
 	"github.com/GitDataAI/jiaozifs/config"
 	"github.com/GitDataAI/jiaozifs/models"
@@ -21,6 +19,8 @@ import (
 	"github.com/GitDataAI/jiaozifs/testhelper"
 	"github.com/GitDataAI/jiaozifs/utils"
 	"github.com/GitDataAI/jiaozifs/utils/hash"
+	"github.com/brianvoe/gofakeit/v6"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

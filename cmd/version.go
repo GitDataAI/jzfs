@@ -13,7 +13,7 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "version of jiaozifs",
 	Long:  `jiaozifs version`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(cmd *cobra.Command, _ []string) error {
 		swagger, err := api.GetSwagger()
 		if err != nil {
 			return err

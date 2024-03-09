@@ -17,7 +17,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		userName := "jimmy"
 		repoName := "happyrun"
 
-		c.Convey("init", func(c convey.C) {
+		c.Convey("init", func(_ convey.C) {
 			loginAndSwitch(ctx, client, "admin2", true)
 			_ = createRepo(ctx, client, "admin2_repo", false)
 
@@ -354,7 +354,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
 			})
 
-			c.Convey("create branch", func(c convey.C) {
+			c.Convey("create branch", func(_ convey.C) {
 				createBranch(ctx, client, userName, repoName, "main", "feat/ano_branch")
 			})
 
@@ -403,7 +403,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 			})
 
-			c.Convey("add commit to branch", func(c convey.C) {
+			c.Convey("add commit to branch", func(_ convey.C) {
 				createWip(ctx, client, userName, repoName, controller.DefaultBranchName)
 				uploadObject(ctx, client, userName, repoName, controller.DefaultBranchName, "a.txt")
 				commitWip(ctx, client, userName, repoName, controller.DefaultBranchName, "first commit")
@@ -422,7 +422,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So((*result.JSON200)[0].Message, convey.ShouldEqual, "first commit")
 			})
 
-			c.Convey("add double commit to branch", func(c convey.C) {
+			c.Convey("add double commit to branch", func(_ convey.C) {
 				uploadObject(ctx, client, userName, repoName, controller.DefaultBranchName, "b.txt")
 				commitWip(ctx, client, userName, repoName, controller.DefaultBranchName, "second commit")
 				uploadObject(ctx, client, userName, repoName, controller.DefaultBranchName, "c.txt")

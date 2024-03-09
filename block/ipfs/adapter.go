@@ -20,10 +20,10 @@ import (
 
 	"github.com/ipfs/boxo/files"
 
-	"github.com/google/uuid"
-	"github.com/ipfs/kubo/client/rpc"
 	"github.com/GitDataAI/jiaozifs/block"
 	"github.com/GitDataAI/jiaozifs/utils/hash"
+	"github.com/google/uuid"
+	"github.com/ipfs/kubo/client/rpc"
 	ma "github.com/multiformats/go-multiaddr"
 )
 

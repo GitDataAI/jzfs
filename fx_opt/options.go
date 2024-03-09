@@ -113,7 +113,7 @@ func ApplyIf(check func(s *Settings) bool, opts ...Option) Option {
 }
 
 func If(b bool, opts ...Option) Option {
-	return ApplyIf(func(s *Settings) bool {
+	return ApplyIf(func(_ *Settings) bool {
 		return b
 	}, opts...)
 }
@@ -192,7 +192,7 @@ func as(in interface{}, as interface{}) interface{} {
 	if inType.Kind() != reflect.Func || inType.AssignableTo(outType.Elem()) {
 		ctype := reflect.FuncOf(nil, []reflect.Type{outType.Elem()}, false)
 
-		return reflect.MakeFunc(ctype, func(args []reflect.Value) (results []reflect.Value) {
+		return reflect.MakeFunc(ctype, func(_ []reflect.Value) (results []reflect.Value) {
 			out := reflect.New(outType.Elem())
 			out.Elem().Set(reflect.ValueOf(in))
 

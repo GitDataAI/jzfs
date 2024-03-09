@@ -5,11 +5,11 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/GitDataAI/jiaozifs/models/rbacmodel"
+	"github.com/GitDataAI/jiaozifs/testhelper"
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
-	"github.com/GitDataAI/jiaozifs/models/rbacmodel"
-	"github.com/GitDataAI/jiaozifs/testhelper"
 	"github.com/stretchr/testify/require"
 )
 

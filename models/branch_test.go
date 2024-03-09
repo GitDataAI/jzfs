@@ -4,12 +4,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/brianvoe/gofakeit/v6"
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/uuid"
 	"github.com/GitDataAI/jiaozifs/models"
 	"github.com/GitDataAI/jiaozifs/testhelper"
 	"github.com/GitDataAI/jiaozifs/utils/hash"
+	"github.com/brianvoe/gofakeit/v6"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
 

@@ -24,7 +24,7 @@ func MergeRequestSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		repoName := "mr_test"
 		branchName := "feat/obj_test"
 
-		c.Convey("init", func(c convey.C) {
+		c.Convey("init", func(_ convey.C) {
 			_ = createUser(ctx, client, userName)
 			loginAndSwitch(ctx, client, userName, false)
 			_ = createRepo(ctx, client, repoName, false)
@@ -254,7 +254,7 @@ func MergeRequestSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 		})
 
-		c.Convey("create many mergequests", func(c convey.C) {
+		c.Convey("create many mergequests", func(_ convey.C) {
 			for i := 0; i < 10; i++ {
 				branchName := fmt.Sprintf("feat/list_merge_test_%d", i)
 				createBranch(ctx, client, userName, repoName, "main", branchName)
