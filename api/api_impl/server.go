@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/jiaozifs/jiaozifs/auth/aksk"
+	"github.com/GitDataAI/jiaozifs/auth/aksk"
 
 	"github.com/hellofresh/health-go/v5"
 
@@ -23,11 +23,11 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/sessions"
 	logging "github.com/ipfs/go-log/v2"
-	"github.com/jiaozifs/jiaozifs/api"
-	"github.com/jiaozifs/jiaozifs/auth"
-	"github.com/jiaozifs/jiaozifs/auth/crypt"
-	"github.com/jiaozifs/jiaozifs/config"
-	"github.com/jiaozifs/jiaozifs/models"
+	"github.com/GitDataAI/jiaozifs/api"
+	"github.com/GitDataAI/jiaozifs/auth"
+	"github.com/GitDataAI/jiaozifs/auth/crypt"
+	"github.com/GitDataAI/jiaozifs/config"
+	"github.com/GitDataAI/jiaozifs/models"
 	"github.com/rs/cors"
 	"go.uber.org/fx"
 )

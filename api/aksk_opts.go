@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/jiaozifs/jiaozifs/auth/aksk"
+	"github.com/GitDataAI/jiaozifs/auth/aksk"
 )
 
 func AkSkOption(ak, sk string) ClientOption {

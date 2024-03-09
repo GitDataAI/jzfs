@@ -10,8 +10,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	awss3 "github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/go-test/deep"
-	"github.com/jiaozifs/jiaozifs/block/params"
-	"github.com/jiaozifs/jiaozifs/block/s3"
+	"github.com/GitDataAI/jiaozifs/block/params"
+	"github.com/GitDataAI/jiaozifs/block/s3"
 )
 
 var errRegion = errors.New("failed to get region")

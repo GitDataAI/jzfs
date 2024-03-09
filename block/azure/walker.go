@@ -11,7 +11,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/container"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/service"
-	"github.com/jiaozifs/jiaozifs/block"
+	"github.com/GitDataAI/jiaozifs/block"
 )
 
 const DirectoryBlobMetadataKey = "hdi_isfolder"

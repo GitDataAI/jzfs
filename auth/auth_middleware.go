@@ -9,9 +9,9 @@ import (
 
 	logging "github.com/ipfs/go-log/v2"
 
-	"github.com/jiaozifs/jiaozifs/utils"
+	"github.com/GitDataAI/jiaozifs/utils"
 
-	"github.com/jiaozifs/jiaozifs/auth/aksk"
+	"github.com/GitDataAI/jiaozifs/auth/aksk"
 
 	"github.com/golang-jwt/jwt/v5"
 
@@ -19,8 +19,8 @@ import (
 	"github.com/getkin/kin-openapi/routers"
 	"github.com/getkin/kin-openapi/routers/legacy"
 	"github.com/gorilla/sessions"
-	"github.com/jiaozifs/jiaozifs/auth/crypt"
-	"github.com/jiaozifs/jiaozifs/models"
+	"github.com/GitDataAI/jiaozifs/auth/crypt"
+	"github.com/GitDataAI/jiaozifs/models"
 )
 
 const (

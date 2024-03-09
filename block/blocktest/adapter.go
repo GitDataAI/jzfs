@@ -13,7 +13,7 @@ import (
 	"testing"
 
 	"github.com/go-test/deep"
-	"github.com/jiaozifs/jiaozifs/block"
+	"github.com/GitDataAI/jiaozifs/block"
 	"github.com/stretchr/testify/require"
 	"github.com/thanhpk/randstr"
 )

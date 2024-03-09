@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/jiaozifs/jiaozifs/utils/hash"
+	"github.com/GitDataAI/jiaozifs/utils/hash"
 )
 
 func TestPathOfHash(t *testing.T) {

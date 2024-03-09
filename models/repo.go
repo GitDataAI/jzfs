@@ -5,7 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/google/uuid"
-	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
+	"github.com/GitDataAI/jiaozifs/models/rbacmodel"
 	"github.com/uptrace/bun"
 )
 

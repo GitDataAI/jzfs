@@ -3,7 +3,7 @@ package versionmgr
 import (
 	"testing"
 
-	"github.com/jiaozifs/jiaozifs/versionmgr/merkletrie"
+	"github.com/GitDataAI/jiaozifs/versionmgr/merkletrie"
 
 	"github.com/stretchr/testify/require"
 )

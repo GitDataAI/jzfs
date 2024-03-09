@@ -3,8 +3,8 @@ package auth
 import (
 	"context"
 
-	"github.com/jiaozifs/jiaozifs/auth/aksk"
-	"github.com/jiaozifs/jiaozifs/models"
+	"github.com/GitDataAI/jiaozifs/auth/aksk"
+	"github.com/GitDataAI/jiaozifs/models"
 )
 
 var _ aksk.SkGetter = (*SkGetter)(nil)

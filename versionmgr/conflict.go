@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/jiaozifs/jiaozifs/utils/hash"
-	"github.com/jiaozifs/jiaozifs/versionmgr/merkletrie"
+	"github.com/GitDataAI/jiaozifs/utils/hash"
+	"github.com/GitDataAI/jiaozifs/versionmgr/merkletrie"
 )
 
 // ConflictResolver resolve conflict between two change

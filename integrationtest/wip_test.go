@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/jiaozifs/jiaozifs/api"
-	apiimpl "github.com/jiaozifs/jiaozifs/api/api_impl"
+	"github.com/GitDataAI/jiaozifs/api"
+	apiimpl "github.com/GitDataAI/jiaozifs/api/api_impl"
 	"github.com/smartystreets/goconvey/convey"
 )
 

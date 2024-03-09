@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"cloud.google.com/go/storage"
-	"github.com/jiaozifs/jiaozifs/block"
+	"github.com/GitDataAI/jiaozifs/block"
 	"google.golang.org/api/iterator"
 )
 

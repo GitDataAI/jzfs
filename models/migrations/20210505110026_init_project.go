@@ -3,8 +3,8 @@ package migrations
 import (
 	"context"
 
-	"github.com/jiaozifs/jiaozifs/models"
-	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
+	"github.com/GitDataAI/jiaozifs/models"
+	"github.com/GitDataAI/jiaozifs/models/rbacmodel"
 	"github.com/uptrace/bun"
 )
 

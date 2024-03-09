@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/jiaozifs/jiaozifs/utils"
+	"github.com/GitDataAI/jiaozifs/utils"
 
-	"github.com/jiaozifs/jiaozifs/api"
-	apiimpl "github.com/jiaozifs/jiaozifs/api/api_impl"
+	"github.com/GitDataAI/jiaozifs/api"
+	apiimpl "github.com/GitDataAI/jiaozifs/api/api_impl"
 	"github.com/smartystreets/goconvey/convey"
 )
 

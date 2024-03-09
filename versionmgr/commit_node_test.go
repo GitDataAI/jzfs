@@ -7,10 +7,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/google/uuid"
-	"github.com/jiaozifs/jiaozifs/utils/hash"
+	"github.com/GitDataAI/jiaozifs/utils/hash"
 
-	"github.com/jiaozifs/jiaozifs/models"
-	"github.com/jiaozifs/jiaozifs/testhelper"
+	"github.com/GitDataAI/jiaozifs/models"
+	"github.com/GitDataAI/jiaozifs/testhelper"
 )
 
 // TestWrapCommitNode

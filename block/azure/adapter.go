@@ -15,10 +15,10 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/bloberror"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/blockblob"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/sas"
-	"github.com/jiaozifs/jiaozifs/block"
-	"github.com/jiaozifs/jiaozifs/block/params"
-	"github.com/jiaozifs/jiaozifs/utils"
-	"github.com/jiaozifs/jiaozifs/utils/hash"
+	"github.com/GitDataAI/jiaozifs/block"
+	"github.com/GitDataAI/jiaozifs/block/params"
+	"github.com/GitDataAI/jiaozifs/utils"
+	"github.com/GitDataAI/jiaozifs/utils/hash"
 )
 
 const (

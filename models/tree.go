@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jiaozifs/jiaozifs/models/filemode"
-	"github.com/jiaozifs/jiaozifs/utils/hash"
+	"github.com/GitDataAI/jiaozifs/models/filemode"
+	"github.com/GitDataAI/jiaozifs/utils/hash"
 	"github.com/uptrace/bun"
 )
 

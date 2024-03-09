@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jiaozifs/jiaozifs/utils/hash"
+	"github.com/GitDataAI/jiaozifs/utils/hash"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/streaming"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/blob"
@@ -19,7 +19,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/container"
 	"github.com/google/uuid"
 	logging "github.com/ipfs/go-log/v2"
-	"github.com/jiaozifs/jiaozifs/block"
+	"github.com/GitDataAI/jiaozifs/block"
 )
 
 var log = logging.Logger("azure")

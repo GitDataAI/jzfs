@@ -1,9 +1,9 @@
 package merkletrie_test
 
 import (
-	"github.com/jiaozifs/jiaozifs/versionmgr/merkletrie"
-	"github.com/jiaozifs/jiaozifs/versionmgr/merkletrie/internal/fsnoder"
-	"github.com/jiaozifs/jiaozifs/versionmgr/merkletrie/noder"
+	"github.com/GitDataAI/jiaozifs/versionmgr/merkletrie"
+	"github.com/GitDataAI/jiaozifs/versionmgr/merkletrie/internal/fsnoder"
+	"github.com/GitDataAI/jiaozifs/versionmgr/merkletrie/noder"
 
 	. "gopkg.in/check.v1" //nolint
 )

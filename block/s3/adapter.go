@@ -12,7 +12,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/jiaozifs/jiaozifs/utils"
+	"github.com/GitDataAI/jiaozifs/utils"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
@@ -24,8 +24,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/aws/smithy-go/middleware"
 	smithyhttp "github.com/aws/smithy-go/transport/http"
-	"github.com/jiaozifs/jiaozifs/block"
-	"github.com/jiaozifs/jiaozifs/block/params"
+	"github.com/GitDataAI/jiaozifs/block"
+	"github.com/GitDataAI/jiaozifs/block/params"
 )
 
 var (

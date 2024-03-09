@@ -5,8 +5,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jiaozifs/jiaozifs/models"
-	"github.com/jiaozifs/jiaozifs/versionmgr/merkletrie/noder"
+	"github.com/GitDataAI/jiaozifs/models"
+	"github.com/GitDataAI/jiaozifs/versionmgr/merkletrie/noder"
 )
 
 var _ noder.Noder = (*TreeNode)(nil)

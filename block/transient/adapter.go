@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jiaozifs/jiaozifs/block"
+	"github.com/GitDataAI/jiaozifs/block"
 )
 
 type Adapter struct{}

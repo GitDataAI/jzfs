@@ -2,13 +2,13 @@
 A version control file system for data centric applications & teams.
 
 <p align="left">
-  <a href="https://codecov.io/gh/jiaozifs/jiaozifs"><img src="https://codecov.io/gh/jiaozifs/jiaozifs/branch/main/graph/badge.svg"></a>
-  <a href="https://goreportcard.com/report/github.com/jiaozifs/jiaozifs"><img src="https://goreportcard.com/badge/github.com/jiaozifs/jiaozifs" /></a>  
+  <a href="https://codecov.io/gh/GitDataAI/jiaozifs"><img src="https://codecov.io/gh/GitDataAI/jiaozifs/branch/main/graph/badge.svg"></a>
+  <a href="https://goreportcard.com/report/github.com/GitDataAI/jiaozifs"><img src="https://goreportcard.com/badge/github.com/GitDataAI/jiaozifs" /></a>  
   <a href=""><img src="https://img.shields.io/badge/golang-%3E%3D1.22.0-blue.svg" /></a>
   <br>
 </p>
 
-<img src="https://github.com/jiaozifs/jiaozifs/blob/main/docs/logo/jiaozifs.png" width="100">
+<img src="https://github.com/GitDataAI/jiaozifs/blob/main/docs/logo/jiaozifs.png" width="100">
 
 ----
 ### What is JiaoziFS?
@@ -52,7 +52,7 @@ JiaoziFS's versatility shines across different industries – making it the mult
 
 1. clone and build
 ```bash
-git clone https://github.com/jiaozifs/jiaozifs.git
+git clone https://github.com/GitDataAI/jiaozifs.git
 cd jiaozifs
 make build
 ```
@@ -82,5 +82,5 @@ docker run -v <data>:/app -p 34913:34913 gitdatateam/jzfs:latest  --db "postgres
 ----
 ### License
 
-Dual-licensed under [MIT](https://github.com/jiaozifs/jiaozifs/blob/main/LICENSE-MIT) + [Apache 2.0](https://github.com/jiaozifs/jiaozifs/blob/main/LICENSE-APACHE)
+Dual-licensed under [MIT](https://github.com/GitDataAI/jiaozifs/blob/main/LICENSE-MIT) + [Apache 2.0](https://github.com/GitDataAI/jiaozifs/blob/main/LICENSE-APACHE)
 

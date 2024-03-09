@@ -3,7 +3,7 @@ package auth
 import (
 	"context"
 
-	"github.com/jiaozifs/jiaozifs/models"
+	"github.com/GitDataAI/jiaozifs/models"
 	"golang.org/x/crypto/bcrypt"
 )
 

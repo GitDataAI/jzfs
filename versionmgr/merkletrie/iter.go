@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/jiaozifs/jiaozifs/versionmgr/merkletrie/internal/frame"
-	"github.com/jiaozifs/jiaozifs/versionmgr/merkletrie/noder"
+	"github.com/GitDataAI/jiaozifs/versionmgr/merkletrie/internal/frame"
+	"github.com/GitDataAI/jiaozifs/versionmgr/merkletrie/noder"
 )
 
 // Iter is an iterator for merkletries (only the trie part of the

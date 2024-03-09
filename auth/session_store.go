@@ -4,8 +4,8 @@ import (
 	"encoding/hex"
 
 	"github.com/gorilla/sessions"
-	"github.com/jiaozifs/jiaozifs/auth/crypt"
-	"github.com/jiaozifs/jiaozifs/config"
+	"github.com/GitDataAI/jiaozifs/auth/crypt"
+	"github.com/GitDataAI/jiaozifs/config"
 )
 
 func NewSessionStore(secretStrore crypt.SecretStore) sessions.Store {

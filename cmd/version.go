@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/jiaozifs/jiaozifs/api"
-	"github.com/jiaozifs/jiaozifs/version"
+	"github.com/GitDataAI/jiaozifs/api"
+	"github.com/GitDataAI/jiaozifs/version"
 	"github.com/spf13/cobra"
 )
 

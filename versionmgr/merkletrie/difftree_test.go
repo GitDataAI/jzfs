@@ -10,8 +10,8 @@ import (
 	"testing"
 	"unicode"
 
-	"github.com/jiaozifs/jiaozifs/versionmgr/merkletrie"
-	"github.com/jiaozifs/jiaozifs/versionmgr/merkletrie/internal/fsnoder"
+	"github.com/GitDataAI/jiaozifs/versionmgr/merkletrie"
+	"github.com/GitDataAI/jiaozifs/versionmgr/merkletrie/internal/fsnoder"
 
 	. "gopkg.in/check.v1" //nolint
 )

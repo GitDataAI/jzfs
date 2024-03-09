@@ -6,11 +6,11 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/jiaozifs/jiaozifs/api"
+	"github.com/GitDataAI/jiaozifs/api"
 
-	"github.com/jiaozifs/jiaozifs/auth"
+	"github.com/GitDataAI/jiaozifs/auth"
 
-	"github.com/jiaozifs/jiaozifs/auth/rbac"
+	"github.com/GitDataAI/jiaozifs/auth/rbac"
 	"go.uber.org/fx"
 )
 

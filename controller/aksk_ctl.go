@@ -5,18 +5,18 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
+	"github.com/GitDataAI/jiaozifs/models/rbacmodel"
 
-	"github.com/jiaozifs/jiaozifs/auth/rbac"
+	"github.com/GitDataAI/jiaozifs/auth/rbac"
 
-	"github.com/jiaozifs/jiaozifs/utils"
+	"github.com/GitDataAI/jiaozifs/utils"
 
-	aksk2 "github.com/jiaozifs/jiaozifs/auth/aksk"
+	aksk2 "github.com/GitDataAI/jiaozifs/auth/aksk"
 
-	"github.com/jiaozifs/jiaozifs/auth"
+	"github.com/GitDataAI/jiaozifs/auth"
 
-	"github.com/jiaozifs/jiaozifs/api"
-	"github.com/jiaozifs/jiaozifs/models"
+	"github.com/GitDataAI/jiaozifs/api"
+	"github.com/GitDataAI/jiaozifs/models"
 	"go.uber.org/fx"
 )
 

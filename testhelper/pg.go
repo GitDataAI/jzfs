@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
-	"github.com/jiaozifs/jiaozifs/config"
-	"github.com/jiaozifs/jiaozifs/models"
-	"github.com/jiaozifs/jiaozifs/models/migrations"
+	"github.com/GitDataAI/jiaozifs/config"
+	"github.com/GitDataAI/jiaozifs/models"
+	"github.com/GitDataAI/jiaozifs/models/migrations"
 	"github.com/phayes/freeport"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"io"
 
-	"github.com/jiaozifs/jiaozifs/utils/hash"
+	"github.com/GitDataAI/jiaozifs/utils/hash"
 )
 
 type bfsCommitIterator struct {

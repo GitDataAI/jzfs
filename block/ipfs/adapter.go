@@ -22,8 +22,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/ipfs/kubo/client/rpc"
-	"github.com/jiaozifs/jiaozifs/block"
-	"github.com/jiaozifs/jiaozifs/utils/hash"
+	"github.com/GitDataAI/jiaozifs/block"
+	"github.com/GitDataAI/jiaozifs/utils/hash"
 	ma "github.com/multiformats/go-multiaddr"
 )
 

@@ -13,7 +13,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/sas"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/service"
 	lru "github.com/hnlq715/golang-lru"
-	"github.com/jiaozifs/jiaozifs/block/params"
+	"github.com/GitDataAI/jiaozifs/block/params"
 	"github.com/puzpuzpuz/xsync"
 )
 

@@ -8,9 +8,9 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/jiaozifs/jiaozifs/api"
-	apiimpl "github.com/jiaozifs/jiaozifs/api/api_impl"
-	"github.com/jiaozifs/jiaozifs/utils/hash"
+	"github.com/GitDataAI/jiaozifs/api"
+	apiimpl "github.com/GitDataAI/jiaozifs/api/api_impl"
+	"github.com/GitDataAI/jiaozifs/utils/hash"
 	"github.com/smartystreets/goconvey/convey"
 )
 

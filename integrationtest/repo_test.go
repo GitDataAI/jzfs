@@ -4,10 +4,10 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/jiaozifs/jiaozifs/api"
-	apiimpl "github.com/jiaozifs/jiaozifs/api/api_impl"
-	"github.com/jiaozifs/jiaozifs/controller"
-	"github.com/jiaozifs/jiaozifs/utils"
+	"github.com/GitDataAI/jiaozifs/api"
+	apiimpl "github.com/GitDataAI/jiaozifs/api/api_impl"
+	"github.com/GitDataAI/jiaozifs/controller"
+	"github.com/GitDataAI/jiaozifs/utils"
 	"github.com/smartystreets/goconvey/convey"
 )
 

@@ -5,17 +5,17 @@ import (
 	"os"
 	"time"
 
-	"github.com/jiaozifs/jiaozifs/models/migrations"
+	"github.com/GitDataAI/jiaozifs/models/migrations"
 
-	"github.com/jiaozifs/jiaozifs/auth/rbac"
-	"github.com/jiaozifs/jiaozifs/controller/validator"
+	"github.com/GitDataAI/jiaozifs/auth/rbac"
+	"github.com/GitDataAI/jiaozifs/controller/validator"
 
-	"github.com/jiaozifs/jiaozifs/auth"
-	"github.com/jiaozifs/jiaozifs/models"
-	"github.com/jiaozifs/jiaozifs/utils"
+	"github.com/GitDataAI/jiaozifs/auth"
+	"github.com/GitDataAI/jiaozifs/models"
+	"github.com/GitDataAI/jiaozifs/utils"
 	"github.com/m1/go-generate-password/generator"
 
-	"github.com/jiaozifs/jiaozifs/config"
+	"github.com/GitDataAI/jiaozifs/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

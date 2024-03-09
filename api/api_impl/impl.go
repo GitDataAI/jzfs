@@ -1,8 +1,8 @@
 package apiimpl
 
 import (
-	"github.com/jiaozifs/jiaozifs/api"
-	"github.com/jiaozifs/jiaozifs/controller"
+	"github.com/GitDataAI/jiaozifs/api"
+	"github.com/GitDataAI/jiaozifs/controller"
 	"go.uber.org/fx"
 )
 
