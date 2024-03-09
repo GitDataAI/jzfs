@@ -9,13 +9,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/jiaozifs/jiaozifs/auth"
-	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
+	"github.com/GitDataAI/jiaozifs/auth"
+	"github.com/GitDataAI/jiaozifs/models/rbacmodel"
 
-	"github.com/jiaozifs/jiaozifs/auth/rbac"
-	"github.com/jiaozifs/jiaozifs/models"
+	"github.com/GitDataAI/jiaozifs/auth/rbac"
+	"github.com/GitDataAI/jiaozifs/models"
 
-	"github.com/jiaozifs/jiaozifs/testhelper"
+	"github.com/GitDataAI/jiaozifs/testhelper"
 )
 
 func TestNewRbac(t *testing.T) {

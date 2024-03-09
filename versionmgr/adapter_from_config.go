@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/jiaozifs/jiaozifs/block"
-	"github.com/jiaozifs/jiaozifs/block/factory"
-	"github.com/jiaozifs/jiaozifs/config"
+	"github.com/GitDataAI/jiaozifs/block"
+	"github.com/GitDataAI/jiaozifs/block/factory"
+	"github.com/GitDataAI/jiaozifs/config"
 )
 
 func AdapterFromConfig(ctx context.Context, jsonParams string) (block.Adapter, error) {

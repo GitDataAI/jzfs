@@ -14,7 +14,7 @@ import (
 const (
 	latestVersionTimeout = 10 * time.Second
 
-	DefaultReleasesURL = "https://github.com/jiaozifs/jiaozifs/releases"
+	DefaultReleasesURL = "https://github.com/GitDataAI/jiaozifs/releases"
 	githubBaseURL      = "https://api.github.com/"
 
 	GithubRepoOwner = "jiaozifs"

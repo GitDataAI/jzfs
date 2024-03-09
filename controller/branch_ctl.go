@@ -5,16 +5,16 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/jiaozifs/jiaozifs/auth/rbac"
-	"github.com/jiaozifs/jiaozifs/block/params"
-	"github.com/jiaozifs/jiaozifs/controller/validator"
-	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
-	"github.com/jiaozifs/jiaozifs/versionmgr"
+	"github.com/GitDataAI/jiaozifs/auth/rbac"
+	"github.com/GitDataAI/jiaozifs/block/params"
+	"github.com/GitDataAI/jiaozifs/controller/validator"
+	"github.com/GitDataAI/jiaozifs/models/rbacmodel"
+	"github.com/GitDataAI/jiaozifs/versionmgr"
 
-	"github.com/jiaozifs/jiaozifs/api"
-	"github.com/jiaozifs/jiaozifs/auth"
-	"github.com/jiaozifs/jiaozifs/models"
-	"github.com/jiaozifs/jiaozifs/utils"
+	"github.com/GitDataAI/jiaozifs/api"
+	"github.com/GitDataAI/jiaozifs/auth"
+	"github.com/GitDataAI/jiaozifs/models"
+	"github.com/GitDataAI/jiaozifs/utils"
 	"go.uber.org/fx"
 )
 

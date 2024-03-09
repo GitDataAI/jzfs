@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/jiaozifs/jiaozifs/api"
-	apiimpl "github.com/jiaozifs/jiaozifs/api/api_impl"
+	"github.com/GitDataAI/jiaozifs/api"
+	apiimpl "github.com/GitDataAI/jiaozifs/api/api_impl"
 	"github.com/smartystreets/goconvey/convey"
 )
 
@@ -17,7 +17,7 @@ func WipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		branchName := "feat/wip_test"
 		branchNameForDelete := "feat/wip_test2"
 
-		c.Convey("init", func(c convey.C) {
+		c.Convey("init", func(_ convey.C) {
 			_ = createUser(ctx, client, userName)
 			loginAndSwitch(ctx, client, userName, false)
 			_ = createRepo(ctx, client, repoName, false)
@@ -25,7 +25,7 @@ func WipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			_ = createBranch(ctx, client, userName, repoName, "main", branchNameForDelete)
 		})
 
-		c.Convey("list non exit wip", func(c convey.C) {
+		c.Convey("list non exit wip", func(_ convey.C) {
 			resp, err := client.ListWip(ctx, userName, repoName)
 			convey.So(err, convey.ShouldBeNil)
 			convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)

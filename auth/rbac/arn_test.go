@@ -3,7 +3,7 @@ package rbac_test
 import (
 	"testing"
 
-	"github.com/jiaozifs/jiaozifs/auth/rbac"
+	"github.com/GitDataAI/jiaozifs/auth/rbac"
 )
 
 func TestParseARN(t *testing.T) {

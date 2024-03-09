@@ -4,10 +4,10 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/jiaozifs/jiaozifs/utils"
+	"github.com/GitDataAI/jiaozifs/utils"
 
-	"github.com/jiaozifs/jiaozifs/api"
-	apiimpl "github.com/jiaozifs/jiaozifs/api/api_impl"
+	"github.com/GitDataAI/jiaozifs/api"
+	apiimpl "github.com/GitDataAI/jiaozifs/api/api_impl"
 	"github.com/smartystreets/goconvey/convey"
 )
 
@@ -17,7 +17,7 @@ func AkSkSpec(ctx context.Context, urlStr string) func(c convey.C) {
 	return func(c convey.C) {
 		userName := "muly"
 
-		c.Convey("init", func(c convey.C) {
+		c.Convey("init", func(_ convey.C) {
 			createUser(ctx, client, userName)
 			loginAndSwitch(ctx, client, userName, false)
 		})
@@ -142,7 +142,7 @@ func AkSkSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		})
 
 		c.Convey("aksk user", func(c convey.C) {
-			c.Convey("success", func(c convey.C) {
+			c.Convey("success", func(_ convey.C) {
 				aksk := createAksk(ctx, client)
 
 				cli, err := api.NewClient(urlStr+apiimpl.APIV1Prefix, api.AkSkOption(aksk.AccessKey, aksk.SecretKey))
@@ -155,7 +155,7 @@ func AkSkSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(err, convey.ShouldBeNil)
 				convey.ShouldEqual(user.JSON200.Name, userName)
 			})
-			c.Convey("wrong sk", func(c convey.C) {
+			c.Convey("wrong sk", func(_ convey.C) {
 				aksk := createAksk(ctx, client)
 
 				client, err := api.NewClient(urlStr+apiimpl.APIV1Prefix, api.AkSkOption(aksk.AccessKey, "fakesk"))
@@ -166,7 +166,7 @@ func AkSkSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.ShouldEqual(resp.StatusCode, http.StatusUnauthorized)
 			})
 
-			c.Convey("ak not exit", func(c convey.C) {
+			c.Convey("ak not exit", func(_ convey.C) {
 				client, err := api.NewClient(urlStr+apiimpl.APIV1Prefix, api.AkSkOption("fakesk", "fakesk"))
 				convey.So(err, convey.ShouldBeNil)
 

@@ -5,9 +5,9 @@ import (
 	"errors"
 	"io"
 
+	"github.com/GitDataAI/jiaozifs/models"
+	"github.com/GitDataAI/jiaozifs/utils/hash"
 	"github.com/google/uuid"
-	"github.com/jiaozifs/jiaozifs/models"
-	"github.com/jiaozifs/jiaozifs/utils/hash"
 )
 
 var (

@@ -4,8 +4,8 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/jiaozifs/jiaozifs/auth/rbac/wildcard"
-	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
+	"github.com/GitDataAI/jiaozifs/auth/rbac/wildcard"
+	"github.com/GitDataAI/jiaozifs/models/rbacmodel"
 )
 
 var (

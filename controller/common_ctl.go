@@ -4,12 +4,12 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/GitDataAI/jiaozifs/api"
+	"github.com/GitDataAI/jiaozifs/config"
+	"github.com/GitDataAI/jiaozifs/utils"
+	"github.com/GitDataAI/jiaozifs/version"
 	"github.com/go-openapi/swag"
 	logging "github.com/ipfs/go-log/v2"
-	"github.com/jiaozifs/jiaozifs/api"
-	"github.com/jiaozifs/jiaozifs/config"
-	"github.com/jiaozifs/jiaozifs/utils"
-	"github.com/jiaozifs/jiaozifs/version"
 	"go.uber.org/fx"
 )
 

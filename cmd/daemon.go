@@ -3,24 +3,24 @@ package cmd
 import (
 	"context"
 
-	"github.com/jiaozifs/jiaozifs/auth/rbac"
+	"github.com/GitDataAI/jiaozifs/auth/rbac"
 
-	"github.com/jiaozifs/jiaozifs/auth/aksk"
+	"github.com/GitDataAI/jiaozifs/auth/aksk"
 
 	"github.com/pelletier/go-toml/v2"
 
+	apiImpl "github.com/GitDataAI/jiaozifs/api/api_impl"
+	"github.com/GitDataAI/jiaozifs/auth"
+	"github.com/GitDataAI/jiaozifs/auth/crypt"
+	"github.com/GitDataAI/jiaozifs/block/params"
+	"github.com/GitDataAI/jiaozifs/config"
+	"github.com/GitDataAI/jiaozifs/fx_opt"
+	"github.com/GitDataAI/jiaozifs/models"
+	"github.com/GitDataAI/jiaozifs/models/migrations"
+	"github.com/GitDataAI/jiaozifs/utils"
+	"github.com/GitDataAI/jiaozifs/version"
 	"github.com/gorilla/sessions"
 	logging "github.com/ipfs/go-log/v2"
-	apiImpl "github.com/jiaozifs/jiaozifs/api/api_impl"
-	"github.com/jiaozifs/jiaozifs/auth"
-	"github.com/jiaozifs/jiaozifs/auth/crypt"
-	"github.com/jiaozifs/jiaozifs/block/params"
-	"github.com/jiaozifs/jiaozifs/config"
-	"github.com/jiaozifs/jiaozifs/fx_opt"
-	"github.com/jiaozifs/jiaozifs/models"
-	"github.com/jiaozifs/jiaozifs/models/migrations"
-	"github.com/jiaozifs/jiaozifs/utils"
-	"github.com/jiaozifs/jiaozifs/version"
 	"github.com/spf13/cobra"
 	"github.com/uptrace/bun"
 )
@@ -32,7 +32,7 @@ var daemonCmd = &cobra.Command{
 	Use:   "daemon",
 	Short: "daemon program of jiaozifs",
 	Long:  ``,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(cmd *cobra.Command, _ []string) error {
 		cfg, err := config.LoadConfig(cfgFile)
 		if err != nil {
 			return err

@@ -4,8 +4,8 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/GitDataAI/jiaozifs/models/rbacmodel"
 	"github.com/google/uuid"
-	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
 	"github.com/uptrace/bun"
 )
 
@@ -59,7 +59,7 @@ func (repo *PgRepo) Transaction(ctx context.Context, fn func(repo IRepo) error, 
 	for _, opt := range opts {
 		opt(sqlOpt)
 	}
-	return repo.db.RunInTx(ctx, sqlOpt, func(ctx context.Context, tx bun.Tx) error {
+	return repo.db.RunInTx(ctx, sqlOpt, func(_ context.Context, tx bun.Tx) error {
 		return fn(NewRepo(tx))
 	})
 }

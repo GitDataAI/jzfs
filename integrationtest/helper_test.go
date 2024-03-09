@@ -16,10 +16,10 @@ import (
 
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
-	"github.com/jiaozifs/jiaozifs/api"
-	"github.com/jiaozifs/jiaozifs/cmd"
-	"github.com/jiaozifs/jiaozifs/testhelper"
-	"github.com/jiaozifs/jiaozifs/utils"
+	"github.com/GitDataAI/jiaozifs/api"
+	"github.com/GitDataAI/jiaozifs/cmd"
+	"github.com/GitDataAI/jiaozifs/testhelper"
+	"github.com/GitDataAI/jiaozifs/utils"
 	"github.com/phayes/freeport"
 	"github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/require"
@@ -133,7 +133,7 @@ func loginAndSwitch(ctx context.Context, client *api.Client, userName string, us
 	convey.So(err, convey.ShouldBeNil)
 
 	client.RequestEditors = nil
-	client.RequestEditors = append(client.RequestEditors, func(ctx context.Context, req *http.Request) error {
+	client.RequestEditors = append(client.RequestEditors, func(_ context.Context, req *http.Request) error {
 		if useCookie {
 			for _, cookie := range resp.Cookies() {
 				req.AddCookie(cookie)

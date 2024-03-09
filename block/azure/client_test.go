@@ -4,8 +4,8 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/jiaozifs/jiaozifs/block"
-	"github.com/jiaozifs/jiaozifs/block/azure"
+	"github.com/GitDataAI/jiaozifs/block"
+	"github.com/GitDataAI/jiaozifs/block/azure"
 	"github.com/stretchr/testify/require"
 )
 

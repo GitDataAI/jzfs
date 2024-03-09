@@ -7,12 +7,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiaozifs/jiaozifs/auth/rbac/wildcard"
+	"github.com/GitDataAI/jiaozifs/auth/rbac/wildcard"
 
 	"github.com/google/uuid"
 
-	"github.com/jiaozifs/jiaozifs/models"
-	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
+	"github.com/GitDataAI/jiaozifs/models"
+	"github.com/GitDataAI/jiaozifs/models/rbacmodel"
 )
 
 var ErrInsufficientPermissions = fmt.Errorf("permission not enough")
@@ -195,18 +195,18 @@ func (s *RbacAuth) InitRbac(ctx context.Context, adminUser *models.User) error {
 }
 
 func (s *RbacAuth) addGroupPolicy(ctx context.Context, repo models.IRepo, groupName string, policies ...*rbacmodel.Policy) (*rbacmodel.Group, error) {
-	var policyIds []uuid.UUID
+	var policyIDs []uuid.UUID
 	for _, policy := range policies {
 		_, err := repo.PolicyRepo().Insert(ctx, policy)
 		if err != nil {
 			return nil, err
 		}
-		policyIds = append(policyIds, policy.ID)
+		policyIDs = append(policyIDs, policy.ID)
 	}
 
 	return repo.GroupRepo().Insert(ctx, &rbacmodel.Group{
 		Name:      groupName,
-		Policies:  policyIds,
+		Policies:  policyIDs,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	})

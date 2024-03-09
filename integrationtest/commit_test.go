@@ -4,11 +4,11 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/jiaozifs/jiaozifs/utils/hash"
+	"github.com/GitDataAI/jiaozifs/utils/hash"
 
-	"github.com/jiaozifs/jiaozifs/api"
-	apiimpl "github.com/jiaozifs/jiaozifs/api/api_impl"
-	"github.com/jiaozifs/jiaozifs/utils"
+	"github.com/GitDataAI/jiaozifs/api"
+	apiimpl "github.com/GitDataAI/jiaozifs/api/api_impl"
+	"github.com/GitDataAI/jiaozifs/utils"
 	"github.com/smartystreets/goconvey/convey"
 )
 
@@ -20,7 +20,7 @@ func GetEntriesInRefSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		repoName := "black"
 		branchName := "feat/get_entries_test"
 
-		c.Convey("init", func(c convey.C) {
+		c.Convey("init", func(_ convey.C) {
 			_ = createUser(ctx, client, userName)
 			loginAndSwitch(ctx, client, userName, false)
 			_ = createRepo(ctx, client, repoName, false)
@@ -127,7 +127,7 @@ func GetEntriesInRefSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 		})
 
-		c.Convey("commit kitty first changes", func(c convey.C) {
+		c.Convey("commit kitty first changes", func(_ convey.C) {
 			commitWip(ctx, client, userName, repoName, branchName, "test")
 		})
 
@@ -228,7 +228,7 @@ func GetEntriesInRefSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 		})
 
-		c.Convey("prepare data for commit test", func(c convey.C) {
+		c.Convey("prepare data for commit test", func(_ convey.C) {
 			createWip(ctx, client, userName, repoName, "main")
 			uploadObject(ctx, client, userName, repoName, "main", "a.dat")   //delete\
 			uploadObject(ctx, client, userName, repoName, "main", "g/m.dat") //modify
@@ -384,7 +384,7 @@ func GetCommitChangesSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		userName := "kelly"
 		repoName := "gcc"
 
-		c.Convey("init", func(c convey.C) {
+		c.Convey("init", func(_ convey.C) {
 			createUser(ctx, client, userName)
 			loginAndSwitch(ctx, client, userName, false)
 			createRepo(ctx, client, repoName, false)

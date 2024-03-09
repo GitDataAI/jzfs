@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/jiaozifs/jiaozifs/config"
+	"github.com/GitDataAI/jiaozifs/config"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/driver/pgdriver"
@@ -19,7 +19,7 @@ func SetupDatabase(ctx context.Context, lc fx.Lifecycle, dbConfig *config.Databa
 	}
 
 	lc.Append(fx.Hook{
-		OnStop: func(ctx context.Context) error {
+		OnStop: func(_ context.Context) error {
 			return bunDB.Close()
 		},
 	})

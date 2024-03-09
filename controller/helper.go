@@ -3,9 +3,9 @@ package controller
 import (
 	"encoding/hex"
 
-	"github.com/jiaozifs/jiaozifs/api"
-	"github.com/jiaozifs/jiaozifs/utils"
-	"github.com/jiaozifs/jiaozifs/versionmgr"
+	"github.com/GitDataAI/jiaozifs/api"
+	"github.com/GitDataAI/jiaozifs/utils"
+	"github.com/GitDataAI/jiaozifs/versionmgr"
 )
 
 func changesToDTO(changes *versionmgr.Changes) ([]api.Change, error) {

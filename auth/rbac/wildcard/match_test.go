@@ -19,7 +19,7 @@ package wildcard_test
 import (
 	"testing"
 
-	"github.com/jiaozifs/jiaozifs/auth/rbac/wildcard"
+	"github.com/GitDataAI/jiaozifs/auth/rbac/wildcard"
 )
 
 // TestMatch - Tests validate the logic of wild card matching.

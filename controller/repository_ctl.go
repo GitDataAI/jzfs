@@ -8,21 +8,21 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/jiaozifs/jiaozifs/auth/rbac"
-	"github.com/jiaozifs/jiaozifs/controller/validator"
-	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
+	"github.com/GitDataAI/jiaozifs/auth/rbac"
+	"github.com/GitDataAI/jiaozifs/controller/validator"
+	"github.com/GitDataAI/jiaozifs/models/rbacmodel"
 
+	"github.com/GitDataAI/jiaozifs/api"
+	"github.com/GitDataAI/jiaozifs/auth"
+	"github.com/GitDataAI/jiaozifs/block/factory"
+	"github.com/GitDataAI/jiaozifs/block/params"
+	"github.com/GitDataAI/jiaozifs/config"
+	"github.com/GitDataAI/jiaozifs/models"
+	"github.com/GitDataAI/jiaozifs/utils"
+	"github.com/GitDataAI/jiaozifs/utils/hash"
+	"github.com/GitDataAI/jiaozifs/versionmgr"
 	"github.com/google/uuid"
 	logging "github.com/ipfs/go-log/v2"
-	"github.com/jiaozifs/jiaozifs/api"
-	"github.com/jiaozifs/jiaozifs/auth"
-	"github.com/jiaozifs/jiaozifs/block/factory"
-	"github.com/jiaozifs/jiaozifs/block/params"
-	"github.com/jiaozifs/jiaozifs/config"
-	"github.com/jiaozifs/jiaozifs/models"
-	"github.com/jiaozifs/jiaozifs/utils"
-	"github.com/jiaozifs/jiaozifs/utils/hash"
-	"github.com/jiaozifs/jiaozifs/versionmgr"
 	"go.uber.org/fx"
 )
 
@@ -252,11 +252,11 @@ func (repositoryCtl RepositoryController) CreateRepository(ctx context.Context, 
 	//create default ref
 	var createdRepo *models.Repository
 	err = repositoryCtl.Repo.Transaction(ctx, func(repo models.IRepo) error {
-		_, err := repositoryCtl.Repo.BranchRepo().Insert(ctx, defaultRef)
+		_, err := repo.BranchRepo().Insert(ctx, defaultRef)
 		if err != nil {
 			return err
 		}
-		createdRepo, err = repositoryCtl.Repo.RepositoryRepo().Insert(ctx, repository)
+		createdRepo, err = repo.RepositoryRepo().Insert(ctx, repository)
 		return err
 	})
 	if err != nil {
@@ -291,7 +291,7 @@ func (repositoryCtl RepositoryController) DeleteRepository(ctx context.Context, 
 
 	err = repositoryCtl.Repo.Transaction(ctx, func(repo models.IRepo) error {
 		// delete repository
-		affectRows, err := repositoryCtl.Repo.RepositoryRepo().Delete(ctx, models.NewDeleteRepoParams().SetID(repository.ID))
+		affectRows, err := repo.RepositoryRepo().Delete(ctx, models.NewDeleteRepoParams().SetID(repository.ID))
 		if err != nil {
 			return err
 		}
@@ -301,37 +301,37 @@ func (repositoryCtl RepositoryController) DeleteRepository(ctx context.Context, 
 		}
 
 		//delete branch
-		_, err = repositoryCtl.Repo.BranchRepo().Delete(ctx, models.NewDeleteBranchParams().SetRepositoryID(repository.ID))
+		_, err = repo.BranchRepo().Delete(ctx, models.NewDeleteBranchParams().SetRepositoryID(repository.ID))
 		if err != nil {
 			return err
 		}
 
 		//delete commit
-		_, err = repositoryCtl.Repo.CommitRepo(repository.ID).Delete(ctx, models.NewDeleteParams())
+		_, err = repo.CommitRepo(repository.ID).Delete(ctx, models.NewDeleteParams())
 		if err != nil {
 			return err
 		}
 
 		//delete tag
-		_, err = repositoryCtl.Repo.TagRepo(repository.ID).Delete(ctx, models.NewDeleteParams())
+		_, err = repo.TagRepo(repository.ID).Delete(ctx, models.NewDeleteParams())
 		if err != nil {
 			return err
 		}
 
 		// delete tree
-		_, err = repositoryCtl.Repo.FileTreeRepo(repository.ID).Delete(ctx, models.NewDeleteTreeParams())
+		_, err = repo.FileTreeRepo(repository.ID).Delete(ctx, models.NewDeleteTreeParams())
 		if err != nil {
 			return err
 		}
 
 		//delete wip
-		_, err = repositoryCtl.Repo.WipRepo().Delete(ctx, models.NewDeleteWipParams().SetRepositoryID(repository.ID))
+		_, err = repo.WipRepo().Delete(ctx, models.NewDeleteWipParams().SetRepositoryID(repository.ID))
 		if err != nil {
 			return err
 		}
 
 		//delete all membership
-		_, err = repositoryCtl.Repo.MemberRepo().DeleteMember(ctx, models.NewDeleteMemberParams().SetRepoID(repository.ID))
+		_, err = repo.MemberRepo().DeleteMember(ctx, models.NewDeleteMemberParams().SetRepoID(repository.ID))
 		return err
 	})
 	if err != nil {

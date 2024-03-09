@@ -10,8 +10,8 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/GitDataAI/jiaozifs/block"
 	"github.com/google/uuid"
-	"github.com/jiaozifs/jiaozifs/block"
 )
 
 type Adapter struct{}

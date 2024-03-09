@@ -7,7 +7,7 @@ home: https://jiaozifs.com/
 keywords:
   - jiaozifs
 sources:
-  - https://github.com/jiaozifs/jiaozifs
-  - https://github.com/jiaozifs/jiaozifs-ui
+  - https://github.com/GitDataAI/jiaozifs
+  - https://github.com/GitDataAI/jiaozifs-ui
 maintainers:
   - name: jiaozifs team

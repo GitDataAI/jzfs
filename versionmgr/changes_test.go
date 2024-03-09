@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiaozifs/jiaozifs/utils/hash"
-	"github.com/jiaozifs/jiaozifs/versionmgr/merkletrie"
-	"github.com/jiaozifs/jiaozifs/versionmgr/merkletrie/noder"
+	"github.com/GitDataAI/jiaozifs/utils/hash"
+	"github.com/GitDataAI/jiaozifs/versionmgr/merkletrie"
+	"github.com/GitDataAI/jiaozifs/versionmgr/merkletrie/noder"
 	"github.com/stretchr/testify/require"
 )
 

@@ -17,11 +17,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jiaozifs/jiaozifs/utils/hash"
-
+	"github.com/GitDataAI/jiaozifs/block"
+	"github.com/GitDataAI/jiaozifs/block/params"
+	"github.com/GitDataAI/jiaozifs/utils/hash"
 	"github.com/google/uuid"
-	"github.com/jiaozifs/jiaozifs/block"
-	"github.com/jiaozifs/jiaozifs/block/params"
 	"golang.org/x/exp/slices"
 )
 

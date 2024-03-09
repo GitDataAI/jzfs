@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jiaozifs/jiaozifs/versionmgr/merkletrie/noder"
+	"github.com/GitDataAI/jiaozifs/versionmgr/merkletrie/noder"
 )
 
 // A Frame is a collection of siblings in a trie, sorted alphabetically
