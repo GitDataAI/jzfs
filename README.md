@@ -8,6 +8,7 @@ A version control file system for data centric applications & teams.
   <a href=""><img src="https://img.shields.io/badge/golang-%3E%3D1.22.0-blue.svg" /></a>
   <br/>
 </p>
+
 <a href="https://github.com/GitDataAI/jiaozifs"><img src="https://github.com/GitDataAI/jiaozifs/blob/main/docs/logo/jiaozifs.png?raw=true" width="100" /></a>
 
 ----
@@ -54,7 +55,7 @@ JiaoziFS's versatility shines across different industries – making it the mult
 
 1. clone and build
 ```bash
-git clone https://github.com/jiaozifs/jiaozifs.git
+git clone https://github.com/GitDataAI/jiaozifs.git
 cd jiaozifs
 make build
 ```
@@ -90,5 +91,6 @@ docker run -v <data>:/app -p 34913:34913 gitdatateam/jzfs:latest  --db "postgres
 ----
 ### License
 
-Dual-licensed under [MIT](https://github.com/jiaozifs/jiaozifs/blob/main/LICENSE-MIT) + [Apache 2.0](https://github.com/jiaozifs/jiaozifs/blob/main/LICENSE-APACHE)
-  
+Dual-licensed under [MIT](https://github.com/GitDataAI/jiaozifs/blob/main/LICENSE-MIT) + [Apache 2.0](https://github.com/GitDataAI/jiaozifs/blob/main/LICENSE-APACHE)
+
+

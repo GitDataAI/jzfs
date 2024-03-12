@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jiaozifs/jiaozifs/versionmgr/merkletrie/noder"
+	"github.com/GitDataAI/jiaozifs/versionmgr/merkletrie/noder"
 )
 
 // Dir values implement directory-like noders.

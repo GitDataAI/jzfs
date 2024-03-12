@@ -6,8 +6,8 @@ import (
 
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
-	"github.com/jiaozifs/jiaozifs/api"
-	apiimpl "github.com/jiaozifs/jiaozifs/api/api_impl"
+	"github.com/GitDataAI/jiaozifs/api"
+	apiimpl "github.com/GitDataAI/jiaozifs/api/api_impl"
 	"github.com/smartystreets/goconvey/convey"
 )
 
@@ -16,7 +16,7 @@ func UserSpec(ctx context.Context, urlStr string) func(c convey.C) {
 	return func(c convey.C) {
 		userName := "admin2"
 
-		c.Convey("init user", func(c convey.C) {
+		c.Convey("init user", func(_ convey.C) {
 			_ = createUser(ctx, client, userName)
 		})
 
@@ -45,7 +45,7 @@ func UserSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
 		})
 
-		c.Convey("admin login", func(c convey.C) {
+		c.Convey("admin login", func(_ convey.C) {
 			loginAndSwitch(ctx, client, userName, false)
 		})
 
@@ -55,7 +55,7 @@ func UserSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
 		})
 
-		c.Convey("admin login again", func(c convey.C) {
+		c.Convey("admin login again", func(_ convey.C) {
 			loginAndSwitch(ctx, client, userName, true)
 		})
 

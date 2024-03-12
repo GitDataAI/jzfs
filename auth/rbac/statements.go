@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
+	"github.com/GitDataAI/jiaozifs/models/rbacmodel"
 )
 
 var (

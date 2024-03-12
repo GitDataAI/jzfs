@@ -4,11 +4,11 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/jiaozifs/jiaozifs/utils/hash"
+	"github.com/GitDataAI/jiaozifs/utils/hash"
 
-	"github.com/jiaozifs/jiaozifs/api"
-	apiimpl "github.com/jiaozifs/jiaozifs/api/api_impl"
-	"github.com/jiaozifs/jiaozifs/utils"
+	"github.com/GitDataAI/jiaozifs/api"
+	apiimpl "github.com/GitDataAI/jiaozifs/api/api_impl"
+	"github.com/GitDataAI/jiaozifs/utils"
 	"github.com/smartystreets/goconvey/convey"
 )
 
@@ -19,7 +19,7 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		repoName := "hash"
 		branchName := "feat/wip_obj_test"
 
-		c.Convey("init", func(c convey.C) {
+		c.Convey("init", func(_ convey.C) {
 			_ = createUser(ctx, client, userName)
 			loginAndSwitch(ctx, client, userName, false)
 			_ = createRepo(ctx, client, repoName, false)
@@ -297,7 +297,7 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		})
 		testBranchName := "test/empty_branch"
 
-		c.Convey("update objects and create empty branch", func(c convey.C) {
+		c.Convey("update objects and create empty branch", func(_ convey.C) {
 			uploadObject(ctx, client, userName, repoName, branchName, "a/m.dat")
 			uploadObject(ctx, client, userName, repoName, branchName, "a/b.dat")
 			uploadObject(ctx, client, userName, repoName, branchName, "b.dat")
@@ -307,7 +307,7 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			createWip(ctx, client, userName, repoName, testBranchName)
 		})
 
-		c.Convey("get wip success on init", func(c convey.C) {
+		c.Convey("get wip success on init", func(_ convey.C) {
 			resp, err := client.GetWipChanges(ctx, userName, repoName, &api.GetWipChangesParams{
 				RefName: testBranchName,
 			})
@@ -474,7 +474,7 @@ func UpdateWipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		repoName := "update_wip_test"
 		branchName := "main"
 
-		c.Convey("create wip", func(c convey.C) {
+		c.Convey("create wip", func(_ convey.C) {
 			_ = createUser(ctx, client, userName)
 			loginAndSwitch(ctx, client, userName, false)
 			_ = createRepo(ctx, client, repoName, false)
@@ -488,7 +488,7 @@ func UpdateWipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			_ = uploadObject(ctx, client, userName, repoName, branchName, "g/m.dat")
 		})
 
-		c.Convey("get wip", func(c convey.C) {
+		c.Convey("get wip", func(_ convey.C) {
 			resp, err := client.GetWip(ctx, userName, repoName, &api.GetWipParams{
 				RefName: branchName,
 			})

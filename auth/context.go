@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jiaozifs/jiaozifs/models"
+	"github.com/GitDataAI/jiaozifs/models"
 )
 
 var ErrUserNotFound = fmt.Errorf("UserNotFound")

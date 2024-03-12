@@ -6,9 +6,9 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/jiaozifs/jiaozifs/block/blocktest"
-	"github.com/jiaozifs/jiaozifs/block/params"
-	"github.com/jiaozifs/jiaozifs/block/s3"
+	"github.com/GitDataAI/jiaozifs/block/blocktest"
+	"github.com/GitDataAI/jiaozifs/block/params"
+	"github.com/GitDataAI/jiaozifs/block/s3"
 	"github.com/stretchr/testify/require"
 )
 

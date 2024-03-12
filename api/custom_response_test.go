@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/jiaozifs/jiaozifs/auth"
+	"github.com/GitDataAI/jiaozifs/auth"
 
-	"github.com/jiaozifs/jiaozifs/models"
+	"github.com/GitDataAI/jiaozifs/models"
 
 	"go.uber.org/mock/gomock"
 )

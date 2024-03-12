@@ -2,7 +2,7 @@
 
 rbac中引入resource_type, resource, statement, policy, group，user,的概念他们之间的关系如下图
 
-![image](https://github.com/jiaozifs/jiaozifs/assets/41407352/632d8b90-25d4-423e-bcea-5114c339ddf8)
+![image](https://github.com/GitDataAI/jiaozifs/assets/41407352/632d8b90-25d4-423e-bcea-5114c339ddf8)
 
 ## 类型组织
 整体上对于权限的组织情况如下

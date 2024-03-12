@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/jiaozifs/jiaozifs/versionmgr/merkletrie/noder"
+	"github.com/GitDataAI/jiaozifs/versionmgr/merkletrie/noder"
 )
 
 // New function creates a full merkle trie from the string description of

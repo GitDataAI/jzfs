@@ -8,8 +8,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jiaozifs/jiaozifs/versionmgr/merkletrie"
-	"github.com/jiaozifs/jiaozifs/versionmgr/merkletrie/noder"
+	"github.com/GitDataAI/jiaozifs/versionmgr/merkletrie"
+	"github.com/GitDataAI/jiaozifs/versionmgr/merkletrie/noder"
 )
 
 var (
@@ -225,9 +225,9 @@ func (cw *ChangesPairIter) isConflict(left, right IChange) (bool, error) {
 	case merkletrie.Insert:
 		switch rightAction {
 		case merkletrie.Delete:
-			return false, fmt.Errorf("%s right should never be Delete while the left diff is Insert, must be a bug, fire issue at https://github.com/jiaozifs/jiaozifs/issues %w", left.Path(), ErrActionNotMatch)
+			return false, fmt.Errorf("%s right should never be Delete while the left diff is Insert, must be a bug, fire issue at https://github.com/GitDataAI/jiaozifs/issues %w", left.Path(), ErrActionNotMatch)
 		case merkletrie.Modify:
-			return false, fmt.Errorf("%s right should never be Modify while the left diff is Insert, must be a bug, fire issue at https://github.com/jiaozifs/jiaozifs/issues %w", left.Path(), ErrActionNotMatch)
+			return false, fmt.Errorf("%s right should never be Modify while the left diff is Insert, must be a bug, fire issue at https://github.com/GitDataAI/jiaozifs/issues %w", left.Path(), ErrActionNotMatch)
 		case merkletrie.Insert:
 			if bytes.Equal(left.To().Hash(), right.To().Hash()) {
 				return false, nil
@@ -239,14 +239,14 @@ func (cw *ChangesPairIter) isConflict(left, right IChange) (bool, error) {
 		case merkletrie.Delete:
 			return false, nil
 		case merkletrie.Insert:
-			return false, fmt.Errorf("%s right should never be Insert while the other diff is Delete, must be a bug, fire issue at https://github.com/jiaozifs/jiaozifs/issues %w", left.Path(), ErrActionNotMatch)
+			return false, fmt.Errorf("%s right should never be Insert while the other diff is Delete, must be a bug, fire issue at https://github.com/GitDataAI/jiaozifs/issues %w", left.Path(), ErrActionNotMatch)
 		case merkletrie.Modify:
 			return true, nil
 		}
 	case merkletrie.Modify:
 		switch rightAction {
 		case merkletrie.Insert:
-			return false, fmt.Errorf("%s right should never be Insert while the other diff is Modify, must be a bug, fire issue at https://github.com/jiaozifs/jiaozifs/issues %w", left.Path(), ErrActionNotMatch)
+			return false, fmt.Errorf("%s right should never be Insert while the other diff is Modify, must be a bug, fire issue at https://github.com/GitDataAI/jiaozifs/issues %w", left.Path(), ErrActionNotMatch)
 		case merkletrie.Delete:
 			return true, nil
 		case merkletrie.Modify:

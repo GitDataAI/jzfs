@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
+	"github.com/GitDataAI/jiaozifs/models/rbacmodel"
 	"golang.org/x/exp/slices"
 )
 

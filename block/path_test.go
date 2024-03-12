@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/GitDataAI/jiaozifs/block"
 	"github.com/davecgh/go-spew/spew"
-	"github.com/jiaozifs/jiaozifs/block"
 )
 
 func equalStrings(a, b []string) bool {

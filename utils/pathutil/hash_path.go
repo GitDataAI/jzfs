@@ -3,7 +3,7 @@ package pathutil
 import (
 	"path"
 
-	"github.com/jiaozifs/jiaozifs/utils/hash"
+	"github.com/GitDataAI/jiaozifs/utils/hash"
 )
 
 func PathOfHash(hash hash.Hash) string {

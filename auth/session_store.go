@@ -3,9 +3,9 @@ package auth
 import (
 	"encoding/hex"
 
+	"github.com/GitDataAI/jiaozifs/auth/crypt"
+	"github.com/GitDataAI/jiaozifs/config"
 	"github.com/gorilla/sessions"
-	"github.com/jiaozifs/jiaozifs/auth/crypt"
-	"github.com/jiaozifs/jiaozifs/config"
 )
 
 func NewSessionStore(secretStrore crypt.SecretStore) sessions.Store {

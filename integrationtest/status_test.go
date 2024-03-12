@@ -9,7 +9,7 @@ import (
 )
 
 func StatusSpec(_ context.Context, urlStr string) func(c convey.C) {
-	return func(c convey.C) {
+	return func(_ convey.C) {
 		url, err := url.Parse(urlStr)
 		convey.ShouldBeNil(err)
 		url.Path = "/status"

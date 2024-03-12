@@ -4,10 +4,10 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/jiaozifs/jiaozifs/auth/rbac"
+	"github.com/GitDataAI/jiaozifs/auth/rbac"
 
-	"github.com/jiaozifs/jiaozifs/api"
-	apiimpl "github.com/jiaozifs/jiaozifs/api/api_impl"
+	"github.com/GitDataAI/jiaozifs/api"
+	apiimpl "github.com/GitDataAI/jiaozifs/api/api_impl"
 	"github.com/smartystreets/goconvey/convey"
 )
 
@@ -348,7 +348,7 @@ func getToken(ctx context.Context, client *api.Client, userName string) []api.Re
 	loginResult, err := api.ParseLoginResponse(resp)
 	convey.So(err, convey.ShouldBeNil)
 
-	return []api.RequestEditorFn{func(ctx context.Context, req *http.Request) error {
+	return []api.RequestEditorFn{func(_ context.Context, req *http.Request) error {
 		req.Header.Add("Authorization", "Bearer "+loginResult.JSON200.Token)
 		return nil
 	}}

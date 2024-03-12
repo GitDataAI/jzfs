@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jiaozifs/jiaozifs/version"
+	"github.com/GitDataAI/jiaozifs/version"
 	"github.com/stretchr/testify/require"
 )
 

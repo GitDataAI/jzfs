@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"github.com/jiaozifs/jiaozifs/api"
-	"github.com/jiaozifs/jiaozifs/config"
+	"github.com/GitDataAI/jiaozifs/api"
+	"github.com/GitDataAI/jiaozifs/config"
 )
 
 func GetDefaultClient() (*api.Client, error) {

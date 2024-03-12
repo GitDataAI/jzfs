@@ -14,8 +14,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jiaozifs/jiaozifs/block"
-	"github.com/jiaozifs/jiaozifs/block/params"
+	"github.com/GitDataAI/jiaozifs/block"
+	"github.com/GitDataAI/jiaozifs/block/params"
 	gonanoid "github.com/matoous/go-nanoid/v2"
 )
 

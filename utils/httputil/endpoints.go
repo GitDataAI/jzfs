@@ -14,7 +14,7 @@ func SetHealthHandlerInfo(info string) {
 }
 
 func ServeHealth() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = io.WriteString(w, "alive!")
 		if healthInfo != "" {
 			_, _ = io.WriteString(w, " "+healthInfo)

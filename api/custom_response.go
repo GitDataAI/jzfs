@@ -5,8 +5,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/jiaozifs/jiaozifs/auth"
-	"github.com/jiaozifs/jiaozifs/models"
+	"github.com/GitDataAI/jiaozifs/auth"
+	"github.com/GitDataAI/jiaozifs/models"
 )
 
 type JiaozifsResponse struct {

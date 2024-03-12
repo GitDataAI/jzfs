@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/GitDataAI/jiaozifs/utils/hash"
 	"github.com/google/uuid"
-	"github.com/jiaozifs/jiaozifs/utils/hash"
 	"github.com/uptrace/bun"
 )
 

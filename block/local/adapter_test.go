@@ -5,9 +5,9 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/jiaozifs/jiaozifs/block"
-	"github.com/jiaozifs/jiaozifs/block/blocktest"
-	"github.com/jiaozifs/jiaozifs/block/local"
+	"github.com/GitDataAI/jiaozifs/block"
+	"github.com/GitDataAI/jiaozifs/block/blocktest"
+	"github.com/GitDataAI/jiaozifs/block/local"
 	"github.com/stretchr/testify/require"
 )
 

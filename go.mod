@@ -1,4 +1,4 @@
-module github.com/jiaozifs/jiaozifs
+module github.com/GitDataAI/jiaozifs
 
 go 1.21
 
@@ -39,6 +39,7 @@ require (
 	github.com/ipfs/boxo v0.18.0
 	github.com/ipfs/go-log/v2 v2.5.1
 	github.com/ipfs/kubo v0.26.0
+	github.com/m1/go-generate-password v0.2.0
 	github.com/matoous/go-nanoid/v2 v2.0.0
 	github.com/minio/minio-go/v7 v7.0.64
 	github.com/mitchellh/go-homedir v1.1.0
@@ -177,7 +178,6 @@ require (
 	github.com/libp2p/go-libp2p-routing-helpers v0.7.3 // indirect
 	github.com/libp2p/go-msgio v0.3.0 // indirect
 	github.com/libp2p/go-netroute v0.2.1 // indirect
-	github.com/m1/go-generate-password v0.2.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect

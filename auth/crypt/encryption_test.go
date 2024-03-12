@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jiaozifs/jiaozifs/auth/crypt"
+	"github.com/GitDataAI/jiaozifs/auth/crypt"
 )
 
 func TestSecretStore_Encrypt(t *testing.T) {

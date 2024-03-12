@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/jiaozifs/jiaozifs/utils"
+	"github.com/GitDataAI/jiaozifs/utils"
 
-	"github.com/jiaozifs/jiaozifs/api"
-	apiimpl "github.com/jiaozifs/jiaozifs/api/api_impl"
+	"github.com/GitDataAI/jiaozifs/api"
+	apiimpl "github.com/GitDataAI/jiaozifs/api/api_impl"
 	"github.com/smartystreets/goconvey/convey"
 )
 
@@ -24,7 +24,7 @@ func PublicRepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 	var user1Token, user2Token []api.RequestEditorFn
 	return func(c convey.C) {
 
-		c.Convey("init", func(c convey.C) {
+		c.Convey("init", func(_ convey.C) {
 			_ = createUser(ctx, client, user1Name)
 			_ = createUser(ctx, client, user2Name)
 			user1Token = getToken(ctx, client, user1Name)

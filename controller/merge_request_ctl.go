@@ -7,18 +7,18 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/jiaozifs/jiaozifs/auth/rbac"
-	"github.com/jiaozifs/jiaozifs/models/rbacmodel"
-	"github.com/jiaozifs/jiaozifs/utils/hash"
+	"github.com/GitDataAI/jiaozifs/auth/rbac"
+	"github.com/GitDataAI/jiaozifs/models/rbacmodel"
+	"github.com/GitDataAI/jiaozifs/utils/hash"
 
-	"github.com/jiaozifs/jiaozifs/utils"
+	"github.com/GitDataAI/jiaozifs/utils"
 
-	"github.com/jiaozifs/jiaozifs/versionmgr"
+	"github.com/GitDataAI/jiaozifs/versionmgr"
 
-	"github.com/jiaozifs/jiaozifs/api"
-	"github.com/jiaozifs/jiaozifs/auth"
-	"github.com/jiaozifs/jiaozifs/block/params"
-	"github.com/jiaozifs/jiaozifs/models"
+	"github.com/GitDataAI/jiaozifs/api"
+	"github.com/GitDataAI/jiaozifs/auth"
+	"github.com/GitDataAI/jiaozifs/block/params"
+	"github.com/GitDataAI/jiaozifs/models"
 	"go.uber.org/fx"
 )
 
@@ -381,17 +381,17 @@ func (mrCtl MergeRequestController) Merge(ctx context.Context, w *api.JiaozifsRe
 
 	var commit *models.Commit
 	err = mrCtl.Repo.Transaction(ctx, func(repo models.IRepo) error {
-		workRepo, err := versionmgr.NewWorkRepositoryFromConfig(ctx, operator, repository, mrCtl.Repo, mrCtl.PublicStorageConfig)
+		workRepo, err := versionmgr.NewWorkRepositoryFromConfig(ctx, operator, repository, repo, mrCtl.PublicStorageConfig)
 		if err != nil {
 			return err
 		}
 
-		sourceBranch, err := mrCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetID(mergeRequest.SourceBranchID))
+		sourceBranch, err := repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetID(mergeRequest.SourceBranchID))
 		if err != nil {
 			return err
 		}
 
-		targetBranch, err := mrCtl.Repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetID(mergeRequest.TargetBranchID))
+		targetBranch, err := repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetID(mergeRequest.TargetBranchID))
 		if err != nil {
 			return err
 		}
@@ -406,7 +406,7 @@ func (mrCtl MergeRequestController) Merge(ctx context.Context, w *api.JiaozifsRe
 			return err
 		}
 
-		return mrCtl.Repo.MergeRequestRepo().UpdateByID(ctx, models.NewUpdateMergeRequestParams(repository.ID, mergeRequest.Sequence).SetState(models.MergeStateMerged))
+		return repo.MergeRequestRepo().UpdateByID(ctx, models.NewUpdateMergeRequestParams(repository.ID, mergeRequest.Sequence).SetState(models.MergeStateMerged))
 	})
 	if err != nil {
 		w.Error(err)

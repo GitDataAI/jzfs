@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jiaozifs/jiaozifs/utils/httputil"
+	"github.com/GitDataAI/jiaozifs/utils/httputil"
 )
 
 func TestParseRange(t *testing.T) {

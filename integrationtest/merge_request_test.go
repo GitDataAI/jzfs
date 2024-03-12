@@ -7,12 +7,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jiaozifs/jiaozifs/models"
+	"github.com/GitDataAI/jiaozifs/models"
 
-	"github.com/jiaozifs/jiaozifs/utils"
+	"github.com/GitDataAI/jiaozifs/utils"
 
-	"github.com/jiaozifs/jiaozifs/api"
-	apiimpl "github.com/jiaozifs/jiaozifs/api/api_impl"
+	"github.com/GitDataAI/jiaozifs/api"
+	apiimpl "github.com/GitDataAI/jiaozifs/api/api_impl"
 	"github.com/smartystreets/goconvey/convey"
 )
 
@@ -24,7 +24,7 @@ func MergeRequestSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		repoName := "mr_test"
 		branchName := "feat/obj_test"
 
-		c.Convey("init", func(c convey.C) {
+		c.Convey("init", func(_ convey.C) {
 			_ = createUser(ctx, client, userName)
 			loginAndSwitch(ctx, client, userName, false)
 			_ = createRepo(ctx, client, repoName, false)
@@ -254,7 +254,7 @@ func MergeRequestSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 		})
 
-		c.Convey("create many mergequests", func(c convey.C) {
+		c.Convey("create many mergequests", func(_ convey.C) {
 			for i := 0; i < 10; i++ {
 				branchName := fmt.Sprintf("feat/list_merge_test_%d", i)
 				createBranch(ctx, client, userName, repoName, "main", branchName)
