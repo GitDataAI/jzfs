@@ -1290,6 +1290,58 @@ paths:
         420:
           description: too many requests
 
+  /object/{owner}/{repository}/files:
+    parameters:
+      - in: path
+        name: owner
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: repository
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: refName
+        description: branch/tag to the ref
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - objects
+      operationId: getFiles
+      summary: get files by pattern
+      parameters:
+        - in: query
+          name: pattern
+          description: glob pattern for match file path
+          allowEmptyValue: true
+          schema:
+            type: string
+        - in: query
+          name: type
+          description: files to retrieve from wip/branch/tag/commit, default branch
+          required: true
+          schema:
+            $ref: "#/components/schemas/RefType"
+      responses:
+        200:
+          description: files list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        401:
+          description: Unauthorized
+        404:
+          description: object not found
+        420:
+          description: too many requests
+
   /wip/{owner}/{repository}:
     parameters:
       - in: path
@@ -1565,6 +1617,20 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/RefType"
+        - in: query
+          name: recursive
+          description: recursive get entries (include sub files)
+          required: false
+          allowEmptyValue: true
+          schema:
+            type: boolean
+        - in: query
+          name: pattern
+          description: pattern to get files
+          required: false
+          allowEmptyValue: true
+          schema:
+            type: boolean
       responses:
         200:
           description: commit

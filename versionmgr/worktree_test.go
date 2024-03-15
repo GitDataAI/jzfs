@@ -146,3 +146,83 @@ func TestCleanPath(t *testing.T) {
 	require.Equal(t, "a/b/c", CleanPath("/a/b/c/"))
 	require.Equal(t, "a/b/c", CleanPath("\\a\\b\\c\\"))
 }
+
+func TestWorkTreeGetFiles(t *testing.T) {
+	ctx := context.Background()
+	closeDB, _, db := testhelper.SetupDatabase(ctx, t)
+	defer closeDB()
+
+	repoID := uuid.New()
+	objRepo := models.NewFileTree(db, repoID)
+
+	workTree, err := NewWorkTree(ctx, objRepo, EmptyDirEntry)
+	require.NoError(t, err)
+
+	paths := []string{
+		"a/b/c.txt",
+		"a/b/d.txt",
+		"ff/b/c.txt",
+		"ff/b/d.txt",
+		"ff/b/e.jpg",
+		"ff/b/f.jpg",
+		"a.txt",
+	}
+	for _, path := range paths {
+		blob := &models.Blob{}
+		require.NoError(t, gofakeit.Struct(blob))
+		blob.Type = models.BlobObject
+		blob.RepositoryID = repoID
+		err = workTree.AddLeaf(ctx, path, blob)
+		require.NoError(t, err)
+	}
+
+	t.Run("all", func(t *testing.T) {
+		newPaths, err := workTree.GetFiles(ctx, "*")
+		require.NoError(t, err)
+		require.Equal(t, 7, len(newPaths))
+		require.Equal(t, "a.txt", newPaths[0])
+		require.Equal(t, "a/b/c.txt", newPaths[1])
+		require.Equal(t, "a/b/d.txt", newPaths[2])
+		require.Equal(t, "ff/b/c.txt", newPaths[3])
+		require.Equal(t, "ff/b/d.txt", newPaths[4])
+		require.Equal(t, "ff/b/e.jpg", newPaths[5])
+		require.Equal(t, "ff/b/f.jpg", newPaths[6])
+	})
+
+	t.Run("single file", func(t *testing.T) {
+		newPaths, err := workTree.GetFiles(ctx, "a/b/d.txt")
+		require.NoError(t, err)
+		require.Equal(t, 1, len(newPaths))
+		require.Equal(t, "a/b/d.txt", newPaths[0])
+	})
+
+	t.Run("single path", func(t *testing.T) {
+		newPaths, err := workTree.GetFiles(ctx, "a")
+		require.NoError(t, err)
+		require.Equal(t, 0, len(newPaths))
+	})
+
+	t.Run("ext match", func(t *testing.T) {
+		newPaths, err := workTree.GetFiles(ctx, "*.jpg")
+		require.NoError(t, err)
+		require.Equal(t, 2, len(newPaths))
+		require.Equal(t, "ff/b/e.jpg", newPaths[0])
+		require.Equal(t, "ff/b/f.jpg", newPaths[1])
+	})
+
+	t.Run("filename match", func(t *testing.T) {
+		newPaths, err := workTree.GetFiles(ctx, "*/e.jpg")
+		require.NoError(t, err)
+		require.Equal(t, 1, len(newPaths))
+		require.Equal(t, "ff/b/e.jpg", newPaths[0])
+	})
+
+	t.Run("sub", func(t *testing.T) {
+		newPaths, err := workTree.GetFiles(ctx, "a/*")
+		require.NoError(t, err)
+		require.Equal(t, 2, len(newPaths))
+		require.Equal(t, "a/b/c.txt", newPaths[0])
+		require.Equal(t, "a/b/d.txt", newPaths[1])
+	})
+
+}

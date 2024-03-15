@@ -31,7 +31,7 @@ func MergeRequestSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			_ = createBranch(ctx, client, userName, repoName, "main", branchName)
 			_ = createWip(ctx, client, userName, repoName, branchName)
 			_ = uploadObject(ctx, client, userName, repoName, branchName, "a.bin")
-			commitWip(ctx, client, userName, repoName, branchName, "test")
+			_ = commitWip(ctx, client, userName, repoName, branchName, "test")
 		})
 
 		c.Convey("create merge request", func(c convey.C) {
@@ -260,7 +260,7 @@ func MergeRequestSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				createBranch(ctx, client, userName, repoName, "main", branchName)
 				createWip(ctx, client, userName, repoName, branchName)
 				uploadObject(ctx, client, userName, repoName, branchName, fmt.Sprintf("%d.txt", i))
-				commitWip(ctx, client, userName, repoName, branchName, "test")
+				_ = commitWip(ctx, client, userName, repoName, branchName, "test")
 				createMergeRequest(ctx, client, userName, repoName, branchName, "main")
 			}
 		})

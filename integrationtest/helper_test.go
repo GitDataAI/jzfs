@@ -205,7 +205,7 @@ func createWip(ctx context.Context, client *api.Client, user string, repoName st
 	return result.JSON200
 }
 
-func commitWip(ctx context.Context, client *api.Client, user string, repoName string, refName string, msg string) {
+func commitWip(ctx context.Context, client *api.Client, user string, repoName string, refName string, msg string) *api.Wip {
 	resp, err := client.CommitWip(ctx, user, repoName, &api.CommitWipParams{
 		RefName: refName,
 		Msg:     msg,
@@ -213,6 +213,10 @@ func commitWip(ctx context.Context, client *api.Client, user string, repoName st
 
 	convey.So(err, convey.ShouldBeNil)
 	convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
+
+	result, err := api.ParseCommitWipResponse(resp)
+	convey.So(err, convey.ShouldBeNil)
+	return result.JSON201
 }
 
 func createMergeRequest(ctx context.Context, client *api.Client, user string, repoName string, sourceBranch string, targetBranch string) *api.MergeRequest {

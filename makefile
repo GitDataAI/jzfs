@@ -11,7 +11,7 @@ ifneq ($(strip $(LDFLAGS)),)
 	ldflags+=-extldflags=$(LDFLAGS)
 endif
 
-GOFLAGS+=-ldflags="$(ldflags)"
+GOFLAGS+=-ldflags=$(ldflags)
 
 gen-api: ./api/swagger.yml ./api/tmpls/chi
 	$(GOGENERATE) ./api

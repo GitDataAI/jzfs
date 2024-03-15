@@ -282,7 +282,7 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
 
 				c.Convey("commit changes", func() {
-					commitWip(ctx, client, userName, repoName, branchName, "test")
+					_ = commitWip(ctx, client, userName, repoName, branchName, "test")
 				})
 
 				//ensure not exit
@@ -482,7 +482,7 @@ func UpdateWipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 			//make wip base commit has value
 			_ = uploadObject(ctx, client, userName, repoName, branchName, "a.txt")
-			commitWip(ctx, client, userName, repoName, branchName, "test")
+			_ = commitWip(ctx, client, userName, repoName, branchName, "test")
 
 			_ = uploadObject(ctx, client, userName, repoName, branchName, "m.dat")
 			_ = uploadObject(ctx, client, userName, repoName, branchName, "g/m.dat")

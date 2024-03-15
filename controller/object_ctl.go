@@ -409,3 +409,58 @@ func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsRes
 		Metadata:    &api.ObjectUserMetadata{},
 	}, http.StatusCreated)
 }
+
+func (oct ObjectController) GetFiles(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, params api.GetFilesParams) {
+	owner, err := oct.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(ownerName))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	repository, err := oct.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetOwnerID(owner.ID).SetName(repositoryName))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	if !oct.authorizeMember(ctx, w, repository.ID, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacmodel.ListObjectsAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
+		},
+	}) {
+		return
+	}
+
+	operator, err := auth.GetOperator(ctx)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	workRepo, err := versionmgr.NewWorkRepositoryFromConfig(ctx, operator, repository, oct.Repo, oct.PublicStorageConfig)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	err = workRepo.CheckOut(ctx, versionmgr.WorkRepoState(params.Type), params.RefName)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	workTree, err := workRepo.RootTree(ctx)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	files, err := workTree.GetFiles(ctx, utils.StringValue(params.Pattern))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	w.JSON(files)
+}
