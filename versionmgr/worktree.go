@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gobwas/glob"
+
 	"github.com/GitDataAI/jiaozifs/models"
 	"github.com/GitDataAI/jiaozifs/models/filemode"
 	"github.com/GitDataAI/jiaozifs/utils/hash"
@@ -157,7 +159,7 @@ func (workTree *WorkTree) ReplaceSubTreeEntry(ctx context.Context, treeEntry mod
 	return obj.TreeNode(), nil
 }
 
-func (workTree *WorkTree) matchPath(ctx context.Context, path string) ([]FullObject, []string, error) {
+func (workTree *WorkTree) findNodeByPath(ctx context.Context, path string) ([]FullObject, []string, error) {
 	pathSegs := strings.Split(path, "/") //path must be unix style
 	var existNodes []FullObject
 	var missingPath []string
@@ -206,7 +208,7 @@ func (workTree *WorkTree) matchPath(ctx context.Context, path string) ([]FullObj
 // AddLeaf insert new leaf in entry, if path not exit, create new
 func (workTree *WorkTree) AddLeaf(ctx context.Context, fullPath string, blob *models.Blob) error {
 	fullPath = CleanPath(fullPath)
-	existNode, missingPath, err := workTree.matchPath(ctx, fullPath)
+	existNode, missingPath, err := workTree.findNodeByPath(ctx, fullPath)
 	if err != nil {
 		return err
 	}
@@ -287,7 +289,7 @@ func (workTree *WorkTree) AddLeaf(ctx context.Context, fullPath string, blob *mo
 // ReplaceLeaf replace leaf with a new blob, all parent directory updated
 func (workTree *WorkTree) ReplaceLeaf(ctx context.Context, fullPath string, blob *models.Blob) error {
 	fullPath = CleanPath(fullPath)
-	existNode, missingPath, err := workTree.matchPath(ctx, fullPath)
+	existNode, missingPath, err := workTree.findNodeByPath(ctx, fullPath)
 	if err != nil {
 		return err
 	}
@@ -350,7 +352,7 @@ func (workTree *WorkTree) ReplaceLeaf(ctx context.Context, fullPath string, blob
 // RemoveEntry(ctx, root, "a/b") return empty root. a b c.txt d.txt all removed
 func (workTree *WorkTree) RemoveEntry(ctx context.Context, fullPath string) error {
 	fullPath = CleanPath(fullPath)
-	existNode, missingPath, err := workTree.matchPath(ctx, fullPath)
+	existNode, missingPath, err := workTree.findNodeByPath(ctx, fullPath)
 	if err != nil {
 		return err
 	}
@@ -419,13 +421,13 @@ func (workTree *WorkTree) RemoveEntry(ctx context.Context, fullPath string) erro
 //
 // Ls(ctx, root, "a") return b
 // Ls(ctx, root, "a/b" return c.txt and d.txt
-func (workTree *WorkTree) Ls(ctx context.Context, fullPath string) ([]FullTreeEntry, error) {
-	fullPath = CleanPath(fullPath)
+func (workTree *WorkTree) Ls(ctx context.Context, pattern string) ([]FullTreeEntry, error) {
+	fullPath := CleanPath(pattern)
 	if len(fullPath) == 0 {
 		return workTree.getFullEntry(ctx, workTree.root.SubObjects())
 	}
 
-	existNode, missingPath, err := workTree.matchPath(ctx, fullPath)
+	existNode, missingPath, err := workTree.findNodeByPath(ctx, fullPath)
 	if err != nil {
 		return nil, err
 	}
@@ -439,6 +441,25 @@ func (workTree *WorkTree) Ls(ctx context.Context, fullPath string) ([]FullTreeEn
 		return nil, ErrNotDirectory
 	}
 	return workTree.getFullEntry(ctx, lastNode.Node().SubObjects)
+}
+
+func (workTree *WorkTree) GetFiles(ctx context.Context, pattern string) ([]string, error) {
+	//todo match all files, it maybe slow maybe need a new algo like filepath.Glob
+	wk := FileWalk{curNode: workTree.root, object: workTree.object}
+	files := make([]string, 0)
+	g, err := glob.Compile(pattern)
+	if err != nil {
+		return files, err
+	}
+
+	err = wk.Walk(ctx, func(path string) error {
+		fmt.Println(path)
+		if g.Match(path) {
+			files = append(files, path)
+		}
+		return nil
+	})
+	return files, err
 }
 
 func (workTree *WorkTree) getFullEntry(ctx context.Context, treeEntries []models.TreeEntry) ([]FullTreeEntry, error) {
@@ -473,7 +494,7 @@ func (workTree *WorkTree) getFullEntry(ctx context.Context, treeEntries []models
 
 func (workTree *WorkTree) FindBlob(ctx context.Context, fullPath string) (*models.Blob, string, error) {
 	fullPath = CleanPath(fullPath)
-	existNode, missingPath, err := workTree.matchPath(ctx, fullPath)
+	existNode, missingPath, err := workTree.findNodeByPath(ctx, fullPath)
 	if err != nil {
 		return nil, "", err
 	}

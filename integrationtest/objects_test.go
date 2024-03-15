@@ -8,6 +8,8 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/GitDataAI/jiaozifs/utils"
+
 	"github.com/GitDataAI/jiaozifs/api"
 	apiimpl "github.com/GitDataAI/jiaozifs/api/api_impl"
 	"github.com/GitDataAI/jiaozifs/utils/hash"
@@ -28,6 +30,7 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			_ = createBranch(ctx, client, userName, repoName, "main", branchName)
 			_ = createWip(ctx, client, userName, repoName, branchName)
 		})
+
 		c.Convey("upload object", func(c convey.C) {
 			c.Convey("no auth", func() {
 				re := client.RequestEditors
@@ -124,7 +127,7 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 		//commit object to branch
 		c.Convey("commit object to branch", func(_ convey.C) {
-			commitWip(ctx, client, userName, repoName, branchName, "test commit msg")
+			_ = commitWip(ctx, client, userName, repoName, branchName, "test commit msg")
 		})
 
 		c.Convey("head object", func(c convey.C) {
@@ -303,6 +306,91 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				exectEtag := fmt.Sprintf(`"%s"`, hex.EncodeToString(reader.Md5.Sum(nil)))
 				convey.So(etag, convey.ShouldEqual, exectEtag)
 			})
+		})
+
+		c.Convey("get files", func(c convey.C) {
+			repoName := "testGetFiles"
+			branchName := "ggct"
+			c.Convey("init", func() {
+				_ = createRepo(ctx, client, repoName, false)
+				_ = createBranch(ctx, client, userName, repoName, "main", branchName)
+			})
+			c.Convey("no auth", func() {
+				re := client.RequestEditors
+				client.RequestEditors = nil
+				resp, err := client.GetFiles(ctx, userName, repoName, &api.GetFilesParams{
+					RefName: "main",
+					Pattern: utils.String("*"),
+					Type:    api.RefTypeBranch,
+				})
+				client.RequestEditors = re
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
+			})
+
+			c.Convey("fail to get object in non exit user", func() {
+				resp, err := client.GetFiles(ctx, "fakeuser", repoName, &api.GetFilesParams{
+					RefName: "main",
+					Pattern: utils.String("*"),
+					Type:    api.RefTypeBranch,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
+			})
+
+			c.Convey("fail to get object in non exit repo", func() {
+				resp, err := client.GetFiles(ctx, userName, "fakerepo", &api.GetFilesParams{
+					RefName: "main",
+					Pattern: utils.String("*"),
+					Type:    api.RefTypeBranch,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
+			})
+
+			c.Convey("fail to get object in non exit branch", func() {
+				resp, err := client.GetFiles(ctx, userName, repoName, &api.GetFilesParams{
+					RefName: "main_bak",
+					Pattern: utils.String("*"),
+					Type:    api.RefTypeBranch,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
+			})
+
+			c.Convey("forbidden get object in others", func() {
+				resp, err := client.GetFiles(ctx, "jimmy", "happygo", &api.GetFilesParams{
+					RefName: "main",
+					Pattern: utils.String("*"),
+					Type:    api.RefTypeBranch,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
+			})
+
+			c.Convey("list success", func() {
+				_ = createWip(ctx, client, userName, repoName, branchName)
+				_ = uploadObject(ctx, client, userName, repoName, branchName, "a/b.txt")
+				_ = uploadObject(ctx, client, userName, repoName, branchName, "a/e.txt")
+				_ = uploadObject(ctx, client, userName, repoName, branchName, "a/g.txt")
+				_ = commitWip(ctx, client, userName, repoName, branchName, "wip")
+
+				resp, err := client.GetFiles(ctx, userName, repoName, &api.GetFilesParams{
+					RefName: branchName,
+					Pattern: utils.String("a/*"),
+					Type:    api.RefTypeBranch,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				result, err := api.ParseGetFilesResponse(resp)
+				convey.So(err, convey.ShouldBeNil)
+				convey.ShouldHaveLength(3, *result.JSON200)
+				convey.ShouldEqual("a/b.txt", (*result.JSON200)[0])
+				convey.ShouldEqual("a/e.txt", (*result.JSON200)[1])
+				convey.ShouldEqual("a/g.txt", (*result.JSON200)[2])
+			})
+
 		})
 	}
 }
