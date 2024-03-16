@@ -1623,20 +1623,6 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/RefType"
-        - in: query
-          name: recursive
-          description: recursive get entries (include sub files)
-          required: false
-          allowEmptyValue: true
-          schema:
-            type: boolean
-        - in: query
-          name: pattern
-          description: pattern to get files
-          required: false
-          allowEmptyValue: true
-          schema:
-            type: boolean
       responses:
         200:
           description: commit
