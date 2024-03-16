@@ -1372,6 +1372,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Wip"
+        201:
+          description: a new working in process created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Wip"
         400:
           description: ValidationError
         401:
