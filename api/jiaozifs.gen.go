@@ -5871,6 +5871,7 @@ type GetWipResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *Wip
+	JSON201      *Wip
 }
 
 // Status returns HTTPResponse.Status
@@ -7508,6 +7509,13 @@ func ParseGetWipResponse(rsp *http.Response) (*GetWipResponse, error) {
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest Wip
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
 
 	}
 
@@ -11536,13 +11544,14 @@ var swaggerSpec = []string{
 	"h1ViXFdiOvzJnRfXaAxzx+eO3ZVcElg8mJm07uO6Gh3G3vW/XTGaAiR3aCldQHxSugpYozg0cGaa95Te",
 	"rXdYLDF7Yo3p3H5M0XznKFqSiM9mEOwx/Iyu6MLWPEQ7BGO/A+qjrhZWLxNW3PDJQ+13cusQ864q31tq",
 	"M/XyU0s7m8L6l+tcxe5Xvh/X5d/Ya1L5KzQJiOPrdq7w6YKlGxZj+8pSb7OiaQt2zx8/ERDzSyALLi5Y",
-	"MtPqmAqOfm0pJU1kV6ixnf2tqIfu3qEUDpLvvVRaLzGut+atnjxvdIDXuBPe7x741m5a5Cq1q0SOQqc2",
-	"z99ozvVmpXh2VIyt+H59Rfe6UC4vA9K1FnxlaWvdj51rzICLifMncoPcoWL5LD1AqCto2wTyHkIWertp",
-	"FN+SfXxlj+8Su02CjsHuTniw98ZjkJLO2kiL5eyWRQIPd+2DWD5yvw6dTUsCWTA1Jwks7sXHG3k/uL6K",
-	"1OsbGoYnh30r3qy01mNhwU1X1752C/5jL+D9ytLNUPcBbBkXLK3tFVPBsei7VrmVCMMTAV0BlyB6gu5/",
-	"gMM8an5UHUJ2RXi45lsNcxvx2QjRj3ESan7foG2umcR7g0DHcDaoVwT5XNE9S3WlIFoTE0YEtCOKwjcf",
-	"tbRv0Shq4uPas7vqp8Tdp3mja+dnyTH8UX6pu/6n/eZ2/WEe0cGn5dew8xNDlI9r0a4koZnFIwlSbu6u",
-	"ld+6PhqPI+7TaM6lOnr56q+HL8c0ZePLQ6+pwWs7LF49v/m/AAAA///zcrj5Wa4AAA==",
+	"MtPqmAqOfm0pJU1kV6ixnf2tqIfu3qEUDpKxdPjhrgemRK/rzeGJ/TTd/Vds6zWb60FlqwfgG50jNq6m",
+	"97uOvrULH7lm7yqfpNCwzdNIHHq4UUWgHdWEKz6jX9G9LrDNq5F0LUlfWdpafmTnGjPgfuT8iVxkd0Gd",
+	"lf8DhLqCtk0g7yEkw7ebRvFJ28dXffkusdvkCRns7oQHe309BinprI20WM5uWatw5x6J5SN3L9HntSSQ",
+	"BVNz47Dcg6s58n5wfZyp16c8DE8O+1a8WfCtx8KCe7+u7fUW3NhewPuVpZuh7gPYuS5YWtuypoJj7Xmt",
+	"ciuBjicCugIuQfQE3f8Ah3nU/LY7hOyK8HDNJyPmNvC0EaIf4yTU/L5Bu20zifcGgY7hbGyxiDW6goyW",
+	"6kpdtiYmjAhoRxSFb76tad+iUdTEx7VHiNUvmrsPFUfXzq+jYxSm/GB4/U/76e/6wzywhE/Lj3LnB5co",
+	"H9eiXcmFM4tHEqTcXKErP7l9NB5H3KfRnEt19PLVXw9fjmnKxpeHXlOD13ZYvHp+838BAAD//28XbVvg",
+	"rgAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

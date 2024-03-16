@@ -85,6 +85,7 @@ func (wipCtl WipController) GetWip(ctx context.Context, w *api.JiaozifsResponse,
 	}
 	if isNew {
 		w.JSON(wipToDto(wip), http.StatusCreated)
+		return
 	}
 	w.JSON(wipToDto(wip))
 }
