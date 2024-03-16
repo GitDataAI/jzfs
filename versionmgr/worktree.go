@@ -443,23 +443,33 @@ func (workTree *WorkTree) Ls(ctx context.Context, pattern string) ([]FullTreeEnt
 	return workTree.getFullEntry(ctx, lastNode.Node().SubObjects)
 }
 
-func (workTree *WorkTree) GetFiles(ctx context.Context, pattern string) ([]string, error) {
+type TreeManifest struct {
+	Size     int64    `json:"size"`
+	FileList []string `json:"file_list"`
+}
+
+func (workTree *WorkTree) GetTreeManifest(ctx context.Context, pattern string) (TreeManifest, error) {
 	//todo match all files, it maybe slow maybe need a new algo like filepath.Glob
 	wk := FileWalk{curNode: workTree.root, object: workTree.object}
-	files := make([]string, 0)
 	g, err := glob.Compile(pattern)
 	if err != nil {
-		return files, err
+		return TreeManifest{}, err
 	}
 
-	err = wk.Walk(ctx, func(path string) error {
+	files := make([]string, 0)
+	var size int64
+	err = wk.Walk(ctx, func(blob *models.Blob, path string) error {
 		fmt.Println(path)
 		if g.Match(path) {
+			size += blob.Size
 			files = append(files, path)
 		}
 		return nil
 	})
-	return files, err
+	return TreeManifest{
+		Size:     size,
+		FileList: files,
+	}, err
 }
 
 func (workTree *WorkTree) getFullEntry(ctx context.Context, treeEntries []models.TreeEntry) ([]FullTreeEntry, error) {

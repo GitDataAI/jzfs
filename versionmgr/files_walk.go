@@ -21,7 +21,7 @@ type nodeWithPath struct {
 	path    string
 }
 
-func (wk FileWalk) Walk(ctx context.Context, fn func(path string) error) error {
+func (wk FileWalk) Walk(ctx context.Context, fn func(blob *models.Blob, path string) error) error {
 	cache := list.New()
 	cache.PushFront(nodeWithPath{wk.curNode, ""})
 	for {
@@ -47,7 +47,13 @@ func (wk FileWalk) Walk(ctx context.Context, fn func(path string) error) error {
 			if subNodes[i].IsDir {
 				continue
 			}
-			err := fn(path.Join(curNode.path, subNodes[i].Name))
+
+			blob, err := wk.object.Blob(ctx, subNodes[i].Hash)
+			if err != nil {
+				return err
+			}
+
+			err = fn(blob, path.Join(curNode.path, subNodes[i].Name))
 			if err != nil {
 				return err
 			}
