@@ -177,52 +177,52 @@ func TestWorkTreeGetFiles(t *testing.T) {
 	}
 
 	t.Run("all", func(t *testing.T) {
-		newPaths, err := workTree.GetFiles(ctx, "*")
+		manifest, err := workTree.GetTreeManifest(ctx, "*")
 		require.NoError(t, err)
-		require.Equal(t, 7, len(newPaths))
-		require.Equal(t, "a.txt", newPaths[0])
-		require.Equal(t, "a/b/c.txt", newPaths[1])
-		require.Equal(t, "a/b/d.txt", newPaths[2])
-		require.Equal(t, "ff/b/c.txt", newPaths[3])
-		require.Equal(t, "ff/b/d.txt", newPaths[4])
-		require.Equal(t, "ff/b/e.jpg", newPaths[5])
-		require.Equal(t, "ff/b/f.jpg", newPaths[6])
+		require.Equal(t, 7, len(manifest.FileList))
+		require.Equal(t, "a.txt", manifest.FileList)
+		require.Equal(t, "a/b/c.txt", manifest.FileList)
+		require.Equal(t, "a/b/d.txt", manifest.FileList)
+		require.Equal(t, "ff/b/c.txt", manifest.FileList)
+		require.Equal(t, "ff/b/d.txt", manifest.FileList)
+		require.Equal(t, "ff/b/e.jpg", manifest.FileList)
+		require.Equal(t, "ff/b/f.jpg", manifest.FileList)
 	})
 
 	t.Run("single file", func(t *testing.T) {
-		newPaths, err := workTree.GetFiles(ctx, "a/b/d.txt")
+		manifest, err := workTree.GetTreeManifest(ctx, "a/b/d.txt")
 		require.NoError(t, err)
-		require.Equal(t, 1, len(newPaths))
-		require.Equal(t, "a/b/d.txt", newPaths[0])
+		require.Equal(t, 1, len(manifest.FileList))
+		require.Equal(t, "a/b/d.txt", manifest.FileList[0])
 	})
 
 	t.Run("single path", func(t *testing.T) {
-		newPaths, err := workTree.GetFiles(ctx, "a")
+		manifest, err := workTree.GetTreeManifest(ctx, "a")
 		require.NoError(t, err)
-		require.Equal(t, 0, len(newPaths))
+		require.Equal(t, 0, len(manifest.FileList))
 	})
 
 	t.Run("ext match", func(t *testing.T) {
-		newPaths, err := workTree.GetFiles(ctx, "*.jpg")
+		manifest, err := workTree.GetTreeManifest(ctx, "*.jpg")
 		require.NoError(t, err)
-		require.Equal(t, 2, len(newPaths))
-		require.Equal(t, "ff/b/e.jpg", newPaths[0])
-		require.Equal(t, "ff/b/f.jpg", newPaths[1])
+		require.Equal(t, 2, len(manifest.FileList))
+		require.Equal(t, "ff/b/e.jpg", manifest.FileList[0])
+		require.Equal(t, "ff/b/f.jpg", manifest.FileList[1])
 	})
 
 	t.Run("filename match", func(t *testing.T) {
-		newPaths, err := workTree.GetFiles(ctx, "*/e.jpg")
+		manifest, err := workTree.GetTreeManifest(ctx, "*/e.jpg")
 		require.NoError(t, err)
-		require.Equal(t, 1, len(newPaths))
-		require.Equal(t, "ff/b/e.jpg", newPaths[0])
+		require.Equal(t, 1, len(manifest.FileList))
+		require.Equal(t, "ff/b/e.jpg", manifest.FileList[0])
 	})
 
 	t.Run("sub", func(t *testing.T) {
-		newPaths, err := workTree.GetFiles(ctx, "a/*")
+		manifest, err := workTree.GetTreeManifest(ctx, "a/*")
 		require.NoError(t, err)
-		require.Equal(t, 2, len(newPaths))
-		require.Equal(t, "a/b/c.txt", newPaths[0])
-		require.Equal(t, "a/b/d.txt", newPaths[1])
+		require.Equal(t, 2, len(manifest.FileList))
+		require.Equal(t, "a/b/c.txt", manifest.FileList[0])
+		require.Equal(t, "a/b/d.txt", manifest.FileList[1])
 	})
 
 }

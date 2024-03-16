@@ -456,11 +456,11 @@ func (oct ObjectController) GetFiles(ctx context.Context, w *api.JiaozifsRespons
 		return
 	}
 
-	files, err := workTree.GetFiles(ctx, utils.StringValue(params.Pattern))
+	treeManifest, err := workTree.GetTreeManifest(ctx, utils.StringValue(params.Pattern))
 	if err != nil {
 		w.Error(err)
 		return
 	}
 
-	w.JSON(files)
+	w.JSON(treeManifest.FileList)
 }

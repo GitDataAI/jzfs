@@ -37,7 +37,7 @@ func TestFileWalk_Walk(t *testing.T) {
 		curNode: workTree.root,
 	}
 	var paths []string
-	err = wk.Walk(ctx, func(path string) error {
+	err = wk.Walk(ctx, func(_ *models.Blob, path string) error {
 		fmt.Println(path)
 		paths = append(paths, path)
 		return nil
