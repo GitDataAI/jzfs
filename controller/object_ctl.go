@@ -191,6 +191,7 @@ func (oct ObjectController) GetObject(ctx context.Context, w *api.JiaozifsRespon
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("X-Frame-Options", "SAMEORIGIN")
 	w.Header().Set("Content-Security-Policy", "default-src 'none'")
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, name))
 	_, err = io.Copy(w, reader)
 	if err != nil {
 		objLog.With(

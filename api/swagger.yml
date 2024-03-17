@@ -1124,6 +1124,11 @@ paths:
                 type: string
                 format: binary
           headers:
+            Content-Disposition:
+              schema:
+                type: string
+                description: response file
+                example: attachment; filename="name.pdf"
             Content-Length:
               schema:
                 type: integer

@@ -69,6 +69,16 @@ var uploadCmd = &cobra.Command{
 			uploadPath = "/"
 		}
 
+		ignoreRootName, err := cmd.Flags().GetBool("ignoreRootName")
+		if err != nil {
+			return err
+		}
+
+		replace, err := cmd.Flags().GetBool("replace")
+		if err != nil {
+			return err
+		}
+
 		if len(path) == 0 {
 			return errors.New("path not set")
 		}
@@ -105,13 +115,19 @@ var uploadCmd = &cobra.Command{
 				return err
 			}
 			relativePath := strings.Replace(file, path, "", 1)
-			destPath := path2.Join(uploadPath, basename, relativePath)
+
+			var destPath string
+			if !ignoreRootName {
+				destPath = path2.Join(uploadPath, basename, relativePath)
+			} else {
+				destPath = path2.Join(uploadPath, relativePath)
+			}
 
 			resp, err := client.UploadObjectWithBody(cmd.Context(), owner, repo, &api.UploadObjectParams{
 				RefName: refName,
 				// Path relative to the ref
 				Path:      destPath,
-				IsReplace: utils.Bool(true),
+				IsReplace: utils.Bool(replace),
 			}, "application/json", fs)
 			if err != nil {
 				return err
@@ -136,4 +152,5 @@ func init() {
 	uploadCmd.Flags().String("refName", "main", "branch name")
 	uploadCmd.Flags().String("uploadPath", "", "path to save in server")
 	uploadCmd.Flags().Bool("replace", true, "path to save in server")
+	uploadCmd.Flags().Bool("ignoreRootName", false, "ignore root name")
 }
