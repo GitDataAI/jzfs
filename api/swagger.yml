@@ -1239,6 +1239,13 @@ paths:
       tags:
         - objects
       operationId: uploadObject
+      parameters:
+        - in: query
+          name: isReplace
+          description: indicate to replace existing object or not
+          allowEmptyValue: true
+          schema:
+            type: boolean
       x-validation-exclude-body: true
       requestBody:
         content:
@@ -1265,6 +1272,8 @@ paths:
           description: ValidationError
         401:
           description: Unauthorized ValidationError
+        409:
+          description: Resource Conflict
         403:
           description: Forbidden
         404:

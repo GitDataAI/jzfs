@@ -25,8 +25,8 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			_ = createRepo(ctx, client, repoName, false)
 			_ = createBranch(ctx, client, userName, repoName, "main", branchName)
 			_ = createWip(ctx, client, userName, repoName, branchName)
-			_ = uploadObject(ctx, client, userName, repoName, branchName, "m.dat")
-			_ = uploadObject(ctx, client, userName, repoName, branchName, "g/m.dat")
+			_ = uploadObject(ctx, client, userName, repoName, branchName, "m.dat", true)
+			_ = uploadObject(ctx, client, userName, repoName, branchName, "g/m.dat", true)
 		})
 
 		c.Convey("head object", func(c convey.C) {
@@ -298,10 +298,10 @@ func WipObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 		testBranchName := "test/empty_branch"
 
 		c.Convey("update objects and create empty branch", func(_ convey.C) {
-			uploadObject(ctx, client, userName, repoName, branchName, "a/m.dat")
-			uploadObject(ctx, client, userName, repoName, branchName, "a/b.dat")
-			uploadObject(ctx, client, userName, repoName, branchName, "b.dat")
-			uploadObject(ctx, client, userName, repoName, branchName, "c.dat")
+			uploadObject(ctx, client, userName, repoName, branchName, "a/m.dat", true)
+			uploadObject(ctx, client, userName, repoName, branchName, "a/b.dat", true)
+			uploadObject(ctx, client, userName, repoName, branchName, "b.dat", true)
+			uploadObject(ctx, client, userName, repoName, branchName, "c.dat", true)
 
 			createBranch(ctx, client, userName, repoName, "main", testBranchName)
 			createWip(ctx, client, userName, repoName, testBranchName)
@@ -481,11 +481,11 @@ func UpdateWipSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			_ = createWip(ctx, client, userName, repoName, branchName)
 
 			//make wip base commit has value
-			_ = uploadObject(ctx, client, userName, repoName, branchName, "a.txt")
+			_ = uploadObject(ctx, client, userName, repoName, branchName, "a.txt", true)
 			_ = commitWip(ctx, client, userName, repoName, branchName, "test")
 
-			_ = uploadObject(ctx, client, userName, repoName, branchName, "m.dat")
-			_ = uploadObject(ctx, client, userName, repoName, branchName, "g/m.dat")
+			_ = uploadObject(ctx, client, userName, repoName, branchName, "m.dat", true)
+			_ = uploadObject(ctx, client, userName, repoName, branchName, "g/m.dat", true)
 		})
 
 		c.Convey("get wip", func(_ convey.C) {
