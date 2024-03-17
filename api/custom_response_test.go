@@ -77,6 +77,17 @@ func TestJiaozifsResponse(t *testing.T) {
 		jzResp.Error(fmt.Errorf("mock"))
 	})
 
+	t.Run("err code", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		resp := NewMockResponseWriter(ctrl)
+		jzResp := JiaozifsResponse{resp}
+
+		resp.EXPECT().WriteHeader(http.StatusConflict)
+		resp.EXPECT().Write([]byte("mock code 409 msg Conflict"))
+
+		jzResp.Error(fmt.Errorf("mock %w", ErrCode(http.StatusConflict)))
+	})
+
 	t.Run("error not found", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		resp := NewMockResponseWriter(ctrl)

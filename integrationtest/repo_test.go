@@ -405,7 +405,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 			c.Convey("add commit to branch", func(_ convey.C) {
 				createWip(ctx, client, userName, repoName, controller.DefaultBranchName)
-				uploadObject(ctx, client, userName, repoName, controller.DefaultBranchName, "a.txt")
+				uploadObject(ctx, client, userName, repoName, controller.DefaultBranchName, "a.txt", true)
 				_ = commitWip(ctx, client, userName, repoName, controller.DefaultBranchName, "first commit")
 			})
 
@@ -423,9 +423,9 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 
 			c.Convey("add double commit to branch", func(_ convey.C) {
-				uploadObject(ctx, client, userName, repoName, controller.DefaultBranchName, "b.txt")
+				uploadObject(ctx, client, userName, repoName, controller.DefaultBranchName, "b.txt", true)
 				_ = commitWip(ctx, client, userName, repoName, controller.DefaultBranchName, "second commit")
-				uploadObject(ctx, client, userName, repoName, controller.DefaultBranchName, "c.txt")
+				uploadObject(ctx, client, userName, repoName, controller.DefaultBranchName, "c.txt", true)
 				_ = commitWip(ctx, client, userName, repoName, controller.DefaultBranchName, "third commit")
 			})
 

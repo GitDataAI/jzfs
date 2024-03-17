@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -388,7 +389,28 @@ func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsRes
 
 	path := versionmgr.CleanPath(params.Path)
 	err = oct.Repo.Transaction(ctx, func(dRepo models.IRepo) error {
-		err = workTree.AddLeaf(ctx, path, blob)
+		oldData, _, err := workTree.FindBlob(ctx, path)
+		if err != nil && !errors.Is(err, versionmgr.ErrPathNotFound) {
+			return err
+		}
+		if oldData == nil {
+			err = workTree.AddLeaf(ctx, path, blob)
+			if err != nil {
+				return err
+			}
+			return dRepo.WipRepo().UpdateByID(ctx, models.NewUpdateWipParams(workRepo.CurWip().ID).SetCurrentTree(workTree.Root().Hash()))
+		}
+
+		if bytes.Equal(oldData.CheckSum, blob.CheckSum) {
+			return nil
+		}
+
+		if !utils.BoolValue(params.IsReplace) {
+			return fmt.Errorf("object exit %w", api.ErrCode(http.StatusConflict))
+		}
+
+		//allow to update
+		err = workTree.ReplaceLeaf(ctx, path, blob)
 		if err != nil {
 			return err
 		}

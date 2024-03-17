@@ -26,9 +26,9 @@ func GetEntriesInRefSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			_ = createRepo(ctx, client, repoName, false)
 			_ = createBranch(ctx, client, userName, repoName, "main", branchName)
 			_ = createWip(ctx, client, userName, repoName, branchName)
-			_ = uploadObject(ctx, client, userName, repoName, branchName, "m.dat")
-			_ = uploadObject(ctx, client, userName, repoName, branchName, "g/x.dat")
-			_ = uploadObject(ctx, client, userName, repoName, branchName, "g/m.dat")
+			_ = uploadObject(ctx, client, userName, repoName, branchName, "m.dat", true)
+			_ = uploadObject(ctx, client, userName, repoName, branchName, "g/x.dat", true)
+			_ = uploadObject(ctx, client, userName, repoName, branchName, "g/m.dat", true)
 		})
 
 		c.Convey("get wip entries", func(c convey.C) {
@@ -230,8 +230,8 @@ func GetEntriesInRefSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 		c.Convey("prepare data for commit test", func(_ convey.C) {
 			createWip(ctx, client, userName, repoName, "main")
-			uploadObject(ctx, client, userName, repoName, "main", "a.dat")   //delete\
-			uploadObject(ctx, client, userName, repoName, "main", "g/m.dat") //modify
+			uploadObject(ctx, client, userName, repoName, "main", "a.dat", true)   //delete\
+			uploadObject(ctx, client, userName, repoName, "main", "g/m.dat", true) //modify
 			_ = commitWip(ctx, client, userName, repoName, "main", "test")
 		})
 
@@ -389,10 +389,10 @@ func GetCommitChangesSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			loginAndSwitch(ctx, client, userName, false)
 			createRepo(ctx, client, repoName, false)
 			createWip(ctx, client, userName, repoName, "main")
-			uploadObject(ctx, client, userName, repoName, "main", "m.dat")
+			uploadObject(ctx, client, userName, repoName, "main", "m.dat", true)
 			_ = commitWip(ctx, client, userName, repoName, "main", "test")
 
-			uploadObject(ctx, client, userName, repoName, "main", "g/x.dat")
+			uploadObject(ctx, client, userName, repoName, "main", "g/x.dat", true)
 			_ = commitWip(ctx, client, userName, repoName, "main", "test")
 
 			//delete
@@ -400,10 +400,10 @@ func GetCommitChangesSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 			//modify
 			deleteObject(ctx, client, userName, repoName, "main", "m.dat")
-			uploadObject(ctx, client, userName, repoName, "main", "m.dat")
+			uploadObject(ctx, client, userName, repoName, "main", "m.dat", true)
 
 			//insert
-			uploadObject(ctx, client, userName, repoName, "main", "g/m.dat")
+			uploadObject(ctx, client, userName, repoName, "main", "g/m.dat", true)
 			_ = commitWip(ctx, client, userName, repoName, "main", "test")
 
 		})
