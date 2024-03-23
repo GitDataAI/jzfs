@@ -450,7 +450,7 @@ type TreeManifest struct {
 
 func (workTree *WorkTree) GetTreeManifest(ctx context.Context, pattern string) (TreeManifest, error) {
 	//todo match all files, it maybe slow maybe need a new algo like filepath.Glob
-	pattern = strings.ReplaceAll(pattern, "\\", "/")
+	pattern = CleanPath(pattern)
 	wk := FileWalk{curNode: workTree.root, object: workTree.object}
 	g, err := glob.Compile(pattern)
 	if err != nil {
