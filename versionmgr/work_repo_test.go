@@ -367,9 +367,7 @@ func TestWorkRepositoryMergeState(t *testing.T) {
 
 		project, err := makeRepository(ctx, repo, user, t.Name())
 		require.NoError(t, err)
-		testData1 := `
-1|a.txt	|a
-`
+		testData1 := `1|a.txt	|a`
 		workRepo := NewWorkRepositoryFromAdapter(ctx, user, project, repo, adapter)
 
 		//base branch
@@ -532,6 +530,47 @@ func TestWorkRepositoryMergeState(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, changes, 2)
 	})
+}
+
+func TestWorkRepositoryCreateTag(t *testing.T) {
+	ctx := context.Background()
+	closeDB, _, db := testhelper.SetupDatabase(ctx, t)
+	defer closeDB()
+	repo := models.NewRepo(db)
+
+	user, err := makeUser(ctx, repo.UserRepo(), "admin")
+	require.NoError(t, err)
+
+	project, err := makeRepository(ctx, repo, user, t.Name())
+	require.NoError(t, err)
+
+	adapter := mem.New(ctx)
+	workRepo := NewWorkRepositoryFromAdapter(ctx, user, project, repo, adapter)
+
+	err = workRepo.CheckOut(ctx, InBranch, "main")
+	require.NoError(t, err)
+
+	_, err = workRepo.CreateTag(ctx, "v0.0.1", nil)
+	require.Error(t, err)
+
+	testData1 := `
+1|a.txt	|a
+`
+	_, err = addChangesToWip(ctx, workRepo, "main", "", testData1)
+	require.NoError(t, err)
+
+	_, err = workRepo.CreateTag(ctx, "v0.0.1", nil)
+	require.Error(t, err)
+
+	err = workRepo.CheckOut(ctx, InBranch, "main")
+	require.NoError(t, err)
+
+	_, err = workRepo.CreateTag(ctx, "v0.0.1", nil)
+	require.NoError(t, err)
+
+	//duplicate tag
+	_, err = workRepo.CreateTag(ctx, "v0.0.1", nil)
+	require.Error(t, err)
 }
 
 func makeUser(ctx context.Context, userRepo models.IUserRepo, name string) (*models.User, error) {

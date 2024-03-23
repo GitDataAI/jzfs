@@ -313,7 +313,7 @@ func (repositoryCtl RepositoryController) DeleteRepository(ctx context.Context, 
 		}
 
 		//delete tag
-		_, err = repo.TagRepo(repository.ID).Delete(ctx, models.NewDeleteParams())
+		_, err = repo.TagRepo().Delete(ctx, models.NewDeleteTagParams().SetRepositoryID(repository.ID))
 		if err != nil {
 			return err
 		}

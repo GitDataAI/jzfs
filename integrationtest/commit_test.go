@@ -228,6 +228,29 @@ func GetEntriesInRefSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 		})
 
+		c.Convey("get tag entries", func(c convey.C) {
+			tagName := "v0.0.1"
+			c.Convey("init", func() {
+				_ = createTag(ctx, client, userName, repoName, tagName, branchName)
+			})
+
+			c.Convey("success to get entries in root", func() {
+				resp, err := client.GetEntriesInRef(ctx, userName, repoName, &api.GetEntriesInRefParams{
+					Path: utils.String("/"),
+					Ref:  utils.String(tagName),
+					Type: api.RefTypeTag,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				result, err := api.ParseGetEntriesInRefResponse(resp)
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(*result.JSON200, convey.ShouldHaveLength, 2)
+				convey.So((*result.JSON200)[0].Name, convey.ShouldEqual, "g")
+				convey.So((*result.JSON200)[1].Name, convey.ShouldEqual, "m.dat")
+			})
+		})
+
 		c.Convey("prepare data for commit test", func(_ convey.C) {
 			createWip(ctx, client, userName, repoName, "main")
 			uploadObject(ctx, client, userName, repoName, "main", "a.dat", true)   //delete\

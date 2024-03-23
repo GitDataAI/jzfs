@@ -66,6 +66,34 @@ func TestValidateRepoName(t *testing.T) {
 	}
 }
 
+func TestValidateTagName(t *testing.T) {
+	//Validate Repo names
+	validTagNames := []string{"myrepo", "v00.00.01", "user123", "tag", "project-name", "repo123_name"}
+	for _, name := range validTagNames {
+		err := ValidateTagName(name)
+		if err != nil {
+			t.Errorf("Expected no error for repo name '%s', but got: %s", name, err)
+		}
+	}
+
+	//Invalidate Repo names
+	invalidTagNames := []struct {
+		name string
+	}{
+		{"invalidaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+		{"invalid/name"},
+		{"分支/name"},
+		{"私は支店です/name"},
+	}
+
+	for _, testCase := range invalidTagNames {
+		err := ValidateTagName(testCase.name)
+		if err == nil {
+			t.Errorf("expect error")
+		}
+	}
+}
+
 func TestValidateUsername(t *testing.T) {
 	//Validate Username
 	validUsernames := []string{"user123", "username", "user_name", "user-123"}
