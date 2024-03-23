@@ -158,6 +158,19 @@ func createBranch(ctx context.Context, client *api.Client, user string, repoName
 	return result.JSON201
 }
 
+func createTag(ctx context.Context, client *api.Client, user string, repoName string, tagName, target string) *api.Branch {
+	resp, err := client.CreateTag(ctx, user, repoName, api.CreateTagJSONRequestBody{
+		Name:   tagName,
+		Target: target,
+	})
+	convey.So(err, convey.ShouldBeNil)
+	convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
+
+	result, err := api.ParseCreateBranchResponse(resp)
+	convey.So(err, convey.ShouldBeNil)
+	return result.JSON201
+}
+
 func createRepo(ctx context.Context, client *api.Client, repoName string, visible bool) *api.Repository {
 	resp, err := client.CreateRepository(ctx, api.CreateRepositoryJSONRequestBody{
 		Name:    repoName,
@@ -218,6 +231,17 @@ func commitWip(ctx context.Context, client *api.Client, user string, repoName st
 	result, err := api.ParseCommitWipResponse(resp)
 	convey.So(err, convey.ShouldBeNil)
 	return result.JSON201
+}
+
+func getBranch(ctx context.Context, client *api.Client, user string, repoName string, refName string) *api.Branch {
+	resp, err := client.GetBranch(ctx, user, repoName, &api.GetBranchParams{
+		RefName: refName,
+	})
+	convey.So(err, convey.ShouldBeNil)
+
+	result, err := api.ParseGetBranchResponse(resp)
+	convey.So(err, convey.ShouldBeNil)
+	return result.JSON200
 }
 
 func createMergeRequest(ctx context.Context, client *api.Client, user string, repoName string, sourceBranch string, targetBranch string) *api.MergeRequest {

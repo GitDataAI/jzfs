@@ -349,6 +349,33 @@ type Signature struct {
 	When  int64               `json:"when"`
 }
 
+// Tag defines model for Tag.
+type Tag struct {
+	CreatedAt    int64              `json:"created_at"`
+	CreatorId    openapi_types.UUID `json:"creator_id"`
+	Id           openapi_types.UUID `json:"id"`
+	Message      *string            `json:"message,omitempty"`
+	Name         string             `json:"name"`
+	RepositoryId openapi_types.UUID `json:"repository_id"`
+	Target       string             `json:"target"`
+	UpdatedAt    int64              `json:"updated_at"`
+}
+
+// TagCreation defines model for TagCreation.
+type TagCreation struct {
+	Message *string `json:"message,omitempty"`
+	Name    string  `json:"name"`
+
+	// Target target branch name or commit hex, first try branch and then commit
+	Target string `json:"target"`
+}
+
+// TagList defines model for TagList.
+type TagList struct {
+	Pagination Pagination `json:"pagination"`
+	Results    []Tag      `json:"results"`
+}
+
 // UpdateMergeRequest defines model for UpdateMergeRequest.
 type UpdateMergeRequest struct {
 	Description *string `json:"description,omitempty"`
@@ -600,6 +627,28 @@ type ListMergeRequestsParams struct {
 	State  *int              `form:"state,omitempty" json:"state,omitempty"`
 }
 
+// DeleteTagParams defines parameters for DeleteTag.
+type DeleteTagParams struct {
+	RefName string `form:"refName" json:"refName"`
+}
+
+// GetTagParams defines parameters for GetTag.
+type GetTagParams struct {
+	RefName string `form:"refName" json:"refName"`
+}
+
+// ListTagsParams defines parameters for ListTags.
+type ListTagsParams struct {
+	// Prefix return items prefixed with this value
+	Prefix *PaginationPrefix `form:"prefix,omitempty" json:"prefix,omitempty"`
+
+	// After return items after this value
+	After *PaginationInt64After `form:"after,omitempty" json:"after,omitempty"`
+
+	// Amount how many items to return
+	Amount *PaginationAmount `form:"amount,omitempty" json:"amount,omitempty"`
+}
+
 // ChangeVisibleParams defines parameters for ChangeVisible.
 type ChangeVisibleParams struct {
 	Visible bool `form:"visible" json:"visible"`
@@ -720,6 +769,9 @@ type UpdateMergeRequestJSONRequestBody = UpdateMergeRequest
 
 // MergeJSONRequestBody defines body for Merge for application/json ContentType.
 type MergeJSONRequestBody = MergeMergeRequest
+
+// CreateTagJSONRequestBody defines body for CreateTag for application/json ContentType.
+type CreateTagJSONRequestBody = TagCreation
 
 // RegisterJSONRequestBody defines body for Register for application/json ContentType.
 type RegisterJSONRequestBody = UserRegisterInfo
@@ -901,6 +953,20 @@ type ClientInterface interface {
 	MergeWithBody(ctx context.Context, owner string, repository string, mrSeq uint64, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	Merge(ctx context.Context, owner string, repository string, mrSeq uint64, body MergeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteTag request
+	DeleteTag(ctx context.Context, owner string, repository string, params *DeleteTagParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetTag request
+	GetTag(ctx context.Context, owner string, repository string, params *GetTagParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateTagWithBody request with any body
+	CreateTagWithBody(ctx context.Context, owner string, repository string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateTag(ctx context.Context, owner string, repository string, body CreateTagJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListTags request
+	ListTags(ctx context.Context, owner string, repository string, params *ListTagsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ChangeVisible request
 	ChangeVisible(ctx context.Context, owner string, repository string, params *ChangeVisibleParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -1379,6 +1445,66 @@ func (c *Client) MergeWithBody(ctx context.Context, owner string, repository str
 
 func (c *Client) Merge(ctx context.Context, owner string, repository string, mrSeq uint64, body MergeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewMergeRequest(c.Server, owner, repository, mrSeq, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteTag(ctx context.Context, owner string, repository string, params *DeleteTagParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteTagRequest(c.Server, owner, repository, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetTag(ctx context.Context, owner string, repository string, params *GetTagParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetTagRequest(c.Server, owner, repository, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateTagWithBody(ctx context.Context, owner string, repository string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateTagRequestWithBody(c.Server, owner, repository, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateTag(ctx context.Context, owner string, repository string, body CreateTagJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateTagRequest(c.Server, owner, repository, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListTags(ctx context.Context, owner string, repository string, params *ListTagsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListTagsRequest(c.Server, owner, repository, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3595,6 +3721,273 @@ func NewMergeRequestWithBody(server string, owner string, repository string, mrS
 	return req, nil
 }
 
+// NewDeleteTagRequest generates requests for DeleteTag
+func NewDeleteTagRequest(server string, owner string, repository string, params *DeleteTagParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/repos/%s/%s/tag", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "refName", runtime.ParamLocationQuery, params.RefName); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetTagRequest generates requests for GetTag
+func NewGetTagRequest(server string, owner string, repository string, params *GetTagParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/repos/%s/%s/tag", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if queryFrag, err := runtime.StyleParamWithLocation("form", true, "refName", runtime.ParamLocationQuery, params.RefName); err != nil {
+			return nil, err
+		} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+			return nil, err
+		} else {
+			for k, v := range parsed {
+				for _, v2 := range v {
+					queryValues.Add(k, v2)
+				}
+			}
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateTagRequest calls the generic CreateTag builder with application/json body
+func NewCreateTagRequest(server string, owner string, repository string, body CreateTagJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateTagRequestWithBody(server, owner, repository, "application/json", bodyReader)
+}
+
+// NewCreateTagRequestWithBody generates requests for CreateTag with any type of body
+func NewCreateTagRequestWithBody(server string, owner string, repository string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/repos/%s/%s/tag", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewListTagsRequest generates requests for ListTags
+func NewListTagsRequest(server string, owner string, repository string, params *ListTagsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "owner", runtime.ParamLocationPath, owner)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "repository", runtime.ParamLocationPath, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/repos/%s/%s/tags", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Prefix != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "prefix", runtime.ParamLocationQuery, *params.Prefix); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.After != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "after", runtime.ParamLocationQuery, *params.After); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Amount != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "amount", runtime.ParamLocationQuery, *params.Amount); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewChangeVisibleRequest generates requests for ChangeVisible
 func NewChangeVisibleRequest(server string, owner string, repository string, params *ChangeVisibleParams) (*http.Request, error) {
 	var err error
@@ -4849,6 +5242,20 @@ type ClientWithResponsesInterface interface {
 
 	MergeWithResponse(ctx context.Context, owner string, repository string, mrSeq uint64, body MergeJSONRequestBody, reqEditors ...RequestEditorFn) (*MergeResponse, error)
 
+	// DeleteTagWithResponse request
+	DeleteTagWithResponse(ctx context.Context, owner string, repository string, params *DeleteTagParams, reqEditors ...RequestEditorFn) (*DeleteTagResponse, error)
+
+	// GetTagWithResponse request
+	GetTagWithResponse(ctx context.Context, owner string, repository string, params *GetTagParams, reqEditors ...RequestEditorFn) (*GetTagResponse, error)
+
+	// CreateTagWithBodyWithResponse request with any body
+	CreateTagWithBodyWithResponse(ctx context.Context, owner string, repository string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateTagResponse, error)
+
+	CreateTagWithResponse(ctx context.Context, owner string, repository string, body CreateTagJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateTagResponse, error)
+
+	// ListTagsWithResponse request
+	ListTagsWithResponse(ctx context.Context, owner string, repository string, params *ListTagsParams, reqEditors ...RequestEditorFn) (*ListTagsResponse, error)
+
 	// ChangeVisibleWithResponse request
 	ChangeVisibleWithResponse(ctx context.Context, owner string, repository string, params *ChangeVisibleParams, reqEditors ...RequestEditorFn) (*ChangeVisibleResponse, error)
 
@@ -5537,6 +5944,93 @@ func (r MergeResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r MergeResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteTagResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteTagResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteTagResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetTagResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Tag
+}
+
+// Status returns HTTPResponse.Status
+func (r GetTagResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetTagResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateTagResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *Tag
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateTagResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateTagResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListTagsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *TagList
+}
+
+// Status returns HTTPResponse.Status
+func (r ListTagsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListTagsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -6286,6 +6780,50 @@ func (c *ClientWithResponses) MergeWithResponse(ctx context.Context, owner strin
 		return nil, err
 	}
 	return ParseMergeResponse(rsp)
+}
+
+// DeleteTagWithResponse request returning *DeleteTagResponse
+func (c *ClientWithResponses) DeleteTagWithResponse(ctx context.Context, owner string, repository string, params *DeleteTagParams, reqEditors ...RequestEditorFn) (*DeleteTagResponse, error) {
+	rsp, err := c.DeleteTag(ctx, owner, repository, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteTagResponse(rsp)
+}
+
+// GetTagWithResponse request returning *GetTagResponse
+func (c *ClientWithResponses) GetTagWithResponse(ctx context.Context, owner string, repository string, params *GetTagParams, reqEditors ...RequestEditorFn) (*GetTagResponse, error) {
+	rsp, err := c.GetTag(ctx, owner, repository, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetTagResponse(rsp)
+}
+
+// CreateTagWithBodyWithResponse request with arbitrary body returning *CreateTagResponse
+func (c *ClientWithResponses) CreateTagWithBodyWithResponse(ctx context.Context, owner string, repository string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateTagResponse, error) {
+	rsp, err := c.CreateTagWithBody(ctx, owner, repository, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateTagResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateTagWithResponse(ctx context.Context, owner string, repository string, body CreateTagJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateTagResponse, error) {
+	rsp, err := c.CreateTag(ctx, owner, repository, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateTagResponse(rsp)
+}
+
+// ListTagsWithResponse request returning *ListTagsResponse
+func (c *ClientWithResponses) ListTagsWithResponse(ctx context.Context, owner string, repository string, params *ListTagsParams, reqEditors ...RequestEditorFn) (*ListTagsResponse, error) {
+	rsp, err := c.ListTags(ctx, owner, repository, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListTagsResponse(rsp)
 }
 
 // ChangeVisibleWithResponse request returning *ChangeVisibleResponse
@@ -7136,6 +7674,100 @@ func ParseMergeResponse(rsp *http.Response) (*MergeResponse, error) {
 	return response, nil
 }
 
+// ParseDeleteTagResponse parses an HTTP response from a DeleteTagWithResponse call
+func ParseDeleteTagResponse(rsp *http.Response) (*DeleteTagResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteTagResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseGetTagResponse parses an HTTP response from a GetTagWithResponse call
+func ParseGetTagResponse(rsp *http.Response) (*GetTagResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetTagResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Tag
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateTagResponse parses an HTTP response from a CreateTagWithResponse call
+func ParseCreateTagResponse(rsp *http.Response) (*CreateTagResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateTagResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest Tag
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListTagsResponse parses an HTTP response from a ListTagsWithResponse call
+func ParseListTagsResponse(rsp *http.Response) (*ListTagsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListTagsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest TagList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseChangeVisibleResponse parses an HTTP response from a ChangeVisibleWithResponse call
 func ParseChangeVisibleResponse(rsp *http.Response) (*ChangeVisibleResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -7702,6 +8334,18 @@ type ServerInterface interface {
 	// merge a mergerequest
 	// (POST /repos/{owner}/{repository}/mergerequest/{mrSeq}/merge)
 	Merge(ctx context.Context, w *JiaozifsResponse, r *http.Request, body MergeJSONRequestBody, owner string, repository string, mrSeq uint64)
+	// delete tag
+	// (DELETE /repos/{owner}/{repository}/tag)
+	DeleteTag(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params DeleteTagParams)
+	// get tag
+	// (GET /repos/{owner}/{repository}/tag)
+	GetTag(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params GetTagParams)
+	// create tag
+	// (POST /repos/{owner}/{repository}/tag)
+	CreateTag(ctx context.Context, w *JiaozifsResponse, r *http.Request, body CreateTagJSONRequestBody, owner string, repository string)
+	// list tags
+	// (GET /repos/{owner}/{repository}/tags)
+	ListTags(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params ListTagsParams)
 	// change repository visible(true for public, false for private)
 	// (POST /repos/{owner}/{repository}/visible)
 	ChangeVisible(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params ChangeVisibleParams)
@@ -7938,6 +8582,30 @@ func (_ Unimplemented) UpdateMergeRequest(ctx context.Context, w *JiaozifsRespon
 // merge a mergerequest
 // (POST /repos/{owner}/{repository}/mergerequest/{mrSeq}/merge)
 func (_ Unimplemented) Merge(ctx context.Context, w *JiaozifsResponse, r *http.Request, body MergeJSONRequestBody, owner string, repository string, mrSeq uint64) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// delete tag
+// (DELETE /repos/{owner}/{repository}/tag)
+func (_ Unimplemented) DeleteTag(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params DeleteTagParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// get tag
+// (GET /repos/{owner}/{repository}/tag)
+func (_ Unimplemented) GetTag(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params GetTagParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// create tag
+// (POST /repos/{owner}/{repository}/tag)
+func (_ Unimplemented) CreateTag(ctx context.Context, w *JiaozifsResponse, r *http.Request, body CreateTagJSONRequestBody, owner string, repository string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// list tags
+// (GET /repos/{owner}/{repository}/tags)
+func (_ Unimplemented) ListTags(ctx context.Context, w *JiaozifsResponse, r *http.Request, owner string, repository string, params ListTagsParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -10108,6 +10776,283 @@ func (siw *ServerInterfaceWrapper) Merge(w http.ResponseWriter, r *http.Request)
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
+// DeleteTag operation middleware
+func (siw *ServerInterfaceWrapper) DeleteTag(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteTagParams
+
+	// ------------- Required query parameter "refName" -------------
+
+	if paramValue := r.URL.Query().Get("refName"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "refName"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "refName", r.URL.Query(), &params.RefName)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "refName", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteTag(r.Context(), &JiaozifsResponse{w}, r, owner, repository, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// GetTag operation middleware
+func (siw *ServerInterfaceWrapper) GetTag(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetTagParams
+
+	// ------------- Required query parameter "refName" -------------
+
+	if paramValue := r.URL.Query().Get("refName"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "refName"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "refName", r.URL.Query(), &params.RefName)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "refName", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetTag(r.Context(), &JiaozifsResponse{w}, r, owner, repository, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// CreateTag operation middleware
+func (siw *ServerInterfaceWrapper) CreateTag(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Body parse -------------
+	var body CreateTagJSONRequestBody
+	parseBody := true
+	if parseBody {
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, "Error unmarshalling body 'CreateTag' as JSON", http.StatusBadRequest)
+			return
+		}
+	}
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateTag(r.Context(), &JiaozifsResponse{w}, r, body, owner, repository)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// ListTags operation middleware
+func (siw *ServerInterfaceWrapper) ListTags(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", chi.URLParam(r, "owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", chi.URLParam(r, "repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	ctx = context.WithValue(ctx, Jwt_tokenScopes, []string{})
+
+	ctx = context.WithValue(ctx, Basic_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, Cookie_authScopes, []string{})
+
+	ctx = context.WithValue(ctx, JiaozifsAccessKeyIdScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureMethodScopes, []string{})
+
+	ctx = context.WithValue(ctx, SignatureVersionScopes, []string{})
+
+	ctx = context.WithValue(ctx, TimestampScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListTagsParams
+
+	// ------------- Optional query parameter "prefix" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "prefix", r.URL.Query(), &params.Prefix)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "prefix", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "after" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "after", r.URL.Query(), &params.After)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "after", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "amount" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "amount", r.URL.Query(), &params.Amount)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "amount", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListTags(r.Context(), &JiaozifsResponse{w}, r, owner, repository, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
 // ChangeVisible operation middleware
 func (siw *ServerInterfaceWrapper) ChangeVisible(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -11364,6 +12309,18 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/repos/{owner}/{repository}/mergerequest/{mrSeq}/merge", wrapper.Merge)
 	})
 	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/repos/{owner}/{repository}/tag", wrapper.DeleteTag)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/repos/{owner}/{repository}/tag", wrapper.GetTag)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/repos/{owner}/{repository}/tag", wrapper.CreateTag)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/repos/{owner}/{repository}/tags", wrapper.ListTags)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/repos/{owner}/{repository}/visible", wrapper.ChangeVisible)
 	})
 	r.Group(func(r chi.Router) {
@@ -11430,101 +12387,105 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"vbz9vwAAAP//4udHdMq7AAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

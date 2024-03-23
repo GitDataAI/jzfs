@@ -39,6 +39,13 @@ var statementByName = map[string]rbacmodel.Statement{
 			rbacmodel.ReadBranchAction,
 			rbacmodel.ListBranchesAction,
 			rbacmodel.WriteBranchAction,
+
+			rbacmodel.CreateTagAction,
+			rbacmodel.DeleteTagAction,
+			rbacmodel.ReadTagAction,
+			rbacmodel.ListTagsAction,
+			rbacmodel.WriteTagAction,
+
 			rbacmodel.DeleteWipAction,
 
 			rbacmodel.CreateMergeRequestAction,

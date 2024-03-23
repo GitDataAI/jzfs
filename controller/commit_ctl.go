@@ -95,6 +95,19 @@ func (commitCtl CommitController) GetEntriesInRef(ctx context.Context, w *api.Ji
 			}
 			treeHash = commit.TreeHash
 		}
+	} else if params.Type == api.RefTypeTag {
+		refName := utils.StringValue(params.Ref)
+		ref, err := commitCtl.Repo.TagRepo().Get(ctx, models.NewGetTagParams().SetRepositoryID(repository.ID).SetName(refName))
+		if err != nil {
+			w.Error(err)
+			return
+		}
+		commit, err := commitCtl.Repo.CommitRepo(repository.ID).Commit(ctx, ref.Target)
+		if err != nil {
+			w.Error(err)
+			return
+		}
+		treeHash = commit.TreeHash
 	} else if params.Type == api.RefTypeCommit {
 		commitHash, err := hash.FromHex(utils.StringValue(params.Ref))
 		if err != nil {
