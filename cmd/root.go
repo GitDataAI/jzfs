@@ -36,7 +36,12 @@ func init() {
 	_ = viper.BindPFlag("config", rootCmd.PersistentFlags().Lookup("config"))
 	_ = viper.BindPFlag("log.level", rootCmd.PersistentFlags().Lookup("log-level"))
 
-	uploadCmd.PersistentFlags().String("url", "https://127.0.0.1:34913", "url")
-	uploadCmd.PersistentFlags().String("ak", "", "access key")
-	uploadCmd.PersistentFlags().String("sk", "", "secret key")
+	rootCmd.PersistentFlags().String("ak", "", "access key")
+	rootCmd.PersistentFlags().String("sk", "", "secret key")
+
+	rootCmd.PersistentFlags().String("user", "", "user name")
+	rootCmd.PersistentFlags().String("password", "", "password")
+
+	rootCmd.PersistentFlags().String("url", "https://127.0.0.1:34913", "url")
+
 }
