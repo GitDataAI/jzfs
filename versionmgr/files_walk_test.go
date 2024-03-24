@@ -2,7 +2,6 @@ package versionmgr
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/GitDataAI/jiaozifs/models"
@@ -36,21 +35,31 @@ func TestFileWalk_Walk(t *testing.T) {
 		object:  objRepo,
 		curNode: workTree.root,
 	}
-	var paths []string
-	err = wk.Walk(ctx, func(_ *models.Blob, path string) error {
-		fmt.Println(path)
-		paths = append(paths, path)
+	var filePath []string
+	var dirPaths []string
+	err = wk.Walk(ctx, func(entry *models.TreeEntry, _ *models.Blob, path string) error {
+		if entry.IsDir {
+			dirPaths = append(dirPaths, path)
+		} else {
+			filePath = append(filePath, path)
+		}
 		return nil
 	})
 	require.NoError(t, err)
-	require.Equal(t, "a.txt", paths[0])
-	require.Equal(t, "b.txt", paths[1])
-	require.Equal(t, "a/b/c.txt", paths[2])
-	require.Equal(t, "a/b/d.txt", paths[3])
-	require.Equal(t, "a/c/e.txt", paths[4])
-	require.Equal(t, "a/c/f.txt", paths[5])
-	require.Equal(t, "mm/f.txt", paths[6])
-	require.Equal(t, "mm/c/f.txt", paths[7])
+	require.Equal(t, "a", dirPaths[0])
+	require.Equal(t, "mm", dirPaths[1])
+	require.Equal(t, "a/b", dirPaths[2])
+	require.Equal(t, "a/c", dirPaths[3])
+	require.Equal(t, "mm/c", dirPaths[4])
+
+	require.Equal(t, "a.txt", filePath[0])
+	require.Equal(t, "b.txt", filePath[1])
+	require.Equal(t, "a/b/c.txt", filePath[2])
+	require.Equal(t, "a/b/d.txt", filePath[3])
+	require.Equal(t, "a/c/e.txt", filePath[4])
+	require.Equal(t, "a/c/f.txt", filePath[5])
+	require.Equal(t, "mm/f.txt", filePath[6])
+	require.Equal(t, "mm/c/f.txt", filePath[7])
 }
 
 func addLeaves(ctx context.Context, t *testing.T, workTree *WorkTree, repoID uuid.UUID, path string) {

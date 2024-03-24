@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"time"
 
 	"github.com/GitDataAI/jiaozifs/versionmgr/merkletrie"
@@ -777,6 +778,54 @@ func (repository *WorkRepository) Merge(ctx context.Context, toMergeCommitHash h
 		return nil, err
 	}
 	return newCommit, nil
+}
+
+type ArchiveType string
+
+const (
+	ZipArchiveType ArchiveType = "zip"
+	CarArchiveType ArchiveType = "car"
+)
+
+func (repository *WorkRepository) Archive(ctx context.Context, archiveType ArchiveType) (io.ReadCloser, int64, error) {
+	rootTree, err := repository.RootTree(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	wk := NewFileWalk(rootTree.object, rootTree.root)
+	reader := func(ctx context.Context, blob *models.Blob, s string) (io.ReadCloser, error) {
+		return repository.ReadBlob(ctx, blob, nil)
+	}
+
+	archiver := NewRepoArchiver(repository.repoModel.Name, wk, reader)
+	tmpDir, err := os.MkdirTemp(os.TempDir(), "*") //todo file cache for archive
+	if err != nil {
+		return nil, 0, err
+	}
+	var tmpFile string
+	switch archiveType {
+	case ZipArchiveType:
+		tmpFile = path.Join(tmpDir, hash.Hash(rootTree.root.Hash()).Hex()+".zip")
+		err = archiver.ArchiveZip(ctx, tmpFile)
+	case CarArchiveType:
+		tmpFile = path.Join(tmpDir, hash.Hash(rootTree.root.Hash()).Hex()+".car")
+		err = archiver.ArchiveZip(ctx, tmpFile)
+	default:
+		return nil, 0, fmt.Errorf("unexpect archive type %s", archiveType)
+	}
+	if err != nil {
+		return nil, 0, err
+	}
+	st, err := os.Stat(tmpFile)
+	if err != nil {
+		return nil, 0, err
+	}
+	fs, err := os.Open(tmpFile)
+	if err != nil {
+		return nil, 0, err
+	}
+	return fs, st.Size(), nil
 }
 
 func (repository *WorkRepository) setCurState(state WorkRepoState, wip *models.WorkingInProcess, branch *models.Branch, tag *models.Tag, commit *models.Commit) {

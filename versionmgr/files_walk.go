@@ -11,9 +11,17 @@ import (
 
 var ErrHalt = errors.New("halt walk")
 
+type IWalk interface {
+	Walk(ctx context.Context, fn func(entry *models.TreeEntry, blob *models.Blob, path string) error) error
+}
+
 type FileWalk struct {
 	object  models.IFileTreeRepo
 	curNode *TreeNode
+}
+
+func NewFileWalk(object models.IFileTreeRepo, curNode *TreeNode) *FileWalk {
+	return &FileWalk{object: object, curNode: curNode}
 }
 
 type nodeWithPath struct {
@@ -21,7 +29,7 @@ type nodeWithPath struct {
 	path    string
 }
 
-func (wk FileWalk) Walk(ctx context.Context, fn func(blob *models.Blob, path string) error) error {
+func (wk FileWalk) Walk(ctx context.Context, fn func(entry *models.TreeEntry, blob *models.Blob, path string) error) error {
 	cache := list.New()
 	cache.PushFront(nodeWithPath{wk.curNode, ""})
 	for {
@@ -41,10 +49,13 @@ func (wk FileWalk) Walk(ctx context.Context, fn func(blob *models.Blob, path str
 			}
 
 			cache.PushFront(nodeWithPath{treeNode, path.Join(curNode.path, treeNode.Name())})
-			continue
 		}
 		for i := 0; i < len(subNodes); i++ {
 			if subNodes[i].IsDir {
+				err := fn(&subNodes[i], nil, path.Join(curNode.path, subNodes[i].Name))
+				if err != nil {
+					return err
+				}
 				continue
 			}
 
@@ -53,7 +64,7 @@ func (wk FileWalk) Walk(ctx context.Context, fn func(blob *models.Blob, path str
 				return err
 			}
 
-			err = fn(blob, path.Join(curNode.path, subNodes[i].Name))
+			err = fn(&subNodes[i], blob, path.Join(curNode.path, subNodes[i].Name))
 			if err != nil {
 				return err
 			}
