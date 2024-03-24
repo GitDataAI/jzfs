@@ -51,9 +51,9 @@ func (response *JiaozifsResponse) Unauthorized() {
 	response.WriteHeader(http.StatusUnauthorized)
 }
 
-func (response *JiaozifsResponse) BadRequest(msg string) {
+func (response *JiaozifsResponse) BadRequest(msg string, args ...any) {
 	response.WriteHeader(http.StatusBadRequest)
-	_, _ = response.Write([]byte(msg))
+	_, _ = response.Write([]byte(fmt.Sprintf(msg, args...)))
 }
 
 // Error response with 500 and error message
