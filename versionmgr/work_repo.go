@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"time"
 
 	"github.com/GitDataAI/jiaozifs/versionmgr/merkletrie"
@@ -31,6 +32,7 @@ const (
 	InWip    WorkRepoState = "wip"
 	InBranch WorkRepoState = "branch"
 	InCommit WorkRepoState = "commit"
+	InTag    WorkRepoState = "tag"
 )
 
 type WorkRepository struct {
@@ -43,6 +45,7 @@ type WorkRepository struct {
 	headTree *hash.Hash
 	wip      *models.WorkingInProcess
 	branch   *models.Branch
+	tag      *models.Tag
 	commit   *models.Commit
 }
 
@@ -161,7 +164,7 @@ func (repository *WorkRepository) rootTree(ctx context.Context, repo models.IRep
 			}
 			treeHash = commit.TreeHash
 		}
-		repository.setCurState(InBranch, nil, ref, commit)
+		repository.setCurState(InBranch, nil, ref, nil, commit)
 		repository.headTree = &treeHash
 	}
 	return NewWorkTree(ctx, repo.FileTreeRepo(repository.repoModel.ID), models.NewRootTreeEntry(*repository.headTree))
@@ -179,7 +182,7 @@ func (repository *WorkRepository) CheckOut(ctx context.Context, refType WorkRepo
 			return fmt.Errorf("unable to get wip of repository %s branch %s: %w", repository.repoModel.Name, refName, err)
 		}
 		treeHash = wip.CurrentTree
-		repository.setCurState(InWip, wip, ref, nil)
+		repository.setCurState(InWip, wip, ref, nil, nil)
 	} else if refType == InBranch {
 		branch, err := repository.repo.BranchRepo().Get(ctx, models.NewGetBranchParams().SetRepositoryID(repository.repoModel.ID).SetName(refName))
 		if err != nil {
@@ -193,7 +196,7 @@ func (repository *WorkRepository) CheckOut(ctx context.Context, refType WorkRepo
 			}
 			treeHash = commit.TreeHash
 		}
-		repository.setCurState(InBranch, nil, branch, commit)
+		repository.setCurState(InBranch, nil, branch, nil, commit)
 	} else if refType == InCommit {
 		commitHash, err := hash.FromHex(refName)
 		if err != nil {
@@ -206,8 +209,19 @@ func (repository *WorkRepository) CheckOut(ctx context.Context, refType WorkRepo
 				return err
 			}
 			treeHash = commit.TreeHash
-			repository.setCurState(InCommit, nil, nil, commit)
+			repository.setCurState(InCommit, nil, nil, nil, commit)
 		}
+	} else if refType == InTag {
+		tag, err := repository.repo.TagRepo().Get(ctx, models.NewGetTagParams().SetRepositoryID(repository.repoModel.ID).SetName(refName))
+		if err != nil {
+			return err
+		}
+		commit, err := repository.repo.CommitRepo(repository.repoModel.ID).Commit(ctx, tag.Target)
+		if err != nil {
+			return err
+		}
+		treeHash = commit.TreeHash
+		repository.setCurState(InTag, nil, nil, tag, commit)
 	} else {
 		return fmt.Errorf("not support type")
 	}
@@ -422,6 +436,7 @@ func (repository *WorkRepository) ChangeAndCommit(ctx context.Context, msg strin
 	}
 	repository.branch.CommitHash = commit.Hash
 	repository.wip.BaseCommit = commit.Hash
+	//dont set commit here, wip possibly wip changes
 	return commit, err
 }
 
@@ -509,21 +524,10 @@ func (repository *WorkRepository) CreateBranch(ctx context.Context, branchName s
 // DeleteBranch delete branch also delete wip belong this branch
 func (repository *WorkRepository) DeleteBranch(ctx context.Context) error {
 	return repository.repo.Transaction(ctx, func(repo models.IRepo) error {
-		wips, err := repo.WipRepo().List(ctx, models.NewListWipParams().SetRepositoryID(repository.repoModel.ID).SetRefID(repository.branch.ID))
-		if err != nil {
-			return err
-		}
-		for _, wip := range wips {
-			_, err = repo.WipRepo().Delete(ctx, models.NewDeleteWipParams().SetID(wip.ID))
-			if err != nil {
-				return err
-			}
-		}
-
 		deleteBranchParams := models.NewDeleteBranchParams().
 			SetRepositoryID(repository.repoModel.ID).
 			SetName(repository.branch.Name)
-		_, err = repo.BranchRepo().Delete(ctx, deleteBranchParams)
+		_, err := repo.BranchRepo().Delete(ctx, deleteBranchParams)
 		if err != nil {
 			return err
 		}
@@ -538,6 +542,52 @@ func (repository *WorkRepository) DeleteBranch(ctx context.Context) error {
 	})
 }
 
+// CreateTag create tag base on current head
+func (repository *WorkRepository) CreateTag(ctx context.Context, tagName string, msg *string) (*models.Tag, error) {
+	//check exit
+	_, err := repository.repo.TagRepo().Get(ctx, models.NewGetTagParams().SetName(tagName).SetRepositoryID(repository.repoModel.ID))
+	if err == nil {
+		return nil, fmt.Errorf("%s already exit", tagName)
+	}
+
+	if err != nil && !errors.Is(err, models.ErrNotFound) {
+		return nil, err
+	}
+
+	if repository.commit == nil {
+		return nil, fmt.Errorf("no commit to create tag")
+	}
+
+	commitHash := repository.commit.Hash
+	if commitHash.IsEmpty() {
+		return nil, fmt.Errorf("empty commit to create tag")
+	}
+
+	// Create branch
+	newTag := &models.Tag{
+		CreatorID:    repository.operator.ID,
+		Target:       commitHash,
+		Message:      msg,
+		RepositoryID: repository.repoModel.ID,
+		Name:         tagName,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
+	}
+	return repository.repo.TagRepo().Insert(ctx, newTag)
+}
+
+// DeleteTag delete tag
+func (repository *WorkRepository) DeleteTag(ctx context.Context) error {
+	return repository.repo.Transaction(ctx, func(repo models.IRepo) error {
+		delTagParams := models.NewDeleteTagParams().
+			SetRepositoryID(repository.repoModel.ID).
+			SetID(repository.tag.ID)
+		_, err := repo.TagRepo().Delete(ctx, delTagParams)
+		return err
+	})
+}
+
+// GetOrCreateWip get wip if exited, otherwise create one
 func (repository *WorkRepository) GetOrCreateWip(ctx context.Context) (*models.WorkingInProcess, bool, error) {
 	if repository.state != InBranch {
 		return nil, false, fmt.Errorf("only create wip from branch")
@@ -578,7 +628,7 @@ func (repository *WorkRepository) GetOrCreateWip(ctx context.Context) (*models.W
 		return nil, false, err
 	}
 	repository.headTree = &wip.CurrentTree
-	repository.setCurState(InWip, wip, repository.branch, nil)
+	repository.setCurState(InWip, wip, repository.branch, nil, nil)
 	return wip, true, nil
 }
 
@@ -730,24 +780,80 @@ func (repository *WorkRepository) Merge(ctx context.Context, toMergeCommitHash h
 	return newCommit, nil
 }
 
-func (repository *WorkRepository) setCurState(state WorkRepoState, wip *models.WorkingInProcess, branch *models.Branch, commit *models.Commit) {
+type ArchiveType string
+
+const (
+	ZipArchiveType ArchiveType = "zip"
+	CarArchiveType ArchiveType = "car"
+)
+
+func (repository *WorkRepository) Archive(ctx context.Context, archiveType ArchiveType) (io.ReadCloser, int64, error) {
+	rootTree, err := repository.RootTree(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	wk := NewFileWalk(rootTree.object, rootTree.root)
+	reader := func(ctx context.Context, blob *models.Blob, s string) (io.ReadCloser, error) {
+		return repository.ReadBlob(ctx, blob, nil)
+	}
+
+	archiver := NewRepoArchiver(repository.repoModel.Name, wk, reader)
+	tmpDir, err := os.MkdirTemp(os.TempDir(), "*") //todo file cache for archive
+	if err != nil {
+		return nil, 0, err
+	}
+	var tmpFile string
+	switch archiveType {
+	case ZipArchiveType:
+		tmpFile = path.Join(tmpDir, hash.Hash(rootTree.root.Hash()).Hex()+".zip")
+		err = archiver.ArchiveZip(ctx, tmpFile)
+	case CarArchiveType:
+		tmpFile = path.Join(tmpDir, hash.Hash(rootTree.root.Hash()).Hex()+".car")
+		err = archiver.ArchiveZip(ctx, tmpFile)
+	default:
+		return nil, 0, fmt.Errorf("unexpect archive type %s", archiveType)
+	}
+	if err != nil {
+		return nil, 0, err
+	}
+	st, err := os.Stat(tmpFile)
+	if err != nil {
+		return nil, 0, err
+	}
+	fs, err := os.Open(tmpFile)
+	if err != nil {
+		return nil, 0, err
+	}
+	return fs, st.Size(), nil
+}
+
+func (repository *WorkRepository) setCurState(state WorkRepoState, wip *models.WorkingInProcess, branch *models.Branch, tag *models.Tag, commit *models.Commit) {
 	repository.state = state
 	repository.wip = wip
 	repository.branch = branch
+	repository.tag = tag
 	repository.commit = commit
 }
 
+// CurWip return current wip if in wip, else return nil
 func (repository *WorkRepository) CurWip() *models.WorkingInProcess {
 	return repository.wip
 }
 
+// CurBranch return current branch if in branch, else return nil
 func (repository *WorkRepository) CurBranch() *models.Branch {
+	return repository.branch
+}
+
+// CurTag return current tag if in tag, else return nil
+func (repository *WorkRepository) CurTag() *models.Branch {
 	return repository.branch
 }
 
 func (repository *WorkRepository) Reset() {
 	repository.headTree = nil
-	repository.setCurState("", nil, nil, nil)
+	repository.setCurState("", nil, nil, nil, nil)
 }
 
 func findBestAncestor(ctx context.Context,

@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -190,6 +191,7 @@ func (oct ObjectController) GetObject(ctx context.Context, w *api.JiaozifsRespon
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("X-Frame-Options", "SAMEORIGIN")
 	w.Header().Set("Content-Security-Policy", "default-src 'none'")
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, name))
 	_, err = io.Copy(w, reader)
 	if err != nil {
 		objLog.With(
@@ -388,7 +390,28 @@ func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsRes
 
 	path := versionmgr.CleanPath(params.Path)
 	err = oct.Repo.Transaction(ctx, func(dRepo models.IRepo) error {
-		err = workTree.AddLeaf(ctx, path, blob)
+		oldData, _, err := workTree.FindBlob(ctx, path)
+		if err != nil && !errors.Is(err, versionmgr.ErrPathNotFound) {
+			return err
+		}
+		if oldData == nil {
+			err = workTree.AddLeaf(ctx, path, blob)
+			if err != nil {
+				return err
+			}
+			return dRepo.WipRepo().UpdateByID(ctx, models.NewUpdateWipParams(workRepo.CurWip().ID).SetCurrentTree(workTree.Root().Hash()))
+		}
+
+		if bytes.Equal(oldData.CheckSum, blob.CheckSum) {
+			return nil
+		}
+
+		if !utils.BoolValue(params.IsReplace) {
+			return fmt.Errorf("object exit %w", api.ErrCode(http.StatusConflict))
+		}
+
+		//allow to update
+		err = workTree.ReplaceLeaf(ctx, path, blob)
 		if err != nil {
 			return err
 		}

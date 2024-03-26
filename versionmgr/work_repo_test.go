@@ -15,7 +15,6 @@ import (
 	"github.com/GitDataAI/jiaozifs/block/mem"
 	"github.com/GitDataAI/jiaozifs/config"
 	"github.com/GitDataAI/jiaozifs/models"
-	"github.com/GitDataAI/jiaozifs/models/filemode"
 	"github.com/GitDataAI/jiaozifs/testhelper"
 	"github.com/GitDataAI/jiaozifs/utils"
 	"github.com/GitDataAI/jiaozifs/utils/hash"
@@ -260,7 +259,7 @@ func TestWorkRepositoryRevert(t *testing.T) {
 		err = workRepo.CheckOut(ctx, InBranch, "main")
 		require.NoError(t, err)
 		err = workRepo.ChangeInWip(ctx, func(workTree *WorkTree) error {
-			return appendChangeToWorkTree(ctx, workTree, testData2)
+			return appendChangeToWorkTree(ctx, workRepo, workTree, testData2)
 		})
 		require.Error(t, err) //state not correct
 
@@ -268,7 +267,7 @@ func TestWorkRepositoryRevert(t *testing.T) {
 		require.NoError(t, err)
 
 		err = workRepo.ChangeInWip(ctx, func(workTree *WorkTree) error {
-			return appendChangeToWorkTree(ctx, workTree, testData2)
+			return appendChangeToWorkTree(ctx, workRepo, workTree, testData2)
 		})
 		require.NoError(t, err)
 
@@ -300,7 +299,7 @@ func TestWorkRepositoryRevert(t *testing.T) {
 		err = workRepo.CheckOut(ctx, InBranch, "main")
 		require.NoError(t, err)
 		err = workRepo.ChangeInWip(ctx, func(workTree *WorkTree) error {
-			return appendChangeToWorkTree(ctx, workTree, testData2)
+			return appendChangeToWorkTree(ctx, workRepo, workTree, testData2)
 		})
 		require.Error(t, err) //state not correct
 
@@ -308,7 +307,7 @@ func TestWorkRepositoryRevert(t *testing.T) {
 		require.NoError(t, err)
 
 		err = workRepo.ChangeInWip(ctx, func(workTree *WorkTree) error {
-			return appendChangeToWorkTree(ctx, workTree, testData2)
+			return appendChangeToWorkTree(ctx, workRepo, workTree, testData2)
 		})
 		require.NoError(t, err)
 
@@ -337,7 +336,7 @@ func TestWorkRepositoryRevert(t *testing.T) {
 		err = workRepo.CheckOut(ctx, InBranch, "main")
 		require.NoError(t, err)
 		err = workRepo.ChangeInWip(ctx, func(workTree *WorkTree) error {
-			return appendChangeToWorkTree(ctx, workTree, testData2)
+			return appendChangeToWorkTree(ctx, workRepo, workTree, testData2)
 		})
 		require.Error(t, err) //state not correct
 
@@ -345,7 +344,7 @@ func TestWorkRepositoryRevert(t *testing.T) {
 		require.NoError(t, err)
 
 		err = workRepo.ChangeInWip(ctx, func(workTree *WorkTree) error {
-			return appendChangeToWorkTree(ctx, workTree, testData2)
+			return appendChangeToWorkTree(ctx, workRepo, workTree, testData2)
 		})
 		require.NoError(t, err)
 
@@ -367,9 +366,7 @@ func TestWorkRepositoryMergeState(t *testing.T) {
 
 		project, err := makeRepository(ctx, repo, user, t.Name())
 		require.NoError(t, err)
-		testData1 := `
-1|a.txt	|a
-`
+		testData1 := `1|a.txt	|a`
 		workRepo := NewWorkRepositoryFromAdapter(ctx, user, project, repo, adapter)
 
 		//base branch
@@ -534,6 +531,98 @@ func TestWorkRepositoryMergeState(t *testing.T) {
 	})
 }
 
+func TestWorkRepositoryCreateTag(t *testing.T) {
+	ctx := context.Background()
+	closeDB, _, db := testhelper.SetupDatabase(ctx, t)
+	defer closeDB()
+	repo := models.NewRepo(db)
+
+	user, err := makeUser(ctx, repo.UserRepo(), "admin")
+	require.NoError(t, err)
+
+	project, err := makeRepository(ctx, repo, user, t.Name())
+	require.NoError(t, err)
+
+	adapter := mem.New(ctx)
+	workRepo := NewWorkRepositoryFromAdapter(ctx, user, project, repo, adapter)
+
+	err = workRepo.CheckOut(ctx, InBranch, "main")
+	require.NoError(t, err)
+
+	_, err = workRepo.CreateTag(ctx, "v0.0.1", nil)
+	require.Error(t, err)
+
+	testData1 := `
+1|a.txt	|a
+`
+	_, err = addChangesToWip(ctx, workRepo, "main", "", testData1)
+	require.NoError(t, err)
+
+	_, err = workRepo.CreateTag(ctx, "v0.0.1", nil)
+	require.Error(t, err)
+
+	err = workRepo.CheckOut(ctx, InBranch, "main")
+	require.NoError(t, err)
+
+	_, err = workRepo.CreateTag(ctx, "v0.0.1", nil)
+	require.NoError(t, err)
+
+	//duplicate tag
+	_, err = workRepo.CreateTag(ctx, "v0.0.1", nil)
+	require.Error(t, err)
+}
+func TestWorkRepository_Archive(t *testing.T) {
+	ctx := context.Background()
+	closeDB, _, db := testhelper.SetupDatabase(ctx, t)
+	defer closeDB()
+	repo := models.NewRepo(db)
+
+	user, err := makeUser(ctx, repo.UserRepo(), "admin")
+	require.NoError(t, err)
+
+	project, err := makeRepository(ctx, repo, user, t.Name())
+	require.NoError(t, err)
+
+	adapter := mem.New(ctx)
+	workRepo := NewWorkRepositoryFromAdapter(ctx, user, project, repo, adapter)
+
+	reader, _, err := workRepo.Archive(ctx, ZipArchiveType)
+	defer reader.Close() //nolint
+	require.NoError(t, err)
+
+	testData1 := `
+1|a.txt	|aaaaaaa
+`
+	_, err = addChangesToWip(ctx, workRepo, "main", "", testData1)
+	require.NoError(t, err)
+
+	err = workRepo.CheckOut(ctx, InBranch, "main")
+	require.NoError(t, err)
+
+	{
+		//unexpect type
+		_, _, err = workRepo.Archive(ctx, "gz")
+		require.Error(t, err)
+	}
+
+	{
+		//test zip
+		reader, _, err := workRepo.Archive(ctx, ZipArchiveType)
+		require.NoError(t, err)
+		defer reader.Close() //nolint
+		_, err = io.ReadAll(reader)
+		require.NoError(t, err)
+	}
+
+	{
+		//test car
+		reader, _, err := workRepo.Archive(ctx, CarArchiveType)
+		require.NoError(t, err)
+		defer reader.Close() //nolint
+		_, err = io.ReadAll(reader)
+		require.NoError(t, err)
+	}
+}
 func makeUser(ctx context.Context, userRepo models.IUserRepo, name string) (*models.User, error) {
 	user := &models.User{
 		Name:              name,
@@ -636,30 +725,23 @@ func addChangesToWip(ctx context.Context, workRepo *WorkRepository, branchName s
 	}
 
 	return workRepo.ChangeAndCommit(ctx, msg, func(workTree *WorkTree) error {
-		return appendChangeToWorkTree(ctx, workTree, testData)
+		return appendChangeToWorkTree(ctx, workRepo, workTree, testData)
 	})
 }
 
-func appendChangeToWorkTree(ctx context.Context, workTree *WorkTree, testData string) error {
+func appendChangeToWorkTree(ctx context.Context, workRepo *WorkRepository, workTree *WorkTree, testData string) error {
 	lines := strings.Split(testData, "\n")
-	var err error
 	for _, line := range lines {
 		if len(strings.TrimSpace(line)) == 0 {
 			continue
 		}
 		commitData := strings.Split(strings.TrimSpace(line), "|")
 		fullPath := strings.TrimSpace(commitData[1])
-		fileHash := strings.TrimSpace(commitData[2])
-		blob := &models.Blob{
-			Hash:         hash.Hash(fileHash),
-			RepositoryID: workTree.RepositoryID(),
-			Type:         models.BlobObject,
-			Size:         10,
-			Properties:   models.Property{Mode: filemode.Regular},
-			CreatedAt:    time.Now(),
-			UpdatedAt:    time.Now(),
+		fileContent := []byte(strings.TrimSpace(commitData[2]))
+		blob, err := workRepo.WriteBlob(ctx, bytes.NewReader(fileContent), int64(len(fileContent)), models.Property{})
+		if err != nil {
+			return err
 		}
-
 		if commitData[0] == "1" {
 			err = workTree.AddLeaf(ctx, fullPath, blob)
 			if err != nil {

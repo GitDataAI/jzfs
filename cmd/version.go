@@ -21,7 +21,7 @@ var versionCmd = &cobra.Command{
 		fmt.Println("Version ", version.UserVersion())
 		fmt.Println("API Version ", swagger.Info.Version)
 
-		client, err := GetDefaultClient()
+		client, err := GetClient(cmd)
 		if err != nil {
 			return err
 		}

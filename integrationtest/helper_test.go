@@ -29,7 +29,7 @@ func InitCmd(ctx context.Context, jzHome string, listen string, db string) error
 	buf := new(bytes.Buffer)
 	cmd.RootCmd().SetOut(buf)
 	cmd.RootCmd().SetErr(buf)
-	cmd.RootCmd().SetArgs([]string{"init", "--listen", listen, "--db_debug", "true", "--db", db,
+	cmd.RootCmd().SetArgs([]string{"init", "--listen", listen, "--db_debug", "false", "--db", db,
 		"--config", fmt.Sprintf("%s/config.toml", jzHome), "--bs_path", fmt.Sprintf("%s/blockstore", jzHome)})
 
 	return cmd.RootCmd().ExecuteContext(ctx)
@@ -158,6 +158,19 @@ func createBranch(ctx context.Context, client *api.Client, user string, repoName
 	return result.JSON201
 }
 
+func createTag(ctx context.Context, client *api.Client, user string, repoName string, tagName, target string) *api.Branch {
+	resp, err := client.CreateTag(ctx, user, repoName, api.CreateTagJSONRequestBody{
+		Name:   tagName,
+		Target: target,
+	})
+	convey.So(err, convey.ShouldBeNil)
+	convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
+
+	result, err := api.ParseCreateBranchResponse(resp)
+	convey.So(err, convey.ShouldBeNil)
+	return result.JSON201
+}
+
 func createRepo(ctx context.Context, client *api.Client, repoName string, visible bool) *api.Repository {
 	resp, err := client.CreateRepository(ctx, api.CreateRepositoryJSONRequestBody{
 		Name:    repoName,
@@ -171,11 +184,12 @@ func createRepo(ctx context.Context, client *api.Client, repoName string, visibl
 	return result.JSON201
 }
 
-func uploadObject(ctx context.Context, client *api.Client, user string, repoName string, refName string, path string) *api.ObjectStats { //nolint
+func uploadObject(ctx context.Context, client *api.Client, user string, repoName string, refName string, path string, replace bool) *api.ObjectStats { //nolint
 	resp, err := client.UploadObjectWithBody(ctx, user, repoName, &api.UploadObjectParams{
-		RefName: refName,
-		Path:    path,
-	}, "application/octet-stream", io.LimitReader(rand.Reader, 50))
+		RefName:   refName,
+		Path:      path,
+		IsReplace: utils.Bool(replace),
+	}, "application/octet-stream", io.LimitReader(rand.Reader, 100))
 	convey.So(err, convey.ShouldBeNil)
 	convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
 
@@ -217,6 +231,17 @@ func commitWip(ctx context.Context, client *api.Client, user string, repoName st
 	result, err := api.ParseCommitWipResponse(resp)
 	convey.So(err, convey.ShouldBeNil)
 	return result.JSON201
+}
+
+func getBranch(ctx context.Context, client *api.Client, user string, repoName string, refName string) *api.Branch {
+	resp, err := client.GetBranch(ctx, user, repoName, &api.GetBranchParams{
+		RefName: refName,
+	})
+	convey.So(err, convey.ShouldBeNil)
+
+	result, err := api.ParseGetBranchResponse(resp)
+	convey.So(err, convey.ShouldBeNil)
+	return result.JSON200
 }
 
 func createMergeRequest(ctx context.Context, client *api.Client, user string, repoName string, sourceBranch string, targetBranch string) *api.MergeRequest {

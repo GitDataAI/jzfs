@@ -189,6 +189,13 @@ func TestWorkTreeGetFiles(t *testing.T) {
 		require.Equal(t, "ff/b/f.jpg", manifest.FileList[6])
 	})
 
+	t.Run("replace windows style separate char", func(t *testing.T) {
+		manifest, err := workTree.GetTreeManifest(ctx, "a\\b\\d.txt")
+		require.NoError(t, err)
+		require.Equal(t, 1, len(manifest.FileList))
+		require.Equal(t, "a/b/d.txt", manifest.FileList[0])
+	})
+
 	t.Run("single file", func(t *testing.T) {
 		manifest, err := workTree.GetTreeManifest(ctx, "a/b/d.txt")
 		require.NoError(t, err)

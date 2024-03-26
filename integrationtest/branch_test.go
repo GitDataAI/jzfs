@@ -277,6 +277,5 @@ func BranchSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(getResp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
 			})
 		})
-
 	}
 }

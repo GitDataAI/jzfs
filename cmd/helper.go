@@ -1,24 +1,31 @@
 package cmd
 
 import (
+	"io"
+	"net/http"
+
 	"github.com/GitDataAI/jiaozifs/api"
-	"github.com/GitDataAI/jiaozifs/config"
+	"github.com/spf13/cobra"
 )
 
-func GetDefaultClient() (*api.Client, error) {
-	swagger, err := api.GetSwagger()
-	if err != nil {
-		return nil, err
-	}
+func GetClient(cmd *cobra.Command) (*api.Client, error) {
+	url := cmd.Flags().Lookup("url").Value.String()
+	ak := cmd.Flags().Lookup("ak").Value.String()
+	sk := cmd.Flags().Lookup("sk").Value.String()
 
-	//get runtime version
-	cfg, err := config.LoadConfig(cfgFile)
-	if err != nil {
-		return nil, err
+	user := cmd.Flags().Lookup("user").Value.String()
+	password := cmd.Flags().Lookup("password").Value.String()
+
+	if len(ak) > 0 {
+		return api.NewClient(url, api.AkSkOption(ak, sk))
 	}
-	basePath, err := swagger.Servers[0].BasePath()
+	return api.NewClient(url, api.UPOption(user, password))
+}
+
+func tryLogError(resp *http.Response) string {
+	bodyContent, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return ""
 	}
-	return api.NewClient(cfg.API.Listen + basePath)
+	return string(bodyContent)
 }

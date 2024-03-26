@@ -9,3 +9,5 @@ ingress_name: nginx
 log_level: info
 claim_name: jiaozifs-home
 tag: latest
+cert: api-jiaozifs-com-tls
+request_size: 100m

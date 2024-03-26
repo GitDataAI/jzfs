@@ -6,6 +6,7 @@ metadata:
     meta.helm.sh/release-name: jiaozifs-api
     nginx.ingress.kubernetes.io/rewrite-target: /
     nginx.ingress.kubernetes.io/proxy-connect-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-body-size: "{{.Values.request_size}}"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "1800"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "1800"
   labels:
@@ -15,6 +16,8 @@ metadata:
     release:  jiaozifs-api
 spec:
   ingressClassName: {{.Values.ingress_name}}
+  tls:
+    - secretName: {{.Values.cert}}
   rules:
     - host: api.jiaozifs.com
       http:
