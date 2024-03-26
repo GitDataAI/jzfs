@@ -1,6 +1,6 @@
 
-# JiaoziFS (JZFS)
-A version control file system for data centric applications & teams.
+# JiaoZiFS (JZFS)
+A version control file system for data linage & data collaboration.
 
 <p align="left">
   <a href="https://codecov.io/gh/jiaozifs/jiaozifs"><img src="https://codecov.io/gh/gitdataai/jiaozifs/branch/main/graph/badge.svg" /></a>
@@ -12,18 +12,18 @@ A version control file system for data centric applications & teams.
 <a href="https://github.com/GitDataAI/jiaozifs"><img src="https://github.com/GitDataAI/jiaozifs/blob/main/docs/logo/jiaozifs.png?raw=true" width="100" /></a>
 
 ----
-### What is JiaoziFS?
-JiaoziFS is an industry-leading **Data-Centric Version Control** File System, helps ensure Responsible AI Engineering by improving **Data Versioning**, **Provenance**, and **Reproducibility**.
+### What is JiaoZiFS?
+JiaoZiFS is an industry-leading **Data-Centric Version Control** File System, helps ensure Responsible AI Engineering by improving **Data Versioning**, **Provenance**, and **Reproducibility**.
 
 Note:
-* The name Jiaozi pays tribute to the world's earliest paper money: [Song Dynasty Jiaozi](https://en.wikipedia.org/wiki/Jiaozi_(currency)).
-* JiaoziFS is yet another implementation of [IPFS (InterPlanetary File System)](https://ipfs.tech/) as JiaoziFS will be compatible with the [implementation requirements](https://specs.ipfs.tech/architecture/principles/#ipfs-implementation-requirements) of IPFS.
-* As a filesystem of data versioning at scale, although JiaoziFS is built for machine learning, It has a wide range of use scenarios (refer A Universe of Uses) and can be seamlessly integrated into all your data stack.
+* The name JiaoZi pays tribute to the world's earliest paper money: [Song Dynasty JiaoZi](https://en.wikipedia.org/wiki/Jiaozi_(currency)).
+* JiaoZiFS is yet another implementation of [IPFS (InterPlanetary File System)](https://ipfs.tech/) as JiaoZiFS will be compatible with the [implementation requirements](https://specs.ipfs.tech/architecture/principles/#ipfs-implementation-requirements) of IPFS.
+* As a filesystem of data versioning at scale, although JiaoZiFS is built for machine learning, It has a wide range of use scenarios (refer A Universe of Uses) and can be seamlessly integrated into all your data stack.
 
 Data-centric AI is about the practice of iterating and collaborating on data, used to build AI systems, programmatically. Machine learning pioneer Andrew Ng [argues that focusing on the quality of data fueling AI systems will help unlock its full power](https://youtu.be/TU6u_T-s68Y).
 
 ----
-### Why JiaoziFS?
+### Why JiaoZiFS?
 In production systems with machine learning components, updates and experiments are frequent. New updates to models(data products) may be released every day or every few minutes, and different users may see the results of different models as part of A/B experiments or canary releases.
 
 * **Version Everything**: Data scientists are often criticized for being less disciplined with versioning their experiments(versioning of data, pipeline, code, and models), especially when using computational notebooks.
@@ -32,24 +32,24 @@ In production systems with machine learning components, updates and experiments 
 
 ----
 ### A Universe of Uses
-JiaoziFS's versatility shines across different industries – making it the multi-purpose tool for the **data centric applications and teams**.
+JiaoZiFS's versatility shines across different industries – making it the multi-purpose tool for the **data centric applications and teams**.
 
-* **Enterprise DataHub & Data Collaboration**: Depending on your operating scale, you may even be managing multiple team members, who may be spread across different locations. JiaoziFS enable Collaborative Datasets Version Management at Scale,Share & collaborate easily: Instantly share insights and co-edit with your team.
-* **DataOps & Data Products & Data Mesh**: Augmenting Enterprise Data Development and Operations,JiaoziFS ensures Responsible DataOps/AIOps/MLOps by improving Data Versioning, Provenance, and Reproducibility. JiaoziFS makes a fusion of data science and product development and allows data to be containerized into shareable, tradeable, and trackable assets(data products or data NFTs). Versioning data products in a maturing Data Mesh environment via standard processes, data consumers can be informed about both breaking and non-breaking changes in a data product, as well as retirement of data products.
+* **Enterprise DataHub & Data Collaboration**: Depending on your operating scale, you may even be managing multiple team members, who may be spread across different locations. JiaoZiFS enable Collaborative Datasets Version Management at Scale,Share & collaborate easily: Instantly share insights and co-edit with your team.
+* **DataOps & Data Products & Data Mesh**: Augmenting Enterprise Data Development and Operations,JiaoZiFS ensures Responsible DataOps/AIOps/MLOps by improving Data Versioning, Provenance, and Reproducibility. JiaoziFS makes a fusion of data science and product development and allows data to be containerized into shareable, tradeable, and trackable assets(data products or data NFTs). Versioning data products in a maturing Data Mesh environment via standard processes, data consumers can be informed about both breaking and non-breaking changes in a data product, as well as retirement of data products.
 * **Industrial Digital Twin**: Developing digital twins for manufacturing involves managing tons of large files and multiple iterations of a project. All of the data collected and created in the digital twin process (and there is a lot of it) needs to be managed carefully. JiaoziFS allows you to manage changes to files over time and store these modifications in a database.
 * **Data Lake Management**: Data lakes are dynamic.   New files and new versions of ex- isting files enter the lake at the ingestion stage.   Additionally, extractors can evolve over time and generate new versions of raw data.   As a result, data lake versioning is a cross-cutting concern across all stages of a data lake.   Of course vanilla dis- tributed file systems are not adequate for versioning-related operations.   For example, simply storing all versions may be too costly for large datasets, and without a good version manager, just using filenames to track versions can be error-prone.   In a data lake, for which there are usually many users, it is even more important to clearly maintain correct versions being used and evolving across different users.   Furthermore, as the number of versions increases, efficiently and cost-effectively providing storage and retrieval of versions is going to be an important feature of a successful data lake system.
 ----
 ### Specification
 
-[JiaoziFS Specification](https://github.com/GitDataAI/Specification/blob/main/JiaoziFS)
+[JiaoZiFS Specification](https://github.com/GitDataAI/Specification/blob/main/JiaoziFS)
 
 ----
 ### Basic Build And Usage
 
 #### Requirement
 
-1. To build JiaoziFS, you need a working installation of   [Go 1.22.0 or higher](https://golang.org/dl/)
-2. JiaoziFS use postgres to store running data, you can install at  [postgres install installation guide](https://www.postgresql.org/docs/current/installation.html)
+1. To build JiaoZiFS, you need a working installation of   [Go 1.22.0 or higher](https://golang.org/dl/)
+2. JiaoZiFS use postgres to store running data, you can install at  [postgres install installation guide](https://www.postgresql.org/docs/current/installation.html)
 
 #### Build And Running
 
@@ -78,6 +78,16 @@ docker run -v <data>:/app -p 34913:34913 gitdatateam/jzfs:latest  --db "postgres
 ### Cloud
 
 [Try without installing](https://cloud.jiaozifs.com)
+
+Note: storage config for IPFS backend storage as you create a new repository in JiaoZiFS UI.
+
+```
+ {"type":"ipfs","ipfs":{"url":"/dns/kubo-service.ipfs.svc.cluster.local/tcp/5001"}}
+```
+
+### Build AL/ML pipeline over JiaoZiFS
+
+[Face detection and recognition inference pipeline](https://colab.research.google.com/drive/1wsv-KMxTdsCLZ64eLq4W1MTfspid-vv6?usp=sharing)
 
 ----
 ### Contributors
