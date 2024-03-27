@@ -3,6 +3,7 @@ package integrationtest
 import (
 	"context"
 	"net/http"
+	"strconv"
 
 	"github.com/GitDataAI/jiaozifs/api"
 	apiimpl "github.com/GitDataAI/jiaozifs/api/api_impl"
@@ -23,7 +24,6 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 			_ = createUser(ctx, client, userName)
 			loginAndSwitch(ctx, client, userName, false)
-
 		})
 		c.Convey("create repo", func(c convey.C) {
 			c.Convey("forbidden create repo name", func() {
@@ -405,7 +405,7 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 			c.Convey("add commit to branch", func(_ convey.C) {
 				createWip(ctx, client, userName, repoName, controller.DefaultBranchName)
-				uploadObject(ctx, client, userName, repoName, controller.DefaultBranchName, "a.txt")
+				uploadObject(ctx, client, userName, repoName, controller.DefaultBranchName, "a.txt", true)
 				_ = commitWip(ctx, client, userName, repoName, controller.DefaultBranchName, "first commit")
 			})
 
@@ -423,9 +423,9 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 			})
 
 			c.Convey("add double commit to branch", func(_ convey.C) {
-				uploadObject(ctx, client, userName, repoName, controller.DefaultBranchName, "b.txt")
+				uploadObject(ctx, client, userName, repoName, controller.DefaultBranchName, "b.txt", true)
 				_ = commitWip(ctx, client, userName, repoName, controller.DefaultBranchName, "second commit")
-				uploadObject(ctx, client, userName, repoName, controller.DefaultBranchName, "c.txt")
+				uploadObject(ctx, client, userName, repoName, controller.DefaultBranchName, "c.txt", true)
 				_ = commitWip(ctx, client, userName, repoName, controller.DefaultBranchName, "third commit")
 			})
 
@@ -492,6 +492,130 @@ func RepoSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(getResp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
 			})
+		})
+
+		c.Convey("get archive file", func(c convey.C) {
+			userName2 := "testarchive"
+			repo2Name := "archiverepo"
+			refName := "testbranch"
+			tag := "vt0.0.1"
+			c.Convey("init", func() {
+				loginAndSwitch(ctx, client, "admin2", true)
+				_ = createUser(ctx, client, userName2)
+				loginAndSwitch(ctx, client, userName2, false)
+				_ = createRepo(ctx, client, repo2Name, false)
+				_ = createBranch(ctx, client, userName2, repo2Name, "main", refName)
+				_ = createWip(ctx, client, userName2, repo2Name, refName)
+				_ = uploadObject(ctx, client, userName2, repo2Name, refName, "g.txt", true)
+				_ = uploadObject(ctx, client, userName2, repo2Name, refName, "a/b.txt", true)
+				_ = uploadObject(ctx, client, userName2, repo2Name, refName, "b/b.txt", true)
+				_ = uploadObject(ctx, client, userName2, repo2Name, refName, "c/b.txt", true)
+				_ = commitWip(ctx, client, userName2, repo2Name, refName, "aaa")
+				_ = createTag(ctx, client, userName2, repo2Name, tag, refName)
+			})
+			c.Convey("no auth", func() {
+				re := client.RequestEditors
+				client.RequestEditors = nil
+				resp, err := client.GetArchive(ctx, userName2, repo2Name, &api.GetArchiveParams{
+					ArchiveType: api.Zip,
+					RefName:     refName,
+					RefType:     api.RefTypeBranch,
+				})
+				client.RequestEditors = re
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
+			})
+			c.Convey("get archive in not exit repo", func() {
+				resp, err := client.GetArchive(ctx, userName2, "happyrunfake", &api.GetArchiveParams{
+					ArchiveType: api.Zip,
+					RefName:     refName,
+					RefType:     api.RefTypeBranch,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
+			})
+
+			c.Convey("get archive in non exit user", func() {
+				resp, err := client.GetArchive(ctx, "telo", repo2Name, &api.GetArchiveParams{
+					ArchiveType: api.Zip,
+					RefName:     refName,
+					RefType:     api.RefTypeBranch,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
+			})
+
+			c.Convey("get archive in non exit ref", func() {
+				resp, err := client.GetArchive(ctx, userName2, repo2Name, &api.GetArchiveParams{
+					ArchiveType: api.Zip,
+					RefName:     "gggg",
+					RefType:     api.RefTypeBranch,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusNotFound)
+			})
+
+			c.Convey("get archive in non other repo", func() {
+				resp, err := client.GetArchive(ctx, "jimmy", "happygo", &api.GetArchiveParams{
+					ArchiveType: api.Zip,
+					RefName:     "main",
+					RefType:     api.RefTypeBranch,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusUnauthorized)
+			})
+
+			c.Convey("success get zip archive in branch", func() {
+				resp, err := client.GetArchive(ctx, userName2, repo2Name, &api.GetArchiveParams{
+					ArchiveType: api.Zip,
+					RefName:     refName,
+					RefType:     api.RefTypeBranch,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				result, err := api.ParseGetArchiveResponse(resp)
+				convey.So(err, convey.ShouldBeNil)
+				sizeStr := resp.Header.Get("Content-Length")
+				size, err := strconv.Atoi(sizeStr)
+				convey.So(err, convey.ShouldBeNil)
+				convey.ShouldHaveLength(size, result.Body)
+			})
+
+			c.Convey("success get car archive in branch", func() {
+				resp, err := client.GetArchive(ctx, userName2, repo2Name, &api.GetArchiveParams{
+					ArchiveType: api.Car,
+					RefName:     refName,
+					RefType:     api.RefTypeBranch,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				result, err := api.ParseGetArchiveResponse(resp)
+				convey.So(err, convey.ShouldBeNil)
+				sizeStr := resp.Header.Get("Content-Length")
+				size, err := strconv.Atoi(sizeStr)
+				convey.So(err, convey.ShouldBeNil)
+				convey.ShouldHaveLength(size, result.Body)
+			})
+
+			c.Convey("success get zip archive in tag", func() {
+				resp, err := client.GetArchive(ctx, userName2, repo2Name, &api.GetArchiveParams{
+					ArchiveType: api.Zip,
+					RefName:     tag,
+					RefType:     api.RefTypeTag,
+				})
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusOK)
+
+				result, err := api.ParseGetArchiveResponse(resp)
+				convey.So(err, convey.ShouldBeNil)
+				sizeStr := resp.Header.Get("Content-Length")
+				size, err := strconv.Atoi(sizeStr)
+				convey.So(err, convey.ShouldBeNil)
+				convey.ShouldHaveLength(size, result.Body)
+			})
+
 		})
 	}
 }

@@ -123,6 +123,33 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
 			})
+
+			c.Convey("success to upload the same resource", func() {
+				resp, err := client.UploadObjectWithBody(ctx, userName, repoName, &api.UploadObjectParams{
+					RefName: branchName,
+					Path:    "a/b.bin",
+				}, "application/octet-stream", bytes.NewReader([]byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 1, 1, 1}))
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
+			})
+
+			c.Convey("fail to upload difference content to exit path without tell serve to replace", func() {
+				resp, err := client.UploadObjectWithBody(ctx, userName, repoName, &api.UploadObjectParams{
+					RefName: branchName,
+					Path:    "a/b.bin",
+				}, "application/octet-stream", bytes.NewReader([]byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 1, 1, 2}))
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusConflict)
+			})
+			c.Convey("success to upload difference content to exit path when tell serve to replace", func() {
+				resp, err := client.UploadObjectWithBody(ctx, userName, repoName, &api.UploadObjectParams{
+					RefName:   branchName,
+					Path:      "a/b.bin",
+					IsReplace: utils.Bool(true),
+				}, "application/octet-stream", bytes.NewReader([]byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 1, 1, 1}))
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.StatusCode, convey.ShouldEqual, http.StatusCreated)
+			})
 		})
 
 		//commit object to branch
@@ -370,9 +397,9 @@ func ObjectSpec(ctx context.Context, urlStr string) func(c convey.C) {
 
 			c.Convey("list success", func() {
 				_ = createWip(ctx, client, userName, repoName, branchName)
-				_ = uploadObject(ctx, client, userName, repoName, branchName, "a/b.txt")
-				_ = uploadObject(ctx, client, userName, repoName, branchName, "a/e.txt")
-				_ = uploadObject(ctx, client, userName, repoName, branchName, "a/g.txt")
+				_ = uploadObject(ctx, client, userName, repoName, branchName, "a/b.txt", true)
+				_ = uploadObject(ctx, client, userName, repoName, branchName, "a/e.txt", true)
+				_ = uploadObject(ctx, client, userName, repoName, branchName, "a/g.txt", true)
 				_ = commitWip(ctx, client, userName, repoName, branchName, "wip")
 
 				resp, err := client.GetFiles(ctx, userName, repoName, &api.GetFilesParams{

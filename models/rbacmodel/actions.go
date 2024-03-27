@@ -34,8 +34,14 @@ const (
 	CreateBranchAction = "repo:CreateBranch"
 	DeleteBranchAction = "repo:DeleteBranch"
 	ReadBranchAction   = "repo:ReadBranch"
-	WriteBranchAction  = "repo:ReadBranch"
+	WriteBranchAction  = "repo:WriteBranch"
 	ListBranchesAction = "repo:ListBranches"
+
+	CreateTagAction = "repo:CreateTag"
+	DeleteTagAction = "repo:DeleteTag"
+	ReadTagAction   = "repo:ReadTag"
+	WriteTagAction  = "repo:WriteTag"
+	ListTagsAction  = "repo:ListTags"
 
 	ReadWipAction   = "repo:GetWip"
 	ListWipAction   = "repo:ListWip"

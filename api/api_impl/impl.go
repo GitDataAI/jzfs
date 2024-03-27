@@ -23,4 +23,5 @@ type APIController struct {
 
 	controller.GroupController
 	controller.MemberController
+	controller.TagController
 }

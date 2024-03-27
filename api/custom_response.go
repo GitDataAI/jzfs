@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/GitDataAI/jiaozifs/auth"
@@ -50,9 +51,9 @@ func (response *JiaozifsResponse) Unauthorized() {
 	response.WriteHeader(http.StatusUnauthorized)
 }
 
-func (response *JiaozifsResponse) BadRequest(msg string) {
+func (response *JiaozifsResponse) BadRequest(msg string, args ...any) {
 	response.WriteHeader(http.StatusBadRequest)
-	_, _ = response.Write([]byte(msg))
+	_, _ = response.Write([]byte(fmt.Sprintf(msg, args...)))
 }
 
 // Error response with 500 and error message
@@ -64,6 +65,13 @@ func (response *JiaozifsResponse) Error(err error) {
 	}
 	if errors.Is(err, auth.ErrUserNotFound) {
 		response.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	var codeErr ErrCode
+	if errors.As(err, &codeErr) {
+		response.WriteHeader(int(codeErr))
+		_, _ = response.Write([]byte(err.Error()))
 		return
 	}
 
@@ -88,4 +96,13 @@ func (response *JiaozifsResponse) String(msg string, code ...int) {
 // Code response with uncommon code
 func (response *JiaozifsResponse) Code(code int) {
 	response.WriteHeader(code)
+}
+
+type ErrCode int
+
+func NewErrCode(code int) ErrCode {
+	return ErrCode(code)
+}
+func (err ErrCode) Error() string {
+	return fmt.Sprintf("code %d msg %s", err, http.StatusText(int(err)))
 }

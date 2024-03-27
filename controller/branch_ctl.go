@@ -67,20 +67,7 @@ func (bct BranchController) ListBranches(ctx context.Context, w *api.JiaozifsRes
 		w.Error(err)
 		return
 	}
-	results := make([]api.Branch, 0, len(branches))
-	for _, branch := range branches {
-		r := api.Branch{
-			CommitHash:   branch.CommitHash.Hex(),
-			CreatedAt:    branch.CreatedAt.UnixMilli(),
-			CreatorId:    branch.CreatorID,
-			Description:  branch.Description,
-			Id:           branch.ID,
-			Name:         branch.Name,
-			RepositoryId: branch.RepositoryID,
-			UpdatedAt:    branch.UpdatedAt.UnixMilli(),
-		}
-		results = append(results, r)
-	}
+	results := utils.Silent(utils.ArrMap(branches, branchToDto))
 	pagMag := utils.PaginationFor(hasMore, results, "Name")
 	pagination := api.Pagination{
 		HasMore:    pagMag.HasMore,
@@ -153,16 +140,7 @@ func (bct BranchController) CreateBranch(ctx context.Context, w *api.JiaozifsRes
 		return
 	}
 
-	w.JSON(api.Branch{
-		CommitHash:   newBranch.CommitHash.Hex(),
-		CreatedAt:    newBranch.CreatedAt.UnixMilli(),
-		CreatorId:    newBranch.CreatorID,
-		Description:  newBranch.Description,
-		Id:           newBranch.ID,
-		Name:         newBranch.Name,
-		RepositoryId: newBranch.RepositoryID,
-		UpdatedAt:    newBranch.UpdatedAt.UnixMilli(),
-	}, http.StatusCreated)
+	w.JSON(utils.Silent(branchToDto(newBranch)), http.StatusCreated)
 }
 
 func (bct BranchController) DeleteBranch(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, params api.DeleteBranchParams) {
@@ -248,14 +226,18 @@ func (bct BranchController) GetBranch(ctx context.Context, w *api.JiaozifsRespon
 		w.Error(err)
 		return
 	}
-	w.JSON(api.Branch{
-		CommitHash:   ref.CommitHash.Hex(),
-		CreatedAt:    ref.CreatedAt.UnixMilli(),
-		CreatorId:    ref.CreatorID,
-		Description:  ref.Description,
-		Id:           ref.ID,
-		Name:         ref.Name,
-		RepositoryId: ref.RepositoryID,
-		UpdatedAt:    ref.UpdatedAt.UnixMilli(),
-	})
+	w.JSON(utils.Silent(branchToDto(ref)))
+}
+
+func branchToDto(in *models.Branch) (api.Branch, error) {
+	return api.Branch{
+		CommitHash:   in.CommitHash.Hex(),
+		CreatedAt:    in.CreatedAt.UnixMilli(),
+		CreatorId:    in.CreatorID,
+		Description:  in.Description,
+		Id:           in.ID,
+		Name:         in.Name,
+		RepositoryId: in.RepositoryID,
+		UpdatedAt:    in.UpdatedAt.UnixMilli(),
+	}, nil
 }

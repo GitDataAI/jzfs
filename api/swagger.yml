@@ -267,6 +267,9 @@ components:
     RefType:
       type: string
       enum: ["branch", "wip","tag", "commit"]
+    ArchiveType:
+      type: string
+      enum: [ "zip", "car" ]
     CreateMergeRequest:
       type: object
       required:
@@ -422,6 +425,63 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/MergeRequest"
+    TagList:
+      type: object
+      required:
+        - pagination
+        - results
+      properties:
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/Tag"
+    TagCreation:
+      type: object
+      required:
+        - name
+        - target
+      properties:
+        name:
+          type: string
+        target:
+          type: string
+          description: target branch name or commit hex, first try branch and then commit
+        message:
+          type: string
+    Tag:
+      type: object
+      required:
+        - id
+        - repository_id
+        - name
+        - creator_id
+        - target
+        - created_at
+        - updated_at
+      properties:
+        id :
+          type: string
+          format: uuid
+        repository_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        creator_id:
+          type: string
+          format: uuid
+        target:
+          type: string
+        message:
+          type: string
+        created_at:
+          type: integer
+          format: int64
+        updated_at:
+          type: integer
+          format: int64
     Branch:
       type: object
       required:
@@ -1124,6 +1184,11 @@ paths:
                 type: string
                 format: binary
           headers:
+            Content-Disposition:
+              schema:
+                type: string
+                description: response file
+                example: attachment; filename="name.pdf"
             Content-Length:
               schema:
                 type: integer
@@ -1239,6 +1304,13 @@ paths:
       tags:
         - objects
       operationId: uploadObject
+      parameters:
+        - in: query
+          name: isReplace
+          description: indicate to replace existing object or not
+          allowEmptyValue: true
+          schema:
+            type: boolean
       x-validation-exclude-body: true
       requestBody:
         content:
@@ -1265,6 +1337,8 @@ paths:
           description: ValidationError
         401:
           description: Unauthorized ValidationError
+        409:
+          description: Resource Conflict
         403:
           description: Forbidden
         404:
@@ -1534,6 +1608,7 @@ paths:
           name: msg
           description: commit message
           required: true
+          allowEmptyValue: true
           schema:
             type: string
       responses:
@@ -1585,6 +1660,76 @@ paths:
         403:
           description: Forbidden
 
+  /repos/{owner}/{repository}/archive:
+    parameters:
+      - in: path
+        name: owner
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: repository
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - repos
+      operationId: getArchive
+      summary: get repo files archive
+      parameters:
+        - in: query
+          name: archive_type
+          description: download zip or car files
+          required: true
+          schema:
+            $ref: "#/components/schemas/ArchiveType"
+        - in: query
+          name: refType
+          description: ref type only allow branch or tag
+          required: true
+          schema:
+            $ref: "#/components/schemas/RefType"
+        - in: query
+          name: refName
+          description: ref(branch/tag) name
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: object content
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                description: response file
+                example: attachment; filename="name.pdf"
+            Content-Length:
+              schema:
+                type: integer
+                format: int64
+            Last-Modified:
+              schema:
+                type: string
+            ETag:
+              schema:
+                type: string
+        401:
+          description: Unauthorized
+        404:
+          description: object not found
+        410:
+          description: object expired
+        416:
+          description: Requested Range Not Satisfiable
+        420:
+          description: too many requests
   /repos/{owner}/{repository}/contents:
     parameters:
       - in: path
@@ -1623,20 +1768,6 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/RefType"
-        - in: query
-          name: recursive
-          description: recursive get entries (include sub files)
-          required: false
-          allowEmptyValue: true
-          schema:
-            type: boolean
-        - in: query
-          name: pattern
-          description: pattern to get files
-          required: false
-          allowEmptyValue: true
-          schema:
-            type: boolean
       responses:
         200:
           description: commit
@@ -2395,7 +2526,7 @@ paths:
           schema:
             type: string
       responses:
-        204:
+        200:
           description: branch delete successfully
         401:
           description: Unauthorized
@@ -2423,6 +2554,133 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Branch"
+        400:
+          description: ValidationError
+        404:
+          description: Resource Not Found
+        409:
+          description: Resource Conflicts With Target
+        420:
+          description: Too many requests
+        default:
+          description: Internal Server Error
+
+
+  /repos/{owner}/{repository}/tags:
+    parameters:
+      - in: path
+        name: owner
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: repository
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - tags
+      operationId: listTags
+      summary: list tags
+      parameters:
+        - $ref: "#/components/parameters/PaginationPrefix"
+        - $ref: "#/components/parameters/PaginationInt64After"
+        - $ref: "#/components/parameters/PaginationAmount"
+      responses:
+        200:
+          description: tag list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TagList"
+        401:
+          description: Unauthorized
+        404:
+          description: Resource Not Found
+        420:
+          description: Too many requests
+        default:
+          description: Internal Server Error
+
+  /repos/{owner}/{repository}/tag:
+    parameters:
+      - in: path
+        name: owner
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: repository
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - tags
+      operationId: getTag
+      summary: get tag
+      parameters:
+        - in: query
+          name: refName
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: tag
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tag"
+        401:
+          description: Unauthorized
+        404:
+          description: Resource Not Found
+        420:
+          description: Too many requests
+        default:
+          description: Internal Server Error
+    delete:
+      tags:
+        - tags
+      operationId: deleteTag
+      summary: delete tag
+      parameters:
+        - in: query
+          name: refName
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: tag delete successfully
+        401:
+          description: Unauthorized
+        404:
+          description: Resource Not Found
+        420:
+          description: Too many requests
+        default:
+          description: Internal Server Error
+    post:
+      tags:
+        - tags
+      operationId: createTag
+      summary: create tag
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TagCreation"
+      responses:
+        201:
+          description: create tag success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tag"
         400:
           description: ValidationError
         404:

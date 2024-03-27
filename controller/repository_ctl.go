@@ -313,7 +313,7 @@ func (repositoryCtl RepositoryController) DeleteRepository(ctx context.Context, 
 		}
 
 		//delete tag
-		_, err = repo.TagRepo(repository.ID).Delete(ctx, models.NewDeleteParams())
+		_, err = repo.TagRepo().Delete(ctx, models.NewDeleteTagParams().SetRepositoryID(repository.ID))
 		if err != nil {
 			return err
 		}
@@ -541,6 +541,73 @@ func (repositoryCtl RepositoryController) ChangeVisible(ctx context.Context, w *
 	if err != nil {
 		w.Error(err)
 		return
+	}
+	w.OK()
+}
+
+func (repositoryCtl RepositoryController) GetArchive(ctx context.Context, w *api.JiaozifsResponse, _ *http.Request, ownerName string, repositoryName string, params api.GetArchiveParams) {
+	owner, err := repositoryCtl.Repo.UserRepo().Get(ctx, models.NewGetUserParams().SetName(ownerName))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	repository, err := repositoryCtl.Repo.RepositoryRepo().Get(ctx, models.NewGetRepoParams().SetName(repositoryName).SetOwnerID(owner.ID))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	if !repositoryCtl.authorizeMember(ctx, w, repository.ID, rbac.Node{
+		Permission: rbac.Permission{
+			Action:   rbacmodel.ReadObjectAction,
+			Resource: rbacmodel.RepoURArn(owner.ID.String(), repository.ID.String()),
+		},
+	}) {
+		return
+	}
+
+	operator, err := auth.GetOperator(ctx)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	workRepo, err := versionmgr.NewWorkRepositoryFromConfig(ctx, operator, repository, repositoryCtl.Repo, repositoryCtl.PublicStorageConfig)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	if string(params.RefType) != string(versionmgr.InBranch) && string(params.RefType) != string(versionmgr.InTag) {
+		w.BadRequest("archive ref type (%s) only allow branch and tag", params.RefType)
+		return
+	}
+
+	err = workRepo.CheckOut(ctx, versionmgr.WorkRepoState(params.RefType), params.RefName)
+	if err != nil {
+		w.Error(err)
+		return
+	}
+
+	readeCloser, size, err := workRepo.Archive(ctx, versionmgr.ArchiveType(params.ArchiveType))
+	if err != nil {
+		w.Error(err)
+		return
+	}
+	defer readeCloser.Close() //nolint
+	w.Header().Set("Content-Length", fmt.Sprint(size))
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, fmt.Sprintf("%s.%s", repository.Name, params.ArchiveType)))
+	_, err = io.Copy(w, readeCloser)
+	if err != nil {
+		objLog.With(
+			"user", ownerName,
+			"repo", repositoryName,
+			"reftype", params.RefType,
+			"refname", params.RefName,
+		).Debugf("archive copy content %v", err)
+
 	}
 	w.OK()
 }

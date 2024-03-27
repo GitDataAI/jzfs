@@ -35,4 +35,13 @@ func init() {
 	_ = viper.BindPFlag("api.listen", rootCmd.PersistentFlags().Lookup("listen"))
 	_ = viper.BindPFlag("config", rootCmd.PersistentFlags().Lookup("config"))
 	_ = viper.BindPFlag("log.level", rootCmd.PersistentFlags().Lookup("log-level"))
+
+	rootCmd.PersistentFlags().String("ak", "", "access key")
+	rootCmd.PersistentFlags().String("sk", "", "secret key")
+
+	rootCmd.PersistentFlags().String("user", "", "user name")
+	rootCmd.PersistentFlags().String("password", "", "password")
+
+	rootCmd.PersistentFlags().String("url", "https://127.0.0.1:34913", "url")
+
 }

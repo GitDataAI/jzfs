@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/GitDataAI/jiaozifs/utils"
 	"github.com/stretchr/testify/require"
 )
 
@@ -141,7 +142,7 @@ func (getter skGetter) Get(_ string) (string, error) {
 
 func mockHttpRequest() *http.Request { //nolint
 	verbs := []string{"GET", "POST", "PUT", "Delete"}
-	req, _ := http.NewRequest(verbs[rand.Intn(3)], "http://www.xx.com/index.html", closerWraper{io.LimitReader(crand.Reader, 100)})
+	req, _ := http.NewRequest(verbs[rand.Intn(3)], "http://www.xx.com/index.html", utils.CloserWraper{Reader: io.LimitReader(crand.Reader, 100)})
 
 	query := req.URL.Query()
 	for i := 0; i < 3; i++ {
@@ -149,20 +150,6 @@ func mockHttpRequest() *http.Request { //nolint
 	}
 	req.URL.RawQuery = query.Encode()
 	return req
-}
-
-var _ io.ReadCloser = (*closerWraper)(nil)
-
-type closerWraper struct {
-	reader io.Reader
-}
-
-func (c closerWraper) Read(p []byte) (int, error) {
-	return c.reader.Read(p)
-}
-
-func (c closerWraper) Close() error {
-	return nil
 }
 
 func randString() string {
