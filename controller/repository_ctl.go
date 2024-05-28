@@ -614,12 +614,17 @@ func (repositoryCtl RepositoryController) GetArchive(ctx context.Context, w *api
 
 func repositoryToDto(repository *models.Repository) *api.Repository {
 	return &api.Repository{
-		CreatedAt:   repository.CreatedAt.UnixMilli(),
-		CreatorId:   repository.CreatorID,
-		Description: repository.Description,
-		Head:        repository.HEAD,
-		Id:          repository.ID,
-		Name:        repository.Name,
-		UpdatedAt:   repository.UpdatedAt.UnixMilli(),
+		CreatedAt:            repository.CreatedAt.UnixMilli(),
+		CreatorId:            repository.CreatorID,
+		Description:          repository.Description,
+		Visible:              repository.Visible,
+		Head:                 repository.HEAD,
+		Id:                   repository.ID,
+		Name:                 repository.Name,
+		UpdatedAt:            repository.UpdatedAt.UnixMilli(),
+		OwnerId:              repository.OwnerID,
+		StorageAdapterParams: repository.StorageAdapterParams,
+		StorageNamespace:     repository.StorageNamespace,
+		UsePublicStorage:     repository.UsePublicStorage,
 	}
 }
