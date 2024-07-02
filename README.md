@@ -116,6 +116,7 @@ JiaoZiFS is supported or integrated by the following companies/projects. If you 
 * DeSci Asia
 * Artizen
 * 6079.AI
+* Functionland
   
 ----
 ### License
