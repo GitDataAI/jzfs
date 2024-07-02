@@ -110,10 +110,12 @@ Note: storage config for IPFS backend storage as you create a new repository in 
 <a href="https://github.com/gitdata001" target="_blank"><img src="https://avatars.githubusercontent.com/u/157772574?v=4" width="5%" height="5%"/> </a>
 
 ----
-### Our Users
-JiaoZiFS is used by following companies. 
+### Our Partners/Users
+JiaoZiFS is supported or integrated by the following companies/projects. If you want to be listed here, please contact us.
 
 * DeSci Asia
+* Artizen
+* 6079.AI
   
 ----
 ### License
