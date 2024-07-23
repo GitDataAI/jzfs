@@ -115,6 +115,7 @@ JiaoZiFS is supported or integrated by the following companies/projects. If you 
 
 * DeSci Asia
 * 6079.AI
+* MesoReefDAO
 
 ### Our Partners
 JiaoZiFS is supported or integrated by the following companies/projects. If you want to be listed here, please contact us.  
