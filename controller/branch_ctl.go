@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/GitDataAI/jiaozifs/auth/rbac"
 	"github.com/GitDataAI/jiaozifs/block/params"
@@ -136,6 +137,10 @@ func (bct BranchController) CreateBranch(ctx context.Context, w *api.JiaozifsRes
 
 	newBranch, err := workRepo.CreateBranch(ctx, body.Name)
 	if err != nil {
+		if strings.Contains(err.Error(), "already exit") {
+			w.Code(http.StatusConflict)
+			return
+		}
 		w.Error(err)
 		return
 	}
