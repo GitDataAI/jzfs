@@ -23,6 +23,7 @@ Data-centric AI is about the practice of iterating and collaborating on data, us
 
 ----
 ### Features
+
 In production systems with machine learning components, updates and experiments are frequent. New updates to models(data products) may be released every day or every few minutes, and different users may see the results of different models as part of A/B experiments or canary releases.
 
 * **Version Everything**: Data scientists are often criticized for being less disciplined with versioning their experiments(versioning of data, pipeline, code, and models), especially when using computational notebooks.
@@ -86,7 +87,6 @@ Build AL/ML pipeline over JiaoZiFS
 [LunCo](https://www.lunco.space/)   
 [Artizen Fund](https://artizen.fund/)   
 [HaAI Labs](https://haai.info/)   
-
 
 ----
 ### Contributors
