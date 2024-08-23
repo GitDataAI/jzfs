@@ -42,6 +42,6 @@ func init() {
 	rootCmd.PersistentFlags().String("user", "", "user name")
 	rootCmd.PersistentFlags().String("password", "", "password")
 
-	rootCmd.PersistentFlags().String("url", "https://127.0.0.1:34913", "url")
+	rootCmd.PersistentFlags().String("url", "http://127.0.0.1:34913", "url")
 
 }

@@ -52,7 +52,7 @@ var uploadCmd = &cobra.Command{
 			return errors.New("owner and repo must be set")
 		}
 
-		refName, err := cmd.Flags().GetString("refName")
+		refName, err := cmd.Flags().GetString("ref-name")
 		if err != nil {
 			return err
 		}
@@ -60,7 +60,7 @@ var uploadCmd = &cobra.Command{
 			return errors.New("refName must be set")
 		}
 
-		uploadPath, err := cmd.Flags().GetString("uploadPath")
+		uploadPath, err := cmd.Flags().GetString("upload-path")
 		if err != nil {
 			return err
 		}
@@ -69,7 +69,7 @@ var uploadCmd = &cobra.Command{
 			uploadPath = "/"
 		}
 
-		ignoreRootName, err := cmd.Flags().GetBool("ignoreRootName")
+		ignoreRootName, err := cmd.Flags().GetBool("ignore-root-name")
 		if err != nil {
 			return err
 		}
@@ -143,14 +143,102 @@ var uploadCmd = &cobra.Command{
 	},
 }
 
+// versionCmd represents the version command
+var downloadCmd = &cobra.Command{
+	Use:   "download",
+	Short: "download files from server",
+	RunE: func(cmd *cobra.Command, _ []string) error {
+		ctx := cmd.Context()
+		client, err := GetClient(cmd)
+		if err != nil {
+			return err
+		}
+
+		path, err := cmd.Flags().GetString("path")
+		if err != nil {
+			return err
+		}
+		if len(path) == 0 {
+			return errors.New("path must be set")
+		}
+
+		owner, err := cmd.Flags().GetString("owner")
+		if err != nil {
+			return err
+		}
+		if len(owner) == 0 {
+			return errors.New("owner must be set")
+		}
+
+		repo, err := cmd.Flags().GetString("repo")
+		if err != nil {
+			return err
+		}
+		if len(owner) == 0 || len(repo) == 0 {
+			return errors.New("owner and repo must be set")
+		}
+
+		refName, err := cmd.Flags().GetString("ref-name")
+		if err != nil {
+			return err
+		}
+		if len(refName) == 0 {
+			return errors.New("ref-name must be set")
+		}
+
+		refType, err := cmd.Flags().GetString("ref-type")
+		if err != nil {
+			return err
+		}
+		if len(refType) == 0 {
+			return errors.New("ref-type must be set")
+		}
+
+		fileName := filepath.Base(path)
+		output, err := cmd.Flags().GetString("output")
+		if err != nil {
+			return err
+		}
+
+		if len(output) == 0 {
+			fileName = output
+		}
+
+		opjResp, err := client.GetObject(ctx, owner, repo, &api.GetObjectParams{
+			// Type type indicate to retrieve from wip/branch/tag, default branch
+			Type:    api.RefType(refType),
+			RefName: refName,
+			Path:    path,
+		})
+		if err != nil {
+			return err
+		}
+
+		headObj, err := api.ParseGetObjectResponse(opjResp)
+		if err != nil {
+			return err
+		}
+
+		return os.WriteFile(fileName, headObj.Body, 0666)
+	},
+}
+
 func init() {
 	rootCmd.AddCommand(uploadCmd)
 
 	uploadCmd.Flags().String("path", "", "path of files to upload")
 	uploadCmd.Flags().String("owner", "", "owner")
 	uploadCmd.Flags().String("repo", "", "repo")
-	uploadCmd.Flags().String("refName", "main", "branch name")
-	uploadCmd.Flags().String("uploadPath", "", "path to save in server")
+	uploadCmd.Flags().String("ref-name", "main", "branch name")
+	uploadCmd.Flags().String("upload-path", "", "path to save in server")
 	uploadCmd.Flags().Bool("replace", true, "path to save in server")
-	uploadCmd.Flags().Bool("ignoreRootName", false, "ignore root name")
+	uploadCmd.Flags().Bool("ignore-root-name", false, "ignore root name")
+
+	rootCmd.AddCommand(downloadCmd)
+	downloadCmd.Flags().String("path", "", "path of files to upload")
+	downloadCmd.Flags().String("owner", "", "owner")
+	downloadCmd.Flags().String("repo", "", "repo")
+	downloadCmd.Flags().String("ref-name", "main", "branch name")
+	downloadCmd.Flags().String("ref-type", "branch", "refrence type")
+	downloadCmd.Flags().String("output", "branch", "refrence type")
 }

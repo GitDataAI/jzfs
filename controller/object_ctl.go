@@ -354,7 +354,7 @@ func (oct ObjectController) UploadObject(ctx context.Context, w *api.JiaozifsRes
 
 	err = validator.ValidateObjectPath(params.Path)
 	if err != nil {
-		w.BadRequest(err.Error())
+		w.BadRequest("%s %s", params.Path, err.Error())
 		return
 	}
 
