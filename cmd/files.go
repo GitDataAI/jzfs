@@ -239,6 +239,6 @@ func init() {
 	downloadCmd.Flags().String("owner", "", "owner")
 	downloadCmd.Flags().String("repo", "", "repo")
 	downloadCmd.Flags().String("ref-name", "main", "branch name")
-	downloadCmd.Flags().String("ref-type", "branch", "refrence type")
-	downloadCmd.Flags().String("output", "branch", "refrence type")
+	downloadCmd.Flags().String("ref-type", "branch", "reference type")
+	downloadCmd.Flags().String("output", "branch", "reference type")
 }
