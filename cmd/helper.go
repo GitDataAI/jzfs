@@ -9,7 +9,7 @@ import (
 )
 
 func GetClient(cmd *cobra.Command) (*api.Client, error) {
-	url := cmd.Flags().Lookup("url").Value.String()
+	url := cmd.Flags().Lookup("url").Value.String() + "/api/v1"
 	ak := cmd.Flags().Lookup("ak").Value.String()
 	sk := cmd.Flags().Lookup("sk").Value.String()
 

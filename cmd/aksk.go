@@ -28,12 +28,12 @@ var createAkskCmd = &cobra.Command{
 			Description: utils.String(desc),
 		})
 		if err != nil {
-			return err
+			return fmt.Errorf("request aksk %w", err)
 		}
 
 		result, err := api.ParseCreateAkskResponse(resp)
 		if err != nil {
-			return err
+			return fmt.Errorf("parser aksk response %w", err)
 		}
 
 		fmt.Printf("ak %s sk %s \n", result.JSON201.AccessKey, result.JSON201.SecretKey)
