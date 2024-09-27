@@ -53,6 +53,6 @@ jobs:
       - name: Deploy
         uses: WyriHaximus/github-action-helm3@v3
         with:
-          exec: helm upgrade  jiaozifs-api --install  ./chart --wait --atomic --timeout 2m --namespace jiaozifs --set-string log_level=debug --set-string db='${{secrets.DBURL}}' --set-string tag=${{ steps.version.outputs.version }}
+          exec: /usr/sbin/helm upgrade  jiaozifs-api --install  ./chart --wait --atomic --timeout 2m --namespace jiaozifs --set-string log_level=debug --set-string db='${{secrets.DBURL}}' --set-string tag=${{ steps.version.outputs.version }}
           kubeconfig: ${{ secrets.KUBECONTENT }}
           overrule_existing_kubeconfig: "true"
