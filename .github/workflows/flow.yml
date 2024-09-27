@@ -15,7 +15,7 @@ jobs:
     # uses: ./.github/workflows/test.yml
   deployment:
     needs:
-      # - test
+      # # - test
       - check
     uses: ./.github/workflows/deployment.yml
     secrets: inherit
