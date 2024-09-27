@@ -36,11 +36,11 @@ jobs:
         run: |
           go test -coverpkg=./... -coverprofile=coverage.out -covermode=atomic -timeout=30m -parallel=4  -v ./...
 
-      - name: Upload
-        uses: codecov/codecov-action@v4
-        with:
-          token: ${{secrets.CODECOV_TOKEN}}
-          files: ./coverage.out
-          name: jzfs
-          fail_ci_if_error: true
-          verbose: true
+      # - name: Upload
+        # uses: codecov/codecov-action@v4
+        # with:
+          # token: ${{secrets.CODECOV_TOKEN}}
+          # files: ./coverage.out
+          # name: jzfs
+          # fail_ci_if_error: true
+          # verbose: true
