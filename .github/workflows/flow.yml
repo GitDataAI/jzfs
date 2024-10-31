@@ -11,11 +11,11 @@ on:
 jobs:
   check:
     uses: ./.github/workflows/basic_check.yml
-  # test:
-    # uses: ./.github/workflows/test.yml
+  test:
+    uses: ./.github/workflows/test.yml
   deployment:
     needs:
-      # # - test
+      - test
       - check
     uses: ./.github/workflows/deployment.yml
     secrets: inherit
