@@ -1,5 +1,4 @@
-
-# JiaoZiFS (JZFS)
+# JZFS
 A version control file system for data linage & data collaboration.
 
 <p align="left">
@@ -9,15 +8,15 @@ A version control file system for data linage & data collaboration.
   <br/>
 </p>
 
-<a href="https://github.com/GitDataAI/jiaozifs"><img src="https://github.com/GitDataAI/jiaozifs/blob/main/docs/logo/jiaozifs.png?raw=true" width="100" /></a>
+<a href="https://github.com/GitDataAI/jzfs"><img src="https://github.com/GitDataAI/jzfs/blob/main/docs/logo/jiaozifs.png?raw=true" width="100" /></a>
 
 ----
-JiaoZiFS is an industry-leading **Data-Centric Version Control** File System, helps ensure Responsible AI Engineering by improving **Data Versioning**, **Provenance**, and **Reproducibility**.
+JZFS is an industry-leading **Data-Centric Version Control** File System, helps ensure Responsible AI Engineering by improving **Data Versioning**, **Provenance**, and **Reproducibility**.
 
 Note:
-* The name JiaoZi pays tribute to the world's earliest paper money: [Song Dynasty JiaoZi](https://en.wikipedia.org/wiki/Jiaozi_(currency)).
-* JiaoZiFS is yet another implementation of [IPFS (InterPlanetary File System)](https://ipfs.tech/) as JiaoZiFS will be compatible with the [implementation requirements](https://specs.ipfs.tech/architecture/principles/#ipfs-implementation-requirements) of IPFS.
-* As a filesystem of data versioning at scale, although JiaoZiFS is built for machine learning, It has a wide range of use scenarios (refer A Universe of Uses) and can be seamlessly integrated into all your data stack.
+* The name JZFS pays tribute to the world's earliest paper money: [Song Dynasty JiaoZi](https://en.wikipedia.org/wiki/Jiaozi_(currency)).
+* JZFS is yet another implementation of [IPFS (InterPlanetary File System)](https://ipfs.tech/) as JZFS will be compatible with the [implementation requirements](https://specs.ipfs.tech/architecture/principles/#ipfs-implementation-requirements) of IPFS.
+* As a filesystem of data versioning at scale, although JZFS is built for machine learning, It has a wide range of use scenarios (refer A Universe of Uses) and can be seamlessly integrated into all your data stack.
 
 Data-centric AI is about the practice of iterating and collaborating on data, used to build AI systems, programmatically. Machine learning pioneer Andrew Ng [argues that focusing on the quality of data fueling AI systems will help unlock its full power](https://youtu.be/TU6u_T-s68Y).
 
@@ -35,15 +34,15 @@ In production systems with machine learning components, updates and experiments 
 
 #### Requirement
 
-1. To build JiaoZiFS, you need a working installation of   [Go 1.22.0 or higher](https://golang.org/dl/)
-2. JiaoZiFS use postgres to store running data, you can install at  [postgres install installation guide](https://www.postgresql.org/docs/current/installation.html)
+1. To build JZFS, you need a working installation of   [Go 1.22.0 or higher](https://golang.org/dl/)
+2. JZFS use postgres to store running data, you can install at  [postgres install installation guide](https://www.postgresql.org/docs/current/installation.html)
 
 #### Build And Running
 
 1. clone and build
 ```bash
-git clone https://github.com/GitDataAI/jiaozifs.git
-cd jiaozifs
+git clone https://github.com/GitDataAI/jzfs.git
+cd jzfs
 make build
 ```
 
@@ -62,16 +61,16 @@ docker run -v <data>:/app -p 34913:34913 gitdatateam/jzfs:latest  --db "postgres
 ```
 #### Cloud
 
-[Try without installing](https://cloud.jiaozifs.com)
+[Try without installing](https://console.gitdata.ai)
 
-Note: storage config for IPFS backend storage as you create a new repository in JiaoZiFS UI.
+Note: storage config for IPFS backend storage as you create a new repository in JZFS Console.
 
 ```
  {"type":"ipfs","ipfs":{"url":"/dns/kubo-service.ipfs.svc.cluster.local/tcp/5001"}}
 ```
 
 #### Examples
-Build AL/ML pipeline over JiaoZiFS   
+Build AL/ML pipeline over JZFS   
 [Face detection and recognition inference pipeline](https://colab.research.google.com/drive/1wsv-KMxTdsCLZ64eLq4W1MTfspid-vv6?usp=sharing)
 
 ----
@@ -100,6 +99,6 @@ Build AL/ML pipeline over JiaoZiFS
 ----
 ### License
 
-Dual-licensed under [MIT](https://github.com/GitDataAI/jiaozifs/blob/main/LICENSE-MIT) + [Apache 2.0](https://github.com/GitDataAI/jiaozifs/blob/main/LICENSE-APACHE)
+Dual-licensed under [MIT](https://github.com/GitDataAI/jzfs/blob/main/LICENSE-MIT) + [Apache 2.0](https://github.com/GitDataAI/jzfs/blob/main/LICENSE-APACHE)
 
 
