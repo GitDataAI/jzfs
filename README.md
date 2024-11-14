@@ -8,7 +8,7 @@ A version control file system for data linage & data collaboration.
   <br/>
 </p>
 
-<a href="https://github.com/GitDataAI/jzfs"><img src="https://github.com/GitDataAI/jzfs/blob/main/docs/logo/jiaozifs.png?raw=true" width="100" /></a>
+<a href="https://github.com/GitDataAI/jzfs"><img src="https://github.com/GitDataAI/jzfs/blob/main/docs/logo/jzfs-go.png?raw=true" width="100" /></a>
 
 ----
 JZFS is an industry-leading **Data-Centric Version Control** File System, helps ensure Responsible AI Engineering by improving **Data Versioning**, **Provenance**, and **Reproducibility**.
