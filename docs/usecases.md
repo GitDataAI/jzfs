@@ -4,7 +4,7 @@ JZFS's versatility shines across different industries – making it the multi-pu
 ## Data Sharing
 Git-style version control allows for decentralized, asynchronous collaboration. Every person gets their own copy of the dataset to read and write. JZFS allows you to coordinate collaboration over the internet with permissions, human review, forks and all the other distributed collaboration tools you are used to from GitHub.
 
-Leveraging the the Git model of code sharing which has scaled to thousands of contributors for open source software, JZFS solve the data sharing as below:
+Leveraging the Git model of code sharing which has scaled to thousands of contributors for open source software, JZFS solve the data sharing as below:
 - Do you share data with customers?
 - Do they ask you what changed between versions you share?
 - Do they want to actively switch versions instead of having data change out from under them?
@@ -22,7 +22,30 @@ JZFS is the best way to build DataHub to share data with customers or vendors.
 ### Case Studies
 Let us know if you would like us to feature your use of JZFS for data sharing here: info@gitdata.ai .
 
-## **Defining artificial intelligence in the context of lineage**
+## Data and Model Quality Control 
+Data Quality Control is a big, broad topic. Tim Sehn@Dolt presents a model for thinking about data quality.
+
+![](./img/dataquality.png)
+
+This model divides data into quality levels based on its classification.      The further you travel down the inverted pyramid the higher quality the data.      Each level adds additional constraints to the data ensuring data quality.      Each level also requires more work, either by humans or software, reducing data quantity.
+
+You want most humans consuming data in the form of metrics or dashboards from the human reviewed portion of the data pyramid.
+
+High quality data takes effort.      You can make unstructured data semi-structured data by doing work.      You can make semi-structured data structured data by doing work.      And so on.
+
+If you believe in the "Data is oil" analogy, improving data quality in this manner is **refining**.
+
+Traditional databases were built for a world of transactions and reports.       External quality control had been the domain of the analysis function of the data organization. Humans produce reports or analyses using the data and uncover data quality issues in the process. They then either make a best effort patch of the data in the warehouse or try to root cause the problem in the pipeline and get it fixed in the data source.
+
+Modern data science tools use data to create models that behave more like software than reports.      Models produce user visible outputs and define application behavior.      Tuning data to get the right model can be a lot like writing code.
+
+Modern data science applications require model reproducibility, data quality, and multiple versions of data to perform at their best.      JZFS allows for these capabilities directly in your datasets, in a Git-style version control model most developers understand.
+
+JZFS is used for model reproducibility. If you build a model from a version of the data, make a tag at that commit and refer to that tag in the model metadata.  It is common practice to store copies of training data or database backups in cloud storage for model reproducibility.      A full copy of the data is stored for every training run.      This can become quite expensive and limit the amount of models you can reproduce.      JZFS stores only the differences between stored versions decreasing the cost of data storage. Additionally, JZFS can produce diffs between versions of training data producing novel model insights.
+
+JZFS is a new way to think about data quality control that adapts quality ideas, testing and versioning, from software development to data.    JZFS can be applied in your analytics function but also in your pipeline itself.    Moving data quality control upstream of analytics is a powerful idea. Just like agile software development made software development more efficient by moving software quality control closer to where code was generated, this new breed of data quality control tools allows you to move data quality control closer to where data is generated. JZFS is a complementary to traditional data quality control tools.    You can and should use both.    These tools can be deployed in multiple places in your data stack, preferably at all the entry and exit points from your warehouse or lake.
+
+### **Defining artificial intelligence in the context of lineage**
 
 Artificial intelligence (AI) is an umbrella term that covers a variety of techniques and approaches that make it possible for machines to learn, adjust and act with intelligence comparable to the natural intelligence of humans. Lineage has direct implications for many of the techniques and approaches of AI, such as:
 - Neural networks. AI classifies data to make predictions and decisions in much the same way a human brain does. A neural network is a computing system made up of interconnected units (like neurons) that process data from external inputs, relaying information between each unit. The neural network requires multiple passes at the data to find connections and derive meaning from undefined data. Neural networks benefit greatly from the movement aspects of data lineage – because connecting those dots directs its search for meaning. 
