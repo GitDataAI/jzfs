@@ -1,0 +1,57 @@
+name: Build Test
+on:
+  push:
+    branches:
+      - main
+      - deploy/*
+  pull_request:
+  workflow_call:
+    secrets:
+      DOCKERHUB_USERNAME:
+        required: true
+      DOCKERHUB_TOKEN:
+        required: true
+      KUBECONTENT:
+        required: true
+
+jobs:
+  deployment:
+    if: ${{ startsWith(github.ref, 'refs/heads/deployment/') || github.ref == 'refs/heads/main'  }}
+    runs-on: [self-hosted]
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Get version
+        id: version
+        run: |
+          if [[ -n "$GITHUB_REF" && "$GITHUB_REF" == "refs/tags/"* ]]; then
+            echo "tag version"
+            echo "::set-output name=version::${GITHUB_REF/refs\/tags\//}"
+          else
+            echo "commit version"    
+            echo "::set-output name=version::${{ github.sha }}"
+          fi
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+          target: x86_64-unknown-linux-gnu
+      - name: Build binary
+        run: cargo build --workspace --release
+
+      - name: Build and push jzfs-api
+        run: |
+          docker build -t gitdatateam/jzfs-rs:${{ steps.version.outputs.version }} .
+          docker push gitdatateam/jzfs-rs:${{ steps.version.outputs.version }}
+
+
+      - name: Deploy
+        uses: WyriHaximus/github-action-helm3@v3
+        with:
+          exec: /usr/sbin/helm upgrade jzfs-rs --install ./chart/ --namespace gitdata --set-string tag=${{ steps.version.outputs.version }}
+          kubeconfig: ${{ secrets.KUBECONTENT }}
+          overrule_existing_kubeconfig: "true"
