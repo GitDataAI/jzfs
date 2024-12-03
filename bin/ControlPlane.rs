@@ -1,12 +1,9 @@
-use std::collections::HashMap;
-use std::thread;
 use actix_session::config::{CookieContentSecurity, PersistentSession, TtlExtensionPolicy};
 use actix_session::SessionMiddleware;
 use actix_session::storage::RedisSessionStore;
 use actix_web::{web, App, HttpServer};
 use actix_web::cookie::Key;
 use actix_web::middleware::Logger;
-use actix_web::rt::System;
 use actix_web_prom::PrometheusMetricsBuilder;
 use log::info;
 use prometheus::{opts, IntCounterVec};
