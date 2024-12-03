@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: jzfs-rust-service
+  namespace: gitdata
+  labels:
+    apptype: jzfs-rust
+spec:
+  type: ClusterIP
+  selector:
+    app: jzfs-rust
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80

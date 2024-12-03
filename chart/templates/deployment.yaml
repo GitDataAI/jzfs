@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: gitdata
+  name: jzfs-rust
+  labels:
+    apptype: jzfs-rust
+spec:
+  replicas: {{ .Values.replicas}}
+  selector:
+    matchLabels:
+      app: jzfs-rust
+  template:
+    metadata:
+      labels:
+        app: jzfs-rust
+        apptype: jzfs-rust
+    spec:
+      containers:
+        - name: jzfs-rust
+          image: gitdatateam/jzfs-rs:{{ .Values.tag }}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
