@@ -43,3 +43,4 @@ pub struct UserUpdate{
     pub sex: Option<String>,
     pub description: Option<String>,
 }
+

@@ -17,6 +17,7 @@ impl TeamService {
             created_at: Set(time::OffsetDateTime::now_utc()),
             updated_at: Set(time::OffsetDateTime::now_utc()),
             created_by: Set(owner),
+            avatar: Default::default(),
         }
             .save(&txn)
             .await?;

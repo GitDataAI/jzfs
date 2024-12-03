@@ -11,6 +11,9 @@ use crate::api::handler::users::update::api_user_update;
 use crate::api::handler::version::api_version;
 use actix_web::web;
 use actix_web::web::{get, post};
+use crate::api::handler::owner::group::api_owner_group;
+use crate::api::handler::owner::info::api_owner_info;
+use crate::api::handler::owner::team::api_owner_teams;
 
 pub fn routes(cfg: &mut web::ServiceConfig){
     let start = std::time::Instant::now();
@@ -19,6 +22,12 @@ pub fn routes(cfg: &mut web::ServiceConfig){
         .route("/version", get().to(api_version))
             .service(
                 web::scope("/v1")
+                    .service(
+                        web::scope("/owner")
+                            .route("/info",post().to(api_owner_info))
+                            .route("/team",post().to(api_owner_teams))
+                            .route("/group",post().to(api_owner_group))
+                    )
                     .service(
                         web::scope("/users")
                             .route("/apply", post().to(api_user_apply))

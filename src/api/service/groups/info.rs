@@ -10,4 +10,7 @@ impl GroupService {
             None => Err(anyhow::anyhow!("[Error] Group Not Found"))
         }
     }
+    pub async fn infos(&self, uids: Vec<Uuid>) -> anyhow::Result<Vec<group::Model>>{
+        Ok(group::Entity::find().filter(group::Column::Uid.is_in(uids)).all(&self.db).await?)
+    }
 }

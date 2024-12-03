@@ -12,7 +12,7 @@ pub struct Model{
     pub group_id: Uuid,
     pub name: String,
     pub description: String,
-
+    pub avatar: Option<String>,
     pub created_at: OffsetDateTime,
     pub updated_at: OffsetDateTime,
     
