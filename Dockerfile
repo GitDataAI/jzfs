@@ -5,7 +5,6 @@ RUN apt-get update \
 
 WORKDIR /app
 COPY  target/release/ControlPlane ./
-COPY ./config ./config
 
 EXPOSE 80
 CMD ["/app/ControlPlane"]
