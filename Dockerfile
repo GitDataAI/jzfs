@@ -6,7 +6,6 @@ RUN apt-get update \
 WORKDIR /app
 COPY  target/release/ControlPlane ./
 RUN mkdir "config"
-COPY config/config.toml /app/config/config.toml
 
 EXPOSE 80
 CMD ["/app/ControlPlane"]

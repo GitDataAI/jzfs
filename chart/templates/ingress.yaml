@@ -24,7 +24,7 @@ metadata:
     heritage: Helm
     release:  jzfs-rust
 spec:
-  ingressClassName: {{.Values.ingress_name}}
+  ingressClassName: "{{.Values.ingress_name}}"
   rules:
     - host: v1.jiaozifs.com
       http:

@@ -21,13 +21,18 @@ impl Config {
             std::fs::create_dir("./config").unwrap()
         }
         if std::fs::read(CONFIG_FILE_NAME).is_err(){
+            if std::env::var("CONFIG").is_ok(){
+                let config:Config = toml::from_str(&std::env::var("CONFIG").unwrap()).unwrap();
+                std::fs::write(CONFIG_FILE_NAME, toml::to_string(&config).unwrap()).unwrap();
+                return config;
+            }
             let config = Config::default();
             let config = toml::to_string(&config).unwrap();
             std::fs::write(CONFIG_FILE_NAME, config).unwrap();
             return Config::default();
         }
         let cfg:Config = toml::from_str(&std::fs::read_to_string(CONFIG_FILE_NAME).unwrap()).unwrap();
-        CFG.get_or_init(||async { 
+        CFG.get_or_init(||async {
             cfg.clone()
         }).await;
         cfg

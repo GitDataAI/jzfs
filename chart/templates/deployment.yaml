@@ -6,7 +6,7 @@ metadata:
   labels:
     apptype: jzfs-rust
 spec:
-  replicas: {{ .Values.replicas}}
+  replicas: "{{ .Values.replicas}}"
   selector:
     matchLabels:
       app: jzfs-rust
@@ -18,7 +18,10 @@ spec:
     spec:
       containers:
         - name: jzfs-rust
-          image: gitdatateam/jzfs-rs:{{ .Values.tag }}
+          image: "gitdatateam/jzfs-rs:{{ .Values.tag }}"
           imagePullPolicy: Always
           ports:
             - containerPort: 80
+          env:
+            - name: CONFIG
+              value: "{{ .Values.config }}"
