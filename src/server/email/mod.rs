@@ -4,6 +4,7 @@ use lettre::transport::smtp::authentication::Credentials;
 use log::{error, info};
 use tokio::sync::mpsc::UnboundedSender;
 use tokio::sync::OnceCell;
+use crate::config::file::CFG;
 use crate::server::email::msg::EmailMSG;
 
 pub mod msg;
@@ -30,10 +31,12 @@ impl EmailServer {
     pub async fn init() -> EmailServer {
         info!("Email Service Start");
         let (rx, mut tx) = tokio::sync::mpsc::unbounded_channel::<EmailMSG>();
+        let cfg = CFG.get().unwrap().clone();
+        
         tokio::spawn(async move {
-            let creds = Credentials::new("gitdata-bot@gitdata.ai".to_owned(), "GsMKT8AP5xf6RUGq".to_owned());
+            let creds = Credentials::new(cfg.email.username.to_owned(), cfg.email.password.to_owned());
             let mailer: AsyncSmtpTransport<Tokio1Executor> =
-                AsyncSmtpTransport::<Tokio1Executor>::relay("smtp.exmail.qq.com")
+                AsyncSmtpTransport::<Tokio1Executor>::relay(&*cfg.email.smtp)
                     .unwrap()
                     .credentials(creds)
                     .build();

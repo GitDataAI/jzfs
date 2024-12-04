@@ -10,21 +10,26 @@ use prometheus::{opts, IntCounterVec};
 use time::Duration;
 use jzfs::api::routes::routes;
 use jzfs::api::service::Service;
+use jzfs::config::file::{Config, CFG};
 use jzfs::server::db::init_db;
 use jzfs::server::redis::Redis;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt().init();
-    info!("server start");
+    info!("Config Loading");
+    Config::init().await;
+    info!("Config Loaded success!");
+    
+    info!("Server starting");
     init_db().await;
-    info!("db init");
+    info!("Database init");
     let server = Service::new().await;
-    info!("service init");
+    info!("Service init");
     let redis = Redis::init().await;
-    info!("redis init");
+    info!("Redis init");
     let session = RedisSessionStore::builder_pooled(redis.clone().pool).build().await?;
-    info!("session init");
+    info!("Session init");
     let prometheus = PrometheusMetricsBuilder::new("api")
         .endpoint("/api/metrics")
         .build()
@@ -35,7 +40,10 @@ async fn main() -> anyhow::Result<()> {
     prometheus
         .registry
         .register(Box::new(counter.clone()))?;
-    info!("prometheus init");
+    info!("Prometheus init");
+    
+    let cfg = CFG.get().unwrap().clone().http.clone();
+    
     HttpServer::new(move || { 
         App::new()
             .wrap(Logger::default())
@@ -66,7 +74,8 @@ async fn main() -> anyhow::Result<()> {
                     .configure(routes)
             )
     })
-        .bind("0.0.0.0:80")?
+        .bind(cfg.format())?
+        .workers(cfg.worker())
         .max_connections(usize::MAX)
         .run()
         .await?;

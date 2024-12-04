@@ -1,12 +1,14 @@
 use std::time::Duration;
 use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 use tokio::sync::OnceCell;
+use crate::config::file::CFG;
 
 pub static DB: OnceCell<DatabaseConnection> = OnceCell::const_new();
 
 
 pub async fn init_db(){
-    let mut opt = ConnectOptions::new("postgres://postgres:D8Sl659hBP@47.236.139.99:6444/gitdata");
+    let cfg = CFG.get().unwrap().clone();
+    let mut opt = ConnectOptions::new(cfg.db.format());
     // let mut opt = ConnectOptions::new("postgres://postgres:123456@192.168.23.128/jzfs");
     opt.max_connections(100)
         .min_connections(5)

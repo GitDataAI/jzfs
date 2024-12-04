@@ -22,3 +22,6 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 80
+          env:
+            - name: CONFIG
+              value: {{ .Values.config }}

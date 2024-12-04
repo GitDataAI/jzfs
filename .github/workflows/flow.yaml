@@ -13,6 +13,8 @@ on:
         required: true
       KUBECONTENT:
         required: true
+      CONFIG:
+        required: true
 
 jobs:
   deployment:
@@ -52,6 +54,6 @@ jobs:
       - name: Deploy
         uses: WyriHaximus/github-action-helm3@v3
         with:
-          exec: /usr/sbin/helm upgrade jzfs-rs --install ./chart/ --namespace gitdata --set-string tag=${{ steps.version.outputs.version }}
+          exec: /usr/sbin/helm upgrade jzfs-rs --install ./chart/ --namespace gitdata --set-string tag=${{ steps.version.outputs.version }} --set-string config=${{ secrets.CONFIG }}
           kubeconfig: ${{ secrets.KUBECONTENT }}
           overrule_existing_kubeconfig: "true"

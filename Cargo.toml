@@ -55,7 +55,7 @@ uuid = { version = "1.11.0" ,features = [
 ] }
 serde = { version = "1.0.126", features = ["derive"] }
 serde_json = { version = "1.0.133", features = ["std"] }
-
+toml = { version = "0.8.19",features = ["indexmap","parse"] }
 
 anyhow = "1.0.47"
 
