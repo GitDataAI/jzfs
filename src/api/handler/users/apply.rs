@@ -6,6 +6,16 @@ use crate::api::middleware::session::ALLOW_NEXT_KEY;
 use crate::api::service::Service;
 use crate::utils::r::R;
 
+#[utoipa::path(
+    post,
+    tag = "users",
+    path = "/api/v1/users/apply",
+    request_body = UsersInner,
+    responses(
+            (status = 200, description = "Apply Success"),
+            (status = NOT_FOUND, description = "Pet was not found")
+    ),
+)]
 pub async fn api_user_apply(
     session: Session,
     dto: web::Json<UsersInner>,

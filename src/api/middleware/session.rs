@@ -1,10 +1,11 @@
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use uuid::Uuid;
 use crate::metadata::model::users::users::Model;
 pub const ALLOW_NEXT_KEY: &str = "allow_next";
 pub const CAPTCHA: &str = "captcha";
 pub const SESSION_USER_KEY: &str = "session_user";
-#[derive(Deserialize,Serialize,Clone,Debug)]
+#[derive(Deserialize,Serialize,Clone,Debug, ToSchema)]
 pub struct SessionModel{
     pub uid: Uuid,
     pub name: String,

@@ -6,6 +6,21 @@ use crate::api::middleware::session::SESSION_USER_KEY;
 use crate::api::service::Service;
 use crate::utils::r::R;
 
+
+
+#[utoipa::path(
+    post,
+    tag = "users",
+    path = "/api/v1/users/login",
+    request_body = UsersInner,
+    description = "if includ must is base64",
+    responses(
+            (status = 200, description = "Login Success"),
+            (status = 400, description = "Base64 Error"),
+            (status = 400, description = "Base64 DeSerde Error"),
+            (status = 401, description = "Login Failed"),
+    ),
+)]
 pub async fn api_users_login_name(
     session: Session,
     dto: web::Json<UsersInner>,
@@ -43,7 +58,7 @@ pub async fn api_users_login_name(
         },
         Err(e) => {
             R::<String>{
-                code: 400,
+                code: 401,
                 msg: Option::from(e.to_string()),
                 data: None,
             }

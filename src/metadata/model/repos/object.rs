@@ -18,7 +18,7 @@ pub struct ObjectModel{
     pub uid: Uuid,
     pub repo_id: Uuid,
     pub branch_id: Uuid,
-    pub object: Object
+    pub object: Vec<Object>
 }
 
 

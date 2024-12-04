@@ -5,6 +5,18 @@ use crate::api::dto::team::TeamInvite;
 use crate::api::service::Service;
 use crate::utils::r::R;
 
+#[utoipa::path(
+    post,
+    tag = "teams",
+    path = "/api/v1/teams/{group}/{team}/invite",
+    request_body(content = TeamInvite, content_type = "application/json"),
+    responses(
+        (status = 200, description = "Ok"),
+        (status = 400, description = "Group Not Exist"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Other Error"),
+   ),
+)]
 pub async fn api_team_group_invite(
     session: Session,
     path: web::Path<(Uuid,Uuid)>,

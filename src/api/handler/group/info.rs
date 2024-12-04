@@ -2,6 +2,16 @@ use actix_web::{web, Responder};
 use crate::api::service::Service;
 use crate::utils::r::R;
 
+
+#[utoipa::path(
+    get,
+    tag = "group",
+    path = "/api/v1/group/{group}",
+    responses(
+        (status = 200, description = "Group found successfully"),
+        (status = 400, description = "Group Not Found"),
+    ),
+)]
 pub async fn api_group_info(
     group: web::Path<String>,
     service: web::Data<Service>

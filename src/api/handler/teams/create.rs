@@ -5,6 +5,19 @@ use crate::api::dto::team::TeamCreate;
 use crate::api::service::Service;
 use crate::utils::r::R;
 
+
+#[utoipa::path(
+    post,
+    tag = "team",
+    path = "/api/v1/team/{group}",
+    request_body = TeamCreate,
+    responses(
+        (status = 200, description = "Ok"),
+        (status = 400, description = "Group Not Exist"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Other Error"),
+    ),
+)]
 pub async fn api_teams_create(
     session: Session,
     group: web::Path<Uuid>,

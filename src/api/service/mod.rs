@@ -1,8 +1,10 @@
 use crate::api::service::check::CheckService;
 use crate::api::service::email::EmailService;
 use crate::api::service::groups::GroupService;
+use crate::api::service::repos::RepoService;
 use crate::api::service::teams::TeamService;
 use crate::api::service::users::UserService;
+use crate::metadata::transaction::repos::RepoTransaction;
 use crate::server::db::DB;
 use crate::server::email::EmailServer;
 
@@ -19,7 +21,8 @@ pub struct Service{
     pub users: UserService,
     pub group: GroupService,
     pub check: CheckService,
-    pub team: TeamService
+    pub team: TeamService,
+    pub repo: RepoService,
 }
 
 impl Service {
@@ -42,6 +45,10 @@ impl Service {
             team: TeamService{
                 db: db.clone(),
             },
+            repo: RepoService{
+                db: db.clone(),
+                transaction: RepoTransaction::new(db.clone()),
+            }
         }
     }
 }

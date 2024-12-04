@@ -6,6 +6,21 @@ use crate::api::middleware::session::{SessionModel, SESSION_USER_KEY};
 use crate::api::service::Service;
 use crate::utils::r::R;
 
+
+#[utoipa::path(
+    post,
+    tag = "users",
+    path = "/api/v1/users/reset",
+    request_body = UsersInner,
+    description = "if include must is base64",
+    responses(
+            (status = 200, description = "Reset Success"),
+            (status = 400, description = "Base64 Error"),
+            (status = 400, description = "Base64 DeSerde Error"),
+            (status = 402, description = "Reset Failed"),
+            (status = 401, description = "Not Login")
+    ),
+)]
 pub async fn api_user_reset_passwd_profile(
     session: Session,
     dto: web::Json<UsersInner>,
@@ -53,7 +68,7 @@ pub async fn api_user_reset_passwd_profile(
         },
         Err(e) => {
             R::<String>{
-                code: 400,
+                code: 402,
                 msg: Option::from(e.to_string()),
                 data: None,
             }

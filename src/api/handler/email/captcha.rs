@@ -5,6 +5,17 @@ use crate::api::middleware::session::{ALLOW_NEXT_KEY, CAPTCHA};
 use crate::api::service::Service;
 use crate::utils::r::R;
 
+#[utoipa::path(
+    post,
+    tag = "email",
+    path = "/api/v1/email/captcha",
+    request_body(content = EmailCaptcha, content_type = "application/json"),
+    responses(
+        (status = 200, description = "Ok"),
+        (status = 400, description = "Captcha Expired"),
+        (status = 500, description = "Other Error"),
+    ),
+)]
 pub async fn api_email_rand_captcha(
     session: Session, 
     service: web::Data<Service>,
@@ -31,6 +42,17 @@ pub async fn api_email_rand_captcha(
         }
 }
 
+#[utoipa::path(
+    post,
+    tag = "email",
+    path = "/api/v1/email/captcha/check",
+    request_body(content = EmailCaptchaCheck, content_type = "application/json"),
+    responses(
+        (status = 200, description = "Ok"),
+        (status = 400, description = "Captcha Expired"),
+        (status = 500, description = "Other Error"),
+    ),
+)]
 pub async fn api_email_captcha_check(
     session: Session, 
     dto: web::Json<EmailCaptchaCheck>

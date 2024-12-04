@@ -3,6 +3,18 @@ use crate::api::dto::email::EmailCaptcha;
 use crate::api::service::Service;
 use crate::utils::r::R;
 
+
+#[utoipa::path(
+    post,
+    tag = "email",
+    path = "/api/v1/email/forget",
+    request_body = EmailCaptcha,
+    responses(
+        (status = 200, description = "Ok"),
+        (status = 400, description = "User Not Exist"),
+        (status = 405, description = "Other Error"),
+    ),
+)]
 pub async fn api_email_forget(
     email: web::Json<EmailCaptcha>,
     service: web::Data<Service>,
@@ -34,7 +46,7 @@ pub async fn api_email_forget(
         },
         Err(e) => {
             R::<String>{
-                code: 400,
+                code: 405,
                 msg: Option::from(e.to_string()),
                 data: None,
             }

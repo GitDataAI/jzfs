@@ -1,25 +1,26 @@
 use sea_orm::*;
 use serde::{Deserialize, Serialize};
+use time::OffsetDateTime;
 use uuid::Uuid;
 
+
 #[derive(Deserialize,Serialize,Debug,Clone,DeriveEntityModel)]
-#[sea_orm(table_name = "branch")]
+#[sea_orm(table_name = "repo_commit")]
 pub struct Model{
     #[sea_orm(primary_key)]
     pub uid: Uuid,
-    pub repo_id: String,
-    pub branch: String,
+    pub repo_id: Uuid,
+    pub branch_id: Uuid,
 
-    pub protect: bool,
-    pub visible: bool,
+    pub bio: String,
 
-    pub head: Uuid, // 最近一次commit的uid
+    pub commit_user: String,
+    pub commit_email: String,
+    pub commit_user_id: Uuid,
 
-    pub created_at: i64,
-    pub updated_at: i64,
+    pub commit_id: i64,
 
-    pub created_by: Uuid,
-
+    pub created_at: OffsetDateTime,
 }
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {}

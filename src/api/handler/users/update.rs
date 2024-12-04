@@ -5,6 +5,17 @@ use crate::api::middleware::session::{SessionModel, SESSION_USER_KEY};
 use crate::api::service::Service;
 use crate::utils::r::R;
 
+#[utoipa::path(
+    post,
+    tag = "users",
+    path = "/api/v1/users/update",
+    request_body = UserUpdate,
+    responses(
+            (status = 200, description = "Upload Success"),
+            (status = 400, description = "Other Error"),
+            (status = 401, description = "User Not Login"),
+    ),
+)]
 pub async fn api_user_update(
     session: Session,
     service: web::Data<Service>,

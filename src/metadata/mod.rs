@@ -1,3 +1,3 @@
 pub mod model;
 pub mod migration;
-mod transaction;
+pub mod transaction;

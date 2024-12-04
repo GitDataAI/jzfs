@@ -5,6 +5,16 @@ use crate::api::middleware::session::{SessionModel, SESSION_USER_KEY};
 use crate::api::service::Service;
 use crate::utils::r::R;
 
+#[utoipa::path(
+    post,
+    tag = "group",
+    path = "/api/v1/group/create",
+    request_body = GroupCreate,
+    responses(
+        (status = 200, description = "Group Create Success"),
+        (status = 400, description = "Group Create Failed"),
+    ),
+)]
 pub async fn api_group_create(
     dto: web::Json<GroupCreate>,
     service: web::Data<Service>,
