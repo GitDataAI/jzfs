@@ -7,8 +7,8 @@ use crate::utils::r::R;
 
 #[utoipa::path(
     post,
-    tag = "teams",
-    path = "/api/v1/teams/{group}/{team}/invite",
+    tag = "team",
+    path = "/api/v1/team/{group}/{team}/invite",
     request_body(content = TeamInvite, content_type = "application/json"),
     responses(
         (status = 200, description = "Ok"),

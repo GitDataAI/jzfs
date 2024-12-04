@@ -6,8 +6,8 @@ use actix_web::{web, Responder};
 
 #[utoipa::path(
     get,
-    tag = "teams",
-    path = "/api/v1/search/team",
+    tag = "team",
+    path = "/api/v1/team/list",
     request_body = ListOption<SearchTeamOptions>,
     responses(
         (status = 200, description = "Ok"),

@@ -6,8 +6,8 @@ use uuid::Uuid;
 
 #[utoipa::path(
     get,
-    tag = "teams",
-    path = "/api/v1/teams/{uid}/info",
+    tag = "team",
+    path = "/api/v1/team/{uid}/info",
     responses(
         (status = 200, description = "Ok"),
         (status = 400, description = "Team Not Exist"),
