@@ -101,8 +101,8 @@ pub fn routes(cfg: &mut web::ServiceConfig){
                     .service(
                         web::scope("/team")
                             .route("/list",get().to(api_list_team))
-                            .route("/create",post().to(api_teams_create))
-                            .route("/invite", post().to(api_team_group_invite))
+                            .route("/{group}/create",post().to(api_teams_create))
+                            .route("/{group}/{team}/invite", post().to(api_team_group_invite))
                             .route("/{uid}/info", post().to(api_team_info))
                     )
                 

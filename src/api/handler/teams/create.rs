@@ -9,7 +9,7 @@ use crate::utils::r::R;
 #[utoipa::path(
     post,
     tag = "team",
-    path = "/api/v1/team/{group}",
+    path = "/api/v1/team/{group}/create",
     request_body = TeamCreate,
     responses(
         (status = 200, description = "Ok"),
