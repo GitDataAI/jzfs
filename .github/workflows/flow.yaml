@@ -50,10 +50,13 @@ jobs:
           docker build -t gitdatateam/jzfs-rs:${{ steps.version.outputs.version }} .
           docker push gitdatateam/jzfs-rs:${{ steps.version.outputs.version }}
 
+      - name: Move Config
+        run: |
+          echo ${{ secrets.CONFIG }} > ./config/config.toml
 
       - name: Deploy
         uses: WyriHaximus/github-action-helm3@v3
         with:
-          exec: /usr/sbin/helm upgrade jzfs-rs --install ./chart/ --namespace gitdata --set-string tag=${{ steps.version.outputs.version }} --set-string config=${{ secrets.CONFIG }}
+          exec: /usr/sbin/helm upgrade jzfs-rs --install ./chart/ --namespace gitdata --set-string tag=${{ steps.version.outputs.version }}
           kubeconfig: ${{ secrets.KUBECONTENT }}
           overrule_existing_kubeconfig: "true"
