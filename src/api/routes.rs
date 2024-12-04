@@ -21,6 +21,7 @@ use crate::api::handler::version::api_version;
 use crate::api::scalar::ApiDoc;
 use actix_web::web::{delete, get, post, put};
 use actix_web::web;
+use crate::api::handler::teams::byuser::api_team_by_user;
 use crate::api::middleware::auth::must_login::must_login;
 
 pub fn routes(cfg: &mut web::ServiceConfig){
@@ -104,6 +105,7 @@ pub fn routes(cfg: &mut web::ServiceConfig){
                             .route("/{group}/create",post().to(api_teams_create))
                             .route("/{group}/{team}/invite", post().to(api_team_group_invite))
                             .route("/{uid}/info", post().to(api_team_info))
+                            .route("/byuser", get().to(api_team_by_user))
                     )
                 
         )
