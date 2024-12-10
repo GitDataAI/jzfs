@@ -1,12 +1,15 @@
+use crate::api::handler::users::setting::__path_api_user_setting;
+use crate::api::handler::owner::setting::__path_api_owner_setting;
+use crate::api::handler::owner::team::__path_api_owner_team;
+use crate::api::handler::owner::repo::__path_api_owner_repo;
+use crate::api::handler::owner::followers::__path_api_owner_follower;
+use crate::api::handler::owner::email::__path_api_owner_email;
 use crate::api::handler::repo::create::__path_api_repo_create;
-use crate::api::handler::owner::team::__path_api_owner_teams;
-use crate::api::handler::owner::info::__path_api_owner_info;
 use crate::api::handler::owner::group::__path_api_owner_group;
 use crate::api::handler::teams::list::__path_api_list_team;
 use crate::api::handler::email::forget::__path_api_email_forget;
 use crate::api::handler::email::captcha::__path_api_email_captcha_check;
 use crate::api::handler::users::login::__path_api_users_login_name;
-use crate::api::handler::users::update::__path_api_user_update;
 use crate::api::handler::users::reset::__path_api_user_reset_passwd_profile;
 use crate::api::handler::users::logout::__path_api_user_logout;
 use crate::api::handler::users::localdata::__path_api_user_local;
@@ -19,7 +22,6 @@ use crate::api::handler::teams::invite::__path_api_team_group_invite;
 use crate::api::handler::group::creat::__path_api_group_create;
 use crate::api::handler::group::info::__path_api_group_info;
 
-
 use utoipa::OpenApi;
 use utoipa_scalar::{Scalar, Servable};
 
@@ -27,12 +29,20 @@ use utoipa_scalar::{Scalar, Servable};
 #[openapi(
     info(description = "GitDataAi Api description"),
     paths(
+        api_owner_email,
+        api_owner_follower,
+        api_owner_group,
+        api_owner_repo,
+        api_owner_team,
+        api_owner_setting,
+    
         api_user_apply,
         api_user_local,
         api_users_login_name,
         api_user_logout,
         api_user_reset_passwd_profile,
-        api_user_update,
+        api_user_setting,
+    
 
         api_email_rand_captcha,
         api_email_captcha_check,
@@ -41,11 +51,6 @@ use utoipa_scalar::{Scalar, Servable};
 
         api_group_create,
         api_group_info,
-
-
-        api_owner_group,
-        api_owner_info,
-        api_owner_teams,
 
         api_repo_create,
 

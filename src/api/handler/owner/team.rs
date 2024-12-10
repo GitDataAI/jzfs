@@ -16,7 +16,7 @@ use crate::utils::r::R;
             (status = 405, description = "Other Error"),
     ),
 )]
-pub async fn api_owner_teams(
+pub async fn api_owner_team(
     session: Session,
     service: web::Data<Service>
 )

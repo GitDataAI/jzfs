@@ -11,9 +11,7 @@ pub struct Model{
     pub uid: Uuid,
     pub name: String,
     pub username: String,
-    pub email: String,
-    pub public_email: bool,
-    pub avatar: Option<String>,
+
     pub phone: Option<String>,
     pub status: i32,
 
@@ -26,16 +24,6 @@ pub struct Model{
     pub timezone: String,
 
     pub theme: String,
-
-    pub team: Vec<Uuid>,
-    pub repo: Vec<Uuid>,
-    pub project: Vec<Uuid>,
-    pub issue: Vec<Uuid>,
-    pub pr: Vec<Uuid>,
-    pub commit: Vec<Uuid>,
-    pub tag: Vec<Uuid>,
-    pub star: Vec<Uuid>,
-    pub follow: Vec<Uuid>,
 
     pub pro: bool,
 

@@ -16,9 +16,17 @@ spec:
         app: jzfs-rust
         apptype: jzfs-rust
     spec:
+      restartPolicy: Always
+      volumes:
+        - name: jzfs-pv
+          hostPath:
+            path: /data/jzfs
       containers:
         - name: jzfs-rust
           image: "gitdatateam/jzfs-rs:{{ .Values.tag }}"
           imagePullPolicy: Always
           ports:
             - containerPort: 80
+          volumeMounts:
+            - mountPath: /
+              name: jzfs-pv

@@ -4,7 +4,7 @@ use sha256::Sha256Digest;
 use uuid::Uuid;
 use crate::api::dto::users::{UserResetPasswd, UserResetPassword};
 use crate::api::service::users::UserService;
-use crate::metadata::model::users::users;
+use crate::metadata::model::users::{users, users_email};
 use crate::server::redis::REDIS;
 
 impl UserService {
@@ -23,10 +23,17 @@ impl UserService {
             return Err(anyhow::anyhow!("Token Expired"))
         }
         redis.del::<String, String>(token).await.ok();
-        let model = users::Entity::find()
+        let model = users_email::Entity::find()
             .filter(
-                users::Column::Email.eq(dto.email)
+                users_email::Column::Email.eq(dto.email)
             )
+            .one(&self.db)
+            .await?;
+        if model.is_none(){
+            return Err(anyhow::anyhow!("User Not Found"))
+        }
+        let model = model.unwrap();
+        let model = users::Entity::find_by_id(model.user_id)
             .one(&self.db)
             .await?;
         if model.is_none(){

@@ -2,16 +2,23 @@ use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 use crate::api::dto::users::{UsersLoginEmail, UsersLoginUsername};
 use crate::api::middleware::session::SessionModel;
 use crate::api::service::users::UserService;
-use crate::metadata::model::users::users;
+use crate::metadata::model::users::{users, users_email};
 
 impl UserService {
     pub async fn login_by_email(&self, dto: UsersLoginEmail) -> anyhow::Result<SessionModel>{
         let email = dto.email;
         let passwd = dto.passwd;
-        let model = users::Entity::find()
+        let model = users_email::Entity::find()
             .filter(
-                users::Column::Email.eq(email)
+                users_email::Column::Email.eq(email)
             )
+            .one(&self.db)
+            .await?;
+        if model.is_none(){
+            return Err(anyhow::anyhow!("Email or Passwd Err"));
+        }
+        let model = model.unwrap();
+        let model = users::Entity::find_by_id(model.user_id)
             .one(&self.db)
             .await?;
         if model.is_none(){

@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use uuid::Uuid;
+use crate::metadata::model::repos::repo;
 
 #[derive(Deserialize,Serialize)]
 pub struct RepoInfo{
@@ -41,4 +42,23 @@ pub struct RepoInfo{
     pub created_at: OffsetDateTime,
     pub updated_at: OffsetDateTime,
     pub created_by: Uuid,
+}
+
+#[derive(Deserialize,Serialize)]
+pub struct RepoBasicInfo{
+    pub uid: Uuid,
+    pub name: String,
+    pub description: String,
+    pub head_hash: String,
+}
+
+impl Into<RepoBasicInfo> for repo::Model {
+    fn into(self) -> RepoBasicInfo {
+        RepoBasicInfo{
+            uid: self.uid,
+            name: self.name,
+            description: self.description,
+            head_hash: self.head_hash,
+        }
+    }
 }

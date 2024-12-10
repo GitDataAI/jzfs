@@ -36,12 +36,13 @@ pub struct UserResetPasswd {
 pub struct UserUpdate{
     pub name: Option<String>,
     pub username: Option<String>,
-    pub email: Option<String>,
     pub phone: Option<String>,
-    pub avatar: Option<String>,
-    pub company: Option<String>,
-    pub website: Option<Vec<String>>,
+    pub theme: Option<String>,
     pub sex: Option<String>,
+    pub website: Option<Vec<String>>,
+    pub company: Option<String>,
     pub description: Option<String>,
+    pub localtime: Option<String>,
+    pub timezone: Option<String>,
 }
 

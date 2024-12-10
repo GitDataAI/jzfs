@@ -5,10 +5,10 @@ use crate::metadata::model::users::users;
 
 impl UserService {
     pub async fn info(&self, uid: uuid::Uuid) -> anyhow::Result<UserOv>{
-        let model = users::Entity::find_by_id(uid)
+        let v1 = users::Entity::find_by_id(uid)
             .one(&self.db)
             .await?;
-        match model {
+        match v1 {
             Some(x) => {
                 Ok(UserOv::from(x))
             },

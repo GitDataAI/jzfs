@@ -5,6 +5,7 @@ use crate::api::service::repos::RepoService;
 use crate::api::service::teams::TeamService;
 use crate::api::service::users::UserService;
 use crate::metadata::transaction::repos::RepoTransaction;
+use crate::metadata::transaction::users::UserTransaction;
 use crate::server::db::DB;
 use crate::server::email::EmailServer;
 
@@ -35,6 +36,9 @@ impl Service {
             },
             users: UserService{
                 db: db.clone(),
+                txn: UserTransaction {
+                    db: db.clone(),
+                }
             },
             group: GroupService{
                 db: db.clone(),

@@ -23,17 +23,11 @@ impl UserService {
         if let Some(username) = dto.username{
             model.username = Set(username);
         }
-        if let Some(email) = dto.email{
-            model.email = Set(email);
-        }
         if let Some(phone) = dto.phone{
             model.phone = Set(Option::from(phone));
         }
         if let Some(description) = dto.description{
             model.description = Set(description);
-        }
-        if let Some(avatar) = dto.avatar{
-            model.avatar = Set(Option::from(avatar));
         }
         if let Some(company) = dto.company{
             model.company = Set(company);
@@ -44,6 +38,16 @@ impl UserService {
         if let Some(sex) = dto.sex{
             model.sex = Set(Some(sex));
         }
+        if let Some(localtime) = dto.localtime{
+            model.localtime = Set(localtime);
+        }
+        if let Some(timezone) = dto.timezone{
+            model.timezone = Set(timezone);
+        }
+        if let Some(theme) = dto.theme{
+            model.theme = Set(theme);
+        }
+        
         model.updated_at = Set(OffsetDateTime::now_utc());
         model.update(&self.db).await?;
         Ok(())

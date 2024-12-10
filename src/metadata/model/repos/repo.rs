@@ -14,6 +14,8 @@ pub struct Model{
     pub commit: i64,
     pub head_hash: String,
     
+    pub ssh_path: String,
+    pub http_path: String,
 
     pub star: i64,
 
