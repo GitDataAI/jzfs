@@ -11,6 +11,11 @@ COPY config/config.toml ./config/
 EXPOSE 80
 =======
 
+<<<<<<< HEAD
 EXPOSE 80, 2222
 >>>>>>> 8084810 (:label: part)
+=======
+EXPOSE 80
+EXPOSE 2222
+>>>>>>> 0db9e89 (:whale: fix expose port)
 CMD ["/app/ControlPlane"]
