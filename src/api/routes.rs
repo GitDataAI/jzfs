@@ -1,6 +1,8 @@
 use actix_web::middleware::from_fn;
 use actix_web::web::{delete, get, post, put};
 use actix_web::web;
+use utoipa::OpenApi;
+use utoipa_redoc::{Redoc, Servable};
 use crate::api::handler::email::captcha::{api_email_captcha_check, api_email_rand_captcha};
 use crate::api::handler::email::forget::api_email_forget;
 use crate::api::handler::group::creat::api_group_create;
@@ -51,7 +53,7 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
     let start = std::time::Instant::now();
     cfg
         .app_data(web::Data::new(start))
-        .service(ApiDoc::init())
+        .service(Redoc::with_url("/scalar", ApiDoc::openapi()))
         .route("/version", get().to(api_version))
             .service(
                 web::scope("/v1")
@@ -219,7 +221,7 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
                             .route("/{group}/create",post().to(api_teams_create))
                             .route("/{group}/{team}/invite", post().to(api_team_group_invite))
                             .route("/{uid}/info", post().to(api_team_info))
-                            .route("/byuser", get().to(api_team_by_user))
+                            .route("/users/{uid}", get().to(api_team_by_user))
                     )
                     .service(
                         web::scope("/notification")

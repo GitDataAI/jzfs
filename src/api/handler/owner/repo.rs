@@ -1,12 +1,11 @@
+use crate::api::service::Service;
+use crate::utils::r::R;
 use actix_session::Session;
 use actix_web::{web, Responder};
-use crate::api::service::Service;
-use crate::metadata::model::repos::repo;
-use crate::utils::r::R;
 
 #[utoipa::path(
     get,
-    tag = "repo",
+    tag = "owner",
     path = "/api/v1/owner/repo",
     responses(
         (status = 200, description = "Ok"),

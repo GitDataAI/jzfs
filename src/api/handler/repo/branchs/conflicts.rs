@@ -1,12 +1,11 @@
-use crate::api::handler::repo::branchs::branch::__path_api_repo_branch;
-use actix_session::Session;
-use actix_web::{web, Responder};
-use uuid::Uuid;
 use crate::api::dto::repo::RepoBranchMerge;
 use crate::api::handler::grand::repo_access::check_repo_access;
 use crate::api::service::Service;
 use crate::store::dto::ConflictsFiles;
 use crate::utils::r::R;
+use actix_session::Session;
+use actix_web::{web, Responder};
+use uuid::Uuid;
 
 
 #[utoipa::path(

@@ -1,10 +1,8 @@
 use sea_orm::*;
 use serde::{Deserialize, Serialize};
-use time::OffsetDateTime;
-use utoipa::ToSchema;
 use uuid::Uuid;
 
-#[derive(Deserialize,Serialize,Debug,Clone,DeriveEntityModel, ToSchema)]
+#[derive(Deserialize,Serialize,Debug,Clone,DeriveEntityModel)]
 #[sea_orm(table_name = "users_email")]
 pub struct Model{
     #[sea_orm(primary_key)]

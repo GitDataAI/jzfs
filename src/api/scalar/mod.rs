@@ -47,7 +47,6 @@ use crate::api::handler::group::creat::__path_api_group_create;
 use crate::api::handler::group::info::__path_api_group_info;
 
 use utoipa::OpenApi;
-use utoipa_scalar::{Scalar, Servable};
 
 #[derive(OpenApi)]
 #[openapi(
@@ -110,10 +109,3 @@ use utoipa_scalar::{Scalar, Servable};
     )
 )]
 pub struct ApiDoc;
-
-impl ApiDoc {
-    pub fn init() -> Scalar<utoipa::openapi::OpenApi> {
-        let scalar = Scalar::with_url("/scalar", ApiDoc::openapi());
-        scalar
-    }
-}

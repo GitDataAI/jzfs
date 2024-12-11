@@ -51,7 +51,7 @@ impl GitLocal {
         let head_commit = self.repo.find_commit(head.target().unwrap());
         let tree = head_commit?.tree()?;
         let mut id: Option<git2::Oid> = None;
-        let _ = tree.walk(git2::TreeWalkMode::PreOrder, |root, entry| {
+        let _ = tree.walk(git2::TreeWalkMode::PreOrder, |_, entry| {
             if entry.id().to_string() == hash {
                 id = Some(entry.id());
             }

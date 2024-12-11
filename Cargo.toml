@@ -36,7 +36,7 @@ sea-orm = { version = "1.1.1", features = [
     "runtime-tokio",
 ]}
 utoipa = { version = "5.2.0",features = ["actix_extras","macros","uuid","auto_into_responses"] }
-utoipa-scalar = { version = "0.2.0",features = ["actix-web"] }
+utoipa-redoc = { version = "5.0.0",features = ["actix-web"] }
 deadpool-redis = { version = "0.16.0",features = ["serde","rt_tokio_1"] }
 
 lettre = {version = "0.11.10",features = [
