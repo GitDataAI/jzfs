@@ -10,6 +10,7 @@ pub mod following;
 pub mod info;
 pub mod setting;
 pub mod key;
+pub mod avatar;
 // pub mod update;
 // pub mod info;
 #[derive(Clone)]

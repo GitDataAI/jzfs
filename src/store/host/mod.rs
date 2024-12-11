@@ -1,46 +1,83 @@
-use std::fs::File;
-use std::io::{Read, Seek, Write};
-use crate::store::inode::{RepoFileTrait, DATA_PATH, IDX};
+use crate::store::dto::{CommitDto, ObjectFile};
+use git2::{Reference, Repository};
+use time::OffsetDateTime;
 
-pub struct HostRepoFile{
-    pub idx: IDX,
-    pub fs: File,
+pub struct GitLocal{
+    pub uid: String,
+    pub repo: Repository,
 }
 
-impl RepoFileTrait for HostRepoFile {
-    fn from_idx(value: IDX) -> anyhow::Result<Self> {
-        if std::fs::read_dir(DATA_PATH).is_err(){
-            std::fs::create_dir(DATA_PATH)?;
+
+impl GitLocal {
+    pub fn init(uid: String) -> Self{
+        if std::fs::read_dir("./repos/").is_err(){
+            std::fs::create_dir("./repos/").ok();
         }
-        let path = format!("{}/{}",DATA_PATH,value.owner_id);
-        if std::fs::read_dir(&path).is_err(){
-            std::fs::create_dir(&path)?;
+        if Repository::open("./repos/".to_string() + &uid.to_string()).is_err(){
+            Repository::init("./repos/".to_string() + &uid.to_string()).ok();
         }
-        let path = format!("{}/{}/{}",path,value.owner_id,value.repo_uid);
-        let fs = File::options()
-            .read(true)
-            .write(true)
-            .create(true)
-            .open(path)?;
-        Ok(Self{
-            idx: value,
-            fs,
-        })
+        GitLocal{
+            uid: uid.clone(),
+            repo: Repository::open("./repos/".to_string() + &uid.to_string()).unwrap()
+        }
+
     }
-    fn read(&mut self, offset: usize, size: usize) -> anyhow::Result<Vec<u8>> {
-        self.fs.seek(std::io::SeekFrom::Start(offset as u64))?;
-        let mut buf = vec![0; size];
-        self.fs.read_exact(&mut buf)?;
-        Ok(buf)
+    pub fn head(&self) -> anyhow::Result<Reference> {
+        let head = self.repo.head()?;
+        Ok(head)
     }
-    fn write(&mut self, offset: usize, data: Vec<u8>) -> anyhow::Result<()> {
-        self.fs.seek(std::io::SeekFrom::Start(offset as u64))?;
-        self.fs.write_all(&data)?;
-        Ok(())
+    pub fn branchs(&self) -> anyhow::Result<Vec<String>> {
+        let branch = self.repo.branches(None);
+        if branch.is_err(){
+            return Err(anyhow::anyhow!("Branch not found"))
+        }
+        let branch = branch?;
+        let branchs = branch.flatten()
+            .map(|x|x.0)
+            .map(|x| x.into_reference())
+            .filter(|x|x.is_branch())
+            .map(|x| x.name().unwrap().to_string())
+            .collect::<Vec<_>>();
+        Ok(branchs)
     }
-    fn clear(&mut self, offset: usize, size: usize) -> anyhow::Result<()> {
-        self.fs.seek(std::io::SeekFrom::Start(offset as u64))?;
-        self.fs.set_len(offset as u64 + size as u64)?;
-        Ok(())
+    pub fn commits_history(&self, branchs: String) -> anyhow::Result<Vec<CommitDto>> {
+        let branch = self.repo.find_branch(branchs.as_str(), git2::BranchType::Local)?;
+        let branch_commit = branch.get().peel_to_commit()?;
+        let mut revwalk = self.repo.revwalk()?;
+        revwalk.push(branch_commit.id())?;
+        let mut cmxs = vec![];
+        for id in revwalk {
+            let commit = self.repo.find_commit(id?)?;
+            cmxs.push(CommitDto{
+                hash: commit.id().to_string(),
+                message: commit.message().unwrap_or("").to_string(),
+                author: commit.author().name().unwrap_or("").to_string(),
+                email: commit.author().email().unwrap_or("").to_string(),
+                date: OffsetDateTime::from_unix_timestamp(commit.time().seconds())?,
+                branch: branchs.clone(),
+            });
+        }
+        Ok(cmxs)
+    }
+    pub fn object_tree(&self, branch: String) -> anyhow::Result<Vec<ObjectFile>>{
+        let head = self.repo.find_branch(branch.as_str(), git2::BranchType::Local);
+        if head.is_err(){
+            return Err(anyhow::anyhow!("Branch not found"))
+        }
+        let head = head?.into_reference();
+        let head_commit = self.repo.find_commit(head.target().unwrap());
+        let tree = head_commit?.tree()?;
+        let mut clo = vec![];
+        tree.walk(git2::TreeWalkMode::PreOrder, |root, entry| {
+            clo.push(ObjectFile{
+                root: root.to_string(),
+                name: entry.name().unwrap_or("N/A").to_string(),
+                hash: entry.id().to_string(),
+            });
+            0
+        })?;
+        Ok(clo)
     }
 }
+
+

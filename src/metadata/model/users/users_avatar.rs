@@ -9,7 +9,7 @@ pub struct Model{
     #[sea_orm(primary_key)]
     pub uid: Uuid,
     pub user_id: Uuid,
-    pub avatar: String,
+    pub avatar: Vec<u8>,
     
     pub upload_at: OffsetDateTime
 }

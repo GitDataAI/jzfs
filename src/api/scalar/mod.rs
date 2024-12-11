@@ -1,3 +1,9 @@
+use crate::api::handler::users::avatar::__path_api_user_avatar_upload;
+use crate::api::handler::users::avatar::__path_api_user_avatar_delete;
+use crate::api::handler::owner::avatar::__path_api_owner_avatar;
+use crate::api::handler::users::keys::__path_api_users_key_remove;
+use crate::api::handler::users::keys::__path_api_users_key_create;
+use crate::api::handler::owner::keys::__path_api_owner_keys;
 use crate::api::handler::users::setting::__path_api_user_setting;
 use crate::api::handler::owner::setting::__path_api_owner_setting;
 use crate::api::handler::owner::team::__path_api_owner_team;
@@ -35,6 +41,9 @@ use utoipa_scalar::{Scalar, Servable};
         api_owner_repo,
         api_owner_team,
         api_owner_setting,
+        api_owner_keys,
+        api_owner_avatar,
+    
     
         api_user_apply,
         api_user_local,
@@ -42,7 +51,10 @@ use utoipa_scalar::{Scalar, Servable};
         api_user_logout,
         api_user_reset_passwd_profile,
         api_user_setting,
-    
+        api_users_key_create,
+        api_users_key_remove,
+        api_user_avatar_upload,
+        api_user_avatar_delete,
 
         api_email_rand_captcha,
         api_email_captcha_check,

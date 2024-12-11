@@ -13,7 +13,6 @@ use uuid::Uuid;
 use crate::api::service::Service;
 use crate::ssh::error::RusshServerError;
 use crate::ssh::server::RusshServer;
-use crate::store::inode::RepoFileTrait;
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum GitService {
@@ -46,7 +45,6 @@ pub fn parse_git_shell_cmd(git_shell_cmd: &str) -> (GitService, &str) {
 
 
 pub struct RusshServerHandler {
-    fs_service: HashMap<ChannelId, Arc<Mutex<Box<dyn RepoFileTrait + 'static + Send>>>>,
     db_service: Service,
     peer_addr: Option<SocketAddr>,
     user_id: Option<Uuid>,
@@ -56,7 +54,6 @@ pub struct RusshServerHandler {
 impl RusshServerHandler {
     pub(crate) fn new(server: &mut RusshServer, peer_addr: Option<SocketAddr>) -> Self {
         Self {
-            fs_service: HashMap::new(),
             db_service: server.service.clone(),
             peer_addr,
             user_id: None,
@@ -129,7 +126,6 @@ impl Handler for RusshServerHandler {
     }
     async fn channel_eof(&mut self, channel: ChannelId, _session: &mut Session) -> Result<(), Self::Error> {
         let stdin = self.stdin.remove(&channel);
-        let _ = self.fs_service.remove(&channel).is_some();
         if let Some(mut stdin) = stdin {
             stdin.flush().await?;
             stdin.shutdown().await?;

@@ -16,9 +16,8 @@ pub struct Model{
 
     pub commit_user: String,
     pub commit_email: String,
-    pub commit_user_id: Uuid,
 
-    pub commit_id: i64,
+    pub commit_id: String,
 
     pub created_at: OffsetDateTime,
 }

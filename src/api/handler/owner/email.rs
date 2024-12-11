@@ -9,7 +9,7 @@ use crate::utils::r::R;
     tag = "owner",
     path = "/api/v1/owner/email",
     responses(
-            (status = 200, description = "OK"),
+            (status = 200, description = "OK", body = Vec<Model>),
             (status = 401, description = "Not Login"),
             (status = 402, description = "User Not Exist"),
             (status = 403, description = "Get Teams Failed"),

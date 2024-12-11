@@ -6,3 +6,5 @@ pub mod email;
 pub mod followers;
 pub mod star;
 pub mod setting;
+pub mod keys;
+pub mod avatar;

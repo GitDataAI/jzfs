@@ -8,6 +8,7 @@ use crate::metadata::model::groups::{group, group_repo};
 use crate::metadata::model::repos::{repo, repo_branch, repo_license};
 use crate::metadata::model::users::{users, users_other};
 use crate::metadata::transaction::repos::RepoTransaction;
+use crate::store::host::GitLocal;
 
 impl RepoTransaction {
     pub async fn create_repo(&self, dto: RepoCreate, created_by: Uuid) -> anyhow::Result<()>{
@@ -151,7 +152,7 @@ impl RepoTransaction {
                     return Err(anyhow::anyhow!("create repo error:{}",e))
                 }
             }
-            
+            GitLocal::init(uid.clone().to_string());
         }
         match txn.commit().await{
             Ok(_) => {

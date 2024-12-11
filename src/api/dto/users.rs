@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 #[derive(Deserialize, ToSchema)]
@@ -46,3 +46,20 @@ pub struct UserUpdate{
     pub timezone: Option<String>,
 }
 
+#[derive(Serialize, ToSchema)]
+pub struct UserKeyList{
+    pub created_at: String,
+    pub head: String,
+    pub last_use: String,
+}
+
+#[derive(Serialize,Deserialize,ToSchema)]
+pub struct UserKeyCreate{
+    pub name: String,
+    pub pubkey: String,
+}
+
+#[derive(Serialize,Deserialize,ToSchema)]
+pub struct UserAvatar{
+    pub(crate) byte: Vec<u8>,
+}

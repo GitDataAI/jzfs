@@ -1,5 +1,5 @@
 use sea_orm::*;
-use time::OffsetDateTime;
+use time::{format_description, OffsetDateTime};
 use uuid::Uuid;
 use crate::api::dto::users::UserApply;
 use crate::metadata::model::users::{users, users_email, users_other};
@@ -50,7 +50,9 @@ impl UserTransaction {
                 email: Set(email),
                 is_public: Set(true),
                 verified: Set(true),
-                bind_at: Set(OffsetDateTime::now_utc()),
+                bind_at: Set(OffsetDateTime::now_utc().format(&format_description::parse(
+                    "[year]-[month]-[day] [hour]:[minute]:[second] [offset_hour sign:mandatory]:[offset_minute]:[offset_second]",
+                )?)?),
             }
                 .insert(&txn)
                 .await;

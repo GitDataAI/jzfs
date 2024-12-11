@@ -3,8 +3,6 @@ use crate::ssh::config::RusshServerConfig;
 use crate::ssh::handle::RusshServerHandler;
 use russh::server::Server;
 use std::net::SocketAddr;
-use std::sync::{Arc, Mutex};
-use crate::store::inode::RepoFileTrait;
 
 pub struct RusshServerInternals {
     pub config: RusshServerConfig,

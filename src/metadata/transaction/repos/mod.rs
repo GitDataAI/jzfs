@@ -1,6 +1,8 @@
 use sea_orm::DatabaseConnection;
 
 pub mod create;
+pub mod sync;
+pub mod object_tree;
 
 
 #[derive(Clone)]

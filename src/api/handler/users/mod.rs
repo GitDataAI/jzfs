@@ -6,3 +6,5 @@ pub mod reset;
 // pub mod update;
 pub mod star;
 pub mod setting;
+pub mod keys;
+pub mod avatar;

@@ -9,10 +9,8 @@ pub struct Model{
     #[sea_orm(primary_key)]
     pub uid: Uuid,
     pub user_id: Uuid,
-    pub pubkey: Vec<u8>,
-    
-    pub hash: String,
-    pub expire_at: Option<OffsetDateTime>,
+    pub pubkey: String,
+    pub name: String,
     pub created_at: OffsetDateTime,
     pub last_use: OffsetDateTime
 }

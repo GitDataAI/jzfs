@@ -5,6 +5,7 @@ use crate::api::handler::email::captcha::{api_email_captcha_check, api_email_ran
 use crate::api::handler::email::forget::api_email_forget;
 use crate::api::handler::group::creat::api_group_create;
 use crate::api::handler::group::info::api_group_info;
+use crate::api::handler::owner::avatar::api_owner_avatar;
 use crate::api::handler::owner::group::api_owner_group;
 use crate::api::handler::repo::create::api_repo_create;
 use crate::api::handler::teams::create::api_teams_create;
@@ -20,10 +21,13 @@ use crate::api::handler::version::api_version;
 use crate::api::scalar::ApiDoc;
 use crate::api::handler::owner::email::api_owner_email;
 use crate::api::handler::owner::followers::api_owner_follower;
+use crate::api::handler::owner::keys::api_owner_keys;
 use crate::api::handler::owner::repo::api_owner_repo;
 use crate::api::handler::owner::setting::api_owner_setting;
 use crate::api::handler::owner::team::api_owner_team;
 use crate::api::handler::teams::byuser::api_team_by_user;
+use crate::api::handler::users::avatar::{api_user_avatar_delete, api_user_avatar_upload};
+use crate::api::handler::users::keys::{api_users_key_create, api_users_key_remove};
 use crate::api::handler::users::setting::api_user_setting;
 use crate::api::middleware::auth::must_login::must_login;
 
@@ -52,7 +56,7 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
                             .route("/repo", get().to(api_owner_repo))
                             .route("/setting", get().to(api_owner_setting))
                             // Now User Key
-                            .route("/key", get().to(||async { "TODO" }))
+                            .route("/keys", get().to(api_owner_keys))
                             // Now User GPG_KEY
                             .route("/gpg", get().to(||async { "TODO" }))
                             // Now User Star
@@ -60,7 +64,7 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
                             // Now User Watch Repo
                             .route("/watch", get().to(||async { "TODO" }))
                             // Now User Avatar
-                            .route("/avatar", get().to(||async { "TODO" }))
+                            .route("/avatar", get().to(api_owner_avatar))
                     )
                     .service(
                         // User APi Start
@@ -91,9 +95,9 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
                                 web::scope("/key")
                                     .wrap(from_fn(must_login))
                                     // create key
-                                    .route("/create", post().to(||async { "TODO" }))
+                                    .route("/create", post().to(api_users_key_create))
                                     // delete key
-                                    .route("/delete", delete().to(||async { "TODO" }))
+                                    .route("/{uid}", delete().to(api_users_key_remove))
                             )
                             .service(
                                 // gpg -- you can use it access ssh or git -- but it will after time will success -- it maybe is rsa or ed25519
@@ -109,9 +113,9 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
                                 web::scope("/avatar")
                                     .wrap(from_fn(must_login))
                                     // upload avatar
-                                    .route("/upload", put().to(||async { "TODO" }))
+                                    .route("/upload", put().to(api_user_avatar_upload))
                                     // delete avatar
-                                    .route("/clear", delete().to(||async { "TODO" }))
+                                    .route("/clear", delete().to(api_user_avatar_delete))
                             )
                             .service(
                                 web::scope("/email")

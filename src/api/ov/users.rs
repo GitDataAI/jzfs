@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use uuid::Uuid;
 use crate::metadata::model::users::{users, users_email, users_other};
 use crate::metadata::model::users::users::Model;
@@ -35,7 +36,7 @@ impl From<Model> for UserOv {
     }
 }
 
-#[derive(Deserialize,Serialize)]
+#[derive(Deserialize,Serialize, ToSchema)]
 pub struct UserFollowerOv {
     pub uid: Uuid,
     pub name: String,
