@@ -6,7 +6,7 @@ use actix_web::{web, Responder};
 
 #[utoipa::path(
     post,
-    tag = "team",
+    tag = "repos",
     path = "/api/v1/repo/create",
     request_body = RepoCreate,
     responses(

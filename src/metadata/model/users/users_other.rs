@@ -18,6 +18,7 @@ pub struct Model{
     pub star: Vec<Uuid>,
     pub follow: Vec<Uuid>,
     pub following: Vec<Uuid>,
+    pub watcher: Vec<Uuid>
 }
 
 

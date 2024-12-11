@@ -5,6 +5,8 @@ use crate::api::handler::email::captcha::{api_email_captcha_check, api_email_ran
 use crate::api::handler::email::forget::api_email_forget;
 use crate::api::handler::group::creat::api_group_create;
 use crate::api::handler::group::info::api_group_info;
+use crate::api::handler::group::member::api_group_member;
+use crate::api::handler::group::team::api_group_team_get;
 use crate::api::handler::owner::avatar::api_owner_avatar;
 use crate::api::handler::owner::group::api_owner_group;
 use crate::api::handler::repo::create::api_repo_create;
@@ -24,12 +26,26 @@ use crate::api::handler::owner::followers::api_owner_follower;
 use crate::api::handler::owner::keys::api_owner_keys;
 use crate::api::handler::owner::repo::api_owner_repo;
 use crate::api::handler::owner::setting::api_owner_setting;
+use crate::api::handler::owner::star::api_owner_star;
 use crate::api::handler::owner::team::api_owner_team;
+use crate::api::handler::owner::watch::api_owner_watcher;
+use crate::api::handler::repo::info::api_repo_info;
+use crate::api::handler::repo::object::api_repo_object_tree;
 use crate::api::handler::teams::byuser::api_team_by_user;
 use crate::api::handler::users::avatar::{api_user_avatar_delete, api_user_avatar_upload};
+use crate::api::handler::users::email::{api_user_email_bind, api_user_email_unbind};
 use crate::api::handler::users::keys::{api_users_key_create, api_users_key_remove};
 use crate::api::handler::users::setting::api_user_setting;
+use crate::api::handler::users::star::{api_user_star_add, api_user_star_remove};
 use crate::api::middleware::auth::must_login::must_login;
+use crate::api::handler::group::repo::api_group_repo_get;
+use crate::api::handler::repo::branchs::protect::api_repo_branch_protect;
+use crate::api::handler::repo::branchs::new::api_repo_branch_new;
+use crate::api::handler::repo::branchs::branch::api_repo_branch;
+use crate::api::handler::repo::branchs::conflicts::api_repo_branch_check_merge;
+use crate::api::handler::repo::branchs::del::api_repo_branch_del;
+use crate::api::handler::repo::branchs::merge::api_repo_branch_merge;
+use crate::api::handler::repo::branchs::rename::api_repo_branch_rename;
 
 pub fn routes(cfg: &mut web::ServiceConfig) {
     let start = std::time::Instant::now();
@@ -60,9 +76,9 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
                             // Now User GPG_KEY
                             .route("/gpg", get().to(||async { "TODO" }))
                             // Now User Star
-                            .route("/star", get().to(||async { "TODO" }))
+                            .route("/star", get().to(api_owner_star))
                             // Now User Watch Repo
-                            .route("/watch", get().to(||async { "TODO" }))
+                            .route("/watcher", get().to(api_owner_watcher))
                             // Now User Avatar
                             .route("/avatar", get().to(api_owner_avatar))
                     )
@@ -120,8 +136,8 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
                             .service(
                                 web::scope("/email")
                                     .wrap(from_fn(must_login))
-                                    .route("/bind", post().to(||async { "TODO" }))
-                                    .route("/unbind", delete().to(||async { "TODO" }))
+                                    .route("/bind", post().to(api_user_email_bind))
+                                    .route("/unbind", delete().to(api_user_email_unbind))
                                     .route("/verify", post().to(||async { "TODO" }))
                             )
                             .service(
@@ -133,20 +149,14 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
                             .service(
                                 web::scope("/star")
                                     .wrap(from_fn(must_login))
-                                    .route("/add", post().to(||async { "TODO" }))
-                                    .route("/del", delete().to(||async { "TODO" }))
+                                    .route("/{uid}", post().to(api_user_star_add))
+                                    .route("/{uid}", delete().to(api_user_star_remove))
                             )
                             .service(
                                 web::scope("/watch")
                                     .wrap(from_fn(must_login))
                                     .route("/add", post().to(||async { "TODO" }))
                                     .route("/del", delete().to(||async { "TODO" }))
-                            )
-                            .service(
-                                web::scope("/repo")
-                                    .wrap(from_fn(must_login))
-                                    .route("/create", post().to(||async { "TODO" }))
-                                    .route("/delete", delete().to(||async { "TODO" }))
                             )
                             .service(
                                 web::scope("/setting")
@@ -165,26 +175,21 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
                     )
                     .service(
                         web::scope("/group")
-                            .route("", get().to(||async { "TODO" }))
                             .route("/creat", post().to(api_group_create))
                             .service(
                                 web::scope("/{group}")
-                                    .route("",get().to(api_group_info))
-                                    .route("", post().to(||async { "TODO" }))
-                                    .route("", delete().to(||async { "TODO" }))
+                                    .route("/info",get().to(api_group_info))
                                     .service(
                                         web::scope("/avatar")
                                             .route("", put().to(||async { "TODO" }))
                                             .route("", delete().to(||async { "TODO" }))
                                             .route("", get().to(||async { "TODO" }))
                                     )
-                                    .route("/member", get().to(||async { "TODO" }))
-                                    .route("/member/{user}", post().to(||async { "TODO" }))
-                                    .route("/member/{user}", delete().to(||async { "TODO" }))
-                                    .route("/member/{user}/role", post().to(||async { "TODO" }))
+                                    .route("/member", get().to(api_group_member))
+                                    .route("/team", get().to(api_group_team_get))
                                     .service(
                                         web::scope("/repo")
-                                            .route("/", get().to(||async { "TODO" }))
+                                            .route("/", get().to(api_group_repo_get))
                                             .route("/", post().to(||async { "TODO" }))
                                     )
                             )
@@ -192,6 +197,21 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
                     .service(
                         web::scope("/repo")
                             .route("/create",post().to(api_repo_create))
+                            .service(
+                                web::scope("/{repo}")
+                                    .route("/info", get().to(api_repo_info))
+                                    .route("/branch", get().to(api_repo_branch))
+                                    .route("/branch/new", post().to(api_repo_branch_new))
+                                    .route("/branch/delete", delete().to(api_repo_branch_del))
+                                    .route("/branch/protect", post().to(api_repo_branch_protect))
+                                    .route("/branch/check_merge", post().to(api_repo_branch_check_merge))
+                                    .route("/branch/rename", post().to(api_repo_branch_rename))
+                                    .route("/branch/merge",post().to(api_repo_branch_merge))
+                                    .service(
+                                        web::scope("/{branch}")
+                                            .route("/object", get().to(api_repo_object_tree))
+                                    )
+                            )
                     )
                     .service(
                         web::scope("/team")

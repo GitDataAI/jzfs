@@ -9,7 +9,7 @@ use crate::utils::r::R;
     tag = "owner",
     path = "/api/v1/owner/setting",
     responses(
-            (status = 200, description = "OK"),
+            (status = 200, description = "OK", body = UserOv),
             (status = 401, description = "Not Login"),
             (status = 500, description = "Internal Server Error"),
     ),

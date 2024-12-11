@@ -4,7 +4,7 @@ use uuid::Uuid;
 use crate::metadata::model::users::{users, users_email, users_other};
 use crate::metadata::model::users::users::Model;
 
-#[derive(Deserialize,Serialize)]
+#[derive(Deserialize,Serialize, ToSchema)]
 pub struct UserOv{
     pub uid: Uuid,
     pub name: String,

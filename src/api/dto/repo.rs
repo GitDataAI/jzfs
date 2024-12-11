@@ -14,3 +14,33 @@ pub struct RepoCreate{
     pub visible: bool,
     pub default_branch: String,
 }
+
+#[derive(Deserialize,Serialize, ToSchema)]
+pub struct RepoBranchNew{
+    pub from: String,
+    pub branch: String,
+    pub protect: bool,
+}
+
+#[derive(Deserialize,Serialize, ToSchema)]
+pub struct RepoBranchDel{
+    pub branch: String,
+}
+
+#[derive(Deserialize,Serialize, ToSchema)]
+pub struct RepoBranchRename{
+    pub branch: String,
+    pub new_branch: String,
+}
+
+#[derive(Deserialize,Serialize, ToSchema)]
+pub struct RepoBranchProtect{
+    pub branch: String,
+    pub protect: bool,
+}
+
+#[derive(Deserialize,Serialize, ToSchema)]
+pub struct RepoBranchMerge{
+    pub branch: String,
+    pub target: String,
+}

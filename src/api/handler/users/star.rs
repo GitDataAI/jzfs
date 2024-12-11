@@ -1,28 +1,93 @@
-use sea_orm::*;
+use actix_session::Session;
+use crate::api::service::Service;
+use crate::utils::r::R;
+use actix_web::{web, Responder};
 use uuid::Uuid;
-use crate::api::ov::repos::RepoBasicInfo;
-use crate::api::service::users::UserService;
-use crate::metadata::model::repos::repo;
-use crate::metadata::model::users::users_other;
 
-impl UserService {
-    pub async fn star(&self, uid: Uuid) -> anyhow::Result<Vec<RepoBasicInfo>> {
-        let repo_ids = users_other::Entity::find()
-            .filter(
-                users_other::Column::UserId.eq(uid)
-            )
-            .one(&self.db)
-            .await?;
-        if repo_ids.is_none(){
-            return Err(anyhow::anyhow!("[Error] User Not Exist"))
+#[utoipa::path(
+    get,
+    tag = "users",
+    path = "/api/v1/users/star/{repo}",
+    responses(
+            (status = 200, description = "Get Star Success"),
+            (status = 400, description = "User Not Exist"),
+            (status = 401, description = "Not Login"),
+            (status = 402, description = "Repo Not Exist"),
+    ),
+)]
+pub async fn api_user_star_add(
+    session: Session,
+    repo: web::Path<Uuid>,
+    service: web::Data<Service>
+)
+-> impl Responder
+{
+    let model = service.check.check_session(session).await;
+    if model.is_err(){
+        return R::<String>{
+            code: 402,
+            msg: Option::from("[Error] User Not Exist".to_string()),
+            data: None,
         }
-        let repo_ids = repo_ids.unwrap().star;
-        let models = repo::Entity::find()
-            .filter(
-                repo::Column::Uid.is_in(repo_ids)
-            )
-            .all(&self.db)
-            .await?;
-        Ok(models.into_iter().map(|x| x.into()).collect::<Vec<_>>())
     }
+    match service.users.instar(model.unwrap().uid, repo.into_inner()).await{
+        Ok(_) => {
+            R::<String>{
+                code: 200,
+                msg: Option::from("[Ok]".to_string()),
+                data: None,
+            }
+        },
+        Err(e) => {
+            R::<String>{
+                code: 400,
+                msg: Option::from(e.to_string()),
+                data: None,
+            }
+        }
+    }
+}
+
+#[utoipa::path(
+    delete,
+    tag = "users",
+    path = "/api/v1/users/star/{repo}",
+    responses(
+            (status = 200, description = "Get Star Success"),
+            (status = 400, description = "User Not Exist"),
+            (status = 401, description = "Not Login"),
+            (status = 402, description = "Repo Not Exist"),
+    ),
+)]
+pub async fn api_user_star_remove(
+    session: Session,
+    repo: web::Path<Uuid>,
+    service: web::Data<Service>
+)
+-> impl Responder
+{
+    let model = service.check.check_session(session).await;
+    if model.is_err(){
+        return R::<String>{
+            code: 402,
+            msg: Option::from("[Error] User Not Exist".to_string()),
+            data: None,
+        }
+    }
+   match service.users.unstar(model.unwrap().uid, repo.into_inner()).await{
+       Ok(_) => {
+           R::<String>{
+               code: 200,
+               msg: Option::from("[Ok]".to_string()),
+               data: None,
+           }
+       },
+       Err(e) => {
+           R::<String>{
+               code: 400,
+               msg: Option::from(e.to_string()),
+               data: None,
+           }
+       }
+   }
 }

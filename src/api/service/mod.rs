@@ -32,6 +32,7 @@ impl Service {
         let email = EmailServer::init().await;
         Self{
             email: EmailService{
+                db: db.clone(),
                 server: email,
             },
             users: UserService{

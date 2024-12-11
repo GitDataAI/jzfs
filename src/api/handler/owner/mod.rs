@@ -8,3 +8,4 @@ pub mod star;
 pub mod setting;
 pub mod keys;
 pub mod avatar;
+pub mod watch;

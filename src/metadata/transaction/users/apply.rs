@@ -78,6 +78,7 @@ impl UserTransaction {
                 star: Default::default(),
                 follow: Default::default(),
                 following: Default::default(),
+                watcher: Default::default(),
             }
                 .insert(&txn)
                 .await;

@@ -10,3 +10,10 @@ pub struct EmailCaptchaCheck{
     pub email: String,
     pub code: String,
 }
+
+
+#[derive(Deserialize, ToSchema)]
+pub struct EmailBind{
+    pub email: String,
+    pub name: Option<String>,
+}

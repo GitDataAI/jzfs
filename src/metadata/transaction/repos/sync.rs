@@ -11,11 +11,11 @@ impl RepoTransaction {
         let repo = repo::Entity::find_by_id(repo_id)
             .one(&self.db)
             .await?;
-        
+
         if repo.is_none(){
             return Err(anyhow::anyhow!("repo not found"))
         }
-        
+
         let repo = repo.unwrap();
         let txn = self.db.begin().await.unwrap();
         {
@@ -94,7 +94,7 @@ impl RepoTransaction {
                             return Err(anyhow::anyhow!("delete repo error:{}",e))
                         }
                     }
-                        
+
                 }
                 for b in brs{
                     let commit = store.commits_history(b.branch);
@@ -102,7 +102,7 @@ impl RepoTransaction {
                         txn.rollback().await?;
                         return Err(anyhow::anyhow!("delete repo error:{}",commit.err().unwrap()))
                     }
-                    let commit = commit.unwrap();
+                    let commit = commit?;
                     for c in commit{
                         let result = repo_commit::ActiveModel {
                             uid: Set(Uuid::new_v4()),
@@ -112,7 +112,7 @@ impl RepoTransaction {
                             commit_user: Set(c.author),
                             commit_email: Set(c.email),
                             commit_id: Set(c.hash),
-                            created_at: Set(c.date),
+                            created_at: Set(OffsetDateTime::from_unix_timestamp(c.unix)?),
                         }
                             .insert(&txn)
                             .await;

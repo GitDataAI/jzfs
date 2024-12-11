@@ -11,6 +11,8 @@ pub mod info;
 pub mod setting;
 pub mod key;
 pub mod avatar;
+pub mod stars;
+pub mod watch;
 // pub mod update;
 // pub mod info;
 #[derive(Clone)]

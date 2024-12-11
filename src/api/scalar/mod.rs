@@ -1,3 +1,21 @@
+use crate::api::handler::repo::branchs::branch::__path_api_repo_branch;
+use crate::api::handler::repo::branchs::rename::__path_api_repo_branch_rename;
+use crate::api::handler::repo::branchs::protect::__path_api_repo_branch_protect;
+use crate::api::handler::repo::branchs::new::__path_api_repo_branch_new;
+use crate::api::handler::repo::branchs::merge::__path_api_repo_branch_merge;
+use crate::api::handler::repo::branchs::del::__path_api_repo_branch_del;
+use crate::api::handler::repo::branchs::conflicts::__path_api_repo_branch_check_merge;
+use crate::api::handler::repo::info::__path_api_repo_info;
+use crate::api::handler::group::team::__path_api_group_team_get;
+use crate::api::handler::group::member::__path_api_group_member;
+use crate::api::handler::group::repo::__path_api_group_repo_get;
+use crate::api::handler::users::email::__path_api_user_email_unbind;
+use crate::api::handler::users::email::__path_api_user_email_bind;
+use crate::api::handler::repo::object::__path_api_repo_object_tree;
+use crate::api::handler::owner::watch::__path_api_owner_watcher;
+use crate::api::handler::users::star::__path_api_user_star_remove;
+use crate::api::handler::users::star::__path_api_user_star_add;
+use crate::api::handler::owner::star::__path_api_owner_star;
 use crate::api::handler::users::avatar::__path_api_user_avatar_upload;
 use crate::api::handler::users::avatar::__path_api_user_avatar_delete;
 use crate::api::handler::owner::avatar::__path_api_owner_avatar;
@@ -43,7 +61,8 @@ use utoipa_scalar::{Scalar, Servable};
         api_owner_setting,
         api_owner_keys,
         api_owner_avatar,
-    
+        api_owner_star,
+        api_owner_watcher,
     
         api_user_apply,
         api_user_local,
@@ -55,7 +74,11 @@ use utoipa_scalar::{Scalar, Servable};
         api_users_key_remove,
         api_user_avatar_upload,
         api_user_avatar_delete,
-
+        api_user_star_remove,
+        api_user_star_add,
+        api_user_email_unbind,
+        api_user_email_bind,
+    
         api_email_rand_captcha,
         api_email_captcha_check,
         api_email_forget,
@@ -63,9 +86,22 @@ use utoipa_scalar::{Scalar, Servable};
 
         api_group_create,
         api_group_info,
-
+        api_group_repo_get,
+        api_group_member,
+        api_group_team_get,
+    
+    
         api_repo_create,
-
+        api_repo_object_tree,
+        api_repo_branch,
+        api_repo_info,
+        api_repo_branch_new,
+        api_repo_branch_del,
+        api_repo_branch_check_merge,
+        api_repo_branch_merge,
+        api_repo_branch_protect,
+        api_repo_branch_rename,
+    
         api_team_by_user,
         api_teams_create,
         api_team_info,
