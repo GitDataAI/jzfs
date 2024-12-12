@@ -13,6 +13,9 @@ use uuid::Uuid;
     tag = "repos",
     path = "/api/v1/repo/{repo}/branch/check_merge",
     request_body = RepoBranchMerge,
+    params(
+        ("repo" = Uuid, description = "Repo Uid"),
+    ),
     responses(
         (status = 200, description = "Repo found successfully", body = Vec<ConflictsFiles>),
         (status = 400, description = "Repo Not Found"),

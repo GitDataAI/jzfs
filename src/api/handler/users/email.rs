@@ -6,7 +6,7 @@ use crate::utils::r::R;
 
 #[utoipa::path(
     post,
-    tag = "user",
+    tag = "users",
     path = "/api/v1/user/email/bind",
     request_body = EmailBind,
     responses(
@@ -51,7 +51,7 @@ pub async fn api_user_email_bind(
 
 #[utoipa::path(
     delete,
-    tag = "user",
+    tag = "users",
     path = "/api/v1/user/email/unbind",
     request_body = EmailBind,
     responses(

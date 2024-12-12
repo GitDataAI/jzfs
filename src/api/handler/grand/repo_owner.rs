@@ -1,12 +1,12 @@
 use uuid::Uuid;
 use crate::api::service::Service;
 
-pub async fn check_repo_access(service: &Service, uid: Uuid, repo_id: Uuid) -> anyhow::Result<bool>{
+pub async fn check_repo_owner(service: &Service, uid: Uuid, repo_id: Uuid) -> anyhow::Result<bool>{
     let repo = service.repo.owner(uid).await?;
     if repo.iter().any(|x| x.uid == repo_id){
         Ok(true)
     }else {
-        let groups = service.group.check_member(repo_id,1).await?;
+        let groups = service.group.check_member(repo_id,2).await?;
         let group_ids = groups
             .iter()
             .map(|x| x.uid)

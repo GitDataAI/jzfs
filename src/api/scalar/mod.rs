@@ -1,3 +1,10 @@
+use crate::api::handler::version::__path_api_version;
+use crate::api::handler::repo::topic::__path_api_repo_topic;
+use crate::api::handler::repo::topic::__path_api_repo_topic_del;
+use crate::api::handler::repo::topic::__path_api_repo_topic_add;
+use crate::api::handler::repo::rename::__path_api_repo_rename;
+use crate::api::handler::repo::objects::once::__path_api_repo_object_once;
+use crate::api::handler::repo::commits::history::__path_api_repo_commit_history;
 use crate::api::handler::repo::branchs::branch::__path_api_repo_branch;
 use crate::api::handler::repo::branchs::rename::__path_api_repo_branch_rename;
 use crate::api::handler::repo::branchs::protect::__path_api_repo_branch_protect;
@@ -11,7 +18,7 @@ use crate::api::handler::group::member::__path_api_group_member;
 use crate::api::handler::group::repo::__path_api_group_repo_get;
 use crate::api::handler::users::email::__path_api_user_email_unbind;
 use crate::api::handler::users::email::__path_api_user_email_bind;
-use crate::api::handler::repo::object::__path_api_repo_object_tree;
+use crate::api::handler::repo::objects::object::__path_api_repo_object_tree;
 use crate::api::handler::owner::watch::__path_api_owner_watcher;
 use crate::api::handler::users::star::__path_api_user_star_remove;
 use crate::api::handler::users::star::__path_api_user_star_add;
@@ -52,6 +59,8 @@ use utoipa::OpenApi;
 #[openapi(
     info(description = "GitDataAi Api description"),
     paths(
+        api_version,
+    
         api_owner_email,
         api_owner_follower,
         api_owner_group,
@@ -100,6 +109,13 @@ use utoipa::OpenApi;
         api_repo_branch_merge,
         api_repo_branch_protect,
         api_repo_branch_rename,
+        api_repo_commit_history,
+        api_repo_object_once,
+        api_repo_rename,
+        api_repo_topic,
+        api_repo_topic_add,
+        api_repo_topic_del,
+    
     
         api_team_by_user,
         api_teams_create,

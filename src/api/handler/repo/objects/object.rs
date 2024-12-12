@@ -7,7 +7,11 @@ use crate::utils::r::R;
 #[utoipa::path(
     get,
     tag = "repos",
-    path = "/api/v1/repo/tree/{repo}/{branch}",
+    path = "/api/v1/repo/tree/{repo}/{branch}/tree",
+    params(
+        ("repo" = String, description = "repo id"),
+        ("branch" = String, description = "branch name"),
+    ),
     responses(
         (status = 200, description = "Ok", body = Vec<ObjectFile>),
         (status = 401, description = "Unauthorized"),
@@ -16,7 +20,7 @@ use crate::utils::r::R;
 )]
 pub async fn api_repo_object_tree(
     service: web::Data<Service>,
-    rb: web::Path<(Uuid, Uuid)>,
+    rb: web::Path<(Uuid, String)>,
 ) -> impl Responder 
 {
     let (repo, branch) = rb.into_inner();

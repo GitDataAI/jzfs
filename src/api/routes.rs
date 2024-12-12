@@ -32,7 +32,7 @@ use crate::api::handler::owner::star::api_owner_star;
 use crate::api::handler::owner::team::api_owner_team;
 use crate::api::handler::owner::watch::api_owner_watcher;
 use crate::api::handler::repo::info::api_repo_info;
-use crate::api::handler::repo::object::api_repo_object_tree;
+use crate::api::handler::repo::objects::object::api_repo_object_tree;
 use crate::api::handler::teams::byuser::api_team_by_user;
 use crate::api::handler::users::avatar::{api_user_avatar_delete, api_user_avatar_upload};
 use crate::api::handler::users::email::{api_user_email_bind, api_user_email_unbind};
@@ -48,6 +48,10 @@ use crate::api::handler::repo::branchs::conflicts::api_repo_branch_check_merge;
 use crate::api::handler::repo::branchs::del::api_repo_branch_del;
 use crate::api::handler::repo::branchs::merge::api_repo_branch_merge;
 use crate::api::handler::repo::branchs::rename::api_repo_branch_rename;
+use crate::api::handler::repo::commits::history::api_repo_commit_history;
+use crate::api::handler::repo::objects::once::api_repo_object_once;
+use crate::api::handler::repo::rename::api_repo_rename;
+use crate::api::handler::repo::topic::{api_repo_topic, api_repo_topic_add, api_repo_topic_del};
 
 pub fn routes(cfg: &mut web::ServiceConfig) {
     let start = std::time::Instant::now();
@@ -202,6 +206,7 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
                             .service(
                                 web::scope("/{repo}")
                                     .route("/info", get().to(api_repo_info))
+                                    .route("/rename", post().to(api_repo_rename))
                                     .route("/branch", get().to(api_repo_branch))
                                     .route("/branch/new", post().to(api_repo_branch_new))
                                     .route("/branch/delete", delete().to(api_repo_branch_del))
@@ -211,7 +216,21 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
                                     .route("/branch/merge",post().to(api_repo_branch_merge))
                                     .service(
                                         web::scope("/{branch}")
-                                            .route("/object", get().to(api_repo_object_tree))
+                                            .route("/tree", get().to(api_repo_object_tree))
+                                            .service(
+                                                web::scope("/commit")
+                                                    .route("/history", get().to(api_repo_commit_history))
+                                                    .service(
+                                                        web::scope("/{ref}")
+                                                            .route("/once", get().to(api_repo_object_once))
+                                                    )
+                                            )
+                                    )
+                                    .service(
+                                        web::scope("/topic")
+                                            .route("/", post().to(api_repo_topic_add))
+                                            .route("/", delete().to(api_repo_topic_del))
+                                            .route("/", get().to(api_repo_topic))
                                     )
                             )
                     )

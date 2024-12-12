@@ -12,6 +12,9 @@ use crate::utils::r::R;
     tag = "repos",
     path = "/api/v1/repo/{repo}/branch/merge",
     request_body = RepoBranchMerge,
+    params(
+        ("repo" = Uuid, description = "Repo Uid"),
+    ),
     responses(
         (status = 200, description = "Repo found successfully"),
         (status = 400, description = "Repo Not Found"),

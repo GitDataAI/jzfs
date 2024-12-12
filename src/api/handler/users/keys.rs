@@ -55,6 +55,9 @@ pub async fn api_users_key_create(
     delete,
     tag = "users",
     path = "/api/v1/users/key/{uid}",
+    params(
+        ("uid" = Uuid, description = "key Uid"),
+    ),
     responses(
             (status = 200, description = "OK"),
             (status = 401, description = "Not Login"),

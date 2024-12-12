@@ -8,6 +8,9 @@ use crate::api::service::Service;
     get,
     tag = "repos",
     path = "/api/v1/repo/{repo}/branch",
+    params(
+        ("repo" = Uuid, description = "Repo Uid"),
+    ),
     responses(
         (status = 200, description = "Repo found successfully"),
         (status = 400, description = "Repo Not Found"),

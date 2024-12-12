@@ -44,3 +44,18 @@ pub struct RepoBranchMerge{
     pub branch: String,
     pub target: String,
 }
+
+#[derive(Deserialize,Serialize, ToSchema)]
+pub struct RepoFilePath{
+    pub path: String,
+}
+
+#[derive(Deserialize,Serialize, ToSchema)]
+pub struct RepoRename{
+    pub name: String,
+}
+
+#[derive(Deserialize,Serialize, ToSchema)]
+pub struct RepoTopic{
+    pub topic: String
+}

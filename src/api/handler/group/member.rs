@@ -6,7 +6,10 @@ use crate::utils::r::R;
 #[utoipa::path(
     get,
     tag = "group",
-    path = "/api/v1/group/{group}/member",
+    path = "/api/v1/group/{group}/member",  
+    params(
+        ("group" = Uuid, description = "group Uid"),
+    ),
     responses(
         (status = 200, description = "Group found successfully"),
         (status = 400, description = "Group Not Found"),

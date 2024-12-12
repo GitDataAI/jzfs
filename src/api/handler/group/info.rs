@@ -7,6 +7,9 @@ use crate::utils::r::R;
     get,
     tag = "group",
     path = "/api/v1/group/{group}/info",
+    params(
+        ("group" = Uuid, description = "group Uid"),
+    ),
     responses(
         (status = 200, description = "Group found successfully"),
         (status = 400, description = "Group Not Found"),

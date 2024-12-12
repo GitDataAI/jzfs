@@ -1,17 +1,19 @@
-use crate::api::handler::repo::branchs::branch::__path_api_repo_branch;
-use actix_session::Session;
-use actix_web::{web, Responder};
-use uuid::Uuid;
 use crate::api::dto::repo::RepoBranchRename;
 use crate::api::handler::grand::repo_access::check_repo_access;
 use crate::api::service::Service;
 use crate::utils::r::R;
+use actix_session::Session;
+use actix_web::{web, Responder};
+use uuid::Uuid;
 
 #[utoipa::path(
     post,
     tag = "repos",
     path = "/api/v1/repo/{repo}/branch/rename",
     request_body = RepoBranchRename,
+    params(
+        ("repo" = Uuid, description = "Repo Uid"),
+    ),
     responses(
         (status = 200, description = "Repo found successfully"),
         (status = 400, description = "Repo Not Found"),

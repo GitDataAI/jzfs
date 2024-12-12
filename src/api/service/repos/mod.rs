@@ -6,6 +6,7 @@ pub mod info;
 pub mod owner;
 pub mod commit;
 pub mod branch;
+pub mod object;
 #[derive(Clone)]
 pub struct RepoService{
     pub db: DatabaseConnection,

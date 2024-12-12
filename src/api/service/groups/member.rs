@@ -22,9 +22,10 @@ impl GroupService {
         }
         Ok(members)
     }
-    pub async fn check_member(&self, user_id: uuid::Uuid) -> anyhow::Result<Vec<group::Model>> {
+    pub async fn check_member(&self, user_id: uuid::Uuid, access: i32) -> anyhow::Result<Vec<group::Model>> {
         let teams_users = teams_user::Entity::find()
             .filter(teams_user::Column::UserId.eq(user_id))
+            .filter(teams_user::Column::Access.gte(access))
             .all(&self.db)
             .await?
             .iter()
@@ -42,4 +43,5 @@ impl GroupService {
             .await?;
         Ok(groups)
     }
+    
 }
