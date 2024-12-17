@@ -6,7 +6,7 @@ metadata:
   labels:
     apptype: jzfs-git-ssh
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
     app: jzfs-git-ssh
   ports:
