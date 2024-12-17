@@ -27,7 +27,10 @@ pub async fn init_api() -> Result<(), Error>{
             .service(
                 scope("/api")
                     .route("/version", web::get().to(api_version))
-                    .configure(app_routes::routes)
+                    .service(
+                        web::scope("/v1")
+                            .configure(app_routes::routes)
+                    )
             )
     })
         .bind(cfg.http.starter())?
