@@ -5,7 +5,7 @@
 pub const ROOT_PATH: &str = "E:/";
 
 #[cfg(not(target_os = "windows"))]
-pub const ROOT_PATH: &str = "/git";
+pub const ROOT_PATH: &str = "/exports";
 
 pub fn init_repo_dir() -> anyhow::Result<()> {
     let repo_dir = ROOT_PATH.to_string();
