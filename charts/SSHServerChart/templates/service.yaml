@@ -11,5 +11,5 @@ spec:
     app: jzfs-git-ssh
   ports:
     - protocol: TCP
-      port: 2222
-      targetPort: 2222
+      port: 22
+      targetPort: 22

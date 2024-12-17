@@ -21,7 +21,7 @@ spec:
           image: "gitdatateam/jzfs-git-ssh:{{ .Values.tag }}"
           imagePullPolicy: Always
           ports:
-            - containerPort: 2222
+            - containerPort: 22
           volumeMounts:
             - mountPath: /exports
               name: shared-storage

@@ -35,4 +35,4 @@ spec:
               service:
                 name: jzfs-git-ssh-service
                 port:
-                  number: 2222
+                  number: 22

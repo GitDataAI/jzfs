@@ -30,6 +30,6 @@ async fn main() -> anyhow::Result<()> {
     let mut server = libs::ssh::server::SshServer{
         server: MetaService::init().await
     };
-    server.run_on_address(Arc::from(config), "0.0.0.0:2222").await?;
+    server.run_on_address(Arc::from(config), "0.0.0.0:22").await?;
     Ok(())
 }

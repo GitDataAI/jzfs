@@ -24,6 +24,11 @@ CMD ["/app/ControlPlane"]
 COPY  target/release/SSHServer ./
 COPY config.yaml .
 COPY ed25519 .
+<<<<<<< HEAD
 EXPOSE 2222
 CMD ["/app/SSHServer"]
 >>>>>>> 249b375 (part):docker/SSHServer/Dockerfile
+=======
+EXPOSE 22
+CMD ["/app/SSHServer"]
+>>>>>>> 9be78dc (fix port 2222 -> 22)
