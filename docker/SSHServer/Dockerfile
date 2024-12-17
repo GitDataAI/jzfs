@@ -23,7 +23,7 @@ CMD ["/app/ControlPlane"]
 =======
 COPY  target/release/SSHServer ./
 COPY config.yaml .
-
+COPY ed25519 .
 EXPOSE 2222
 CMD ["/app/SSHServer"]
 >>>>>>> 249b375 (part):docker/SSHServer/Dockerfile
