@@ -18,7 +18,7 @@ pub struct Model{
 
     pub website: Vec<String>,
     pub company: String,
-    pub description: String,
+    pub description: Option<String>,
 
     pub localtime: String,
     pub timezone: String,

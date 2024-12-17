@@ -26,7 +26,7 @@ pub struct GroupDesc{
     pub status: i32,
     pub website: Vec<String>,
     pub company: String,
-    pub description: String,
+    pub description: Option<String>,
     pub localtime: String,
     pub timezone: String,
     pub pro: bool,

@@ -27,7 +27,7 @@ impl UserService {
             model.phone = Set(Option::from(phone));
         }
         if let Some(description) = dto.description{
-            model.description = Set(description);
+            model.description = Set(Some(description));
         }
         if let Some(company) = dto.company{
             model.company = Set(company);

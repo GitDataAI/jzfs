@@ -75,7 +75,7 @@ pub struct UserOv{
     pub theme: String,
     pub website: Vec<String>,
     pub company: String,
-    pub description: String,
+    pub description: Option<String>,
     pub localtime: String,
     pub timezone: String,
 }
@@ -102,7 +102,7 @@ pub struct UserFollowerOv {
     pub name: String,
     pub username: String,
     pub avatar: Option<String>,
-    pub description: String,
+    pub description: Option<String>,
 }
 
 #[derive(Deserialize,Serialize, ToSchema)]

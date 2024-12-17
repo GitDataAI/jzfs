@@ -25,7 +25,7 @@ impl UserService {
                 timezone: Set("UTC".to_string()),
                 company: Set("".to_string()),
                 website: Set(vec![]),
-                description: Set("".to_string()),
+                description: Set(None),
                 created_at: Set(OffsetDateTime::now_utc()),
                 updated_at: Set(OffsetDateTime::now_utc()),
                 phone: Set(Option::from(None)),
