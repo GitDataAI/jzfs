@@ -21,7 +21,7 @@ postgres:
   min_connections: 1
   log_level: info
 redis:
-  host: 221.128.225.26
+  host: 122.11.28.208
   port: 6379
   password: null
   db: 0
