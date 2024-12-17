@@ -53,10 +53,10 @@ jobs:
         run: |
           docker build -t gitdatateam/jzfs-api:${{ steps.version.outputs.version }} -f ./docker/ApiServer/Dockerfile .
           docker build -t gitdatateam/jzfs-git-ssh:${{ steps.version.outputs.version }} -f ./docker/SSHServer/Dockerfile .
-          docker build -t gitdatateam/jzfs-http-ssh:${{ steps.version.outputs.version }} -f ./docker/GitHttp/Dockerfile .
+          docker build -t gitdatateam/jzfs-git-http:${{ steps.version.outputs.version }} -f ./docker/GitHttp/Dockerfile .
           docker push gitdatateam/jzfs-api:${{ steps.version.outputs.version }}
           docker push gitdatateam/jzfs-git-ssh:${{ steps.version.outputs.version }}
-          docker push gitdatateam/jzfs-http-ssh:${{ steps.version.outputs.version }}
+          docker push gitdatateam/jzfs-git-http:${{ steps.version.outputs.version }}
           
 
       - name: Deploy Api Server
