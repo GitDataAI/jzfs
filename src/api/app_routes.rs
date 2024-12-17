@@ -1,7 +1,3 @@
-use actix_web::web;
-use utoipa::OpenApi;
-use utoipa_redoc::{Redoc, Servable};
-use crate::api::app_docs::ApiDoc;
 use crate::api::handler::email::captcha::{api_email_captcha_check, api_email_rand_captcha};
 use crate::api::handler::groups::avatar::{api_groups_avatar, api_groups_avatar_upload};
 use crate::api::handler::groups::create::api_groups_create;
@@ -29,10 +25,10 @@ use crate::api::handler::users::repos::api_users_repos;
 use crate::api::handler::users::reset::{api_user_reset_passwd_forget, api_user_reset_passwd_profile};
 use crate::api::handler::users::search::api_users_search;
 use crate::api::handler::users::starred::api_users_starred;
+use actix_web::web;
 
 pub fn routes(cfg: &mut web::ServiceConfig){
     cfg
-        .service(Redoc::with_url("/scalar", ApiDoc::openapi()))
         .service(
             web::scope("/user")
                 .service(
