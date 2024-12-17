@@ -1,9 +1,10 @@
-pub mod routes;
+pub mod init;
 pub mod handler;
-pub mod middleware;
-pub mod service;
 pub mod dto;
-pub mod ov;
-pub mod scalar;
+pub mod middleware;
 
 
+pub mod app_write;
+pub mod app_error;
+pub mod app_routes;
+pub mod app_docs;

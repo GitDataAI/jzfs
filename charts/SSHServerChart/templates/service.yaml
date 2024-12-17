@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: jzfs-git-ssh-service
+  namespace: gitdata
+  labels:
+    apptype: jzfs-git-ssh
+spec:
+  type: NodePort
+  selector:
+    app: jzfs-git-ssh
+  ports:
+    - protocol: TCP
+      port: 2222
+      targetPort: 2222

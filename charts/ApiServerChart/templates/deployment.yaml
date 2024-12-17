@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: gitdata
+  name: jzfs-api
+  labels:
+    apptype: jzfs-api
+spec:
+  replicas: {{ .Values.replicas}}
+  selector:
+    matchLabels:
+      app: jzfs-api
+  template:
+    metadata:
+      labels:
+        app: jzfs-api
+        apptype: jzfs-api
+    spec:
+      containers:
+        - name: jzfs-rust
+          image: "gitdatateam/jzfs-api:{{ .Values.tag }}"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - mountPath: /exports
+              name: shared-storage
+
+      volumes:
+        - name: shared-storage
+          persistentVolumeClaim:
+            claimName: shared-pvc

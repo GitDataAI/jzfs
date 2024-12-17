@@ -12,10 +12,10 @@ pub struct Model{
     pub name: String,
     pub username: String,
 
+    pub avatar: Option<Vec<u8>>,
     pub phone: Option<String>,
     pub status: i32,
 
-    pub sex: Option<String>,
     pub website: Vec<String>,
     pub company: String,
     pub description: String,
@@ -32,6 +32,8 @@ pub struct Model{
     pub created_at: OffsetDateTime,
     pub updated_at: OffsetDateTime,
     pub lastlogin: OffsetDateTime,
+    
+    pub is_groups: bool,
 }
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {}

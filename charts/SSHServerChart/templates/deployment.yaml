@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: gitdata
+  name: jzfs-git-ssh
+  labels:
+    apptype: jzfs-git-ssh
+spec:
+  replicas: {{ .Values.replicas}}
+  selector:
+    matchLabels:
+      app: jzfs-git-ssh
+  template:
+    metadata:
+      labels:
+        app: jzfs-git-ssh
+        apptype: jzfs-git-ssh
+    spec:
+      containers:
+        - name: jzfs-git-ssh
+          image: "gitdatateam/jzfs-git-ssh:{{ .Values.tag }}"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 2222
+          volumeMounts:
+            - mountPath: /exports
+              name: shared-storage
+
+      volumes:
+        - name: shared-storage
+          persistentVolumeClaim:
+            claimName: shared-pvc

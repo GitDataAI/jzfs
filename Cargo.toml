@@ -1,43 +1,56 @@
 [package]
-name = "jzfs"
+name = "libs"
 version = "0.1.0"
 edition = "2021"
 
 [[bin]]
-path = "bin/Migration.rs"
-name = "Migration"
+path = "src/main.rs"
+name = "BuildTest"
 
 [[bin]]
-path = "bin/ControlPlane.rs"
-name = "ControlPlane"
+path = "bin/WebHook.rs"
+name = "WebHook"
 
 [[bin]]
-path = "bin/GitServer.rs"
-name = "GitServer"
+path = "bin/GitHttp.rs"
+name = "GitHttp"
 
-[features]
-postgres = []
-mysql = []
-sqlite = []
+[[bin]]
+path = "bin/SshServer.rs"
+name = "SSHServer"
+
+[[bin]]
+path = "bin/ApiServer.rs"
+name = "ApiServer"
+
 
 [dependencies]
-tokio = { version = "1.41.1" ,features = ["full"] }
+tokio = { version = "1.0.0", features = ["full"] }
 
-actix-web = { version = "4.9.0", features = ["default","cookies"]}
-actix-session = { version = "0.10.1", features = ["redis-session","redis-pool","default"] }
-
-russh = { version = "0.49.0",features = ["legacy-ed25519-pkcs8-parser"] }
-russh-keys = { version = "0.49.0",features = ["legacy-ed25519-pkcs8-parser"] }
-git2 = { version = "0.19.0",features = ["ssh","https"] }
-
-sea-orm = { version = "1.1.1", features = [
+actix-web = { version = "4.9.0",features = ["default"] }
+actix-session = { version = "0.10.1", features = [
     "default",
-    "sqlx-all",
-    "runtime-tokio",
+    "redis-session",
+    "redis-pool"
 ]}
-utoipa = { version = "5.2.0",features = ["actix_extras","macros","uuid","auto_into_responses"] }
-utoipa-redoc = { version = "5.0.0",features = ["actix-web"] }
-deadpool-redis = { version = "0.16.0",features = ["serde","rt_tokio_1"] }
+actix-files = { version = "0.6.6", features = ["tokio-uring"] }
+
+flate2 = { version = "1", features = ["default"] }
+
+utoipa = { version = "5.2.0", features = ["actix_extras","uuid","time","auto_into_responses"] }
+utoipa-redoc = { version = "5.0.0", features = ["actix-web"] }
+sea-orm = { version = "1.1.2" ,features = ["sqlx-all", "runtime-tokio", "default"] }
+deadpool-redis = { version = "0.16.0",features = ["cluster","rt_tokio_1"] }
+
+russh = { version = "0.49.1",features = ["default"] }
+russh-keys = { version = "0.49.1", features = ["legacy-ed25519-pkcs8-parser"] }
+
+git2 = { version = "0.19.0", features = [
+    "default",
+    "ssh",
+    "ssh_key_from_memory",
+    "https"
+]}
 
 lettre = {version = "0.11.10",features = [
     "smtp-transport",
@@ -50,28 +63,38 @@ lettre = {version = "0.11.10",features = [
     "tokio1-native-tls"
 ]}
 
-time = { version = "0.3.36",features = [
-    "local-offset",
-    "serde",
-    "formatting"
-] }
-uuid = { version = "1.11.0" ,features = [
-    "v4",
-    "serde",
-    "default"
-] }
-serde = { version = "1.0.126", features = ["derive"] }
-serde_json = { version = "1.0.133", features = ["std"] }
-toml = { version = "0.8.19",features = ["indexmap","parse"] }
+uuid = { version = "1.11.0", features = ["serde", "v4", "default"] }
+time = { version = "0.3.37", features = ["serde","default","local-offset"] }
 
-anyhow = "1.0.47"
-
-sha256 = { version = "1.5.0", features = ["default","tokio"] }
+sha256 = { version = "1.5.0", features = ["tokio"] }
+sha1 = { version = "0.10.6", features = ["std"] }
+md5 = { version = "0.7.0", features = ["default"] }
 base64 = { version = "0.22.1", features = ["default","std"] }
 
-actix-web-prom = "0.9.0"
-prometheus = { version = "0.13.4",features = ["default"] }
-tracing-subscriber = { version = "0.3.19",features = ["default"] }
-log = { version = "0.4.22",features = ["kv","serde"] }
-rand = "0.8.5"
-thiserror = "1.0.69"
+tarpc = { version = "0.35.0", features = ["full"] }
+
+
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1",features = ["std"] }
+serde_yaml = { version = "0.9.33", features = [] }
+toml = { version = "0.8.19", features = ["display","parse"] }
+bincode = { version = "1.3.3", features = ["i128"] }
+
+tracing = { version = "0.1.41", features = ["log","default"] }
+tracing-subscriber = { version = "0.3.19", features = ["default"] }
+tracing-opentelemetry = { version = "0.28.0",features = ["metrics","lazy_static"] }
+opentelemetry = { version = "0.27.1", features = ["metrics"] }
+opentelemetry_sdk = { version = "0.27.1", features = ["metrics", "tokio", "rt-tokio"] }
+opentelemetry-stdout = { version = "0.27.0", features = ["metrics"] }
+tracing-core = "0.1.33"
+opentelemetry-semantic-conventions = { version = "0.27.0", features = ["default", "semconv_experimental"] }
+opentelemetry-otlp = { version = "0.27.0",features = ["metrics","tokio"] }
+
+
+futures-util = "0.3.31"
+anyhow = "1.0.94"
+lazy_static = "1.5.0"
+bytes = "1.9.0"
+futures = "0.3.31"
+regex = { version = "1.11.1" ,features = ["std"] }
+async-stream = "0.3.6"

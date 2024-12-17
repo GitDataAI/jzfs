@@ -1,7 +1,6 @@
 use actix_session::Session;
 use actix_web::Responder;
-use crate::utils::r::R;
-
+use crate::api::app_write::AppWrite;
 
 #[utoipa::path(
     post,
@@ -12,14 +11,10 @@ use crate::utils::r::R;
             (status = 401, description = "Not Login")
     ),
 )]
-pub async fn api_user_logout(
+pub async fn api_users_logout(
     session: Session
 ) -> impl Responder
 {
     session.purge();
-    R::<String>{
-        code: 200,
-        msg: Option::from("[Ok]".to_string()),
-        data: None,
-    }
+    AppWrite::<String>::ok_msg("ok".to_string())
 }

@@ -1,20 +1,17 @@
-use crate::api::service::Service;
-use crate::ssh::config::RusshServerConfig;
-use crate::ssh::handle::RusshServerHandler;
-use russh::server::Server;
 use std::net::SocketAddr;
+use russh::server::Server;
+use crate::metadata::service::MetaService;
+use crate::ssh::handler::SshHandler;
 
-pub struct RusshServerInternals {
-    pub config: RusshServerConfig,
+pub struct SshServer{
+    pub server: MetaService
 }
-#[derive(Clone)]
-pub struct RusshServer {
-    pub service: Service,
-}
-impl Server for RusshServer {
-    type Handler = RusshServerHandler;
+
+
+impl Server for SshServer {
+    type Handler = SshHandler;
 
     fn new_client(&mut self, peer_addr: Option<SocketAddr>) -> Self::Handler {
-        RusshServerHandler::new(self, peer_addr)
+        SshHandler::new(self.server.clone(), peer_addr)
     }
 }

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: jzfs-git-http-service
+  namespace: gitdata
+  labels:
+    apptype: jzfs-git-http
+spec:
+  type: ClusterIP
+  selector:
+    app: jzfs-git-http
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80

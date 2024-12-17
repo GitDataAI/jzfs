@@ -1,10 +1,10 @@
 use lettre::{AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor};
 use lettre::message::header::ContentType;
 use lettre::transport::smtp::authentication::Credentials;
-use log::{error, info};
 use tokio::sync::mpsc::UnboundedSender;
 use tokio::sync::OnceCell;
-use crate::config::file::CFG;
+use tracing::{error, info};
+use crate::config::CFG;
 use crate::server::email::msg::EmailMSG;
 
 pub mod msg;
@@ -29,10 +29,10 @@ pub struct EmailServer{
 
 impl EmailServer {
     pub async fn init() -> EmailServer {
-        info!("Email Service Start");
+        info!("Email Service starting.....");
         let (rx, mut tx) = tokio::sync::mpsc::unbounded_channel::<EmailMSG>();
         let cfg = CFG.get().unwrap().clone();
-        
+
         tokio::spawn(async move {
             let creds = Credentials::new(cfg.email.username.to_owned(), cfg.email.password.to_owned());
             let mailer: AsyncSmtpTransport<Tokio1Executor> =
@@ -55,7 +55,7 @@ impl EmailServer {
                 }
             }
         });
-        info!("Email Service Init");
+        info!("Email Service started");
         Self{
             rx
         }

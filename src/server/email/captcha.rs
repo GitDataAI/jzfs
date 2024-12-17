@@ -1,8 +1,8 @@
 use lettre::message::Mailbox;
-use crate::config::email::captcha::CAPTCHA;
-use crate::config::file::CFG;
+use crate::config::CFG;
 use crate::server::email::EmailServer;
 use crate::server::email::msg::EmailMSG;
+use crate::template::email::CAPTCHA;
 
 impl EmailServer {
     pub async fn send_captcha(&self, email: Mailbox, code: String){

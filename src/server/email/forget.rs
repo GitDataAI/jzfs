@@ -1,8 +1,8 @@
 use crate::server::email::msg::EmailMSG;
 use crate::server::email::EmailServer;
 use lettre::message::Mailbox;
-use crate::config::email::forget::FORGET_EMAIL;
-use crate::config::file::CFG;
+use crate::config::CFG;
+use crate::template::email::FORGET_EMAIL;
 
 impl EmailServer {
     pub async fn send_forget_token(&self, email: Mailbox, token: String){
