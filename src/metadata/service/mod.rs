@@ -1,4 +1,5 @@
 use sea_orm::DatabaseConnection;
+use crate::metadata::service::email_service::EmailService;
 use crate::metadata::service::groups_service::GroupService;
 use crate::metadata::service::repos_service::RepoService;
 use crate::metadata::service::users_service::UserService;
@@ -9,6 +10,7 @@ use crate::server::email::{EmailServer, EMAIL_SERVICE};
 pub mod users_service;
 pub mod repos_service;
 pub mod groups_service;
+pub mod email_service;
 #[derive(Clone)]
 pub struct MetaService{
     pg: DatabaseConnection,
@@ -53,5 +55,8 @@ impl MetaService{
     }
     pub fn group_service(&self) -> GroupService {
         GroupService::from(self)
+    }
+    pub fn email_service(&self) -> EmailService {
+        EmailService::from(self)
     }
 }

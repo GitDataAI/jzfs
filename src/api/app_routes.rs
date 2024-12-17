@@ -2,6 +2,7 @@ use actix_web::web;
 use utoipa::OpenApi;
 use utoipa_redoc::{Redoc, Servable};
 use crate::api::app_docs::ApiDoc;
+use crate::api::handler::email::captcha::{api_email_captcha_check, api_email_rand_captcha};
 use crate::api::handler::groups::avatar::{api_groups_avatar, api_groups_avatar_upload};
 use crate::api::handler::groups::create::api_groups_create;
 use crate::api::handler::groups::info::api_groups_info;
@@ -234,6 +235,8 @@ pub fn routes(cfg: &mut web::ServiceConfig){
         )
         .service(
             web::scope("/email")
+            .route("/captcha", web::post().to(api_email_rand_captcha))
+            .route("/captcha", web::put().to(api_email_captcha_check))
         )
     ;
 }

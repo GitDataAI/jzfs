@@ -1,3 +1,5 @@
+use crate::api::handler::email::captcha::__path_api_email_rand_captcha;
+use crate::api::handler::email::captcha::__path_api_email_captcha_check;
 use crate::api::handler::repos::info::__path_api_repo_info_get;
 use crate::api::handler::users::starred::__path_api_users_starred;
 use crate::api::handler::users::search::__path_api_users_search;
@@ -69,6 +71,9 @@ use utoipa::OpenApi;
         api_users_repos,
         api_users_search,
         api_users_starred,
+    
+        api_email_rand_captcha,
+        api_email_captcha_check,
         
 
         api_user_avatar,

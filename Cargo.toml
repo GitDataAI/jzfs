@@ -98,3 +98,5 @@ bytes = "1.9.0"
 futures = "0.3.31"
 regex = { version = "1.11.1" ,features = ["std"] }
 async-stream = "0.3.6"
+rand = "0.8.5"
+log = "0.4.22"
