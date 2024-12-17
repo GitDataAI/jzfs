@@ -19,6 +19,7 @@ pub mod reset;
 pub mod info;
 pub mod check;
 pub mod setting;
+pub mod search;
 
 
 #[derive(Clone)]

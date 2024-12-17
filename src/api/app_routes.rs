@@ -9,6 +9,8 @@ use crate::api::handler::groups::labels::{api_groups_labels, api_groups_labels_c
 use crate::api::handler::groups::members::{api_groups_member_add, api_groups_member_remove, api_groups_members, api_user_groups};
 use crate::api::handler::groups::repos::{api_groups_repo, api_groups_repo_create};
 use crate::api::handler::groups::search::api_groups_search;
+use crate::api::handler::repos::info::api_repo_info_get;
+use crate::api::handler::repos::search::api_repo_search;
 use crate::api::handler::user::avatar::{api_user_avatar, api_user_avatar_delete, api_user_avatar_upload};
 use crate::api::handler::user::emails::{api_user_email, api_user_email_bind, api_user_email_unbind};
 use crate::api::handler::user::follower::{api_user_follow, api_user_followed, api_user_follower, api_user_unfollow};
@@ -24,6 +26,8 @@ use crate::api::handler::users::login::{api_users_login_email, api_users_login_n
 use crate::api::handler::users::logout::api_users_logout;
 use crate::api::handler::users::repos::api_users_repos;
 use crate::api::handler::users::reset::{api_user_reset_passwd_forget, api_user_reset_passwd_profile};
+use crate::api::handler::users::search::api_users_search;
+use crate::api::handler::users::starred::api_users_starred;
 
 pub fn routes(cfg: &mut web::ServiceConfig){
     cfg
@@ -88,14 +92,14 @@ pub fn routes(cfg: &mut web::ServiceConfig){
                         .route("/profile", web::post().to(api_user_reset_passwd_profile))
                 )
                 .route("/apply", web::post().to(api_users_apply))
-                .route("/search", web::get().to(||async { "TODO" }))
+                .route("/search", web::get().to(api_users_search))
                 .service(
                     web::scope("/once/{username}")
                         .route("/", web::get().to(api_users_info))
                         .route("/followers", web::get().to(api_users_followed))
                         .route("/following", web::get().to(api_users_following))
                         .route("/repos", web::get().to(api_users_repos))
-                        .route("/starred", web::get().to(||async { "TODO" }))
+                        .route("/starred", web::get().to(api_users_starred))
                         .route("/subscriptions", web::get().to(||async { "TODO" }))
                         .route("/groups", web::get().to(||async { "TODO" }))
                         .route("/groups/{group_name}/permissions", web::get().to(||async { "TODO" }))
@@ -134,13 +138,12 @@ pub fn routes(cfg: &mut web::ServiceConfig){
         )
         .service(
             web::scope("/repos")
-                .route("/search", web::get().to(||async { "TODO" }))
+                .route("/search", web::get().to(api_repo_search))
                 .service(
                     web::scope("/{owner}/{repo}")
-                        .route("/", web::get().to(||async { "TODO" }))
+                        .route("/", web::get().to(api_repo_info_get))
                         .route("/", web::post().to(||async { "TODO" }))
                         .route("/", web::delete().to(||async { "TODO" }))
-                        .route("/", web::patch().to(||async { "TODO" }))
                         .service(
                             web::scope("/avatar")
                                 .route("/", web::get().to(||async { "TODO" }))

@@ -51,8 +51,7 @@ impl SshHandler {
         Ok(())
     }
 
-    // Helper to validate and parse the repository path
-    fn parse_git_command(&self, git_shell_cmd: &str) -> Result<(GitService, String), anyhow::Error> {
+    async fn parse_git_command(&self, git_shell_cmd: &str) -> Result<(GitService, String), anyhow::Error> {
         let (service, path) = if let Some(rec_pack_path) = git_shell_cmd.strip_prefix("git-receive-pack ") {
             (GitService::ReceivePack, strip_apostrophes(rec_pack_path))
         } else if let Some(upl_ref_path) = git_shell_cmd.strip_prefix("git-upload-pack ") {
@@ -69,14 +68,18 @@ impl SshHandler {
             return Err(anyhow::anyhow!("Invalid repository path: {path}"));
         }
 
-        let owner = path_segments[0];
-        let repo_name = path_segments[1].split('.').next().unwrap_or_default();
+        let owner = path_segments[0].to_string();
+        let repo_name = path_segments[1].split('.').next().unwrap_or_default().to_string();
 
         if repo_name.is_empty() {
             return Err(anyhow::anyhow!("Invalid repository name in path: {path}"));
         }
-
-        Ok((service, format!("{}/{}", owner, repo_name)))
+        let repo = self.server.repo_service().owner_name_by_uid(owner.clone(), repo_name).await;
+        if repo.is_err() {
+            return Err(anyhow::anyhow!("Repository not found: {path}"));
+        }
+        let repo_path = repo?.to_string();
+        Ok((service, repo_path))
     }
     async fn forward<R, F, Fut>(
         session_handle: Arc<Handle>, 
@@ -148,7 +151,7 @@ impl Handler for SshHandler {
         let git_shell_cmd = std::str::from_utf8(data).map_err(|_| anyhow::anyhow!("Invalid UTF-8 input"))?;
         info!("Executing command: {git_shell_cmd}");
 
-        let (service, path) = self.parse_git_command(git_shell_cmd)?;
+        let (service, path) = self.parse_git_command(git_shell_cmd).await?;
 
         let cmd = tokio::process::Command::new("git")
             .arg(service.to_string())

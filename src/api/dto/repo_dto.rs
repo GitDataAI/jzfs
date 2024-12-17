@@ -15,6 +15,17 @@ pub struct RepoCreate{
     pub default_branch: String,
 }
 
+#[derive(Deserialize,Serialize,ToSchema)]
+pub struct RepoSearch{
+    pub keywords: String,
+    pub page: u64,
+    pub size: u64,
+}
+#[derive(Deserialize,Serialize,ToSchema)]
+pub struct RepoInfo{
+    pub owner: Uuid,
+}
+
 #[derive(Deserialize,Serialize, ToSchema)]
 pub struct RepoBranchNew{
     pub from: String,

@@ -6,3 +6,4 @@ pub mod apply;
 pub mod reset;
 pub mod logout;
 pub mod info;
+pub mod starred;

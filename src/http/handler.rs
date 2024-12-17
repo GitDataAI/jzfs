@@ -368,6 +368,7 @@ pub async fn objects_pack(http_request: HttpRequest, path: web::Path<(String, St
     map.insert("Date".to_string(), time.format(&format_description::parse("%a, %d %b %Y %H:%M:%S GMT").unwrap()).unwrap());
     map.insert("Expires".to_string(), expires.format(&format_description::parse("%a, %d %b %Y %H:%M:%S GMT").unwrap()).unwrap());
     map.insert("Cache-Control".to_string(), "public, max-age=86400".to_string());
+    #[allow(unused_assignments)]
     let mut xtype = "application/x-git-loose-object".to_string();
     if url.ends_with(".pack") {
         xtype = "application/x-git-packed-objects".to_string();

@@ -6,6 +6,7 @@ pub mod health;
 pub mod user;
 pub mod users;
 pub mod groups;
+pub mod repos;
 
 pub async fn check_session(session: Session) -> anyhow::Result<SessionModel>{
     match session.get::<SessionModel>(SessionModelKey){

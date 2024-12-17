@@ -2,6 +2,7 @@ use actix_web::{web, App, HttpServer};
 use actix_web::web::scope;
 use tracing::info;
 use crate::api::app_error::Error;
+use crate::api::app_routes;
 use crate::api::handler::version::api_version;
 use crate::api::middleware::service::ActixServer;
 use crate::config::{init_config, CFG};
@@ -26,6 +27,7 @@ pub async fn init_api() -> Result<(), Error>{
             .service(
                 scope("/api")
                     .route("/version", web::get().to(api_version))
+                    .configure(app_routes::routes)
             )
     })
         .bind(cfg.http.starter())?

@@ -1,3 +1,7 @@
+use crate::api::handler::repos::info::__path_api_repo_info_get;
+use crate::api::handler::users::starred::__path_api_users_starred;
+use crate::api::handler::users::search::__path_api_users_search;
+use crate::api::handler::repos::search::__path_api_repo_search;
 use crate::api::handler::users::repos::__path_api_users_repos;
 use crate::api::handler::users::follower::__path_api_users_following;
 use crate::api::handler::users::follower::__path_api_users_followed;
@@ -63,6 +67,9 @@ use utoipa::OpenApi;
         api_users_following,
         api_users_followed,
         api_users_repos,
+        api_users_search,
+        api_users_starred,
+        
 
         api_user_avatar,
         api_user_avatar_upload,
@@ -104,7 +111,10 @@ use utoipa::OpenApi;
         api_groups_labels,
         api_groups_labels_create,
         api_groups_labels_delete,
-        api_groups_labels_update
+        api_groups_labels_update,
+
+        api_repo_search,
+        api_repo_info_get,
     ),
 )]
 pub struct ApiDoc;
