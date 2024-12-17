@@ -5,8 +5,8 @@ use crate::api::app_write::AppWrite;
 
 #[utoipa::path(
     get,
-    tag = "search",
-    path = "/api/v1/search",
+    tag = "repos",
+    path = "/api/v1/repos/search",
     params(
         ("keywords" = String, Query, description = "Search Keywords"),
         ("page" = u64, Query, description = "Page"),

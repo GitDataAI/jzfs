@@ -7,6 +7,7 @@ use crate::metadata::service::MetaService;
 
 #[utoipa::path(
     get,
+    tag = "user",
     path = "/api/v1/user/follower",
     responses(
         (status = 200, description = "Success", body = Vec<UserFollowerOv>),
@@ -35,6 +36,7 @@ pub async fn api_user_follower(
 
 #[utoipa::path(
     get,
+    tag = "user",
     path = "/api/v1/user/followed",
     responses(
         (status = 200, description = "Success", body = Vec<UserFollowerOv>),
@@ -63,6 +65,7 @@ pub async fn api_user_followed(
 
 #[utoipa::path(
     post,
+    tag = "user",
     path = "/api/v1/user/follow",
     request_body = UserFollow,
     responses(
@@ -99,6 +102,7 @@ pub async fn api_user_follow(
 
 #[utoipa::path(
     delete,
+    tag = "user",
     path = "/api/v1/user/unfollow",
     request_body = UserFollow,
     responses(

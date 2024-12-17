@@ -6,10 +6,7 @@ use actix_web::{web, Responder};
 #[utoipa::path(
     get,
     tag = "repo",
-    path = "/api/v1/repo/info",
-    params(
-        ("uid" = String, Query, description = "Repo Uid"),
-    ),
+    path = "/api/v1/repos/{owner}/{repo}",
     responses(
         (status = 200, description = "Success"),
         (status = 400, description = "Bad Request")
