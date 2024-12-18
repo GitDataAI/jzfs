@@ -7,3 +7,4 @@ pub mod reset;
 pub mod logout;
 pub mod info;
 pub mod starred;
+pub mod session;

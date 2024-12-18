@@ -23,6 +23,13 @@ pub async fn api_email_rand_captcha(
 )
     -> impl Responder
 {
+    let check = service.user_service().check_email(dto.email.clone()).await;
+    if check.is_err(){
+        return AppWrite::error(check.err().unwrap().to_string())
+    }
+    if check.unwrap() == false {
+        return AppWrite::error("[Error] Email Exists".to_string())
+    }
     match service.email_service().generate_and_send_captcha(dto.email.clone()).await{
         Ok(result) => {
             session.insert(CAPTCHA, result).ok();

@@ -2,7 +2,7 @@ use actix_web::{HttpRequest, HttpResponse};
 use actix_web::body::BoxBody;
 use actix_web::http::StatusCode;
 use serde::{Serialize};
-use serde_json::{Number, Value};
+use serde_json::{json, Number, Value};
 use utoipa::ToSchema;
 
 #[derive(Serialize, ToSchema)]
@@ -121,7 +121,7 @@ impl<T: serde::ser::Serialize> actix_web::Responder for AppWrite<T> {
         value["code"] = Value::Number(Number::from(self.code));
         value["msg"] = Value::String(self.msg);
         if let Some(data) = self.data {
-            value["data"] = Value::Object(serde_json::to_value(data).unwrap().as_object().unwrap().clone());
+            value["data"] = json!(data);
         }
         HttpResponse::new(StatusCode::OK)
             .set_body(BoxBody::new(value.to_string()))

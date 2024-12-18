@@ -22,7 +22,7 @@ pub struct GroupDesc{
     pub uid: Uuid,
     pub name: String,
     pub username: String,
-    pub avatar: Option<Vec<u8>>,
+    pub avatar: Option<String>,
     pub status: i32,
     pub website: Vec<String>,
     pub company: String,

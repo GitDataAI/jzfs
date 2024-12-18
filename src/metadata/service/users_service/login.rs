@@ -15,18 +15,18 @@ impl UserService {
             .one(&self.db)
             .await?;
         if model.is_none(){
-            return Err(anyhow::anyhow!("Email or Passwd Err"));
+            return Err(anyhow::anyhow!("Email or Passwd Err 0"));
         }
         let model = model.unwrap();
         let model = users::Entity::find_by_id(model.user_id)
             .one(&self.db)
             .await?;
         if model.is_none(){
-            return Err(anyhow::anyhow!("Email or Passwd Err"));
+            return Err(anyhow::anyhow!("Email or Passwd Err 1"));
         }
         let model = model.unwrap();
         if model.passwd != sha256::digest(passwd){
-            return Err(anyhow::anyhow!("Email or Passwd Err"));
+            return Err(anyhow::anyhow!("Email or Passwd Err 2"));
         }
         Ok(SessionModel::from(model))
     }
@@ -40,11 +40,11 @@ impl UserService {
             .one(&self.db)
             .await?;
         if model.is_none(){
-            return Err(anyhow::anyhow!("Username or Passwd Err"));
+            return Err(anyhow::anyhow!("Username or Passwd Err 0"));
         }
         let model = model.unwrap();
         if model.passwd != sha256::digest(passwd){
-            return Err(anyhow::anyhow!("Username or Passwd Err"));
+            return Err(anyhow::anyhow!("Username or Passwd Err 1"));
         }
         Ok(SessionModel::from(model))
     }

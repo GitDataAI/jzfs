@@ -12,7 +12,7 @@ pub struct Model{
     pub name: String,
     pub username: String,
 
-    pub avatar: Option<Vec<u8>>,
+    pub avatar: Option<String>,
     pub phone: Option<String>,
     pub status: i32,
 

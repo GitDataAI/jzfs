@@ -9,7 +9,7 @@ use actix_web::{web, Responder};
 #[utoipa::path(
     get,
     tag = "user",
-    path = "/api/v1/user/repo",
+    path = "/api/v1/user/repos",
     responses(
         (status = 200, description = "Success"),
         (status = 401, description = "Not Login")
@@ -38,7 +38,7 @@ pub async fn api_user_repo(
 #[utoipa::path(
     post,
     tag = "user",
-    path = "/api/v1/user/repo",
+    path = "/api/v1/user/repos",
     request_body(content = RepoCreate, description = "Create Repo", content_type = "application/json"),
     responses(
         (status = 200, description = "Success"),

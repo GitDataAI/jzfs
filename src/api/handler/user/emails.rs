@@ -68,7 +68,7 @@ pub async fn api_user_email_bind(
 }
 
 #[utoipa::path(
-    delete,
+    patch,
     tag = "user",
     path = "/api/v1/user/email",
     request_body = EmailBind,

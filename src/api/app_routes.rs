@@ -26,6 +26,7 @@ use crate::api::handler::users::reset::{api_user_reset_passwd_forget, api_user_r
 use crate::api::handler::users::search::api_users_search;
 use crate::api::handler::users::starred::api_users_starred;
 use actix_web::web;
+use crate::api::handler::users::session::api_user_session_model;
 
 pub fn routes(cfg: &mut web::ServiceConfig){
     cfg
@@ -44,7 +45,7 @@ pub fn routes(cfg: &mut web::ServiceConfig){
                 .route("/avatar", web::get().to(api_user_avatar))
                 .route("/emails", web::get().to(api_user_email))
                 .route("/emails", web::post().to(api_user_email_bind))
-                .route("/emails", web::delete().to(api_user_email_unbind))
+                .route("/emails", web::patch().to(api_user_email_unbind))
                 .route("/followers", web::get().to(api_user_followed))
                 .route("/following", web::get().to(api_user_follower))
                 .route("/following/{username}", web::delete().to(api_user_unfollow))
@@ -77,6 +78,7 @@ pub fn routes(cfg: &mut web::ServiceConfig){
         )
         .service(
             web::scope("/users")
+                .route("/session", web::get().to(api_user_session_model))
                 .service(
                     web::scope("/login")
                         .route("/email", web::post().to(api_users_login_email))
@@ -91,8 +93,8 @@ pub fn routes(cfg: &mut web::ServiceConfig){
                 .route("/apply", web::post().to(api_users_apply))
                 .route("/search", web::get().to(api_users_search))
                 .service(
-                    web::scope("/once/{username}")
-                        .route("/", web::get().to(api_users_info))
+                    web::scope("/once/{user}")
+                        .route("", web::get().to(api_users_info))
                         .route("/followers", web::get().to(api_users_followed))
                         .route("/following", web::get().to(api_users_following))
                         .route("/repos", web::get().to(api_users_repos))

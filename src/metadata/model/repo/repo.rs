@@ -12,7 +12,7 @@ pub struct Model{
     pub description: String,
     pub owner: String,
     pub commit: i64,
-    pub head_hash: String,
+    pub head_hash: Option<String>,
     
     pub ssh_path: String,
     pub http_path: String,

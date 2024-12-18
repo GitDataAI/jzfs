@@ -22,7 +22,7 @@ pub async fn api_user_avatar(
 {
     let model = check_session(session).await;
     if model.is_err(){
-        return AppWrite::<Vec<u8>>::unauthorized(model.err().unwrap().to_string());
+        return AppWrite::<String>::unauthorized(model.err().unwrap().to_string());
     }
     match service.user_service().avatar(model.unwrap().uid).await {
         Ok(result) => {
@@ -57,10 +57,10 @@ pub async fn api_user_avatar_upload(
     }
     match service.user_service().upload_avatar(model.unwrap().uid,dto.byte.clone()).await{
         Ok(_)=>{
-            return AppWrite::ok_msg("ok".to_string());
+            AppWrite::ok_msg("ok".to_string())
         },
         Err(e)=>{
-            return AppWrite::fail(e.to_string());
+            AppWrite::fail(e.to_string())
         }
     }
 }

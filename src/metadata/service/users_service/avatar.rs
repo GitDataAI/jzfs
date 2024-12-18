@@ -7,7 +7,7 @@ use crate::metadata::service::users_service::UserService;
 use sea_orm::*;
 
 impl UserService {
-    pub async fn avatar(&self, uid: Uuid) -> anyhow::Result<Vec<u8>>{
+    pub async fn avatar(&self, uid: Uuid) -> anyhow::Result<String>{
         let avatar = users::Entity::find()
             .filter(
                 users::Column::Uid.eq(uid)
@@ -20,7 +20,7 @@ impl UserService {
             Ok(result) => {
                 match result {
                     Some(result) => {
-                        Ok(result.avatar.unwrap_or(vec![]))
+                        Ok(result.avatar.unwrap_or(String::new()))
                     },
                     None => {
                         Err(anyhow!(
@@ -34,7 +34,7 @@ impl UserService {
             }
         }
     }
-    pub async fn upload_avatar(&self, uid: Uuid, avatar: Vec<u8>) -> anyhow::Result<()>{
+    pub async fn upload_avatar(&self, uid: Uuid, avatar: String) -> anyhow::Result<()>{
         let model = users::Entity::find()
             .filter(
                 users::Column::Uid.eq(uid)

@@ -16,6 +16,7 @@ pub async fn api_users_info(
     user: web::Path<String>
 ) -> impl Responder
 {
+    
     let user_id = match service.user_service().username_to_uid(user.into_inner()).await{
         Ok(x) => x,
         Err(e) => return AppWrite::fail(e.to_string())

@@ -1,5 +1,6 @@
 use crate::metadata::service::users_service::UserService;
 use sea_orm::*;
+use sha256::Sha256Digest;
 use time::{format_description, OffsetDateTime};
 use uuid::Uuid;
 use crate::api::dto::user_dto::UserApply;
@@ -17,7 +18,7 @@ impl UserService {
                 uid: Set(uid),
                 name: Set(username.clone()),
                 username: Set(username),
-                passwd: Set(passwd),
+                passwd: Set(passwd.digest()),
                 status: Set(1),
                 pro: Set(false),
                 theme: Set("default".to_string()),

@@ -37,7 +37,7 @@ impl UserService {
     pub async fn followed(&self, uid: uuid::Uuid) -> anyhow::Result<Vec<UserFollowerOv>> {
         let model = users_data::Entity::find()
             .filter(
-                users_data::Column::Following.eq(uid)
+                users_data::Column::UserId.eq(uid)
             )
             .one(&self.db)
             .await?;
@@ -47,7 +47,7 @@ impl UserService {
         let model = model.unwrap();
         let models = users::Entity::find()
             .filter(
-                users::Column::Uid.eq(model.user_id)
+                users::Column::Uid.is_in(model.following)
             )
             .all(&self.db)
             .await? 
@@ -57,7 +57,7 @@ impl UserService {
                     uid: x.uid.clone(),
                     name: x.name.clone(),
                     username: x.username.clone(),
-                    avatar: None,
+                    avatar: x.avatar.clone(),
                     description: x.description.clone(),
                 }
             })

@@ -63,7 +63,7 @@ pub struct UserKeyCreate{
 
 #[derive(Serialize,Deserialize,ToSchema)]
 pub struct UserAvatar{
-    pub(crate) byte: Vec<u8>,
+    pub(crate) byte: String,
 }
 
 #[derive(Deserialize,Serialize, ToSchema)]
@@ -78,6 +78,7 @@ pub struct UserOv{
     pub description: Option<String>,
     pub localtime: String,
     pub timezone: String,
+    pub avatar: Option<String>,
 }
 impl From<Users> for UserOv {
     fn from(value: Users) -> Self {
@@ -92,6 +93,7 @@ impl From<Users> for UserOv {
             description: value.description,
             localtime: value.localtime,
             timezone: value.timezone,
+            avatar: value.avatar,
         }
     }
 }

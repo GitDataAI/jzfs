@@ -84,7 +84,7 @@ impl RepoService {
                 description: Set(dto.description),
                 owner: Set(rootless.clone()),
                 commit: Set(0),
-                head_hash: Default::default(),
+                head_hash: Set(None),
                 ssh_path: Set(format!("{}/{}", rootless, dto.name)),
                 http_path: Set(format!("{}/{}", rootless, dto.name)),
                 star: Set(0),
@@ -118,7 +118,7 @@ impl RepoService {
             let result = repo_license::ActiveModel{
                 uid: Set(Uuid::new_v4()),
                 repo_id: Set(uid),
-                name: Set(dto.license_name.clone().expect("None")),
+                name: Set(dto.license_name.clone().unwrap_or("None".to_string())),
                 license: Set(dto.license.unwrap_or("None".to_string())),
                 created_at: Set(OffsetDateTime::now_utc()),
                 updated_at: Set(OffsetDateTime::now_utc()),
