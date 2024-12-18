@@ -1,3 +1,5 @@
+mod handler;
+
 use opentelemetry::{global, trace::TracerProvider as _, KeyValue};
 use opentelemetry_sdk::{
     metrics::{MeterProviderBuilder, PeriodicReader, SdkMeterProvider},

@@ -69,16 +69,16 @@ impl UserService {
             let result = users_data::ActiveModel{
                 uid: Set(Uuid::new_v4()),
                 user_id: Set(uid),
-                repo: Default::default(),
-                project: Default::default(),
-                issue: Default::default(),
-                pr: Default::default(),
-                commit: Default::default(),
-                tag: Default::default(),
-                star: Default::default(),
-                follow: Default::default(),
-                following: Default::default(),
-                watcher: Default::default(),
+                repo: Set(vec![]),
+                project:Set(vec![]),
+                issue: Set(vec![]),
+                pr: Set(vec![]),
+                commit: Set(vec![]),
+                tag: Set(vec![]),
+                star: Set(vec![]),
+                follow: Set(vec![]),
+                following: Set(vec![]),
+                watcher: Set(vec![]),
             }
                 .insert(&txn)
                 .await;
