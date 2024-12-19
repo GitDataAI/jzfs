@@ -123,7 +123,8 @@ impl<T: serde::ser::Serialize> actix_web::Responder for AppWrite<T> {
         if let Some(data) = self.data {
             value["data"] = json!(data);
         }
-        HttpResponse::new(StatusCode::OK)
-            .set_body(BoxBody::new(value.to_string()))
+        HttpResponse::Ok()
+            .content_type("application/json")
+            .body(BoxBody::new(value.to_string()))
     }
 }
