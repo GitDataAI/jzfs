@@ -140,13 +140,22 @@ pub fn routes(cfg: &mut web::ServiceConfig){
                 .route("/search", web::get().to(api_repo_search))
                 .service(
                     web::scope("/{owner}/{repo}")
-                        .route("/", web::get().to(api_repo_info_get))
+                        .route("", web::get().to(api_repo_info_get))
                         .route("/", web::post().to(||async { "TODO" }))
                         .route("/", web::delete().to(||async { "TODO" }))
+                        .route("/avatar", web::put().to(||async { "TODO" }))
                         .service(
-                            web::scope("/avatar")
+                            web::scope("/blob")
+                                // Get Last Main Blobs
                                 .route("/", web::get().to(||async { "TODO" }))
-                                .route("/", web::put().to(||async { "TODO" }))
+                                // Get Blobs from Path
+                                .route("/{path}", web::get().to(||async { "TODO" }))
+                                // Create Blobs
+                                .route("/{path}", web::put().to(||async { "TODO" }))
+                                // Delete Blobs
+                                .route("/{path}", web::delete().to(||async { "TODO" }))
+                                // Update Blobs
+                                .route("/{path}", web::post().to(||async { "TODO" }))
                         )
                         .service(
                             web::scope("/branchs")

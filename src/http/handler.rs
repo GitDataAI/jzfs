@@ -75,13 +75,13 @@ pub async fn info_refs(req: HttpRequest, path: web::Path<(String, String)>, quer
 
 pub async fn git_upload_pack(http_request: HttpRequest,path: web::Path<(String, String)>, mut payload: Payload, service: web::Data<MetaService>) -> impl Responder {
     let (owner, repo_name) = path.into_inner();
-    let repo = service.repo_service().owner_name_by_uid(owner.clone(), repo_name).await;
+    let repo = service.repo_service().owner_name_by_uid(owner.clone(), repo_name.clone()).await;
     if repo.is_err() {
         return HttpResponse::NotFound().body("Not Found");
     }
     let repo_path = repo.unwrap().to_string();
-    
-    
+    let owner_id = service.user_service().username_to_uid(owner.clone()).await.unwrap();
+    service.repo_service().sync_repo(owner.clone(), repo_name, owner_id).await.ok();
     let version = http_request.headers().get("Git-Protocol").unwrap_or(&HeaderValue::from_str("").unwrap()).to_str().map(|s| s.to_string()).unwrap_or("".to_string());
 
     let mut resp = HttpResponseBuilder::new(StatusCode::OK);
@@ -162,7 +162,7 @@ pub async fn git_receive_pack(
     service: web::Data<MetaService>,
 ) -> impl Responder {
     let (owner, repo_name) = path.into_inner();
-    let repo = service.repo_service().owner_name_by_uid(owner.clone(), repo_name).await;
+    let repo = service.repo_service().owner_name_by_uid(owner.clone(), repo_name.clone()).await;
     if repo.is_err() {
         return HttpResponse::NotFound().body("Not Found");
     }
@@ -267,13 +267,14 @@ pub async fn git_receive_pack(
             }
         }
     });
-
+    let owner_id = service.user_service().username_to_uid(owner.clone()).await.unwrap();
+    service.repo_service().sync_repo(owner.clone(), repo_name, owner_id).await.ok();
     resp.body(body_stream)
 }
 
 pub async fn get_text_file(http_request: HttpRequest, path: web::Path<(String, String)>, service: web::Data<MetaService>) -> impl Responder{
     let (owner, repo_name) = path.into_inner();
-    let repo = service.repo_service().owner_name_by_uid(owner.clone(), repo_name).await;
+    let repo = service.repo_service().owner_name_by_uid(owner.clone(), repo_name.clone()).await;
     if repo.is_err() {
         return HttpResponse::NotFound().body("Not Found");
     }
@@ -296,7 +297,7 @@ pub async fn get_text_file(http_request: HttpRequest, path: web::Path<(String, S
             for (k, v) in resp.iter() {
                 response.headers_mut().insert(
                     k.to_string().parse().unwrap(),
-                    header::HeaderValue::from_str(v).unwrap(),
+                    HeaderValue::from_str(v).unwrap(),
                 );
             }
 
@@ -304,7 +305,8 @@ pub async fn get_text_file(http_request: HttpRequest, path: web::Path<(String, S
                 header::CONTENT_TYPE,
                 HeaderValue::from_str("text/plain").unwrap(),
             );
-
+            let owner_id = service.user_service().username_to_uid(owner.clone()).await.unwrap();
+            service.repo_service().sync_repo(owner.clone(), repo_name, owner_id).await.ok();
             response
         }
         Err(_) => HttpResponse::InternalServerError().body("Failed to open file"),
@@ -313,7 +315,7 @@ pub async fn get_text_file(http_request: HttpRequest, path: web::Path<(String, S
 
 pub async fn objects_info_packs(http_request: HttpRequest,path: web::Path<(String, String)>, service: web::Data<MetaService>) -> impl Responder {
     let (owner, repo_name) = path.into_inner();
-    let repo = service.repo_service().owner_name_by_uid(owner.clone(), repo_name).await;
+    let repo = service.repo_service().owner_name_by_uid(owner.clone(), repo_name.clone()).await;
     if repo.is_err() {
         return HttpResponse::NotFound().body("Not Found");
     }
@@ -344,7 +346,8 @@ pub async fn objects_info_packs(http_request: HttpRequest,path: web::Path<(Strin
                 header::CONTENT_TYPE,
                 HeaderValue::from_str("application/x-git-loose-object").unwrap(),
             );
-
+            let owner_id = service.user_service().username_to_uid(owner.clone()).await.unwrap();
+            service.repo_service().sync_repo(owner.clone(), repo_name, owner_id).await.ok();
             response
         }
         Err(_) => HttpResponse::InternalServerError().body("Failed to open file"),
@@ -354,7 +357,7 @@ pub async fn objects_info_packs(http_request: HttpRequest,path: web::Path<(Strin
 
 pub async fn objects_pack(http_request: HttpRequest, path: web::Path<(String, String, String)>, service: web::Data<MetaService>) -> impl Responder {
     let (owner, repo_name,pack_hash) = path.into_inner();
-    let repo = service.repo_service().owner_name_by_uid(owner.clone(), repo_name).await;
+    let repo = service.repo_service().owner_name_by_uid(owner.clone(), repo_name.clone()).await;
     if repo.is_err() {
         return HttpResponse::NotFound().body("Not Found");
     }
@@ -397,7 +400,8 @@ pub async fn objects_pack(http_request: HttpRequest, path: web::Path<(String, St
                 header::CONTENT_TYPE,
                 HeaderValue::from_str(&xtype).unwrap(),
             );
-
+            let owner_id = service.user_service().username_to_uid(owner.clone()).await.unwrap();
+            service.repo_service().sync_repo(owner.clone(), repo_name, owner_id).await.ok();
             response
         }
         Err(_) => HttpResponse::InternalServerError().body("Failed to open file"),

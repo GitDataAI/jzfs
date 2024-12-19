@@ -14,6 +14,8 @@ pub struct GroupCreate{
 #[derive(Deserialize, ToSchema)]
 pub struct GroupQuery{
     pub key: String,
+    pub page: u64,
+    pub size: u64,
 }
 
 

@@ -5,6 +5,10 @@ use crate::server::email::EmailServer;
 pub mod info;
 pub mod create;
 pub mod access;
+pub mod blob;
+pub mod sync;
+pub mod branchs;
+pub mod commits;
 
 #[allow(dead_code)]
 pub struct RepoService{

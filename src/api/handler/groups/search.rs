@@ -19,13 +19,15 @@ use crate::metadata::service::MetaService;
 )]
 pub async fn api_groups_search(
     info: web::Query<GroupQuery>,
-    query: web::Json<ListOption>,
     service: web::Data<MetaService>
 )
 -> impl Responder
 {
     let key = info.key.clone();
-    match service.group_service().query(key, query.into_inner()).await {
+    match service.group_service().query(key,ListOption{
+        page: info.page,
+        size: info.size,
+    }).await {
         Ok(result) => {
             let result = result
                 .iter()

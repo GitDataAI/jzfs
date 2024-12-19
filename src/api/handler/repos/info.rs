@@ -17,7 +17,9 @@ pub async fn api_repo_info_get(
     path: web::Path<(String,String)>
 ) -> impl Responder
 {
+    
     let (owner, repo) = path.into_inner();
+    tracing::info!("owner: {}, repo: {}", owner, repo);
     let repo_id = match service.repo_service().owner_name_by_uid(owner,repo).await{
         Ok(data) => {
             data
