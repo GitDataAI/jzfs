@@ -20,17 +20,17 @@ impl RepoService {
         
         let models = repo_branch::Entity::find()
             .filter(repo_branch::Column::RepoId.eq(repo_uid))
-            .all(&txn)
+            .all(&self.db)
             .await?;
         for model in models{
-            model.delete(&txn).await?;
+            model.into_active_model().delete(&self.db).await?;
         }
         let models = repo_commit::Entity::find()
             .filter(repo_commit::Column::RepoId.eq(repo_uid))
-            .all(&txn)
+            .all(&self.db)
             .await?;
         for model in models{
-            model.delete(&txn).await?;
+            model.into_active_model().delete(&self.db).await?;
         }
 
         let model = self.info(repo_uid).await;
