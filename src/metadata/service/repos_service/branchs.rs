@@ -1,8 +1,7 @@
-use sea_orm::*;
-use time::OffsetDateTime;
-use uuid::Uuid;
 use crate::metadata::model::repo::{repo_branch, repo_commit};
 use crate::metadata::service::repos_service::RepoService;
+use sea_orm::*;
+use uuid::Uuid;
 
 impl RepoService {
     pub async fn branch(&self, owner: String, repo: String) -> anyhow::Result<Vec<repo_branch::Model>>{
