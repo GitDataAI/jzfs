@@ -11,22 +11,28 @@ use crate::metadata::model::repo::{repo_branch, repo_commit};
 impl RepoService {
     pub async fn sync_repo<'a>(&self, owner: String, repo: String, owner_id: Uuid) -> anyhow::Result<()>{
         let txn = self.db.begin().await?;
-        
+
         let uid = self.owner_name_by_uid(owner.clone(),repo.clone()).await;
         if uid.is_err(){
             return Err(uid.err().unwrap())
         }
         let repo_uid = uid?;
         
-        repo_branch::Entity::delete_many()
+        let models = repo_branch::Entity::find()
             .filter(repo_branch::Column::RepoId.eq(repo_uid))
-            .exec(&txn)
+            .all(&txn)
             .await?;
-        repo_commit::Entity::delete_many()
+        for model in models{
+            model.delete(&txn).await?;
+        }
+        let models = repo_commit::Entity::find()
             .filter(repo_commit::Column::RepoId.eq(repo_uid))
-            .exec(&txn)
+            .all(&txn)
             .await?;
-        
+        for model in models{
+            model.delete(&txn).await?;
+        }
+
         let model = self.info(repo_uid).await;
         if model.is_err(){
             return Err(model.err().unwrap())
