@@ -46,7 +46,7 @@ pub async fn init_api() -> Result<(), Error>{
                     .session_lifecycle(
                         PersistentSession::default()
                             .session_ttl(Duration::days(30))
-                            .session_ttl_extension_policy(TtlExtensionPolicy::OnStateChanges)
+                            .session_ttl_extension_policy(TtlExtensionPolicy::OnEveryRequest)
                     )
                     .cookie_secure(false)
                     .build()
