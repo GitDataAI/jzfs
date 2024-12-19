@@ -26,6 +26,9 @@ use crate::api::handler::users::reset::{api_user_reset_passwd_forget, api_user_r
 use crate::api::handler::users::search::api_users_search;
 use crate::api::handler::users::starred::api_users_starred;
 use actix_web::web;
+use crate::api::handler::repos::branchs::{api_repo_branch, api_repo_branchs};
+use crate::api::handler::repos::commits::{api_repo_commit, api_repo_commits};
+use crate::api::handler::repos::tree::api_repo_tree;
 use crate::api::handler::users::session::api_user_session_model;
 
 pub fn routes(cfg: &mut web::ServiceConfig){
@@ -158,27 +161,25 @@ pub fn routes(cfg: &mut web::ServiceConfig){
                                 .route("/{path}", web::post().to(||async { "TODO" }))
                         )
                         .service(
-                            web::scope("/branchs")
-                                .route("/", web::get().to(||async { "TODO" }))
-                                .route("/", web::post().to(||async { "TODO" }))
+                            web::scope("/branches")
+                                .route("", web::get().to(api_repo_branchs))
+                                .route("", web::post().to(||async { "TODO" }))
                                 .service(
                                     web::scope("/{branch}")
-                                        .route("/", web::get().to(||async { "TODO" }))
+                                        .route("/", web::get().to(api_repo_branch))
+                                        .route("/", web::delete().to(||async { "TODO" }))
                                         .route("/", web::post().to(||async { "TODO" }))
                                 )
                         )
                         .service(
-                            web::scope("/commits")
-                                .route("/", web::get().to(||async { "TODO" }))
-                                .route("/{ref}/status", web::get().to(||async { "TODO" }))
+                            web::scope("/commits/{branches}")
+                                .route("", web::get().to(api_repo_commits))
+                                .route("/{ref}/status", web::get().to(api_repo_commit))
                                 .route("/{sha}/pull", web::get().to(||async { "TODO" }))
                         )
                         .service(
-                            web::scope("/object/{filepath}")
-                                .route("/", web::get().to(||async { "TODO" }))
-                                .route("/", web::post().to(||async { "TODO" }))
-                                .route("/", web::put().to(||async { "TODO" }))
-                                .route("/", web::delete().to(||async { "TODO" }))
+                            web::scope("/tree")
+                                .route("/{branches}", web::get().to(api_repo_tree))
                         )
                         .service(
                             web::scope("/fork")

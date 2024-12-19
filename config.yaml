@@ -18,7 +18,7 @@ postgres:
   idle_timeout: 60
   connect_timeout: 10
   max_connections: 20
-  min_connections: 10
+  min_connections: 5
   log_level: info
 redis:
   host: 122.11.28.208

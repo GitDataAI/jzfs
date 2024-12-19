@@ -91,8 +91,8 @@ impl RepoService {
                 repo_id: Set(repo_uid),
                 branch: Set(branch),
                 head: Set({
-                    if commits.last().is_some(){
-                        Option::from(commits.last().unwrap().clone().uid.unwrap())
+                    if commits.first().is_some(){
+                        Option::from(commits.first().unwrap().clone().uid.unwrap())
                     }else{
                         Option::from(None)
                     }

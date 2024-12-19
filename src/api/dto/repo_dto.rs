@@ -70,3 +70,18 @@ pub struct RepoRename{
 pub struct RepoTopic{
     pub topic: String
 }
+
+
+
+#[derive(Deserialize,Serialize, ToSchema)]
+pub struct RepoTree{
+    pub name: String,
+    pub is_dir: bool,
+    pub path: String,
+    pub children: Vec<RepoTree>
+}
+
+#[derive(Deserialize,Serialize, ToSchema)]
+pub struct RepoTreeQuery{
+    pub commit: Option<String>
+}
