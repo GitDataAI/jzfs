@@ -17,7 +17,7 @@ impl RepoService {
             return Err(uid.err().unwrap())
         }
         let repo_uid = uid?;
-        
+
         let models = repo_branch::Entity::find()
             .filter(repo_branch::Column::RepoId.eq(repo_uid))
             .all(&self.db)
@@ -44,7 +44,6 @@ impl RepoService {
         if branchs.is_err() {
             return Err(branchs.err().unwrap());
         }
-        let repo_uid = Uuid::new_v4();
         let mut map = HashMap::new();
         let branchs = branchs?;
         for branchs_idx in branchs {
