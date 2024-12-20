@@ -25,14 +25,21 @@ use crate::api::handler::users::repos::api_users_repos;
 use crate::api::handler::users::reset::{api_user_reset_passwd_forget, api_user_reset_passwd_profile};
 use crate::api::handler::users::search::api_users_search;
 use crate::api::handler::users::starred::api_users_starred;
-use actix_web::web;
 use crate::api::handler::repos::branchs::{api_repo_branch, api_repo_branchs};
 use crate::api::handler::repos::commits::{api_repo_commit, api_repo_commits};
 use crate::api::handler::repos::tree::api_repo_tree;
 use crate::api::handler::users::session::api_user_session_model;
+use actix_web::web;
+use crate::api::graphql::repo::handler::graphql_repo_handler;
+use crate::api::graphql::user::handler::graphql_user_handler;
 
 pub fn routes(cfg: &mut web::ServiceConfig){
     cfg
+        .service(
+            web::scope("/graphql")
+                .route("/user", web::get().to(graphql_user_handler))
+                .route("/repo", web::get().to(graphql_repo_handler))
+        )
         .service(
             web::scope("/user")
                 .service(

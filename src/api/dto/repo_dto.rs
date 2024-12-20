@@ -85,3 +85,14 @@ pub struct RepoTree{
 pub struct RepoTreeQuery{
     pub commit: Option<String>
 }
+
+#[derive(Deserialize,Serialize,ToSchema)]
+pub struct RepoBranchOv{
+    pub uid: Uuid,
+    pub branch: String,
+    pub protect: bool,
+    pub visible: bool,
+    pub head: Option<Uuid>,
+    pub created_at: i64,
+    pub updated_at: i64,
+}

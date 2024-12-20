@@ -1,3 +1,5 @@
+use crate::api::graphql::user::handler::__path_graphql_user_handler;
+use crate::api::graphql::repo::handler::__path_graphql_repo_handler;
 use crate::api::handler::email::captcha::__path_api_email_rand_captcha;
 use crate::api::handler::email::captcha::__path_api_email_captcha_check;
 use crate::api::handler::repos::info::__path_api_repo_info_get;
@@ -59,6 +61,10 @@ use utoipa::OpenApi;
 #[openapi(
     info(description = "GitDataAi Api description"),
     paths(
+        
+        graphql_user_handler,
+        graphql_repo_handler,
+    
         api_users_apply,
         api_users_login_name,
         api_users_login_email,

@@ -11,7 +11,6 @@ pub struct Model{
     pub user_id: Uuid,
     pub repo_id: Uuid,
     pub contribute: String,
-    
     pub first_at: OffsetDateTime,
     pub last_at: OffsetDateTime,
 }

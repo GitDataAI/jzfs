@@ -47,7 +47,7 @@ pub struct UserUpdate{
     pub timezone: Option<String>,
 }
 
-#[derive(Serialize, ToSchema,Clone)]
+#[derive(Deserialize, Serialize, ToSchema,Clone)]
 pub struct UserKeyList{
     pub uid: Uuid,
     pub created_at: String,
@@ -66,7 +66,7 @@ pub struct UserAvatar{
     pub(crate) byte: String,
 }
 
-#[derive(Deserialize,Serialize, ToSchema)]
+#[derive(Deserialize,Serialize, ToSchema,Clone)]
 pub struct UserOv{
     pub uid: Uuid,
     pub name: String,
@@ -110,4 +110,9 @@ pub struct UserFollowerOv {
 #[derive(Deserialize,Serialize, ToSchema)]
 pub struct UserFollow{
     pub uid: Uuid
+}
+
+#[derive(Deserialize,Serialize, ToSchema)]
+pub struct UserActiveQuery{
+    pub username: Option<String>
 }

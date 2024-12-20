@@ -9,6 +9,8 @@ pub mod blob;
 pub mod sync;
 pub mod branchs;
 pub mod commits;
+pub mod license;
+pub mod readme;
 
 #[allow(dead_code)]
 pub struct RepoService{

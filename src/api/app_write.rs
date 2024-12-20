@@ -1,7 +1,6 @@
-use actix_web::{HttpRequest, HttpResponse};
 use actix_web::body::BoxBody;
-use actix_web::http::StatusCode;
-use serde::{Serialize};
+use actix_web::{HttpRequest, HttpResponse};
+use serde::Serialize;
 use serde_json::{json, Number, Value};
 use utoipa::ToSchema;
 

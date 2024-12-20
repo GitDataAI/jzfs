@@ -54,4 +54,29 @@ impl GitRepo{
             .spawn()?;
         Ok(())
     }
+    pub fn files(&self, branchs: String, commit_id: Option<String>, file_path: String) -> anyhow::Result<Vec<u8>>{
+        let repo = self.repo();
+        let branch = repo.find_branch(branchs.as_str(), git2::BranchType::Local)?;
+        let commit = match commit_id{
+            Some(id)=> repo.find_commit(id.parse::<git2::Oid>()?)?,
+            None=> branch.get().peel_to_commit()?
+        };
+        let tree = commit.tree()?;
+        let entry = tree.get_path(&*PathBuf::from(file_path));
+        if entry.is_err(){
+            return Err(anyhow::anyhow!("file not found"))
+        }
+        let entry = entry?;
+        let blob = entry.to_object(&self.repo)?.as_blob().map(|x|x.clone()).ok_or_else(||{
+            anyhow::anyhow!("file not found")
+        });
+        Ok(blob?.content().to_vec())
+    }
+    pub fn readme(&self, branch: String) -> anyhow::Result<Vec<u8>>{
+        let readme = self.files(branch, None, "README.md".to_string());
+        if readme.is_err(){
+            return Err(anyhow::anyhow!("readme not found"))
+        }
+        Ok(readme?)
+    }
 }

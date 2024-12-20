@@ -26,4 +26,13 @@ impl UserService{
             None => Err(anyhow::anyhow!("[Error] User Data Not Found"))
         }
     }
+    pub async fn _user_private(&self, uid: Uuid) -> anyhow::Result<users::Model>{
+        let v1 = users::Entity::find_by_id(uid)
+            .one(&self.db)
+            .await?;
+        match v1 {
+            Some(x) => Ok(x),
+            None => Err(anyhow::anyhow!("[Error] User Not Found"))
+        }
+    }
 }
