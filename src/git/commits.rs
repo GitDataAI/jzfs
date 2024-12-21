@@ -42,34 +42,36 @@ impl <'a>GitCommits<'a>{
     pub fn build_tree(repo: &Repository, tree_id: git2::Oid, base_path: String) -> anyhow::Result<RepoTree> {
         let tree = repo.find_tree(tree_id)?;
         let mut children = Vec::new();
-        tree.walk(TreeWalkMode::PreOrder, |_root, entry| {
+        for entry in tree.iter() {
             if let Some(name) = entry.name() {
-                if let Some(entry_id) = entry.id().to_string().parse::<git2::Oid>().ok() {
-                    let is_dir = entry.kind() == Some(git2::ObjectType::Tree);
-                    if is_dir {
-                        if let Ok(child_tree) = Self::build_tree(repo, entry_id, format!("{}/", _root)) {
+                let full_path = if base_path.is_empty() {
+                    name.to_string()
+                } else {
+                    format!("{}/{}", base_path, name)
+                };
+                let is_dir = entry.kind() == Some(git2::ObjectType::Tree);
+                if is_dir {
+                    if let Some(entry_id) = entry.id().to_string().parse::<git2::Oid>().ok() {
+                        if let Ok(child_tree) = Self::build_tree(repo, entry_id, full_path.clone()) {
                             children.push(child_tree);
                         }
-                    } else {
-                        children.push(RepoTree {
-                            name: name.trim_end_matches('/')
-                                .rsplit('/')
-                                .next().unwrap_or("").to_string(),
-                            is_dir,
-                            path: _root.to_string(),
-                            children: Vec::new(),
-                        });
                     }
+                } else {
+                    children.push(RepoTree {
+                        name: name.to_string(),
+                        is_dir,
+                        path: full_path.clone(),
+                        children: Vec::new(),
+                    });
                 }
             }
-            TreeWalkResult::Ok
-        })?;
+        }
         Ok(RepoTree {
             name: base_path.clone().to_string().trim_end_matches('/')
                 .rsplit('/')
                 .next().unwrap_or("").to_string(),
             is_dir: true,
-            path: base_path.clone(),
+            path: base_path,
             children,
         })
     }
