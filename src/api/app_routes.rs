@@ -37,8 +37,8 @@ pub fn routes(cfg: &mut web::ServiceConfig){
     cfg
         .service(
             web::scope("/graphql")
-                .route("/user", web::get().to(graphql_user_handler))
-                .route("/repo", web::get().to(graphql_repo_handler))
+                .route("/user", web::post().to(graphql_user_handler))
+                .route("/repo", web::post().to(graphql_repo_handler))
         )
         .service(
             web::scope("/user")
