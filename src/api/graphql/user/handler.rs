@@ -9,7 +9,7 @@ use actix_web::{web, Responder};
 
 
 #[utoipa::path(
-    get,
+    post,
     path = "/api/graphql/user",
     request_body = UserGraphqlQuery,
     tags = ["graphql"],

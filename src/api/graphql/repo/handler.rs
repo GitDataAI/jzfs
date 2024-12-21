@@ -5,7 +5,7 @@ use crate::metadata::service::MetaService;
 use actix_web::{web, Responder};
 
 #[utoipa::path(
-    get,
+    post,
     path = "/api/graphql/repo",
     request_body = GraphQLRepoQuery,
     tags = ["graphql"],
