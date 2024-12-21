@@ -1,7 +1,7 @@
-use git2::{Branch, Commit, Repository, TreeWalkMode, TreeWalkResult};
 use crate::api::dto::repo_dto::RepoTree;
 use crate::git::dtos::FileDto;
 use crate::git::tree::GitTree;
+use git2::{Branch, Commit, Repository};
 
 pub struct GitCommits<'a>{
     branch: Branch<'a>,
