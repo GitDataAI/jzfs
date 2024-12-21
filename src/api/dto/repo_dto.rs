@@ -78,6 +78,7 @@ pub struct RepoTree{
     pub name: String,
     pub is_dir: bool,
     pub path: String,
+    #[schema(no_recursion)]
     pub children: Vec<RepoTree>
 }
 

@@ -29,6 +29,7 @@ pub async fn init_api() -> Result<(), Error>{
     Init().await;
     let session = RedisSessionStore::builder_pooled(META.get().unwrap().redis()).build().await.unwrap();
     info!("Redis session store initialized.");
+    info!("API server started.");
     HttpServer::new(move || {
         let meta = META.get().unwrap().clone();
         App::new()
@@ -55,7 +56,7 @@ pub async fn init_api() -> Result<(), Error>{
             .wrap(ActixServer)
             .service(
                 scope("/api")
-                    .service(Redoc::with_url("/scalar", ApiDoc::openapi()))
+                    .service(Redoc::with_url("/openapi", ApiDoc::openapi()))
                     .route("/version", web::get().to(api_version))
                     .service(
                         scope("/v1")
@@ -66,6 +67,5 @@ pub async fn init_api() -> Result<(), Error>{
         .bind(cfg.http.starter())?
         .run()
         .await?;
-    info!("API server started.");
     Ok(())
 }

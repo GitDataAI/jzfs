@@ -37,7 +37,7 @@ actix-files = { version = "0.6.6", features = ["tokio-uring"] }
 
 flate2 = { version = "1", features = ["default"] }
 
-utoipa = { version = "5.2.0", features = ["actix_extras","uuid","time","auto_into_responses"] }
+utoipa = { version = "5.3.0", features = ["actix_extras","uuid","time","auto_into_responses"] }
 utoipa-redoc = { version = "5.0.0", features = ["actix-web"] }
 sea-orm = { version = "1.1.2" ,features = ["sqlx-all", "runtime-tokio", "default"] }
 deadpool-redis = { version = "0.16.0",features = ["cluster","rt_tokio_1"] }
