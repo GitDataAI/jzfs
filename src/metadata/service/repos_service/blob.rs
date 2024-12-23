@@ -1,11 +1,10 @@
-use crate::api::dto::repo_dto::RepoTree;
 use crate::metadata::model::repo::repo;
+use crate::metadata::mongo::repotree::RepoTreeModel;
 use crate::metadata::service::repos_service::RepoService;
 use futures_util::TryStreamExt;
 use mongodb::bson::doc;
 use sea_orm::*;
 use uuid::Uuid;
-use crate::metadata::mongo::repotree::RepoTreeModel;
 
 impl RepoService {
     pub async fn tree(&self, repo_id: Uuid, branch: String, commid_id: Option<String>) -> anyhow::Result<RepoTreeModel>{

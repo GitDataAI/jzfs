@@ -1,7 +1,6 @@
+use crate::api::dto::repo_dto::RepoTree;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use uuid::Uuid;
-use crate::api::dto::repo_dto::RepoTree;
 
 #[derive(Deserialize,Serialize,Debug,Clone,ToSchema)]
 pub struct RepoTreeModel{

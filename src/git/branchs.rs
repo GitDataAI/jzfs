@@ -1,8 +1,7 @@
-use git2::{Branch, BranchType, Reference, Repository};
-use uuid::Uuid;
 use crate::api::dto::repo_dto::RepoTree;
 use crate::git::commits::GitCommits;
 use crate::metadata::mongo::repotree::RepoTreeModel;
+use git2::{Branch, BranchType, Reference, Repository};
 
 pub struct GitBranch{
     repo: Repository
