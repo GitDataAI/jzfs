@@ -5,9 +5,10 @@ use futures_util::TryStreamExt;
 use mongodb::bson::doc;
 use sea_orm::*;
 use uuid::Uuid;
+use crate::metadata::mongo::repotree::RepoTreeModel;
 
 impl RepoService {
-    pub async fn tree(&self, repo_id: Uuid, branch: String, commid_id: Option<String>) -> anyhow::Result<RepoTree>{
+    pub async fn tree(&self, repo_id: Uuid, branch: String, commid_id: Option<String>) -> anyhow::Result<RepoTreeModel>{
         let repo_model = repo::Entity::find()
             .filter(repo::Column::Uid.eq(repo_id))
             .one(&self.db)
@@ -27,9 +28,12 @@ impl RepoService {
                 }
             }else{
                 doc!{
-                    "repo":repo,
-                    "owner": owner,
-                    "branch":branch,
+                    "$and":[
+                        {"repo":repo},
+                        {"owner":owner},
+                        {"branch":branch},
+                        {"hash":{"$exists":true}}
+                    ]
                 }
             }
         };
@@ -37,6 +41,10 @@ impl RepoService {
         let mut result = Vec::new();
         while let Some(doc) = cursor.try_next().await? {
             result.push(doc);
+        }
+        if result.len() > 0{
+            result.sort_by(|a, b| a.time.cmp(&b.time));
+            return Ok(result.first().unwrap().clone());
         }
         Err(anyhow::anyhow!("branch not found"))
     }

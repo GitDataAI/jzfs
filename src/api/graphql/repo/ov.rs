@@ -1,4 +1,4 @@
-use crate::api::dto::repo_dto::RepoTree;
+use crate::metadata::mongo::repotree::RepoTreeModel;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
@@ -10,7 +10,7 @@ pub struct GraphQLRepoModel{
     pub profile: Option<GraphQLRepoProfile>,
     pub data: Option<GraphQLRepoData>,
     pub branchs: Option<Vec<GraphQLRepoBranchOv>>,
-    pub tree: Option<RepoTree>,
+    pub tree: Option<RepoTreeModel>,
     pub license: Option<Vec<GraphQLRepoLicense>>,
     pub readme: Option<Vec<u8>>,
 }

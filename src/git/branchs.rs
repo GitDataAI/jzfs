@@ -64,12 +64,12 @@ impl GitBranch{
                 break;
             }
             result.push(RepoTreeModel{
-                uid: Uuid::new_v4(),
                 hash: commit_id.id().to_string(),
                 branch: branch_name.clone(),
                 owner: owner.clone(),
                 tree: tree?,
                 repo: repo.clone(),
+                time: commit_id.time().seconds()
             });
             match commit_id.parent(0){
                 Ok(parent) => commit_id = parent,

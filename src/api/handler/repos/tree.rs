@@ -1,14 +1,14 @@
-use actix_web::{web, Responder};
 use crate::api::app_write::AppWrite;
-use crate::api::dto::repo_dto::RepoTree;
+use crate::metadata::mongo::repotree::RepoTreeModel;
 use crate::metadata::service::MetaService;
+use actix_web::{web, Responder};
 
 
 #[utoipa::path(
     get,
     path = "/api/repo/{owner}/{repo}/tree/{path}?{commit={refs}:?}",
     responses(
-        (status = 200, description = "success", body = RepoTree),
+        (status = 200, description = "success", body = RepoTreeModel),
         (status = 400, description = "fail", body = String),
     ),
     params(
@@ -28,7 +28,7 @@ pub async fn api_repo_tree(
     let (owner, repo, branch) = path.into_inner();
     let repo_id = match service.repo_service().owner_name_by_uid(owner, repo).await{
         Ok(repo_id) => repo_id,
-        Err(e) => return AppWrite::<RepoTree>::fail(e.to_string())
+        Err(e) => return AppWrite::<RepoTreeModel>::fail(e.to_string())
     };
     match service.repo_service().tree(repo_id, branch, query.commit.clone()).await{
         Ok(tree) => AppWrite::ok(tree),

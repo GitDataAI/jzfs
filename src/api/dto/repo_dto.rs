@@ -73,7 +73,7 @@ pub struct RepoTopic{
 
 
 
-#[derive(Deserialize,Serialize, ToSchema,Debug)]
+#[derive(Deserialize,Serialize, ToSchema,Debug,Clone)]
 pub struct RepoTree{
     pub name: String,
     pub is_dir: bool,
