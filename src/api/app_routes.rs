@@ -30,7 +30,9 @@ use crate::api::handler::repos::commits::{api_repo_commit, api_repo_commits};
 use crate::api::handler::repos::tree::api_repo_tree;
 use crate::api::handler::users::session::api_user_session_model;
 use actix_web::web;
+use crate::api::graphql::files::handler::graphql_files_handler;
 use crate::api::graphql::repo::handler::graphql_repo_handler;
+use crate::api::graphql::tree::handler::graphql_tree_handler;
 use crate::api::graphql::user::handler::graphql_user_handler;
 
 pub fn routes(cfg: &mut web::ServiceConfig){
@@ -39,6 +41,8 @@ pub fn routes(cfg: &mut web::ServiceConfig){
             web::scope("/graphql")
                 .route("/user", web::post().to(graphql_user_handler))
                 .route("/repo", web::post().to(graphql_repo_handler))
+                .route("/tree", web::post().to(graphql_tree_handler))
+                .route("/files", web::post().to(graphql_files_handler))
         )
         .service(
             web::scope("/user")

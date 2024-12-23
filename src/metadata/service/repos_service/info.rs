@@ -14,6 +14,17 @@ impl RepoService {
         }
         Ok(model.unwrap().uid)
     }
+    pub async fn owner_name_by_model(&self, owner: String, name: String) -> anyhow::Result<repo::Model>{
+        let model = repo::Entity::find()
+            .filter(repo::Column::Name.eq(name))
+            .filter(repo::Column::Owner.eq(owner))
+            .one(&self.db)
+            .await?;
+        if model.is_none(){
+            return Err(anyhow::anyhow!("repo not found"))
+        }
+        Ok(model.unwrap())
+    }
     pub async fn search(&self, keyword: String, page: u64, size: u64) -> anyhow::Result<Vec<repo::Model>>{
         let models = repo::Entity::find()
             .filter(repo::Column::Name.contains(keyword.clone()))

@@ -1,3 +1,5 @@
+use crate::api::graphql::files::handler::__path_graphql_files_handler;
+use crate::api::graphql::tree::handler::__path_graphql_tree_handler;
 use crate::api::graphql::user::handler::__path_graphql_user_handler;
 use crate::api::graphql::repo::handler::__path_graphql_repo_handler;
 use crate::api::handler::email::captcha::__path_api_email_rand_captcha;
@@ -64,6 +66,9 @@ use utoipa::OpenApi;
         
         graphql_user_handler,
         graphql_repo_handler,
+        graphql_tree_handler,
+        graphql_files_handler,
+    
     
         api_users_apply,
         api_users_login_name,
