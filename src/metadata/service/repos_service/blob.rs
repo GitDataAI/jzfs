@@ -43,7 +43,7 @@ impl RepoService {
         }
         if result.len() > 0{
             result.sort_by(|a, b| a.time.cmp(&b.time));
-            return Ok(result.first().unwrap().clone());
+            return Ok(result.last().unwrap().clone());
         }
         Err(anyhow::anyhow!("branch not found"))
     }
