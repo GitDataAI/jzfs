@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use log::{error, info};
+use mongodb::bson::doc;
 use crate::git::branchs::GitBranch;
 use crate::git::repo::GitRepo;
 use crate::metadata::service::repos_service::RepoService;
@@ -7,11 +9,12 @@ use sea_orm::ActiveValue::Set;
 use time::OffsetDateTime;
 use uuid::Uuid;
 use crate::metadata::model::repo::{repo_branch, repo_commit};
+use crate::server::mongodb::MONGODB;
 
 impl RepoService {
     pub async fn sync_repo<'a>(&self, owner: String, repo: String, owner_id: Uuid) -> anyhow::Result<()>{
         let txn = self.db.begin().await?;
-
+        let repo_name = repo.clone();
         let uid = self.owner_name_by_uid(owner.clone(),repo.clone()).await;
         if uid.is_err(){
             return Err(uid.err().unwrap())
@@ -38,7 +41,7 @@ impl RepoService {
             return Err(model.err().unwrap())
         }
         let model = model?;
-        let repo = GitRepo::from(model);
+        let repo = GitRepo::from(model.clone());
         let branchs = GitBranch::new(repo.repo);
         let branchs = branchs.branchs();
         if branchs.is_err() {
@@ -117,13 +120,44 @@ impl RepoService {
             };
             map.insert(branch_model, commits);
         }
-        for (branch_model,commits) in map{
+        for (branch_model,commits) in map.clone(){
             for commit in commits{
                 commit.insert(&txn).await?;
             }
             branch_model.insert(&txn).await?;
         }
         txn.commit().await?;
+        let mongo_tree = MONGODB.get().unwrap().clone().tree;
+        mongo_tree.delete_many(doc!{
+            "$and" :[
+                doc!{
+                    "owner":owner.clone()
+                },
+                doc!{
+                    "repo":repo_name.clone()
+                }
+            ]
+        }).await?;
+        
+        let repo = GitRepo::from(model);
+        let br = GitBranch::new(repo.repo);
+        let branchs = br.branchs()?;
+        for branch in branchs{
+            let trees = br.trees(branch,owner.clone(),repo_name.clone());
+            if trees.is_err(){
+                continue;
+            }
+            let trees = trees?;
+            match mongo_tree.insert_many(trees).await{
+                Ok(o) => {
+                    info!("insert many tree:{:?}",o);
+                }
+                Err(e) => {
+                    error!("insert many tree:{:?}",e);
+                    continue
+                }
+            }
+        }
         Ok(())
     }
 }

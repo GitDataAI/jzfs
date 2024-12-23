@@ -13,6 +13,9 @@ impl <'a>GitCommits<'a>{
             branch
         }
     }
+    pub fn name(&self) -> String{
+        self.branch.name().unwrap().unwrap().to_string()
+    }
     pub fn commits(&self) -> anyhow::Result<Vec<Commit>>{
         let mut result = Vec::new();
         let head = self.branch.get().peel_to_commit();

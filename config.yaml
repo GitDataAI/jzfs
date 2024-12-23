@@ -27,13 +27,13 @@ redis:
   db: 0
   pool_size: 10
 mongodb:
-  host: localhost
+  host: 122.11.28.208
   port: 27017
-  username: ''
-  password: ''
+  username: 'root'
+  password: '1313113a'
   database: ''
   auth_db: ''
-  pool_size: 10
+  pool_size: 2000
 email:
   smtp: smtp.exmail.qq.com
   port: 465

@@ -1,6 +1,7 @@
 use sea_orm::DatabaseConnection;
 use crate::metadata::service::MetaService;
 use crate::server::email::init_email;
+use crate::server::mongodb::MongoDBClient;
 use crate::server::postgres::PGDB;
 
 pub mod postgres;
@@ -19,6 +20,7 @@ pub async fn Init(){
     sqlite::init_sqlite().await;
     init_email().await;
     MetaService::init().await;
+    MongoDBClient::init().await;
 }
 
 #[allow(non_snake_case)]

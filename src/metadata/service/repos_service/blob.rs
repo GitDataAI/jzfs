@@ -1,10 +1,10 @@
-use uuid::Uuid;
+use crate::api::dto::repo_dto::RepoTree;
 use crate::metadata::model::repo::repo;
 use crate::metadata::service::repos_service::RepoService;
+use futures_util::TryStreamExt;
+use mongodb::bson::doc;
 use sea_orm::*;
-use crate::api::dto::repo_dto::RepoTree;
-use crate::git::branchs::GitBranch;
-use crate::git::repo::GitRepo;
+use uuid::Uuid;
 
 impl RepoService {
     pub async fn tree(&self, repo_id: Uuid, branch: String, commid_id: Option<String>) -> anyhow::Result<RepoTree>{
@@ -16,25 +16,27 @@ impl RepoService {
             return Err(anyhow::anyhow!("repo not found"));
         }
         let repo_model = repo_model.unwrap();
-        let repo = GitRepo::from(repo_model);
-        let branchse = GitBranch::new(repo.repo);
-        let branchs = branchse.branchs();
-        if branchs.is_err(){
-            return Err(anyhow::anyhow!("branchs error"));
-        }
-        let branchs = branchs?;
-        for item in branchs{
-            if item.name()?.unwrap() == branch{
-                let tree = branchse.tree(
-                    item,
-                    commid_id
-                );
-                if tree.is_err(){
-                    return Err(anyhow::anyhow!("tree error"));
+        let (repo, owner) = (repo_model.name, repo_model.owner);
+        let doc = {
+            if commid_id.is_some(){
+                doc!{
+                    "repo":repo,
+                    "owner": owner,
+                    "branch":branch,
+                    "hash":commid_id.unwrap()
                 }
-                let tree = tree?;
-                return Ok(tree)
+            }else{
+                doc!{
+                    "repo":repo,
+                    "owner": owner,
+                    "branch":branch,
+                }
             }
+        };
+        let mut cursor = self.mongo.tree.find(doc).await?;
+        let mut result = Vec::new();
+        while let Some(doc) = cursor.try_next().await? {
+            result.push(doc);
         }
         Err(anyhow::anyhow!("branch not found"))
     }

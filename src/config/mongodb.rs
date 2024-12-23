@@ -24,3 +24,16 @@ impl Default for MongoDBConfig {
         }
     }
 }
+
+impl MongoDBConfig{
+    pub fn format(&self) -> String{
+        format!("mongodb://{}:{}@{}:{}/?directConnection=true&serverSelectionTimeoutMS=2000&maxPoolSize={}&minPoolSize={}", 
+                self.username, 
+                self.password, 
+                self.host, 
+                self.port,
+                self.pool_size,
+                self.pool_size / 10
+        )
+    }
+}

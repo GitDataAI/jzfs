@@ -26,3 +26,4 @@ pub mod rpc;
 pub mod log;
 pub mod template;
 pub mod hash;
+pub mod scheduler;

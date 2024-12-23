@@ -1,6 +1,8 @@
-use git2::{Branch, BranchType, Repository};
+use git2::{Branch, BranchType, Reference, Repository};
+use uuid::Uuid;
 use crate::api::dto::repo_dto::RepoTree;
 use crate::git::commits::GitCommits;
+use crate::metadata::mongo::repotree::RepoTreeModel;
 
 pub struct GitBranch{
     repo: Repository
@@ -25,8 +27,7 @@ impl GitBranch{
         }
         Ok(result)
     }
-    pub fn tree(&self, branch: Branch, commit_ids: Option<String>) -> anyhow::Result<RepoTree>{
-        let refs = branch.into_reference();
+    pub fn tree(&self, refs: &Reference, commit_ids: Option<String>) -> anyhow::Result<RepoTree>{
         let tree = refs.peel_to_commit();
         if tree.is_err(){
             return Err(tree.err().unwrap().into());
@@ -47,6 +48,35 @@ impl GitBranch{
             commit_id
         };
         GitCommits::build_tree(&self.repo, commit.tree()?.id(), "".to_string())
+    }
+    pub fn trees(&self, refs: Branch, owner: String, repo: String) -> anyhow::Result<Vec<RepoTreeModel>>{
+        let branch_name = refs.name()?.unwrap().to_string();
+        let refs = refs.into_reference();
+        let tree = refs.peel_to_commit();
+        if tree.is_err(){
+            return Err(tree.err().unwrap().into());
+        }
+        let mut commit_id = tree?;
+        let mut result = Vec::new();
+        loop {
+            let tree = GitCommits::build_tree(&self.repo, commit_id.tree()?.id(), "".to_string());
+            if tree.is_err(){
+                break;
+            }
+            result.push(RepoTreeModel{
+                uid: Uuid::new_v4(),
+                hash: commit_id.id().to_string(),
+                branch: branch_name.clone(),
+                owner: owner.clone(),
+                tree: tree?,
+                repo: repo.clone(),
+            });
+            match commit_id.parent(0){
+                Ok(parent) => commit_id = parent,
+                Err(_) => break
+            }
+        }
+        Ok(result)
     }
 }
 

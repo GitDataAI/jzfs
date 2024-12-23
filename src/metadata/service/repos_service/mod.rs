@@ -1,6 +1,7 @@
 use sea_orm::DatabaseConnection;
 use crate::metadata::service::MetaService;
 use crate::server::email::EmailServer;
+use crate::server::mongodb::{MongoDBClient, MONGODB};
 
 pub mod info;
 pub mod create;
@@ -17,14 +18,17 @@ pub struct RepoService{
     db: DatabaseConnection,
     redis: deadpool_redis::Pool,
     email: EmailServer,
+    mongo: MongoDBClient,
 }
 
 impl From<&MetaService> for RepoService {
     fn from(value: &MetaService) -> Self {
+        let mongo = MONGODB.get().unwrap().clone();
         Self{
             db: value.pg(),
             redis: value.redis(),
             email: value.email(),
+            mongo
         }
     }
 }
