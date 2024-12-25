@@ -138,7 +138,7 @@ impl RepoService {
                 }
             ]
         }).await?;
-        
+
         let repo = GitRepo::from(model);
         let br = GitBranch::new(repo.repo);
         let branchs = br.branchs()?;

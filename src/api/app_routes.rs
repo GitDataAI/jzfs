@@ -34,6 +34,7 @@ use crate::api::graphql::files::handler::graphql_files_handler;
 use crate::api::graphql::repo::handler::graphql_repo_handler;
 use crate::api::graphql::tree::handler::graphql_tree_handler;
 use crate::api::graphql::user::handler::graphql_user_handler;
+use crate::api::handler::repos::files::api_repo_file_upload;
 
 pub fn routes(cfg: &mut web::ServiceConfig){
     cfg
@@ -180,6 +181,7 @@ pub fn routes(cfg: &mut web::ServiceConfig){
                                         .route("/", web::get().to(api_repo_branch))
                                         .route("/", web::delete().to(||async { "TODO" }))
                                         .route("/", web::post().to(||async { "TODO" }))
+                                        .route("/upfile", web::post().to(api_repo_file_upload))
                                 )
                         )
                         .service(

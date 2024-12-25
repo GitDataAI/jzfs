@@ -55,6 +55,7 @@ impl UserService {
                 bind_at: Set(OffsetDateTime::now_utc().format(&format_description::parse(
                     "[year]-[month]-[day] [hour]:[minute]:[second] [offset_hour sign:mandatory]:[offset_minute]:[offset_second]",
                 )?)?),
+                main: Set(true),
             }
                 .insert(&txn)
                 .await;

@@ -13,6 +13,7 @@ pub mod commits;
 pub mod license;
 pub mod readme;
 pub mod files;
+pub mod issues;
 #[allow(dead_code)]
 pub struct RepoService{
     db: DatabaseConnection,

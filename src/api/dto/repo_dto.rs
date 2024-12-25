@@ -97,3 +97,11 @@ pub struct RepoBranchOv{
     pub created_at: i64,
     pub updated_at: i64,
 }
+
+#[derive(Deserialize,Serialize,ToSchema)]
+pub struct RepoFileUpload{
+    pub file_name: String, 
+    pub path: String, 
+    pub msg: String, 
+    pub content: Vec<u8>,
+}

@@ -5,7 +5,7 @@ use crate::metadata::service::MetaService;
 #[utoipa::path(
     get,
     tag = "users",
-    path = "/api/v1/users/info/{user}",
+    path = "/api/v1/users/once/{user}",
     responses(
         (status = 200, description = "Success"),
         (status = 401, description = "Not Login")

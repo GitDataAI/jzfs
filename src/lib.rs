@@ -1,8 +1,9 @@
 #![allow(non_upper_case_globals)]
+#![allow(non_snake_case)]
 
 
 #[cfg(target_os = "windows")]
-pub const ROOT_PATH: &str = "E:/";
+pub const ROOT_PATH: &str = "E:\\test";
 
 #[cfg(not(target_os = "windows"))]
 pub const ROOT_PATH: &str = "/exports";

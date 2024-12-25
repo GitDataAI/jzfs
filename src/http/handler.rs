@@ -68,7 +68,6 @@ pub async fn info_refs(req: HttpRequest, path: web::Path<(String, String)>, quer
         _ => {}
     }
     body.push_str(&String::from_utf8(output.stdout).unwrap());
-    dbg!(&body);
     resp.body(body.as_bytes().to_vec())
 }
 

@@ -14,6 +14,7 @@ pub struct Model{
     pub is_public: bool,
     pub verified: bool,
     pub bind_at: String,
+    pub main: bool,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

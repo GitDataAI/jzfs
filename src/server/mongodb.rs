@@ -1,6 +1,7 @@
 use log::info;
 use mongodb::{Collection, Database};
 use crate::config::CFG;
+use crate::metadata::mongo::issues::IssuesModel;
 use crate::metadata::mongo::repotree::RepoTreeModel;
 
 pub static MONGODB: tokio::sync::OnceCell<MongoDBClient> = tokio::sync::OnceCell::const_new();
@@ -10,6 +11,7 @@ pub static MONGODB: tokio::sync::OnceCell<MongoDBClient> = tokio::sync::OnceCell
 #[derive(Clone)]
 pub struct MongoDBClient{
     pub repo: Database,
+    pub issues: Collection<IssuesModel>,
     pub tree: Collection<RepoTreeModel>
 }
 
@@ -20,10 +22,12 @@ impl MongoDBClient{
         let client = mongodb::Client::with_uri_str(cfg.mongodb.format()).await.expect("Failed to connect to MongoDB");
         let repo = client.database("repo");
         let tree = repo.collection::<RepoTreeModel>("RepoTree");
+        let issues = repo.collection::<IssuesModel>("Issues");
         info!("Connected to MongoDB for Database RepoTree");
         let result = Self{
             repo,
             tree,
+            issues,
         };
         MONGODB.get_or_init(||async { 
             result.clone()
