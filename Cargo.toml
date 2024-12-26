@@ -23,6 +23,10 @@ name = "SSHServer"
 path = "bin/ApiServer.rs"
 name = "ApiServer"
 
+[[bin]]
+path = "bin/DuckDBServer.rs"
+name = "DuckDBServer"
+
 
 [dependencies]
 tokio = { version = "1.0.0", features = ["full"] }
