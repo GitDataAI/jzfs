@@ -36,13 +36,31 @@ pub async fn graphql_files_handler(
             data: tree,
         })
     }else {
-        let result = tree[(dto.block * dto.size_limit) as usize..((dto.block + 1) * dto.size_limit) as usize].to_vec();
-        AppWrite::<GraphQLFileOV>::ok(GraphQLFileOV{
-            total: tree.len() as i32 / dto.size_limit,
-            current: dto.block,
-            size: dto.size_limit,
-            data: result,
-        })
+        let size = (dto.block * dto.size_limit);
+        let next_size = ((dto.block + 1) * dto.size_limit);
+        if size > tree.len() as i32{
+            return AppWrite::<GraphQLFileOV>::ok(GraphQLFileOV{
+                total: tree.len() as i32 / dto.size_limit,
+                current: dto.block,
+                size: dto.size_limit,
+                data: tree
+            })
+        }else if next_size > tree.len() as i32 && tree.len() as i32 > size{
+            return AppWrite::<GraphQLFileOV>::ok(GraphQLFileOV{
+                total: tree.len() as i32 / dto.size_limit,
+                current: dto.block,
+                size: dto.size_limit,
+                data: tree[(dto.block * dto.size_limit) as usize..tree.len()].to_vec(),
+            })
+        }else {
+            let result = tree[(dto.block * dto.size_limit) as usize..((dto.block + 1) * dto.size_limit) as usize].to_vec();
+            AppWrite::<GraphQLFileOV>::ok(GraphQLFileOV{
+                total: tree.len() as i32 / dto.size_limit,
+                current: dto.block,
+                size: dto.size_limit,
+                data: result,
+            })
+        }
     }
  
 }
