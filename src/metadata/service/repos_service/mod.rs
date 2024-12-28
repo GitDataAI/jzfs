@@ -15,11 +15,12 @@ pub mod readme;
 pub mod files;
 pub mod issues;
 #[allow(dead_code)]
+#[derive(Clone)]
 pub struct RepoService{
-    db: DatabaseConnection,
-    redis: deadpool_redis::Pool,
-    email: EmailServer,
-    mongo: MongoDBClient,
+    pub db: DatabaseConnection,
+    pub redis: deadpool_redis::Pool,
+    pub email: EmailServer,
+    pub mongo: MongoDBClient,
 }
 
 impl From<&MetaService> for RepoService {

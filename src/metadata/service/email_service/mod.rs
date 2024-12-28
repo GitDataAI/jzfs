@@ -6,10 +6,11 @@ pub mod captcha;
 pub mod forget;
 
 #[allow(unused)]
+#[derive(Clone)]
 pub struct EmailService{
-    db: DatabaseConnection,
-    redis: deadpool_redis::Pool,
-    email: EmailServer,
+    pub(crate) db: DatabaseConnection,
+    pub(crate) redis: deadpool_redis::Pool,
+    pub(crate) email: EmailServer,
 }
 
 impl From<&MetaService> for EmailService {

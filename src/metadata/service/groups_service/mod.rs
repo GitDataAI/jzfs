@@ -10,10 +10,11 @@ pub mod repos;
 pub mod labels;
 
 #[allow(dead_code)]
+#[derive(Clone)]
 pub struct GroupService{
-    db: DatabaseConnection,
-    redis: deadpool_redis::Pool,
-    email: EmailServer,
+    pub db: DatabaseConnection,
+    pub redis: deadpool_redis::Pool,
+    pub email: EmailServer,
 }
 
 impl From<&MetaService> for GroupService {
