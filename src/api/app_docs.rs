@@ -32,7 +32,6 @@ use crate::api::handler::groups::search::__path_api_groups_search;
 use crate::api::handler::groups::info::__path_api_groups_info;
 use crate::api::handler::groups::create::__path_api_groups_create;
 use crate::api::handler::users::logout::__path_api_users_logout;
-use crate::api::handler::users::login::__path_api_users_login_name;
 use crate::api::handler::users::login::__path_api_users_login_email;
 use crate::api::handler::users::apply::__path_api_users_apply;
 use crate::api::handler::user::follower::__path_api_user_unfollow;
@@ -71,7 +70,6 @@ use utoipa::OpenApi;
     
     
         api_users_apply,
-        api_users_login_name,
         api_users_login_email,
         api_users_logout,
         api_user_reset_passwd_profile,

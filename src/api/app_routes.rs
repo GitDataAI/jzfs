@@ -19,7 +19,7 @@ use crate::api::handler::user::subscriptions::{api_user_subscription_add, api_us
 use crate::api::handler::users::apply::api_users_apply;
 use crate::api::handler::users::follower::{api_users_followed, api_users_following};
 use crate::api::handler::users::info::api_users_info;
-use crate::api::handler::users::login::{api_users_login_email, api_users_login_name};
+use crate::api::handler::users::login::{api_users_login_email};
 use crate::api::handler::users::logout::api_users_logout;
 use crate::api::handler::users::repos::api_users_repos;
 use crate::api::handler::users::reset::{api_user_reset_passwd_forget, api_user_reset_passwd_profile};
@@ -96,8 +96,7 @@ pub fn routes(cfg: &mut web::ServiceConfig){
                 .route("/session", web::get().to(api_user_session_model))
                 .service(
                     web::scope("/login")
-                        .route("/email", web::post().to(api_users_login_email))
-                        .route("/username", web::post().to(api_users_login_name))
+                        .route("", web::post().to(api_users_login_email))
                 )
                 .route("/logout", web::post().to(api_users_logout))
                 .service(
