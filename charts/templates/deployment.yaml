@@ -30,9 +30,11 @@ spec:
 
       volumes:
         - name: shared-storage
-          persistentVolumeClaim:
-            claimName: shared-pvc
+          hostPath:
+            path: /exports
+            type: Directory
 
         - name: static-storage
-          persistentVolumeClaim:
-            claimName: jzlab-avatar-pvc
+          hostPath:
+            path: /static
+            type: Directory

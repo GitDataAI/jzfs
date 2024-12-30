@@ -8,9 +8,6 @@ pub mod upload;
 pub fn avatar(cfg: &mut web::ServiceConfig) {
     cfg
         .route("/{uid}", web::put().to(avatar_upload))
-        .service(
-            web::resource("/{uid}")
-                .get(avatar_download)
-        )
+        .route("/{uid}", web::get().to(avatar_download))
     ;
 }
