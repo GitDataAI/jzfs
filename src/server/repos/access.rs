@@ -1,11 +1,11 @@
+use crate::api::handlers::repos::RepoCreateOwnerList;
 use crate::error::{JZError, JZResult};
 use crate::models::groups::groups;
 use crate::models::teams::{teams, teamsus};
+use crate::models::users::users;
 use crate::server::MetaData;
 use sea_orm::*;
 use uuid::Uuid;
-use crate::api::handlers::repos::RepoCreateOwnerList;
-use crate::models::users::users;
 
 impl MetaData {
     pub async fn repo_groups_teams_access(
@@ -62,29 +62,30 @@ impl MetaData {
             Err(JZError::Other(anyhow::anyhow!("[038] Repo Not Group")))
         }
     }
-    pub async fn repo_owner_list_check(&self, user_id: Uuid) -> anyhow::Result<Vec<RepoCreateOwnerList>>{
+    pub async fn repo_owner_list_check(
+        &self,
+        user_id: Uuid,
+    ) -> anyhow::Result<Vec<RepoCreateOwnerList>> {
         let teams = teamsus::Entity::find()
             .filter(teamsus::Column::UserId.eq(user_id))
             .all(&self.database)
             .await?
             .iter()
-            .map(|x|{
-                x.team_id
-            })
+            .map(|x| x.team_id)
             .collect::<Vec<_>>();
         let teams = teams::Entity::find()
             .filter(teams::Column::Uid.is_in(teams))
             .all(&self.database)
             .await?;
         let mut results = Vec::<RepoCreateOwnerList>::new();
-        for group_id in teams{
+        for group_id in teams {
             let members = groups::Entity::find()
                 .filter(groups::Column::Uid.eq(group_id.org_id.clone()))
                 .all(&self.database)
                 .await?;
-            for member in members{
+            for member in members {
                 let avatar_url = member.avatar_url.clone().unwrap_or_else(|| "".to_string());
-                let result = RepoCreateOwnerList{
+                let result = RepoCreateOwnerList {
                     uid: group_id.clone().uid,
                     name: group_id.clone().name,
                     group: member.name,
@@ -98,17 +99,16 @@ impl MetaData {
             .filter(users::Column::Uid.eq(user_id))
             .one(&self.database)
             .await?;
-        if owner.is_none(){
+        if owner.is_none() {
             return Ok(results);
         }
         let owner = owner.unwrap();
-        results.push(RepoCreateOwnerList{
+        results.push(RepoCreateOwnerList {
             name: owner.username,
             uid: owner.uid,
             group: "".to_string(),
             avatar_url: owner.avatar_url.unwrap_or_else(|| "".to_string()),
         });
         Ok(results)
-
     }
 }

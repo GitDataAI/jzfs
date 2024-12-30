@@ -113,5 +113,5 @@ pub struct RepoCreateOptions {
     pub private: bool,
     pub name: String,
     pub description: Option<String>,
-    pub add_readme: bool
+    pub add_readme: bool,
 }

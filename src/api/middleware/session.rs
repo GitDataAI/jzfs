@@ -1,14 +1,14 @@
-use std::sync::Arc;
 use crate::error::{JZError, JZResult};
 use crate::models::users::users::Model as UserModel;
 use actix_session::Session;
 use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 use uuid::Uuid;
 const SESSION_KEY: &str = "SESSIONID";
 
-pub use Model as SessionModel;
 use crate::server::MetaData;
+pub use Model as SessionModel;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct Model {
@@ -69,7 +69,7 @@ impl SessionModel {
     pub async fn insert(&self, session: Session) {
         session.insert(SESSION_KEY, self).ok();
     }
-    pub async fn sync(&self, session: Session, meta_data: Arc<MetaData>) -> anyhow::Result<()>{
+    pub async fn sync(&self, session: Session, meta_data: Arc<MetaData>) -> anyhow::Result<()> {
         let uid = self.uid;
         let model = match meta_data.users_info_uid(uid).await {
             Ok(model) => model,

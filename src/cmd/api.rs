@@ -1,17 +1,17 @@
-use actix_session::config::{CookieContentSecurity, PersistentSession, TtlExtensionPolicy};
-use actix_session::SessionMiddleware;
-use actix_session::storage::RedisSessionStore;
-use actix_web::{App, HttpServer};
-use actix_web::cookie::Key;
-use actix_web::cookie::time::Duration;
-use actix_web::web::Data;
-use tracing::info;
 use crate::api::app_router::AppRouter;
 use crate::config::{init_config, CFG};
 use crate::server::META;
 use crate::utils::db::{Init, Redis};
+use actix_session::config::{CookieContentSecurity, PersistentSession, TtlExtensionPolicy};
+use actix_session::storage::RedisSessionStore;
+use actix_session::SessionMiddleware;
+use actix_web::cookie::time::Duration;
+use actix_web::cookie::Key;
+use actix_web::web::Data;
+use actix_web::{App, HttpServer};
+use tracing::info;
 
-pub async fn api(){
+pub async fn api() {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("debug"));
     // init_tracing_subscriber();
     info!("Starting API server...");
@@ -21,7 +21,8 @@ pub async fn api(){
     Init().await;
     let session = RedisSessionStore::builder_pooled(Redis().await)
         .build()
-        .await.unwrap();
+        .await
+        .unwrap();
     info!("Redis session store initialized.");
     info!("API server started.");
     HttpServer::new(move || {
@@ -45,7 +46,9 @@ pub async fn api(){
             .app_data(Data::new(meta))
             .configure(AppRouter)
     })
-        .bind(cfg.http.starter()).unwrap()
-        .run()
-        .await.unwrap();
+    .bind(cfg.http.starter())
+    .unwrap()
+    .run()
+    .await
+    .unwrap();
 }

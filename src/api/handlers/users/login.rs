@@ -11,8 +11,8 @@ pub async fn session(session: Session, meta: web::Data<MetaData>) -> impl Respon
         Err(err) => return AppWrite::<SessionModel>::unauthorized(err.to_string()),
     };
     match meta.users_info_uid(model.uid).await {
-        Ok(model)=> AppWrite::ok(SessionModel::from(&model)),
-        Err(err)=>AppWrite::fail(err.to_string()),
+        Ok(model) => AppWrite::ok(SessionModel::from(&model)),
+        Err(err) => AppWrite::fail(err.to_string()),
     }
 }
 

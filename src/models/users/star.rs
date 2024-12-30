@@ -1,4 +1,3 @@
-use async_graphql::SimpleObject;
 use sea_orm::*;
 use serde::Serialize;
 use uuid::Uuid;

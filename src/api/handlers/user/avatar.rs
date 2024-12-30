@@ -1,6 +1,5 @@
 use crate::api::app_writer::AppWrite;
 use crate::api::handlers::user::AvatarGet;
-use crate::api::handlers::users::options::Base64Inner;
 use crate::api::middleware::session::SessionModel;
 use crate::server::MetaData;
 use actix_session::Session;

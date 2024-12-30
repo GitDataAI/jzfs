@@ -1,10 +1,10 @@
-use std::collections::HashMap;
-use actix_session::Session;
 use crate::api::app_writer::AppWrite;
+use crate::api::handlers::users::options::UserFollowCount;
 use crate::api::middleware::session::SessionModel;
 use crate::server::MetaData;
+use actix_session::Session;
 use actix_web::{web, Responder};
-use crate::api::handlers::users::options::UserFollowCount;
+use std::collections::HashMap;
 
 pub async fn users_info_username(
     path: web::Path<String>,
@@ -19,9 +19,8 @@ pub async fn users_info_username(
 pub async fn user_follower_count_data(
     session: Session,
     meta: web::Data<MetaData>,
-    query: web::Query<HashMap<String,String>>
-)
--> impl Responder {
+    query: web::Query<HashMap<String, String>>,
+) -> impl Responder {
     let uid = if let Some(uid) = query.get("username") {
         match meta.users_info_username(uid.to_string()).await {
             Ok(user) => user.uid,
@@ -45,5 +44,4 @@ pub async fn user_follower_count_data(
         follower: follower_count,
         following: following_count,
     })
-    
 }

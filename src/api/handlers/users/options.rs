@@ -52,7 +52,7 @@ pub struct EmailBind {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct UserFollowCount{
+pub struct UserFollowCount {
     pub following: usize,
     pub follower: usize,
 }

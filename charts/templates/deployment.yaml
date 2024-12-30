@@ -25,8 +25,14 @@ spec:
           volumeMounts:
             - mountPath: /exports
               name: shared-storage
+            - mountPath: /static
+              name: static-storage
 
       volumes:
         - name: shared-storage
           persistentVolumeClaim:
             claimName: shared-pvc
+
+        - name: static-storage
+          persistentVolumeClaim:
+            claimName: jzlab-avatar-pvc

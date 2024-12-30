@@ -106,7 +106,7 @@ impl MetaData {
             Ok(x) => {
                 dbg!(x);
                 Ok(())
-            },
+            }
             Err(err) => Err(JZError::Other(anyhow!("[50] {:?}", err))),
         }
     }

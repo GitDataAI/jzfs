@@ -4,6 +4,7 @@ use crate::api::handlers::repos::branchs::{
     repo_branch_delete, repo_branch_info, repo_branch_list, repo_branch_protect,
     repo_branch_unprotect, repo_get_default_branch, repo_set_default_branch,
 };
+use crate::api::handlers::repos::check::{check_repo_name, repo_owner_check};
 use crate::api::handlers::repos::commits::{repo_commit_list, repo_commit_sha};
 use crate::api::handlers::repos::repos::{repo_create, repo_info, repo_search};
 use crate::api::handlers::repos::star::{
@@ -19,6 +20,7 @@ use crate::api::handlers::user::followers::{
     users_follower_add, users_follower_count, users_follower_del, users_follower_get,
 };
 use crate::api::handlers::user::following::{users_following_count, users_following_get};
+use crate::api::handlers::user::repo::{user_option, users_repos};
 use crate::api::handlers::user::ssh_key::{
     users_key_add, users_key_del, users_key_get, users_key_get_by_uid,
 };
@@ -26,16 +28,16 @@ use crate::api::handlers::users::apply::apply;
 use crate::api::handlers::users::handlers::{user_follower_count_data, users_info_username};
 use crate::api::handlers::users::login::{login, logout, session};
 use crate::api::handlers::users::search::users_search;
+use crate::avatar::avatar;
 use crate::git::http::GitHttpBackend;
 use actix_web::web;
 use actix_web::web::{delete, get, patch, post, put, scope};
-use crate::api::handlers::repos::check::{check_repo_name, repo_owner_check};
-use crate::api::handlers::user::repo::{user_option, users_repos};
 
 #[allow(non_snake_case)]
 pub fn AppRouter(cfg: &mut web::ServiceConfig) {
     cfg.service(
         scope("/api")
+            .service(scope("/avatar").configure(avatar))
             .service(scope("/git").configure(GitHttpBackend))
             .service(
                 scope("/v1")
@@ -45,7 +47,7 @@ pub fn AppRouter(cfg: &mut web::ServiceConfig) {
                             .route("/logout", post().to(logout))
                             .route("/apply", post().to(apply))
                             .route("/search", get().to(users_search))
-                            .route("/repo",get().to(users_repos))
+                            .route("/repo", get().to(users_repos))
                             .route("/follow", get().to(user_follower_count_data))
                             .route("/information/{username}", get().to(users_info_username)),
                     )
@@ -94,7 +96,7 @@ pub fn AppRouter(cfg: &mut web::ServiceConfig) {
                             .service(
                                 scope("/check")
                                     .route("/owner", get().to(repo_owner_check))
-                                    .route("/name/{owner}/{repo}", get().to(check_repo_name))
+                                    .route("/name/{owner}/{repo}", get().to(check_repo_name)),
                             )
                             .service(
                                 scope("/{owner}/{repos}")
