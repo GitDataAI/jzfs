@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize,Serialize,Debug,Clone)]
-pub struct RedisConfig{
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct RedisConfig {
     pub host: String,
     pub port: u16,
     pub password: Option<String>,
@@ -9,9 +9,9 @@ pub struct RedisConfig{
     pub pool_size: usize,
 }
 
-impl Default for RedisConfig{
-    fn default() -> Self{
-        RedisConfig{
+impl Default for RedisConfig {
+    fn default() -> Self {
+        RedisConfig {
             host: "127.0.0.1".to_string(),
             port: 6379,
             password: None,
@@ -22,10 +22,13 @@ impl Default for RedisConfig{
 }
 
 impl RedisConfig {
-    pub fn format(&self) -> String{
-        match &self.password{
-            Some(password) => format!("redis://:{}@{}:{}/{}", password, self.host, self.port, self.db),
-            None => format!("redis://{}:{}/{}", self.host, self.port, self.db)
+    pub fn format(&self) -> String {
+        match &self.password {
+            Some(password) => format!(
+                "redis://:{}@{}:{}/{}",
+                password, self.host, self.port, self.db
+            ),
+            None => format!("redis://{}:{}/{}", self.host, self.port, self.db),
         }
     }
 }

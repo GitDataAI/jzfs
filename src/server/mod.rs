@@ -1,37 +1,36 @@
+use crate::emails::Email;
+use crate::git::GitServer;
+use crate::utils::db::{Postgres, EMAIL_SERVICE};
+use crate::ROOT_PATH;
 use sea_orm::DatabaseConnection;
-use crate::metadata::service::MetaService;
-use crate::server::email::init_email;
-use crate::server::mongodb::MongoDBClient;
-use crate::server::postgres::PGDB;
+use std::path::PathBuf;
+use tokio::sync::OnceCell;
 
-pub mod postgres;
-pub mod sqlite;
-// 保留, 未来可能启用
-pub mod mysql;
-// 保留, 未来可能启用
-pub mod mongodb;
-pub mod redis;
-pub mod email;
+pub mod check;
+pub mod emails;
+pub mod repos;
+pub mod teams;
+pub mod users;
+#[derive(Clone)]
+pub struct MetaData {
+    database: DatabaseConnection,
+    email: Email,
+    git: GitServer,
+}
+pub static META: OnceCell<MetaData> = OnceCell::const_new();
 
-#[allow(non_snake_case)]
-pub async fn Init(){
-    postgres::init_pg().await;
-    redis::init_redis().await;
-    sqlite::init_sqlite().await;
-    init_email().await;
-    MetaService::init().await;
-    MongoDBClient::init().await;
-}
-
-#[allow(non_snake_case)]
-pub async fn Postgres() -> DatabaseConnection{
-    PGDB.get().unwrap().clone()
-}
-#[allow(non_snake_case)]
-pub async fn Sqlite() -> DatabaseConnection{
-    sqlite::SQLITEDB.get().unwrap().clone()
-}
- #[allow(non_snake_case)]
- pub async fn Redis() -> deadpool_redis::Pool{
-    redis::REDIS.get().unwrap().clone()
+impl MetaData {
+    pub async fn init() -> Self {
+        let email = EMAIL_SERVICE.get().unwrap().clone();
+        let git = GitServer {
+            root: PathBuf::from(ROOT_PATH),
+        };
+        let once = Self {
+            database: Postgres().await,
+            email: email.clone(),
+            git,
+        };
+        let _ = META.get_or_init(|| async { once.clone() }).await.clone();
+        once
+    }
 }

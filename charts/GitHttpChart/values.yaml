@@ -1,6 +1,0 @@
-# Additional Trusted CAs.
-# Enable this flag and add your CA certs as a secret named tls-ca-additional in the namespace.
-# See README.md for details.
-replicas: 1
-ingress_name: nginx
-tag: latest

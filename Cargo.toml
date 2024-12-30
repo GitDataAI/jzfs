@@ -1,60 +1,29 @@
 [package]
-name = "libs"
+name = "jzfs"
 version = "0.1.0"
 edition = "2021"
 
+
 [[bin]]
+name = "jzfs"
 path = "src/main.rs"
-name = "BuildTest"
 
-[[bin]]
-path = "bin/WebHook.rs"
-name = "WebHook"
+[features]
 
-[[bin]]
-path = "bin/GitHttp.rs"
-name = "GitHttp"
-
-[[bin]]
-path = "bin/SshServer.rs"
-name = "SSHServer"
-
-[[bin]]
-path = "bin/ApiServer.rs"
-name = "ApiServer"
-
-[[bin]]
-path = "bin/DuckDBServer.rs"
-name = "DuckDBServer"
 
 
 [dependencies]
-tokio = { version = "1.0.0", features = ["full"] }
+tokio = { version = "1", features = ["full"]}
 
-actix-web = { version = "4.9.0",features = ["default"] }
-actix-session = { version = "0.10.1", features = [
-    "default",
-    "redis-session",
-    "redis-pool"
-]}
-actix-files = { version = "0.6.6", features = ["tokio-uring"] }
+actix-web = { version = "4", features = ["cookies"] }
+actix-session = { version = "0.10.1", features = ["redis-pool","redis-session"] }
+actix-files = { version = "0.6.6", features = [] }
+deadpool-redis = { version = "0.16.0", features = ["serde"] }
+sea-orm = { version = "1", features = ["sqlx-all","runtime-tokio"]}
 
-flate2 = { version = "1", features = ["default"] }
+async-graphql = { version = "7.0.13", features = ["uuid","graphiql"] }
+async-graphql-actix-web = { version = "7.0.13", features = ["cbor"] }
 
-utoipa = { version = "5.3.0", features = ["actix_extras","uuid","time","auto_into_responses"] }
-utoipa-redoc = { version = "5.0.0", features = ["actix-web"] }
-sea-orm = { version = "1.1.2" ,features = ["sqlx-all", "runtime-tokio", "default"] }
-deadpool-redis = { version = "0.16.0",features = ["cluster","rt_tokio_1"] }
-mongodb = { version = "3.1.1" ,features = ["sync"] }
-russh = { version = "0.49.1",features = ["default"] }
-russh-keys = { version = "0.49.1", features = ["legacy-ed25519-pkcs8-parser"] }
-
-git2 = { version = "0.19.0", features = [
-    "default",
-    "ssh",
-    "ssh_key_from_memory",
-    "https"
-]}
 
 lettre = {version = "0.11.10",features = [
     "smtp-transport",
@@ -67,31 +36,31 @@ lettre = {version = "0.11.10",features = [
     "tokio1-native-tls"
 ]}
 
-uuid = { version = "1.11.0", features = ["serde", "v4", "default"] }
-time = { version = "0.3.37", features = ["serde","default","local-offset"] }
-
-sha256 = { version = "1.5.0", features = ["tokio"] }
-base64 = { version = "0.22.1", features = ["default","std"] }
-
-
 serde = { version = "1", features = ["derive"] }
-serde_json = { version = "1",features = ["std"] }
+serde_json = { version = "1", features = ["default"] }
 serde_yaml = { version = "0.9.33", features = [] }
 
-tracing = { version = "0.1.41", features = ["log","default"] }
-tracing-subscriber = { version = "0.3.19", features = ["default"] }
-tracing-opentelemetry = { version = "0.28.0",features = ["metrics","lazy_static"] }
-opentelemetry = { version = "0.27.1", features = ["metrics"] }
-opentelemetry_sdk = { version = "0.27.1", features = ["metrics", "tokio", "rt-tokio"] }
-opentelemetry-stdout = { version = "0.27.0", features = ["metrics"] }
-tracing-core = "0.1.33"
-opentelemetry-semantic-conventions = { version = "0.27.0", features = ["default", "semconv_experimental"] }
-opentelemetry-otlp = { version = "0.27.0",features = ["metrics","tokio"] }
+base64 = { version = "0.22.1", features = ["default"] }
+sha256 = { version = "1.5.0", features = [] }
+chrono = { version = "0.4.39", features = ["clock","serde"] }
+uuid = { version = "1", features = ["serde","v4"] }
+rand = { version = "0.8.5", features = ["default"] }
 
+git2 = { version = "0.19.0", features = ["ssh","https"] }
 
-futures-util = "0.3.31"
-anyhow = "1.0.94"
-futures = "0.3.31"
-async-stream = "0.3.6"
-rand = "0.8.5"
+anyhow = { version = "1", features = ["backtrace"] }
 log = "0.4.22"
+tempfile = "3.14.0"
+tracing = "0.1.41"
+opentelemetry = "0.27.1"
+opentelemetry_sdk = { version = "0.27.1", features = ["rt-tokio"] }
+tracing-core = "0.1.33"
+tracing-opentelemetry = "0.28.0"
+tracing-subscriber = "0.3.19"
+opentelemetry-otlp = "0.27.0"
+opentelemetry-stdout = "0.27.0"
+opentelemetry-semantic-conventions = { version = "0.27.0", features = ["semconv_experimental"] }
+env_logger = "0.11.6"
+flate2 = { version = "1", features = ["default"] }
+futures-util = "0.3.31"
+async-stream = "0.3.6"

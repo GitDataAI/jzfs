@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 use tracing::log;
 
-#[derive(Deserialize,Serialize,Debug,Clone)]
-pub struct PgConfig{
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct PgConfig {
     pub host: String,
     pub port: String,
     pub user: String,
@@ -19,9 +19,9 @@ pub struct PgConfig{
     pub log_level: String,
 }
 
-impl Default for PgConfig{
-    fn default() -> Self{
-        PgConfig{
+impl Default for PgConfig {
+    fn default() -> Self {
+        PgConfig {
             host: "localhost".to_string(),
             port: "5432".to_string(),
             user: "postgres".to_string(),
@@ -30,7 +30,7 @@ impl Default for PgConfig{
             schema: "public".to_string(),
             pool_size: 10,
             max_conn_lifetime: 60,
-            max_conn_lifetime_ms:60000,
+            max_conn_lifetime_ms: 60000,
             idle_timeout: 60,
             connect_timeout: 10,
             max_connections: 10,
@@ -40,12 +40,15 @@ impl Default for PgConfig{
     }
 }
 
-impl PgConfig{
-    pub fn format(&self) -> String{
-        format!("postgres://{}:{}@{}:{}/{}", self.user, self.password, self.host, self.port, self.dbname)
+impl PgConfig {
+    pub fn format(&self) -> String {
+        format!(
+            "postgres://{}:{}@{}:{}/{}",
+            self.user, self.password, self.host, self.port, self.dbname
+        )
     }
-    pub fn level(&self) -> log::LevelFilter{
-        match self.log_level.to_lowercase().as_str(){
+    pub fn level(&self) -> log::LevelFilter {
+        match self.log_level.to_lowercase().as_str() {
             "trace" => log::LevelFilter::Trace,
             "debug" => log::LevelFilter::Debug,
             "info" => log::LevelFilter::Info,

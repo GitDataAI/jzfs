@@ -51,31 +51,14 @@ jobs:
 
       - name: Build and push jzfs-api
         run: |
-          docker build -t gitdatateam/jzfs-api:${{ steps.version.outputs.version }} -f ./docker/ApiServer/Dockerfile .
-          docker build -t gitdatateam/jzfs-git-ssh:${{ steps.version.outputs.version }} -f ./docker/SSHServer/Dockerfile .
-          docker build -t gitdatateam/jzfs-git-http:${{ steps.version.outputs.version }} -f ./docker/GitHttp/Dockerfile .
+          docker build -t gitdatateam/jzfs-api:${{ steps.version.outputs.version }} .
           docker push gitdatateam/jzfs-api:${{ steps.version.outputs.version }}
-          docker push gitdatateam/jzfs-git-ssh:${{ steps.version.outputs.version }}
-          docker push gitdatateam/jzfs-git-http:${{ steps.version.outputs.version }}
           
 
       - name: Deploy Api Server
         uses: WyriHaximus/github-action-helm3@v3
         with:
-          exec: /usr/sbin/helm upgrade jzfs-api-server --install ./charts/ApiServerChart --namespace gitdata --set-string tag=${{ steps.version.outputs.version }}
+          exec: /usr/sbin/helm upgrade jzfs-api-server --install ./charts --namespace gitdata --set-string tag=${{ steps.version.outputs.version }}
           kubeconfig: ${{ secrets.KUBECONTENT }}
           overrule_existing_kubeconfig: "true"
 
-      - name: Deploy SSH Server
-        uses: WyriHaximus/github-action-helm3@v3
-        with:
-          exec: /usr/sbin/helm upgrade jzfs-git-http --install ./charts/GitHttpChart --namespace gitdata --set-string tag=${{ steps.version.outputs.version }}
-          kubeconfig: ${{ secrets.KUBECONTENT }}
-          overrule_existing_kubeconfig: "true"
-
-      - name: Deploy Git Http
-        uses: WyriHaximus/github-action-helm3@v3
-        with:
-          exec: /usr/sbin/helm upgrade jzfs-git-ssh --install ./charts/SSHServerChart --namespace gitdata --set-string tag=${{ steps.version.outputs.version }}
-          kubeconfig: ${{ secrets.KUBECONTENT }}
-          overrule_existing_kubeconfig: "true"

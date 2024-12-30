@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize,Serialize,Debug,Clone)]
-pub struct EmailConfig{
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct EmailConfig {
     pub smtp: String,
     pub port: i32,
     pub username: String,
@@ -11,7 +11,7 @@ pub struct EmailConfig{
 
 impl Default for EmailConfig {
     fn default() -> Self {
-        Self{
+        Self {
             smtp: "smtp.exmail.qq.com".to_string(),
             port: 465,
             username: "gitdata-bot@gitdata.ai".to_string(),
@@ -20,4 +20,3 @@ impl Default for EmailConfig {
         }
     }
 }
-
