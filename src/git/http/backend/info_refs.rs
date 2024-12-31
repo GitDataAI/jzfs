@@ -76,6 +76,7 @@ pub async fn info_refs(
         }
         _ => {}
     }
+    service._sync_repo(repo_id.uid).await.ok();
     body.push_str(&String::from_utf8(output.stdout).unwrap());
     resp.body(body.as_bytes().to_vec())
 }

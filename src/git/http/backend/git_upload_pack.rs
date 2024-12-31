@@ -105,5 +105,6 @@ pub async fn git_upload_pack(
             }
         }
     });
+    service._sync_repo(repo_id.uid).await.ok();
     resp.body(body_stream)
 }

@@ -10,7 +10,7 @@ use crate::api::handlers::repos::repos::{repo_create, repo_info, repo_search};
 use crate::api::handlers::repos::star::{
     repo_star_add, repo_star_count, repo_star_list, repo_star_remove,
 };
-use crate::api::handlers::repos::tree::repo_tree;
+use crate::api::handlers::repos::tree::{repo_tree, repo_tree_sha};
 use crate::api::handlers::repos::watch::{
     repo_watch_add, repo_watch_count, repo_watch_list, repo_watch_remove,
 };
@@ -108,9 +108,8 @@ pub fn AppRouter(cfg: &mut web::ServiceConfig) {
                                                 scope("/{branch}")
                                                     .route("", get().to(repo_branch_info))
                                                     .route("", delete().to(repo_branch_delete))
-                                                    .route("", delete().to(repo_branch_delete))
                                                     .route("/tree", get().to(repo_tree))
-                                                    .route("/tree/{sha}", get().to(repo_tree))
+                                                    .route("/tree/{sha}", get().to(repo_tree_sha))
                                                     .route("/blob", get().to(repo_blob_sha))
                                                     .route(
                                                         "/protect",

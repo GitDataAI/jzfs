@@ -139,11 +139,11 @@ impl MetaData {
                 }
             }
             let _ = branchs::ActiveModel {
-                uid: sea_orm::ActiveValue::Set(Uuid::new_v4()),
-                repo_id: sea_orm::ActiveValue::Set(repo_id),
-                name: sea_orm::ActiveValue::Set(branch.name),
-                head: sea_orm::ActiveValue::Set(Option::from(branch.head)),
-                protect: sea_orm::ActiveValue::Set(false),
+                uid: ActiveValue::Set(Uuid::new_v4()),
+                repo_id: ActiveValue::Set(repo_id),
+                name: ActiveValue::Set(branch.name),
+                head: ActiveValue::Set(Option::from(branch.head)),
+                protect: ActiveValue::Set(false),
             }
             .insert(&txn)
             .await;
