@@ -39,12 +39,9 @@ pub async fn avatar_upload(
         Ok(model) => model,
         Err(err) => return AppWrite::<String>::unauthorized(err.to_string()),
     };
-    meta.users_avatar_set(
-        model.uid,
-        format!("/api/avatar/{}", path.clone()),
-    )
-    .await
-    .ok();
+    meta.users_avatar_set(model.uid, format!("/api/avatar/{}", path.clone()))
+        .await
+        .ok();
     save_file_create(path.clone());
     while let Some(bytes) = file.next().await {
         let mut file = match bytes {
