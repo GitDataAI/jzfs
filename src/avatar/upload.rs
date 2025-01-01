@@ -41,7 +41,7 @@ pub async fn avatar_upload(
     };
     meta.users_avatar_set(
         model.uid,
-        format!("https://jzhub.io/api/avatar/{}", path.clone()),
+        format!("/api/avatar/{}", path.clone()),
     )
     .await
     .ok();
