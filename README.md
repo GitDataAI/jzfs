@@ -3,6 +3,7 @@
 
 # JZFS
 
+
 #### 🚧 Current Status: Incubating - JZFS is not ready for production usage. The API is still evolving and documentation is lacking.
 
 JZFS is a distributed git storage service for the Rust programming language that prioritizes ease-of-use. It supports both Single Machine as well as some distributed environments, including Kubernetes and more. Note that JZFS does not hide the store; instead, JZFS exposes features based on the target distributed git storage service.
@@ -19,8 +20,14 @@ This project is licensed under the [MIT License].
 
 [MIT License]: LICENSE
 
-### Contribution
+# Contributing
 
-Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in GitDataAi by you, Please refer to [Contribution Guidelines](Contributing.md), shall be licensed as MIT, without any additional terms or conditions.
+There are many ways to contribute to JZFS. This document lays out what they
+are and has information on how to get started. If you have any questions about
+contributing or need help with anything, please ask in the GitDataAI channel
+on [Discord](https://discord.gg/THH43bUJgj) or [QQ](https://qm.qq.com/q/6CPL9T96TK). Feel free to also ask questions
+on issues, or file new issues specifically to get help.
 
+### Star
+![star](https://github-nicelee.vercel.app/h/GitDataAI/jzfs-rust)
 
