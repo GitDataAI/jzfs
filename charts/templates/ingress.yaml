@@ -39,7 +39,7 @@ spec:
     - host: http.jiaozifs.com
       http:
         paths:
-          - path: /git
+          - path: /api/git
             pathType: Prefix
             backend:
               service:
