@@ -1,5 +1,4 @@
 pub mod api;
-pub mod avatar;
 pub mod cmd;
 pub mod config;
 pub mod database;
@@ -8,10 +7,10 @@ pub mod error;
 pub mod git;
 pub mod logic;
 pub mod models;
+pub mod modules;
 pub mod options;
 pub mod server;
 pub mod utils;
-
 #[cfg(target_os = "windows")]
 pub const ROOT_PATH: &str = "E:\\test";
 #[cfg(target_os = "windows")]

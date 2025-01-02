@@ -73,7 +73,7 @@ impl SessionModel {
         let uid = self.uid;
         let model = match meta_data.users_info_uid(uid).await {
             Ok(model) => model,
-            Err(err) => return Err(anyhow!(err)),
+            Err(err) => return Err(anyhow!(err.to_string())),
         };
         let model = SessionModel::from(&model);
         session.insert(SESSION_KEY, model).ok();

@@ -1,3 +1,4 @@
+use crate::api::handlers::avatar::avatar;
 use crate::api::handlers::emails::handlers::{email_captcha, email_captcha_check};
 use crate::api::handlers::repos::blob::repo_blob_sha;
 use crate::api::handlers::repos::branchs::{
@@ -28,7 +29,6 @@ use crate::api::handlers::users::apply::apply;
 use crate::api::handlers::users::handlers::{user_follower_count_data, users_info_username};
 use crate::api::handlers::users::login::{login, logout, session};
 use crate::api::handlers::users::search::users_search;
-use crate::avatar::avatar;
 use crate::git::http::GitHttpBackend;
 use actix_web::web;
 use actix_web::web::{delete, get, patch, post, put, scope};

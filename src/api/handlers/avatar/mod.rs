@@ -1,5 +1,5 @@
-use crate::avatar::download::avatar_download;
-use crate::avatar::upload::avatar_upload;
+use crate::api::handlers::avatar::download::avatar_download;
+use crate::api::handlers::avatar::upload::avatar_upload;
 use actix_web::web;
 
 pub mod download;
