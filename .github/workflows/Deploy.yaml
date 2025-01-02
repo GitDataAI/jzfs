@@ -48,7 +48,7 @@ jobs:
           target: x86_64-unknown-linux-gnu
       - name: Build binary
         run: |
-          echo ${{ secrets.CONFIG }} >> config.yaml
+          echo "${{ secrets.CONFIG }}" >> config.yaml
           cargo build --workspace --release
 
       - name: Build and push jzfs-api
