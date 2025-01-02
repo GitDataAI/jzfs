@@ -36,6 +36,25 @@ spec:
                 name: jzfs-api-service
                 port:
                   number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gitdata-http-api
+  namespace: gitdata
+  annotations:
+    meta.helm.sh/release-name: gitdata-http-api
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "1800"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "1800"
+  labels:
+    apptype: gitdata-http-api
+    app.kubernetes.io/managed-by: Helm
+    heritage: Helm
+    release: gitdata-http-api
+spec:
+  ingressClassName: {{.Values.ingress_name}}
+  rules:
     - host: http.jiaozifs.com
       http:
         paths:
