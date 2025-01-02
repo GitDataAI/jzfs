@@ -21,9 +21,5 @@ dist-ssr
 *.sln
 *.sw?
 
-config.dev.yaml
-<<<<<<< HEAD
->>>>>>> b25bfcd (config(project): remove dev default file)
-=======
-config.yaml
->>>>>>> 289e4e7 (docs(readme): fix readme)
+./config.dev.yaml
+./config.yaml

@@ -35,10 +35,6 @@ jobs:
             echo "::set-output name=version::${{ github.sha }}"
           fi
 
-      - name: Move Config
-        run: |
-          echo ${{ secrets.CONFIG }} > ./config/config.toml
-
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
