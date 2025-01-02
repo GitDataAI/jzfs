@@ -44,9 +44,9 @@ metadata:
   namespace: gitdata
   annotations:
     meta.helm.sh/release-name: gitdata-http-api
-    nginx.ingress.kubernetes.io/proxy-connect-timeout: "30"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "1800"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "1800"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "0"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "0"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "0"
   labels:
     apptype: gitdata-http-api
     app.kubernetes.io/managed-by: Helm
@@ -58,7 +58,7 @@ spec:
     - host: http.jiaozifs.com
       http:
         paths:
-          - path: /api/git
+          - path: /git
             pathType: Prefix
             backend:
               service:
