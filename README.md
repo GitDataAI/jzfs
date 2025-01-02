@@ -5,7 +5,7 @@
 
 #### 🚧 Current Status: Incubating - JZFS is not ready for production usage. The API is still evolving and documentation is lacking.
 
-JZFS is a Pipeline for the Rust programming language that prioritizes ease-of-use. It supports both Single Machine as well as some distributed environments, including Kubernetes and Cycle.IO. Note that JZFS does not hide the Pipeline; instead, JZFS exposes features based on the target pipeline.
+JZFS is a distributed git storage service for the Rust programming language that prioritizes ease-of-use. It supports both Single Machine as well as some distributed environments, including Kubernetes and more. Note that JZFS does not hide the Pipeline; instead, JZFS exposes features based on the target distributed git storage service.
 
 ### Current Status and Roadmap
 
