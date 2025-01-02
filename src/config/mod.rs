@@ -21,6 +21,14 @@ pub struct Config {
 }
 
 pub fn load_config() -> Result<Config, Box<dyn std::error::Error>> {
+    let env = std::env::var("JZCONFIG");
+    if env.is_ok() {
+        let env = env.unwrap();
+        println!("Config file path: {}", env);
+        let config_file = std::fs::read_to_string(env)?;
+        info!("Config file loaded");
+        return Ok(serde_yaml::from_str(&config_file)?);
+    }
     #[cfg(not(target_os = "windows"))]
     let config_file = std::fs::read_to_string("config.yaml")?;
     #[cfg(target_os = "windows")]

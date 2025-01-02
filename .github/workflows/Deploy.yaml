@@ -1,4 +1,4 @@
-name: Build Test
+name: Deploy
 on:
   push:
     branches:
@@ -47,7 +47,9 @@ jobs:
           override: true
           target: x86_64-unknown-linux-gnu
       - name: Build binary
-        run: cargo build --workspace --release
+        run: |
+          echo ${{ secrets.CONFIG }} >> config.yaml
+          cargo build --workspace --release
 
       - name: Build and push jzfs-api
         run: |
