@@ -133,20 +133,28 @@ impl MetaData {
                         continue;
                     } else {
                         br.into_active_model().delete(&txn).await.ok();
+                        let _ = branchs::ActiveModel {
+                            uid: ActiveValue::Set(Uuid::new_v4()),
+                            repo_id: ActiveValue::Set(repo_id),
+                            name: ActiveValue::Set(branch.name),
+                            head: ActiveValue::Set(Option::from(branch.head)),
+                            protect: ActiveValue::Set(false),
+                        }
+                            .insert(&txn)
+                            .await;
                     }
-                } else if branch.head.is_empty() {
-                    continue;
                 }
+            }else {
+                let _ = branchs::ActiveModel {
+                    uid: ActiveValue::Set(Uuid::new_v4()),
+                    repo_id: ActiveValue::Set(repo_id),
+                    name: ActiveValue::Set(branch.name),
+                    head: ActiveValue::Set(Option::from(branch.head)),
+                    protect: ActiveValue::Set(false),
+                }
+                    .insert(&txn)
+                    .await;
             }
-            let _ = branchs::ActiveModel {
-                uid: ActiveValue::Set(Uuid::new_v4()),
-                repo_id: ActiveValue::Set(repo_id),
-                name: ActiveValue::Set(branch.name),
-                head: ActiveValue::Set(Option::from(branch.head)),
-                protect: ActiveValue::Set(false),
-            }
-            .insert(&txn)
-            .await;
         }
         txn.commit().await?;
         Ok(())
