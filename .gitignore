@@ -1,1 +1,25 @@
 /target
+<<<<<<< HEAD
+=======
+.idea
+# Logs
+logs
+*.log
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+config.dev.yaml
+>>>>>>> b25bfcd (config(project): remove dev default file)
