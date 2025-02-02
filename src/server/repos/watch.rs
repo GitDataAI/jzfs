@@ -22,7 +22,7 @@ impl MetaData {
                 return Err(JZError::Other(anyhow::anyhow!(
                     "[039] Open Repo Failed: {}",
                     e.to_string()
-                )))
+                )));
             }
         };
         Ok(result)
