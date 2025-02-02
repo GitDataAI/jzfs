@@ -1,8 +1,8 @@
 use crate::api::app_writer::AppWrite;
 use crate::git::git::options::BlobTreeMsg;
 use crate::server::MetaData;
-use actix_web::web::{Data, Path};
 use actix_web::Responder;
+use actix_web::web::{Data, Path};
 
 pub async fn repo_tree(
     path: Path<(String, String, String)>,

@@ -1,5 +1,5 @@
-use crate::git::git::options::{BlobTree, Commits};
 use crate::git::git::GitLocal;
+use crate::git::git::options::{BlobTree, Commits};
 use git2::{DiffOptions, Oid, Reference, Tree};
 use std::path::Path;
 
