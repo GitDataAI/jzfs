@@ -3,8 +3,8 @@ use crate::api::middleware::session::SessionModel;
 use crate::models::repos::branchs;
 use crate::server::MetaData;
 use actix_session::Session;
-use actix_web::web::{Data, Path};
 use actix_web::Responder;
+use actix_web::web::{Data, Path};
 
 pub async fn repo_branch_info(
     path: Path<(String, String, String)>,

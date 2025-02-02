@@ -3,7 +3,7 @@ use crate::api::handlers::user::AvatarGet;
 use crate::api::middleware::session::SessionModel;
 use crate::server::MetaData;
 use actix_session::Session;
-use actix_web::{web, Responder};
+use actix_web::{Responder, web};
 
 pub async fn avatar_get(session: Session, cfg: web::Data<MetaData>) -> impl Responder {
     let model = match SessionModel::authenticate(session).await {

@@ -1,8 +1,8 @@
 use crate::api::app_writer::AppWrite;
 use crate::api::handlers::repos::options::RepoPath;
 use crate::server::MetaData;
-use actix_web::web::{Data, Json, Path};
 use actix_web::Responder;
+use actix_web::web::{Data, Json, Path};
 
 pub async fn repo_latest_blob(
     path: Path<(String, String, String)>,

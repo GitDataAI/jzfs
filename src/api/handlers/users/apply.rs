@@ -1,7 +1,7 @@
 use crate::api::app_writer::AppWrite;
 use crate::api::handlers::users::options::{Base64Inner, UsersApply};
 use crate::server::MetaData;
-use actix_web::{web, Responder};
+use actix_web::{Responder, web};
 use uuid::Uuid;
 
 pub async fn apply(inner: web::Json<Base64Inner>, meta: web::Data<MetaData>) -> impl Responder {

@@ -112,7 +112,7 @@ impl MetaData {
                 return Err(JZError::Other(anyhow::anyhow!(
                     "[049] Open Repo Failed: {}",
                     e.to_string()
-                )))
+                )));
             }
         };
         let txn = self.database.begin().await?;
@@ -140,11 +140,11 @@ impl MetaData {
                             head: ActiveValue::Set(Option::from(branch.head)),
                             protect: ActiveValue::Set(false),
                         }
-                            .insert(&txn)
-                            .await;
+                        .insert(&txn)
+                        .await;
                     }
                 }
-            }else {
+            } else {
                 let _ = branchs::ActiveModel {
                     uid: ActiveValue::Set(Uuid::new_v4()),
                     repo_id: ActiveValue::Set(repo_id),
@@ -152,8 +152,8 @@ impl MetaData {
                     head: ActiveValue::Set(Option::from(branch.head)),
                     protect: ActiveValue::Set(false),
                 }
-                    .insert(&txn)
-                    .await;
+                .insert(&txn)
+                .await;
             }
         }
         txn.commit().await?;
@@ -190,7 +190,7 @@ impl MetaData {
                 return Err(JZError::Other(anyhow::anyhow!(
                     "[042] Repo Branch Delete Failed: {}",
                     e.to_string()
-                )))
+                )));
             }
         };
         let local = match self.git.open_repo(info.uid.to_string()) {
@@ -199,7 +199,7 @@ impl MetaData {
                 return Err(JZError::Other(anyhow::anyhow!(
                     "[044] Open Repo Failed: {}",
                     e.to_string()
-                )))
+                )));
             }
         };
 

@@ -1,6 +1,6 @@
 use crate::error::JZResult;
-use crate::git::git::options::Branchs;
 use crate::git::git::GitLocal;
+use crate::git::git::options::Branchs;
 use git2::BranchType;
 use log::info;
 
