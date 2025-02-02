@@ -4,7 +4,7 @@ use crate::models::repos::repos;
 use crate::models::users::users::UpdateOption;
 use crate::server::MetaData;
 use actix_session::Session;
-use actix_web::{web, Responder};
+use actix_web::{Responder, web};
 use std::collections::HashMap;
 
 pub async fn user_option(
