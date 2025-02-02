@@ -35,28 +35,28 @@ jobs:
             echo "::set-output name=version::${{ github.sha }}"
           fi
 
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          override: true
-          target: x86_64-unknown-linux-gnu
-      - name: Build binary
-        run: |
-          echo "${{ secrets.CONFIG }}" >> config.yaml
-          cargo build --workspace --release
-
-      - name: Build and push jzfs-api
-        run: |
-          docker build -t gitdatateam/jzfs-api:${{ steps.version.outputs.version }} .
-          docker push gitdatateam/jzfs-api:${{ steps.version.outputs.version }}
-          
-
-      - name: Deploy Api Server
-        uses: WyriHaximus/github-action-helm3@v3
-        with:
-          exec: /usr/sbin/helm upgrade jzfs-api-server --install ./charts --namespace gitdata --set-string tag=${{ steps.version.outputs.version }}
-          kubeconfig: ${{ secrets.KUBECONTENT }}
-          overrule_existing_kubeconfig: "true"
-
+#      - name: Install Rust
+#        uses: actions-rs/toolchain@v1
+#        with:
+#          toolchain: stable
+#          profile: minimal
+#          override: true
+#          target: x86_64-unknown-linux-gnu
+#      - name: Build binary
+#        run: |
+#          echo "${{ secrets.CONFIG }}" >> config.yaml
+#          cargo build --workspace --release
+#
+#      - name: Build and push jzfs-api
+#        run: |
+#          docker build -t gitdatateam/jzfs-api:${{ steps.version.outputs.version }} .
+#          docker push gitdatateam/jzfs-api:${{ steps.version.outputs.version }}
+#
+#
+#      - name: Deploy Api Server
+#        uses: WyriHaximus/github-action-helm3@v3
+#        with:
+#          exec: /usr/sbin/helm upgrade jzfs-api-server --install ./charts --namespace gitdata --set-string tag=${{ steps.version.outputs.version }}
+#          kubeconfig: ${{ secrets.KUBECONTENT }}
+#          overrule_existing_kubeconfig: "true"
+#
