@@ -1,12 +1,12 @@
 use crate::api::app_router::AppRouter;
-use crate::config::{init_config, CFG};
+use crate::config::{CFG, init_config};
 use crate::server::META;
 use crate::utils::db::{Init, Redis};
+use actix_session::SessionMiddleware;
 use actix_session::config::{CookieContentSecurity, PersistentSession, TtlExtensionPolicy};
 use actix_session::storage::RedisSessionStore;
-use actix_session::SessionMiddleware;
-use actix_web::cookie::time::Duration;
 use actix_web::cookie::Key;
+use actix_web::cookie::time::Duration;
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
 use tracing::info;
