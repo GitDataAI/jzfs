@@ -1,7 +1,7 @@
 use actix_web::body::BoxBody;
 use actix_web::{HttpRequest, HttpResponse};
 use serde::Serialize;
-use serde_json::{json, Number, Value};
+use serde_json::{Number, Value, json};
 
 #[derive(Serialize)]
 pub struct AppWrite<T: Serialize> {

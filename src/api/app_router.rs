@@ -35,8 +35,7 @@ use actix_web::web::{delete, get, patch, post, put, scope};
 
 #[allow(non_snake_case)]
 pub fn AppRouter(cfg: &mut web::ServiceConfig) {
-    cfg
-        .service(scope("/git").configure(GitHttpBackend))
+    cfg.service(scope("/git").configure(GitHttpBackend))
         .service(
             scope("/api")
                 .service(scope("/avatar").configure(avatar))
@@ -110,7 +109,10 @@ pub fn AppRouter(cfg: &mut web::ServiceConfig) {
                                                         .route("", get().to(repo_branch_info))
                                                         .route("", delete().to(repo_branch_delete))
                                                         .route("/tree", get().to(repo_tree))
-                                                        .route("/tree/{sha}", get().to(repo_tree_sha))
+                                                        .route(
+                                                            "/tree/{sha}",
+                                                            get().to(repo_tree_sha),
+                                                        )
                                                         .route("/blob", get().to(repo_blob_sha))
                                                         .route(
                                                             "/protect",
@@ -122,7 +124,10 @@ pub fn AppRouter(cfg: &mut web::ServiceConfig) {
                                                         )
                                                         .service(
                                                             scope("/commits")
-                                                                .route("", get().to(repo_commit_list))
+                                                                .route(
+                                                                    "",
+                                                                    get().to(repo_commit_list),
+                                                                )
                                                                 .route(
                                                                     "/{sha}",
                                                                     get().to(repo_commit_sha),
@@ -169,5 +174,5 @@ pub fn AppRouter(cfg: &mut web::ServiceConfig) {
                         ),
                 ),
         )
-    .service(web::scope("/rpc"));
+        .service(web::scope("/rpc"));
 }
