@@ -1,12 +1,20 @@
 [package]
 name = "jzfs"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 
 [[bin]]
 name = "jzfs"
 path = "src/main.rs"
+
+[[bin]]
+name = "ApiModule"
+path = "bin/ApiModule.rs"
+
+[[bin]]
+name = "SshModule"
+path = "bin/SshModule.rs"
 
 [features]
 
@@ -44,9 +52,9 @@ base64 = { version = "0.22.1", features = ["default"] }
 sha256 = { version = "1.5.0", features = [] }
 chrono = { version = "0.4.39", features = ["clock","serde"] }
 uuid = { version = "1", features = ["serde","v4"] }
-rand = { version = "0.8.5", features = ["default"] }
+rand = { version = "0.9.0", features = ["default"] }
 
-git2 = { version = "0.19.0", features = ["ssh","https"] }
+git2 = { version = "0.20.0", features = ["ssh","https"] }
 
 anyhow = { version = "1", features = ["backtrace"] }
 log = "0.4.22"
@@ -64,3 +72,5 @@ env_logger = "0.11.6"
 flate2 = { version = "1", features = ["default"] }
 futures-util = "0.3.31"
 async-stream = "0.3.6"
+nacos-sdk = { version = "0.4.3", features = ["base64","naming","auth-by-http"] }
+sysinfo = { version = "0.33.1", features = ["network"] }
