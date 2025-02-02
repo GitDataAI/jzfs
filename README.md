@@ -16,9 +16,9 @@ The immediate next steps for the project are to fill obvious gaps, such as imple
 
 ### License
 
-This project is licensed under the [MIT License].
+This project is licensed under the [GSAv1] and [SSPLv1].
 
-[MIT License]: LICENSE
+[Licensed]: licensed
 
 # Contributing
 
@@ -28,6 +28,4 @@ contributing or need help with anything, please ask in the GitDataAI channel
 on [Discord](https://discord.gg/THH43bUJgj) or [QQ](https://qm.qq.com/q/6CPL9T96TK). Feel free to also ask questions
 on issues, or file new issues specifically to get help.
 
-### Star
-![star](https://github-nicelee.vercel.app/h/GitDataAI/jzfs-rust)
 

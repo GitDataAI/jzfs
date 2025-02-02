@@ -1,7 +1,7 @@
+use crate::ROOT_PATH;
 use crate::emails::Email;
 use crate::git::GitServer;
-use crate::utils::db::{Postgres, EMAIL_SERVICE};
-use crate::ROOT_PATH;
+use crate::utils::db::{EMAIL_SERVICE, Postgres};
 use sea_orm::DatabaseConnection;
 use std::path::PathBuf;
 use tokio::sync::OnceCell;

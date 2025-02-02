@@ -99,7 +99,7 @@ impl MetaData {
                 return Err(JZError::Other(anyhow::anyhow!(
                     "[047] Open Repo Failed: {}",
                     e.to_string()
-                )))
+                )));
             }
         };
         let txn = self.database.begin().await?;

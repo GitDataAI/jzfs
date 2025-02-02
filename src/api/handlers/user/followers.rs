@@ -3,7 +3,7 @@ use crate::api::middleware::session::SessionModel;
 use crate::models::users::follower::Model;
 use crate::server::MetaData;
 use actix_session::Session;
-use actix_web::{web, Responder};
+use actix_web::{Responder, web};
 
 pub async fn users_follower_add(
     session: Session,

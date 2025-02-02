@@ -6,9 +6,9 @@ use tracing::{error, info};
 pub mod email;
 pub mod http;
 pub mod mongodb;
+pub mod nacos;
 pub mod postgres;
 pub mod redis;
-
 pub static CFG: OnceCell<Config> = OnceCell::const_new();
 
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]

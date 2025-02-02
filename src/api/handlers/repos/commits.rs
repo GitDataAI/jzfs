@@ -2,8 +2,8 @@ use crate::api::app_writer::AppWrite;
 use crate::api::handlers::repos::options::QueryList;
 use crate::models::repos::commits;
 use crate::server::MetaData;
-use actix_web::web::{Data, Path, Query};
 use actix_web::Responder;
+use actix_web::web::{Data, Path, Query};
 
 pub async fn repo_commit_list(
     path: Path<(String, String, String)>,

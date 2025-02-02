@@ -3,7 +3,7 @@ use crate::api::handlers::users::options::UserFollowCount;
 use crate::api::middleware::session::SessionModel;
 use crate::server::MetaData;
 use actix_session::Session;
-use actix_web::{web, Responder};
+use actix_web::{Responder, web};
 use std::collections::HashMap;
 
 pub async fn users_info_username(

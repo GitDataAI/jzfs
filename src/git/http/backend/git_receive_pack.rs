@@ -1,8 +1,8 @@
-use crate::server::MetaData;
 use crate::ROOT_PATH;
-use actix_web::http::{header, StatusCode};
+use crate::server::MetaData;
+use actix_web::http::{StatusCode, header};
 use actix_web::web::Payload;
-use actix_web::{web, HttpRequest, HttpResponse, HttpResponseBuilder, Responder};
+use actix_web::{HttpRequest, HttpResponse, HttpResponseBuilder, Responder, web};
 use flate2::read::GzDecoder;
 use futures_util::StreamExt;
 use std::io;
@@ -79,7 +79,7 @@ pub async fn git_receive_pack(
             Ok(data) => bytes.extend_from_slice(&data),
             Err(e) => {
                 return HttpResponse::InternalServerError()
-                    .body(format!("Failed to read request body: {}", e))
+                    .body(format!("Failed to read request body: {}", e));
             }
         }
     }

@@ -1,6 +1,6 @@
 use crate::error::JZResult;
-use crate::git::git::options::{BlobTree, BlobTreeMsg, Commits};
 use crate::git::git::GitLocal;
+use crate::git::git::options::{BlobTree, BlobTreeMsg, Commits};
 use git2::BranchType;
 
 impl GitLocal {

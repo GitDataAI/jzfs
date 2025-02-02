@@ -12,8 +12,10 @@ impl MetaData {
             Ok(email) => email,
             Err(err) => return Err(JZError::Other(anyhow::anyhow!(err))),
         };
-        let mut rng = rand::thread_rng();
-        let captcha: String = (0..6).map(|_| rng.gen_range(0..10).to_string()).collect();
+        let mut rng = rand::rng();
+        let captcha: String = (0..6)
+            .map(|_| rng.random_range(0..10).to_string())
+            .collect();
         session.insert("captcha", captcha.clone()).ok();
         self.email.send_captcha(email, &captcha).await;
         Ok(())

@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/jzfs.iml" filepath="$PROJECT_DIR$/.idea/jzfs.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/jzfs-rust.iml" filepath="$PROJECT_DIR$/.idea/jzfs-rust.iml" />
     </modules>
   </component>
 </project>

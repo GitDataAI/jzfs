@@ -1,5 +1,5 @@
 use crate::STATIC_FILE;
-use actix_web::{web, HttpResponse, Responder};
+use actix_web::{HttpResponse, Responder, web};
 use std::fs;
 
 pub async fn avatar_download(path: web::Path<String>) -> impl Responder {

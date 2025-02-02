@@ -3,7 +3,7 @@ use crate::api::handlers::repos::RepoCreateOwnerList;
 use crate::api::middleware::session::SessionModel;
 use crate::server::MetaData;
 use actix_session::Session;
-use actix_web::{web, Responder};
+use actix_web::{Responder, web};
 
 pub async fn repo_owner_check(session: Session, meta: web::Data<MetaData>) -> impl Responder {
     let model = match SessionModel::authenticate(session).await {
