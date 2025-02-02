@@ -1,10 +1,10 @@
+use crate::STATIC_FILE;
 use crate::api::app_writer::AppWrite;
 use crate::api::middleware::session::SessionModel;
-use crate::STATIC_FILE;
 use actix_multipart::Multipart;
 use actix_session::Session;
 use actix_web::web::Path;
-use actix_web::{web, Responder};
+use actix_web::{Responder, web};
 use futures_util::StreamExt;
 use std::io::Write;
 use uuid::Uuid;
