@@ -18,7 +18,7 @@ The immediate next steps for the project are to fill obvious gaps, such as imple
 
 This project is licensed under the [GSAv1] and [SSPLv1].
 
-[Licensed]: licensed
+[Licensed]: LICENSE
 
 # Contributing
 
