@@ -27,7 +27,15 @@ spec:
               name: shared-storage
             - mountPath: /static
               name: static-storage
-
+          env:
+            - name: NACOS_ADDR
+              valueFrom: {{ .Values.nacos.addr }}
+            - name: NACOS_PASSWORD
+              valueFrom: {{ .Values.nacos.passwd }}
+            - name: NACOS_NAMESPACE
+              valueFrom: {{ .Values.nacos.namespace }}
+            - name: NACOS_USER
+              valueFrom: {{ .Values.nacos.user }}
       volumes:
         - name: shared-storage
           hostPath:

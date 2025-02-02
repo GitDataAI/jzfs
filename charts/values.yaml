@@ -4,3 +4,9 @@
 replicas: 1
 ingress_name: nginx
 tag: latest
+  
+nacos:
+  user: ""
+  addr: ""
+  passwd: ""
+  namespace: ""                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
