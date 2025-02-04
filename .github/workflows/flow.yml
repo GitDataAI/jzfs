@@ -11,9 +11,9 @@ on:
 jobs:
     build:
         uses: ./.github/workflows/build.yml
-    
+
     push:
-        need:
+        needs:
           - build
         uses: ./.github/workflows/push.yml
         secrets: inherit
