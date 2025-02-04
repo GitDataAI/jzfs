@@ -21,57 +21,59 @@ spec:
           ports:
             - containerPort: 80
           env:
-              - name: NACOS
-                value: "gateway://{{ .Values.nacos }}"
+            - name: NACOS
+              value: "gateway://{{ .Values.nacos }}"
+            - name: ALL_PORT
+              value: "80"
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-    namespace: {{ .Values.namespace }}
-    name: gitdata-auth
+  namespace: {{ .Values.namespace }}
+  name: gitdata-auth
 spec:
-    replicas: {{ .Values.replica.auth }}
-    selector:
-        matchLabels:
-            app: gitdata-auth
-    template:
-        metadata:
-            labels:
-                app: gitdata-auth
-                apptype: gitdata-auth
-        spec:
-            containers:
-                - name: gitdata-auth
-                  image: "gitdatateam/gitdata-auth:{{ .Values.tag }}"
-                  imagePullPolicy: Always
-                  ports:
-                      - containerPort: 80
-                  env:
-                      -   name: NACOS
-                          value: "auth://{{ .Values.nacos }}"
-
+  replicas: {{ .Values.replica.auth }}
+  selector:
+    matchLabels:
+      app: gitdata-auth
+  template:
+    metadata:
+      labels:
+        app: gitdata-auth
+        apptype: gitdata-auth
+    spec:
+      containers:
+        - name: gitdata-auth
+          image: "gitdatateam/gitdata-auth:{{ .Values.tag }}"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          env:
+            - name: NACOS
+              value: "auth://{{ .Values.nacos }}"
+            - name: ALL_PORT
+              value: "80"
 ---
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-    namespace: {{ .Values.namespace }}
-    name: migrator
+  namespace: {{ .Values.namespace }}
+  name: migrator
 spec:
-    replicas: {{ .Values.replica.auth }}
-    selector:
-        matchLabels:
-            app: migrator
-    template:
-        metadata:
-            labels:
-                app: migrator
-                apptype: migrator
-        spec:
-            containers:
-                - name: migrator
-                  image: "gitdatateam/migrator:{{ .Values.tag }}"
-                  imagePullPolicy: Always
-                  env:
-                    - name: NACOS
-                      value: "migrator://{{ .Values.nacos }}"
+  replicas: {{ .Values.replica.auth }}
+  selector:
+    matchLabels:
+      app: migrator
+  template:
+    metadata:
+      labels:
+        app: migrator
+        apptype: migrator
+    spec:
+      containers:
+        - name: migrator
+          image: "gitdatateam/migrator:{{ .Values.tag }}"
+          imagePullPolicy: Always
+          env:
+            - name: NACOS
+              value: "migrator://{{ .Values.nacos }}"
