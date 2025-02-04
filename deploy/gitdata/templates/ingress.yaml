@@ -2,7 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name:  gateway
-  namespace: gitdata
+  namespace: {{ .Values.namespace }}
   annotations:
     meta.helm.sh/release-name: gateway
     nginx.ingress.kubernetes.io/rewrite-target: /
