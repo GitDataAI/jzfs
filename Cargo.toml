@@ -1,76 +1,36 @@
-[package]
-name = "jzfs"
+[workspace.package]
 version = "0.1.0"
 edition = "2024"
-
-
-[[bin]]
-name = "jzfs"
-path = "src/main.rs"
-
-[[bin]]
-name = "ApiModule"
-path = "bin/ApiModule.rs"
-
-[[bin]]
-name = "SshModule"
-path = "bin/SshModule.rs"
-
-[features]
+authors = [
+    "ZhenYi <434836402@qq.com>"
+]
+homepage = "https://gitdata.ai"
 
 
 
-[dependencies]
-tokio = { version = "1", features = ["full"]}
+[workspace.dependencies]
+tokio = "1"
+sea-orm = "1"
+serde = "1"
+uuid = "1"
+nacos-sdk = "0.4"
+sysinfo = "0.33.1"
+toml = "0.8.19"
+lazy_static = "1.5.0"
+lib-config = { path = "lib-config" }
+lib-entity = { path = "lib-entity" }
+actix-session = { path = "lib-session", features = ["redis-session","redis-pool"]}
+actix-web = "4.9.0"
+[workspace]
+members = [
+    "gateway",
+    "gitdata-auth",
+    "gitdata-emails",
+    "gitdata-repository",
+    "gitdata-user",
+    "lib-config",
+    "lib-entity",
+    "lib-session"
+]
 
-actix-web = { version = "4", features = ["cookies"] }
-actix-session = { version = "0.10.1", features = ["redis-pool","redis-session"] }
-actix-files = { version = "0.6.6", features = [] }
-actix-multipart = { version = "0.7.2", features = ["derive"] }
-deadpool-redis = { version = "0.16.0", features = ["serde"] }
-sea-orm = { version = "1", features = ["sqlx-all","runtime-tokio"]}
-
-async-graphql = { version = "7.0.13", features = ["uuid","graphiql"] }
-
-
-lettre = {version = "0.11.10",features = [
-    "smtp-transport",
-    "serde",
-    "rustls-tls",
-    "rustls-native-certs",
-    "hostname",
-    "tokio1",
-    "tokio1-rustls-tls",
-    "tokio1-native-tls"
-]}
-
-serde = { version = "1", features = ["derive"] }
-serde_json = { version = "1", features = ["default"] }
-serde_yaml = { version = "0.9.33", features = [] }
-
-base64 = { version = "0.22.1", features = ["default"] }
-sha256 = { version = "1.5.0", features = [] }
-chrono = { version = "0.4.39", features = ["clock","serde"] }
-uuid = { version = "1", features = ["serde","v4"] }
-rand = { version = "0.9.0", features = ["default"] }
-
-git2 = { version = "0.20.0", features = ["ssh","https"] }
-
-anyhow = { version = "1", features = ["backtrace"] }
-log = "0.4.22"
-tempfile = "3.14.0"
-tracing = "0.1.41"
-opentelemetry = "0.27.1"
-opentelemetry_sdk = { version = "0.27.1", features = ["rt-tokio"] }
-tracing-core = "0.1.33"
-tracing-opentelemetry = "0.28.0"
-tracing-subscriber = "0.3.19"
-opentelemetry-otlp = "0.27.0"
-opentelemetry-stdout = "0.27.0"
-opentelemetry-semantic-conventions = { version = "0.27.0", features = ["semconv_experimental"] }
-env_logger = "0.11.6"
-flate2 = { version = "1", features = ["default"] }
-futures-util = "0.3.31"
-async-stream = "0.3.6"
-nacos-sdk = { version = "0.4.3", features = ["base64","naming","auth-by-http"] }
-sysinfo = { version = "0.33.1", features = ["network"] }
+resolver = "2"

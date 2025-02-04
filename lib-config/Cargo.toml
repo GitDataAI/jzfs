@@ -1,0 +1,26 @@
+[package]
+name = "lib-config"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+homepage.workspace = true
+
+[dependencies]
+etcd = { version = "0.9.0", features = ["default"]}
+serde = { version = "1.0.217", features = ["derive"] }
+serde_json = { version = "1", features = ["alloc"] }
+sysinfo = { version = "0.33.1", features = ["network"] }
+nacos-sdk = { version = "0.4.3", features = ["default","naming","config","base64"] }
+chrono = { version = "0.4.39", features = ["clock"] }
+
+tokio = { version = "1", features = ["full"] }
+deadpool-redis = { version = "0.18.0", features = ["cluster","rt_tokio_1"] }
+actix-session = { workspace = true, features = ["redis-session","redis-pool"]}
+
+time = { version = "0.3.37", features = ["local-offset","serde"] }
+anyhow = "1.0.95"
+uuid = { version = "1.12.1", features = ["v4","serde"] }
+log = "0.4.25"
+sea-orm = { version = "1", features = ["sqlx-all", "runtime-tokio"] }
+
+lib-entity = { workspace = true }

@@ -1,0 +1,25 @@
+name: Build and Deploy
+
+on:
+    push:
+        branches:
+            - main
+    pull_request:
+        branches:
+            - '**'
+
+jobs:
+    build:
+        uses: ./.github/workflows/build.yml
+    
+    push:
+        need:
+          - build
+        uses: ./.github/workflows/push.yml
+        secrets: inherit
+    deployment:
+        needs:
+            - push
+            - build
+        uses: ./.github/workflows/deployment.yml
+        secrets: inherit

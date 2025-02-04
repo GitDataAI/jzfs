@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: {{ .Values.namespace }}
+  name: gateway
+spec:
+  replicas: {{ .Values.replica.gateway }}
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+        apptype: gateway
+    spec:
+      containers:
+        - name: gateway
+          image: "gitdatateam/gateway:{{ .Values.tag }}"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          env:
+              - name: NACOS
+                value: "gateway://{{ .Values.nacos }}"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    namespace: {{ .Values.namespace }}
+    name: gitdata-auth
+spec:
+    replicas: {{ .Values.replica.auth }}
+    selector:
+        matchLabels:
+            app: gitdata-auth
+    template:
+        metadata:
+            labels:
+                app: gitdata-auth
+                apptype: gitdata-auth
+        spec:
+            containers:
+                - name: gitdata-auth
+                  image: "gitdatateam/gitdata-auth:{{ .Values.tag }}"
+                  imagePullPolicy: Always
+                  ports:
+                      - containerPort: 80
+                  env:
+                      -   name: NACOS
+                          value: "auth://{{ .Values.nacos }}"

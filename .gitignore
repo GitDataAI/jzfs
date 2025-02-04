@@ -1,6 +1,4 @@
-target
-.idea
-logs/**
-config/**
-data/**
-config.yaml
+/target
+.idea/*
+.fleet/*
+.vscode/*

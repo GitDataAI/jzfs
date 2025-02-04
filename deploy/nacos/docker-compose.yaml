@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+    nacos1:
+        image: qingpan/rnacos
+        container_name: nacos1
+        ports:
+            - "8848:8848"
+            - "9848:9848"
+            - "10848:10848"
+        volumes:
+            - nacos_data1:/io:rw
+        environment:
+            - RNACOS_INIT_ADMIN_USERNAME=admin
+            - RNACOS_INIT_ADMIN_PASSWORD=admin
+            - RNACOS_RAFT_AUTO_INIT=true
+            - RNACOS_HTTP_PORT=8848
+            - RNACOS_RAFT_NODE_ADDR=172.30.0.101:9848
+            - RNACOS_RAFT_NODE_ID=1
+            - RNACOS_CONSOLE_ENABLE_CAPTCHA=false
+        networks:
+            nacos_net:
+                ipv4_address: 172.30.0.101
+        restart: always
+
+    nacos2:
+        image: qingpan/rnacos
+        container_name: nacos2
+        ports:
+            - "8849:8848"
+            - "9850:9848"
+        volumes:
+            - nacos_data2:/io:rw
+        environment:
+            - RNACOS_INIT_ADMIN_USERNAME=admin
+            - RNACOS_INIT_ADMIN_PASSWORD=admin
+            - RNACOS_RAFT_NODE_ADDR=172.30.0.102:9848
+            - RNACOS_RAFT_JOIN_ADDR=172.30.0.101:9848
+            - RNACOS_RAFT_NODE_ID=2
+        networks:
+            nacos_net:
+                ipv4_address: 172.30.0.102
+        restart: always
+
+    nacos3:
+        image: qingpan/rnacos
+        container_name: nacos3
+        ports:
+            - "8850:8848"
+            - "9851:9848"
+        volumes:
+            - nacos_data3:/io:rw
+        environment:
+            - RNACOS_INIT_ADMIN_USERNAME=admin
+            - RNACOS_INIT_ADMIN_PASSWORD=admin
+            - RNACOS_RAFT_NODE_ADDR=172.30.0.103:9848
+            - RNACOS_RAFT_JOIN_ADDR=172.30.0.101:9848
+            - RNACOS_RAFT_NODE_ID=3
+        networks:
+            nacos_net:
+                ipv4_address: 172.30.0.103
+        restart: always
+
+volumes:
+    nacos_data1:
+        name: nacos_data1
+    nacos_data2:
+        name: nacos_data2
+    nacos_data3:
+        name: nacos_data3
+
+networks:
+    nacos_net:
+        driver: bridge
+        ipam:
+            config:
+                - subnet: 172.30.0.0/24

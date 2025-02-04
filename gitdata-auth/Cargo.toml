@@ -1,0 +1,22 @@
+[package]
+name = "gitdata-auth"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+homepage.workspace = true
+
+[dependencies]
+actix-web = { version = "4.9.0",  features = ["default","secure-cookies"] }
+actix-session = { workspace = true, features = ["redis-session","redis-pool"]}
+
+tokio = { version = "1.0.0", features = ["rt", "rt-multi-thread", "macros"] }
+tracing-subscriber = { version = "0.3.19", features = ["default"] }
+
+lib-config = { workspace = true }
+lib-entity = { workspace = true }
+anyhow = "1.0.95"
+serde = { version = "1.0.217", features = ["derive"] }
+captcha-rs = { version = "0.2.11", features = [] }
+serde_json = { version = "1" ,features = ["alloc"] }
+sha256 = { version = "1.5.0", features = ["async"] }
+lazy_static = "1.5.0"

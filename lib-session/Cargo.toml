@@ -1,0 +1,45 @@
+[package]
+name = "actix-session"
+version = "0.10.1"
+authors = [
+  "Nikolay Kim <fafhrd91@gmail.com>",
+  "Luca Palmieri <rust@lpalmieri.com>",
+]
+description = "Session management for Actix Web"
+keywords = ["http", "web", "framework", "async", "session"]
+edition = "2021"
+
+[package.metadata.docs.rs]
+rustdoc-args = ["--cfg", "docsrs"]
+all-features = true
+
+[features]
+default = []
+cookie-session = []
+redis-session = ["dep:redis"]
+redis-session-native-tls = ["redis-session", "redis/tokio-native-tls-comp"]
+redis-session-rustls = ["redis-session", "redis/tokio-rustls-comp"]
+redis-pool = ["dep:deadpool-redis"]
+
+[dependencies]
+actix-service = "2"
+actix-utils = "3"
+actix-web = { version = "4", default-features = false, features = ["cookies", "secure-cookies"] }
+
+anyhow = "1"
+derive_more = { version = "1", features = ["display", "error", "from"] }
+rand = "0.8"
+serde = { version = "1" }
+serde_json = { version = "1" }
+tracing = { version = "0.1.30", default-features = false, features = ["log"] }
+
+# redis-session
+redis = { version = "0.27", default-features = false, features = ["tokio-comp", "connection-manager"], optional = true }
+deadpool-redis = { version = "0.18",optional = true, features = ["cluster","rt_tokio_1"] }
+
+[dev-dependencies]
+actix-session = { path = "", features = ["cookie-session", "redis-session"] }
+actix-test = "0.1"
+actix-web = { version = "4", default-features = false, features = ["cookies", "secure-cookies", "macros"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing = "0.1.30"

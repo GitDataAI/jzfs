@@ -3,8 +3,15 @@
     <option name="myName" value="Project Default" />
     <inspection_tool class="DuplicatedCode" enabled="true" level="WEAK WARNING" enabled_by_default="true">
       <Languages>
-        <language minSize="118" name="Rust" />
+        <language minSize="90" name="Rust" />
       </Languages>
+    </inspection_tool>
+    <inspection_tool class="IncorrectHttpHeaderInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="customHeaders">
+        <set>
+          <option value="    &quot;password&quot;" />
+        </set>
+      </option>
     </inspection_tool>
   </profile>
 </component>

@@ -1,0 +1,20 @@
+
+replicaCount: 1
+tag: "latest"
+
+
+
+
+namespace: gitdataai
+
+nacos: ""
+
+
+
+ingress:
+  enabled: true
+  host: gitdata.jzhub.io
+
+replica:
+    gateway: 1
+    auth: 1

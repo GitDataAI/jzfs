@@ -1,0 +1,38 @@
+name: Build
+
+on:
+  workflow_call:
+
+jobs:
+  build:
+    name: Build
+    runs-on: [self-hosted]
+
+    steps:
+      - name: Print Event
+        run: |
+          echo "Event Name: ${{ github.event_name }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "SHA: ${{ github.sha }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "Action: ${{ github.action }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "Workflow Run ID: ${{ github.run_id }}"
+          echo "Head Repository: ${{ github.head_repository }}"
+          echo "Base Repository: ${{ github.base_repository }}"
+
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Install latest nightly
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+          components:
+
+      - name: Build project
+        run: |
+          export ALL_PORT=80
+          cargo build --release --workspace
+        

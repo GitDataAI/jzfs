@@ -1,0 +1,81 @@
+version: "3"
+
+# 定义服务，可以多个
+services:
+  redis-7001: # 服务名称
+    image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/quay.io/opstree/redis:v6.2.4  # 创建容器时所需的镜像
+    container_name: redis-7001 # 容器名称
+    restart: always # 容器总是重新启动
+    volumes: # 数据卷，目录挂载
+      - /home/web/redis/node_7001/conf/redis.conf:/usr/local/etc/redis/redis.conf
+      - /home/web/redis/node_7001/data:/data
+    ports:
+      - "7001:7001"
+      - "17001:17001"
+    command:
+      redis-server /usr/local/etc/redis/redis.conf
+
+  redis-7002: # 服务名称
+    image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/quay.io/opstree/redis:v6.2.4  # 创建容器时所需的镜像
+    container_name: redis-7002 # 容器名称
+    restart: always # 容器总是重新启动
+    volumes: # 数据卷，目录挂载
+      - /home/web/redis/node_7002/conf/redis.conf:/usr/local/etc/redis/redis.conf
+      - /home/web/redis/node_7002/data:/data
+    ports:
+      - "7002:7002"
+      - "17002:17002"
+    command:
+      redis-server /usr/local/etc/redis/redis.conf
+
+  redis-7003: # 服务名称
+    image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/quay.io/opstree/redis:v6.2.4  # 创建容器时所需的镜像
+    container_name: redis-7003 # 容器名称
+    restart: always # 容器总是重新启动
+    volumes: # 数据卷，目录挂载
+      - /home/web/redis/node_7003/conf/redis.conf:/usr/local/etc/redis/redis.conf
+      - /home/web/redis/node_7003/data:/data
+    ports:
+      - "7003:7003"
+      - "17003:17003"
+    command:
+      redis-server /usr/local/etc/redis/redis.conf
+
+  redis-7004: # 服务名称
+    image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/quay.io/opstree/redis:v6.2.4  # 创建容器时所需的镜像
+    container_name: redis-7004 # 容器名称
+    restart: always # 容器总是重新启动
+    volumes: # 数据卷，目录挂载
+      - /home/web/redis/node_7004/conf/redis.conf:/usr/local/etc/redis/redis.conf
+      - /home/web/redis/node_7004/data:/data
+    ports:
+      - "7004:7004"
+      - "17004:17004"
+    command:
+      redis-server /usr/local/etc/redis/redis.conf
+
+  redis-7005: # 服务名称
+    image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/quay.io/opstree/redis:v6.2.4  # 创建容器时所需的镜像
+    container_name: redis-7005 # 容器名称
+    restart: always # 容器总是重新启动
+    volumes: # 数据卷，目录挂载
+      - /home/web/redis/node_7005/conf/redis.conf:/usr/local/etc/redis/redis.conf
+      - /home/web/redis/node_7005/data:/data
+    ports:
+      - 7005:7005
+      - 17005:17005
+    command:
+      redis-server /usr/local/etc/redis/redis.conf
+
+  redis-7006: # 服务名称
+    image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/quay.io/opstree/redis:v6.2.4  # 创建容器时所需的镜像
+    container_name: redis-7006 # 容器名称
+    restart: always # 容器总是重新启动
+    volumes: # 数据卷，目录挂载
+      - /home/web/redis/node_7006/conf/redis.conf:/usr/local/etc/redis/redis.conf
+      - /home/web/redis/node_7006/data:/data
+    ports:
+      - 7006:7006
+      - 17006:17006
+    command:
+      redis-server /usr/local/etc/redis/redis.conf
