@@ -49,3 +49,29 @@ spec:
                   env:
                       -   name: NACOS
                           value: "auth://{{ .Values.nacos }}"
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    namespace: {{ .Values.namespace }}
+    name: migrator
+spec:
+    replicas: {{ .Values.replica.auth }}
+    selector:
+        matchLabels:
+            app: migrator
+    template:
+        metadata:
+            labels:
+                app: migrator
+                apptype: migrator
+        spec:
+            containers:
+                - name: migrator
+                  image: "gitdatateam/migrator:{{ .Values.tag }}"
+                  imagePullPolicy: Always
+                  env:
+                    - name: NACOS
+                      value: "migrator://{{ .Values.nacos }}"
