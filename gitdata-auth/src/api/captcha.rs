@@ -1,14 +1,14 @@
+use actix_session::Session;
 use actix_web::{web, HttpRequest, Responder};
 use captcha_rs::CaptchaBuilder;
+use lib_entity::write::AppWrite;
+use lib_mq::client::client::AppKafkaClient;
+use lib_mq::server::email::captcha::EmailCaptcha;
+use lib_mq::server::email::EmailType;
+use lib_mq::EMAIL_TOPIC;
 use serde::Deserialize;
 use serde_json::json;
 use sha256::Sha256Digest;
-use actix_session::Session;
-use lib_entity::write::AppWrite;
-use lib_mq::client::client::AppKafkaClient;
-use lib_mq::EMAIL_TOPIC;
-use lib_mq::server::email::captcha::EmailCaptcha;
-use lib_mq::server::email::{EmailEvent, EmailType};
 /*
  * 登录验证码
  * @param {Session} session
