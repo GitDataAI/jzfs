@@ -25,11 +25,14 @@ actix-web = "4.9.0"
 members = [
     "gateway",
     "gitdata-auth",
-    "gitdata-emails", "gitdata-jobs",
+    "gitdata-emails",
+    "gitdata-jobs",
     "gitdata-repository",
-    "gitdata-user", "gitdata-website",
+    "gitdata-user",
     "lib-config",
-    "lib-entity", "lib-jobs", "lib-mq",
+    "lib-entity",
+    "lib-jobs",
+    "lib-mq",
     "lib-session"
 ]
 
