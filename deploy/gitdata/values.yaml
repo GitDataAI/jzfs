@@ -18,3 +18,4 @@ ingress:
 replica:
     gateway: 1
     auth: 1
+    mq: 1

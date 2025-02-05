@@ -8,7 +8,7 @@ use crate::naming::AppNaming;
 
 pub mod naming;
 pub mod config;
-
+pub mod public;
 #[derive(Clone)]
 pub struct AppNacos {
     pub config: AppConfig,

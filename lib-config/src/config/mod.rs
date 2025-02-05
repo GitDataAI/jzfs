@@ -16,3 +16,5 @@ impl AppConfig {
 pub mod postgres;
 pub mod redis;
 pub mod auth;
+pub mod kafka;
+pub mod email;
