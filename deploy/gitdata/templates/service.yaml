@@ -29,3 +29,19 @@ spec:
       protocol: TCP
   selector:
     app: gitdata-auth
+    
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitdata-user-service
+  labels:
+    app: gitdata-user
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+  selector:
+    app: gitdata-user
