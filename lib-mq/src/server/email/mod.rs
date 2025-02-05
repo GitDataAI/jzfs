@@ -33,7 +33,7 @@ impl EmailEvent {
                 .unwrap()
                 .credentials(creds)
                 .build();
-        
+
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
         tokio::spawn(async move {
             EmailEvent::listen(config,rx, mailer).await;
@@ -71,7 +71,7 @@ impl EmailEvent {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[tokio::test]
     async fn test_email_event() {
         let nacos = AppNacos::from_env().unwrap();

@@ -1,6 +1,8 @@
 FROM ubuntu:22.04
-RUN apk --no-cache add ca-certificates \
-  && update-ca-certificates
+RUN apt update \
+  &&  apt install ca-certificates  -y \
+  && update-ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY target/release/gitdata-mq .
