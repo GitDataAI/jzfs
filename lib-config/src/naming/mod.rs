@@ -49,7 +49,6 @@ impl AppNaming {
         instance.port = port;
         instance.ip = ips.join(",");
         instance.service_name = Some(self.name.clone());
-        instance.healthy = true;
         self.client.register_instance(
             key.to_string(),
             Some(groups.to_string()), 

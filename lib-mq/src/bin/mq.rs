@@ -8,7 +8,7 @@ async fn main() -> std::io::Result<()> {
     tracing_subscriber::fmt().init();
     let nacos = AppNacos::from_env()?;
     let (version_n, version_s) = get_rdkafka_version();
-    let mut naming = nacos.naming;
+    let mut naming = nacos.naming.clone();
     naming.register(0, "mq",3).await
         .map_err(|e| {
             std::io::Error::new(std::io::ErrorKind::Other, e)
