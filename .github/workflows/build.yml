@@ -62,4 +62,9 @@ jobs:
           docker build -t gitdatateam/gitdata-auth:${{ steps.version.outputs.version }} -f ./docker/auth.Dockerfile .
           docker push gitdatateam/gitdata-auth:${{ steps.version.outputs.version }}
 
+      - name: Build and Push GitdataMQ
+        run: |
+          docker build -t gitdatateam/gitdata-mq:${{ steps.version.outputs.version }} -f ./docker/mq.Dockerfile .
+          docker push gitdatateam/gitdata-mq:${{ steps.version.outputs.version }}
+
 

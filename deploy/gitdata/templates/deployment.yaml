@@ -95,7 +95,7 @@ spec:
     spec:
       containers:
         - name: gitdata-mq
-          image: "gitdatateam/mq:{{ .Values.tag }}"
+          image: "gitdatateam/gitdata-mq:{{ .Values.tag }}"
           imagePullPolicy: Always
           env:
             - name: NACOS
