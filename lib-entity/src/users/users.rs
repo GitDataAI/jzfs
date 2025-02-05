@@ -129,6 +129,54 @@ impl ActiveModel {
             ..Default::default()
         }
     }
+    
+    pub fn update_optional(&self, option: UpdateOption) -> ActiveModel {
+        let mut model = self.clone();
+        if let Some(name) = &option.name {
+            model.name = Set(name.clone());
+        }
+        if let Some(bio) = &option.bio {
+            model.bio = Set(Some(bio.clone()));
+        }
+        if let Some(pronouns) = &option.pronouns {
+            model.pronouns = Set(Some(pronouns.clone()));
+        }
+        if let Some(company) = &option.company {
+            model.company = Set(Some(company.clone()));
+        }
+        if let Some(location) = &option.location {
+            model.location = Set(Some(location.clone()));
+        }
+        if let Some(localtime) = &option.localtime {
+            model.localtime = Set(Some(localtime.clone()));
+        }
+        if let Some(i18n) = &option.i18n {
+            model.i18n = Set(Some(i18n.clone()));
+        }
+        if let Some(website) = &option.website {
+            model.website = Set(website.clone());
+        }
+        if let Some(orcid) = &option.orcid {
+            model.orcid = Set(Some(orcid.clone()));
+        }
+        if let Some(theme) = &option.theme {
+            model.theme = Set(theme.clone());
+        }
+        if let Some(orcid) = &option.orcid {
+            model.orcid = Set(Some(orcid.clone()));
+        }
+        if let Some(orcid) = &option.orcid {
+            model.orcid = Set(Some(orcid.clone()));
+        }
+        if let Some(social) = &option.social {
+            model.social = Set(social.clone());
+        }
+        if let Some(pinned) = &option.pinned {
+            model.pinned = Set(pinned.clone());
+        }
+        model.updated = Set(chrono::Local::now().timestamp());
+        model
+    }
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -146,6 +194,76 @@ pub struct UpdateOption {
     pub theme: Option<String>,
     pub pinned: Option<Vec<Uuid>>,
 }
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct UsersOption {
+    pub uid: Uuid,
+    pub name: String,
+    pub username: String,
+    pub bio: Option<String>,
+    pub pronouns: Option<String>,
+    pub company: Option<String>,
+    pub location: Option<String>,
+    pub localtime: Option<String>,
+    pub i18n: Option<String>,
+    pub website: Vec<String>,
+    pub orcid: Option<String>,
+    pub social: Vec<String>,
+    pub theme: String,
+    pub pinned: Vec<Uuid>,
+    pub followers: i32,
+    pub following: i32,
+    pub repository: i32,
+    pub stars: i32,
+    pub watching: i32,
+    pub package: i32,
+    pub release: i32,
+    pub mentioned: bool,
+    pub main_email: String,
+    pub visible_email: bool,
+    pub pro: bool,
+    pub avatar_url: Option<String>,
+    pub created: i64,
+    pub updated: i64,
+    pub hasused: i64,
+}
+
+impl From<Model> for UsersOption {
+    fn from(model: Model) -> Self {
+        Self {
+            uid: model.uid,
+            name: model.name,
+            username: model.username,
+            bio: model.bio,
+            pronouns: model.pronouns,
+            company: model.company,
+            location: model.location,
+            localtime: model.localtime,
+            i18n: model.i18n,
+            website: model.website,
+            orcid: model.orcid,
+            social: model.social,
+            theme: model.theme,
+            pinned: model.pinned,
+            followers: model.followers,
+            following: model.following,
+            repository: model.repository,
+            stars: model.stars,
+            watching: model.watching,
+            package: model.package,
+            release: model.release,
+            mentioned: model.mentioned,
+            main_email: model.main_email,
+            visible_email: model.visible_email,
+            pro: model.pro,
+            avatar_url: model.avatar_url,
+            created: model.created,
+            updated: model.updated,
+            hasused: model.hasused,
+        }
+    }
+}
+
 
 impl Model {
     pub fn verify_password(&self, password: &str) -> bool {
