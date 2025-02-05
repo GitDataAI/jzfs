@@ -34,6 +34,7 @@ async fn main() -> std::io::Result<()> {
                     .cookie_path("/".to_string())
                     .build()
             )
+            .configure(api::router)
     })
         .max_connections(usize::MAX)
         .bind("0.0.0.0:8080")
