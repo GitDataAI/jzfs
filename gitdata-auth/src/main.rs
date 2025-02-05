@@ -9,6 +9,7 @@ use actix_web::cookie::time::Duration;
 use lazy_static::lazy_static;
 use lib_config::AppNacos;
 use lib_config::config::redis::RedisConfigKind;
+use lib_mq::client::client::AppKafkaClient;
 
 lazy_static! {
     static ref PORT: u16 = {
@@ -24,14 +25,16 @@ async fn main() -> std::io::Result<()> {
     let nacos = AppNacos::from_env()?;
     let redis = nacos.config.redis_cluster(RedisConfigKind::Session).await?;
     let mut naming = nacos.naming.clone();
-    let state = server::AppAuthState::init(nacos).await
+    let state = server::AppAuthState::init(nacos.clone()).await
         .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "init error"))?;
     naming
         .register(PORT.clone() as i32, "api", 1).await
         .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "register error"))?;
+    let mq = AppKafkaClient::init(nacos, "app".to_string()).await?;
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(state.clone()))
+            .app_data(web::Data::new(mq.clone()))
             // .wrap(actix_web::middleware::Logger::default())
             .wrap(
                 actix_session::SessionMiddleware::builder(

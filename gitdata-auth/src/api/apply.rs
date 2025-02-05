@@ -48,7 +48,9 @@ pub async fn auth_apply(
         if !next {
             return AppWrite::error("next error".to_string());
         }
-    };
+    } else { 
+        return AppWrite::error("next error".to_string());
+    }
     match state.auth_apply(param.into_inner()).await {
         Ok(user) => {
             session.insert("next", false).ok();
