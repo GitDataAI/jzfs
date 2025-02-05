@@ -89,8 +89,9 @@ impl AppNacos {
             .namespace(namespace)
             .max_retries(3)
             .app_name(server_name.clone())
+            .remote_grpc_port(9848)
             .server_addr(format!("{}:{}", host, port));
-        
+
         let naming_service = nacos_sdk::api::naming::NamingServiceBuilder::new(client_props.clone())
             .enable_auth_plugin_http()
             .build()
@@ -99,10 +100,10 @@ impl AppNacos {
             .enable_auth_plugin_http()
             .build()
             .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
-        
+
         let config = AppConfig::new(Arc::new(Box::new(config_service)));
         let naming = AppNaming::new(Arc::new(Box::new(naming_service)), server_name.clone());
-        
+
         Ok(Self { config, naming, endpoint: server_name})
     }
 }
