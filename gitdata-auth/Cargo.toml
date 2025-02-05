@@ -14,6 +14,7 @@ tracing-subscriber = { version = "0.3.19", features = ["default"] }
 
 lib-config = { workspace = true }
 lib-entity = { workspace = true }
+lib-mq = { workspace = true }
 anyhow = "1.0.95"
 serde = { version = "1.0.217", features = ["derive"] }
 captcha-rs = { version = "0.2.11", features = [] }
