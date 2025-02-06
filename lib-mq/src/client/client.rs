@@ -12,17 +12,16 @@ pub struct AppKafkaClient {
 }
 
 impl AppKafkaClient {
-    pub async fn init(nacos: AppNacos, group: String) -> std::io::Result<Self>{
+    pub async fn init(nacos: AppNacos) -> std::io::Result<Self>{
         let config = nacos.config.kafka_config().await.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?
             .addrs.first()
             .map(|s| s.to_string())
             .ok_or(std::io::Error::new(std::io::ErrorKind::Other, "kafka config error"))?;
-        let producer:FutureProducer = ClientConfig::new()
+        let producer: FutureProducer = ClientConfig::new()
             .set("bootstrap.servers", config)
-            .set("group.id", &group)
-            .set("session.timeout.ms", "6000")
-            .set("enable.auto.commit", "false")
-            .set("auto.offset.reset", "earliest")
+            .set("api.version.request", "false") // Disable ApiVersionRequest if needed
+            .set("api.version.request.timeout.ms", "50000") // Increase timeout
+            .set("debug", "all") // Enable debug logging
             .create()
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
         info!("kafka producer init success");

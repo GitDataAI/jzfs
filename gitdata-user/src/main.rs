@@ -30,7 +30,7 @@ async fn main() -> std::io::Result<()> {
     naming
         .register(PORT.clone() as i32, "api", 1).await
         .map_err(|_| std::io::Error::new(std::io::ErrorKind::Other, "register error"))?;
-    let mq = AppKafkaClient::init(nacos, "app".to_string()).await?;
+    let mq = AppKafkaClient::init(nacos).await?;
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(state.clone()))
