@@ -2,6 +2,7 @@ use crate::repos::repos;
 use crate::sea_query::TableCreateStatement;
 use crate::teams::teamsus;
 use sea_orm::*;
+use sea_orm::ActiveValue::Set;
 use serde::{Deserialize, Serialize};
 use sha256::Sha256Digest;
 use uuid::Uuid;
@@ -122,14 +123,37 @@ impl ActiveModel {
             uid: Set(uid),
             name: Set(username.clone()),
             username: Set(username),
+            bio: Set(None),
+            pronouns: Set(None),
+            company: Set(None),
+            location: Set(None),
+            localtime: Set(None),
+            i18n: Set(None),
+            website: Set(vec![]),
+            orcid: Set(None),
+            social: Set(vec![]),
+            theme: Set("system".to_string()),
+            pinned: Set(vec![]),
+            followers: Set(0),
+            following: Set(0),
+            repository: Set(0),
+            stars: Set(0),
+            watching: Set(0),
+            package: Set(0),
+            release: Set(0),
             password: Set(password),
             main_email: Set(main_email),
+            visible_email: Set(false),
             created: Set(chrono::Local::now().timestamp()),
             updated: Set(chrono::Local::now().timestamp()),
-            ..Default::default()
+
+            mentioned: Set(true),
+            pro: Set(false),
+            avatar_url: Set(None),
+            hasused: Set(chrono::Local::now().timestamp()),
         }
     }
-    
+
     pub fn update_optional(&self, option: UpdateOption) -> ActiveModel {
         let mut model = self.clone();
         if let Some(name) = &option.name {
