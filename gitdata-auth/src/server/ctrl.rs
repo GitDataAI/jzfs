@@ -1,8 +1,10 @@
 use lib_entity::{ActiveModelTrait, ColumnTrait};
 use serde::{Deserialize, Serialize};
 use lib_entity::{EntityTrait, QueryFilter};
+use lib_entity::prelude::Uuid;
 use lib_entity::session::UsersSessionModel;
 use lib_entity::users::{email, users};
+use lib_entity::users::users::UsersOption;
 use crate::server::AppAuthState;
 
 
@@ -68,6 +70,18 @@ impl AppAuthState {
                 },
                 Err(e) => {
                     Err(anyhow::anyhow!("注册失败：{}",e))
+                }
+        }
+    }
+    pub async fn now_user(&self, users_uid: Uuid) -> anyhow::Result<UsersOption> {
+        match users::Entity::find_by_id(users_uid)
+            .one(&self.read)
+            .await?{
+                Some(user) => {
+                    Ok(UsersOption::from(user))
+                },
+                None => {
+                    Err(anyhow::anyhow!("用户不存在"))
                 }
         }
     }
