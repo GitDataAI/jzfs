@@ -1,4 +1,4 @@
-name: Build and Push
+name: Build and Push with GitHub Actions Artifacts
 
 on:
   workflow_call:
@@ -18,7 +18,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
 
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
@@ -49,6 +48,12 @@ jobs:
             echo "::set-output name=version::${{ github.sha }}"
           fi
 
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts-${{ needs.build.outputs.version }}
+          path: target/release/
+
   push-images:
     name: Build and Push Docker Images
     needs: build
@@ -73,7 +78,13 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
           registry: docker.io
 
-      - name: Build and Push ${{matrix.image.name}}
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts-${{ needs.build.outputs.version }}
+          path: ./target/release/
+
+      - name: Build and Push ${{ matrix.image.name }}
         run: |
-          docker build -t gitdatateam/${{matrix.image.name}}:${{ needs.build.outputs.version }} -f ${{matrix.image.dockerfile}} .
-          docker push gitdatateam/${{matrix.image.name}}:${{ needs.build.outputs.version }}
+          docker build -t gitdatateam/${{ matrix.image.name }}:${{ needs.build.outputs.version }} -f ${{ matrix.image.dockerfile }} .
+          docker push gitdatateam/${{ matrix.image.name }}:${{ needs.build.outputs.version }}
