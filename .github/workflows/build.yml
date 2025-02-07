@@ -59,7 +59,7 @@ jobs:
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: build-artifacts-${{ needs.build.outputs.version }}
+          name: build-artifacts-${{ steps.version.outputs.version }}
           path: target/release/
           if-no-files-found: error
           compression-level: 6
