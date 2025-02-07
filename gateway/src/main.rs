@@ -72,6 +72,7 @@ async fn main() -> std::io::Result<()>{
         async fn run(redis: ClusterMaster, server_list: Vec<HttpServiceNode>) -> (ServerHandle, Server) {
             let serve = HttpServer::new(move || {
                 App::new()
+                    .wrap(actix_web::middleware::Logger::default())
                     .app_data(web::Data::new(server_list.clone()))
                     .wrap(
                         actix_session::SessionMiddleware::builder(
