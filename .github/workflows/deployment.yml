@@ -25,6 +25,9 @@ jobs:
                   echo "commit version"
                   echo "::set-output name=version::${{ github.sha }}"
                 fi
+            - name: Set up Helm
+              run: |
+                curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
             - name: Deploy
               uses: WyriHaximus/github-action-helm3@v3
