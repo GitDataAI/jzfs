@@ -32,6 +32,6 @@ jobs:
             - name: Deploy
               uses: WyriHaximus/github-action-helm3@v3
               with:
-                  exec: /usr/sbin/helm upgrade gateway --install ./deploy/gitdata --namespace gitdataai --set-string nacos=${{ secrets.NACOS }}  --set-string tag=${{ steps.version.outputs.version }}
+                  exec: /usr/local/bin/helm upgrade gateway --install ./deploy/gitdata --namespace gitdataai --set-string nacos=${{ secrets.NACOS }}  --set-string tag=${{ steps.version.outputs.version }}
                   kubeconfig: ${{ secrets.KUBECONTENT }}
                   overrule_existing_kubeconfig: 'true'

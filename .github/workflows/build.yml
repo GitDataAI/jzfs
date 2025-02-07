@@ -1,4 +1,4 @@
-name: Build
+name: Build and Push
 
 on:
   workflow_call:
@@ -12,36 +12,27 @@ jobs:
   build:
     name: Build
     runs-on: [self-hosted]
+    outputs:
+      version: "${{ steps.version.outputs.version }}"
 
     steps:
-      - name: Print Event
-        run: |
-          echo "Event Name: ${{ github.event_name }}"
-          echo "Repository: ${{ github.repository }}"
-          echo "SHA: ${{ github.sha }}"
-          echo "Ref: ${{ github.ref }}"
-          echo "Action: ${{ github.action }}"
-          echo "Actor: ${{ github.actor }}"
-          echo "Workflow Run ID: ${{ github.run_id }}"
-          echo "Head Repository: ${{ github.head_repository }}"
-          echo "Base Repository: ${{ github.base_repository }}"
-
-      - name: Checkout repo
+      - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2.2.1
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
 
       - name: Base Tool
         run: |
           sudo apt update \
           && sudo apt install build-essential openssl libssl-dev pkg-config -y \
-          && sudo apt install cmake gcc -y \
-
-
-      - name: Install latest nightly
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          override: true
-          components: rustfmt,clippy
+          && sudo apt install cmake gcc -y
 
       - name: Build project
         run: |
@@ -52,12 +43,28 @@ jobs:
         id: version
         run: |
           if [[ -n "$GITHUB_REF" && "$GITHUB_REF" == "refs/tags/"* ]]; then
-            echo "tag version"
             echo "::set-output name=version::${GITHUB_REF/refs\/tags\//}"
           else
-            echo "commit version"
             echo "::set-output name=version::${{ github.sha }}"
           fi
+
+  push-images:
+    name: Build and Push Docker Images
+    needs: build
+    runs-on: self-hosted
+    strategy:
+      matrix:
+        image:
+          - { name: migrator, dockerfile: ./docker/migrator.Dockerfile }
+          - { name: gateway, dockerfile: ./docker/gateway.Dockerfile }
+          - { name: gitdata-auth, dockerfile: ./docker/auth.Dockerfile }
+          - { name: gitdata-mq, dockerfile: ./docker/mq.Dockerfile }
+          - { name: gitdata-user, dockerfile: ./docker/user.Dockerfile }
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
       - name: Docker Login
         uses: docker/login-action@v3
         with:
@@ -65,29 +72,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
           registry: docker.io
 
-      - name: Build nad Push Migrator
+      - name: Build and Push ${matrix.image.name}
         run: |
-          docker build -t gitdatateam/migrator:${{ steps.version.outputs.version }} -f ./docker/migrator.Dockerfile .
-          docker push gitdatateam/migrator:${{ steps.version.outputs.version }}
-
-      - name: Build and Push Gateway
-        run: |
-          docker build -t gitdatateam/gateway:${{ steps.version.outputs.version }} -f ./docker/gateway.Dockerfile .
-          docker push gitdatateam/gateway:${{ steps.version.outputs.version }}
-
-      - name: Build and Push GitdataAuth
-        run: |
-          docker build -t gitdatateam/gitdata-auth:${{ steps.version.outputs.version }} -f ./docker/auth.Dockerfile .
-          docker push gitdatateam/gitdata-auth:${{ steps.version.outputs.version }}
-
-      - name: Build and Push GitdataMQ
-        run: |
-          docker build -t gitdatateam/gitdata-mq:${{ steps.version.outputs.version }} -f ./docker/mq.Dockerfile .
-          docker push gitdatateam/gitdata-mq:${{ steps.version.outputs.version }}
-
-      - name: Build and Push GitdataUser
-        run: |
-          docker build -t gitdatateam/gitdata-user:${{ steps.version.outputs.version }} -f ./docker/user.Dockerfile .
-          docker push gitdatateam/gitdata-user:${{ steps.version.outputs.version }}
-
-
+          docker build -t gitdatateam/${matrix.image.name}:${{ needs.build.outputs.version }} -f ${matrix.image.dockerfile} .
+          docker push gitdatateam/${matrix.image.name}:${{ needs.build.outputs.version }}
