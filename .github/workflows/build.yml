@@ -73,7 +73,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
           registry: docker.io
 
-      - name: Build and Push ${matrix.image.name}
+      - name: Build and Push ${{matrix.image.name}}
         run: |
-          docker build -t gitdatateam/${matrix.image.name}:${{ needs.build.outputs.version }} -f ${matrix.image.dockerfile} .
-          docker push gitdatateam/${matrix.image.name}:${{ needs.build.outputs.version }}
+          docker build -t gitdatateam/${{matrix.image.name}}:${{ needs.build.outputs.version }} -f ${matrix.image.dockerfile} .
+          docker push gitdatateam/${{matrix.image.name}}:${{ needs.build.outputs.version }}
