@@ -27,7 +27,7 @@ jobs:
       - name: Base Tool
         run: |
           sudo apt update \
-          && sudo apt install build-essential -y \
+          && sudo apt install build-essential openssl-devel pkg-config -y \
           && sudo apt install cmake gcc -y \
 
 
