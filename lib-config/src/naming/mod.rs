@@ -43,7 +43,7 @@ impl AppNaming {
             })
             .flatten()
             .collect::<Vec<String>>();
-        
+
         key.set_ips(ips.clone());
         let mut instance = ServiceInstance::default();
         instance.port = port;
@@ -51,13 +51,13 @@ impl AppNaming {
         instance.service_name = Some(self.name.clone());
         self.client.register_instance(
             key.to_string(),
-            Some(groups.to_string()), 
+            Some(groups.to_string()),
             instance,
         ).await?;
         self.name_key = Some(key);
         Ok(self.clone())
     }
-    
+
     pub async fn unregister(&self) -> anyhow::Result<()> {
         if let Some(key) = &self.name_key {
             self.client.deregister_instance(
@@ -66,16 +66,20 @@ impl AppNaming {
                 ServiceInstance::default(),
             ).await?;
         }
-        
+
         Ok(())
     }
-    pub async fn list_http_server(&self, group: &str) -> anyhow::Result<Vec<HttpServiceNode>> {
-        let (result, _) = self.client
-            .get_service_list(
-                0,
-                i32::MAX,
-                Some(group.to_string())
-            ).await?;
+    pub async fn list_http_server(&self, group: Vec<&str>) -> anyhow::Result<Vec<HttpServiceNode>> {
+        let mut result = Vec::new();
+        for idx in group {
+            let (res, _) = self.client
+                .get_service_list(
+                    0,
+                    i32::MAX,
+                    Some(idx.to_string())
+                ).await?;
+            result.extend_from_slice(&res);
+        }
         let mut ins = Vec::new();
         for idx in result {
             match self.client
@@ -150,7 +154,7 @@ mod tests {
     #[tokio::test]
     async fn test_list() {
         let nacos = AppNacos::from_env().unwrap();
-        let result = nacos.naming.list_http_server("api").await.unwrap();
+        let result = nacos.naming.list_http_server(vec!["api","web"]).await.unwrap();
         dbg!(result);
     }
 }
