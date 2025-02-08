@@ -8,6 +8,7 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub uid: Uuid,
     pub user_id: Uuid,
+    #[serde(skip_serializing)]
     pub content: String,
     pub name: String,
     pub access: i64,
