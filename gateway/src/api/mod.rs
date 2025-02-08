@@ -1,22 +1,16 @@
-use actix_web::{web, HttpRequest, HttpResponse};
-use actix_web::web::{Bytes, Payload};
 use actix_session::Session;
+use actix_web::http::header::REFERER;
+use actix_web::web::{Bytes, Payload};
+use actix_web::{web, HttpRequest, HttpResponse};
 use lib_config::naming::HttpServiceNode;
-
-
-
-
+use url::Url;
 /*
  * Gateway 入口
  * @Author: ZhenYi
  */
-pub async fn endpoint(request: HttpRequest, data: web::Data<Vec<HttpServiceNode>>, payload: Payload, session: Session) -> HttpResponse {
+pub async fn endpoint(request: HttpRequest, data: web::Data<Vec<HttpServiceNode>>, payload: Payload, _session: Session) -> HttpResponse {
     let url = request.uri();
     let url = url.to_string();
-    
-    if let Ok(Some(x)) = session.get::<String>("index"){
-        println!("{}", x);
-    }
     let method = request.method();
     let header = request.headers();
     if url.starts_with("/api/"){
@@ -52,10 +46,27 @@ pub async fn endpoint(request: HttpRequest, data: web::Data<Vec<HttpServiceNode>
     }
     let web_path = data.iter().filter(|x| x.endpoint.starts_with("path@")).map(|x|x.clone()).collect::<Vec<HttpServiceNode>>();
     {
-        let urls = url.clone()
-            .split("/")
-            .map(|x|x.to_string())
-            .collect::<Vec<_>>();
+        let urls = if let Some(x) = request.headers().get(REFERER){
+            if let Ok(x) = Url::parse(x.to_str().unwrap()) {
+                let path = x.path().split("/")
+                    .map(|x|x.to_string())
+                    .filter(|x| !x.is_empty())
+                    .collect::<Vec<_>>();
+                path
+            }else {
+                url.clone()
+                    .split("/")
+                    .map(|x|x.to_string())
+                    .filter(|x| !x.is_empty())
+                    .collect::<Vec<_>>()
+            }
+        } else {
+            url.clone()
+                .split("/")
+                .map(|x|x.to_string())
+                .filter(|x| !x.is_empty())
+                .collect::<Vec<_>>()
+        };
         let mut server:Option<HttpServiceNode> = None;
         let mut length = 0;
         for x in web_path.iter(){
