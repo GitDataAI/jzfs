@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::naming::key::NamingKey;
 use chrono::Utc;
 use nacos_sdk::api::naming::ServiceInstance;
@@ -70,7 +71,7 @@ impl AppNaming {
         Ok(())
     }
     pub async fn list_http_server(&self, group: Vec<&str>) -> anyhow::Result<Vec<HttpServiceNode>> {
-        let mut result = Vec::new();
+        let mut result = HashMap::new();
         for idx in group {
             let (res, _) = self.client
                 .get_service_list(
@@ -78,52 +79,55 @@ impl AppNaming {
                     i32::MAX,
                     Some(idx.to_string())
                 ).await?;
-            result.extend_from_slice(&res);
+            result.insert(idx,res);
         }
         let mut ins = Vec::new();
-        for idx in result {
-            match self.client
-                .get_all_instances(
-                    idx,
-                    Some(group.to_string().clone()),
-                    vec![],
-                    false,
-                )
-                .await{
-                Ok(mut x) => {
-                    ins.extend_from_slice(
-                        x
-                            .iter_mut()
-                            .map(|x|{
-                                let name = x.service_name.clone().unwrap_or("@@none".to_string())
-                                    .split("@@")
-                                    .collect::<Vec<_>>()
-                                    .last()
-                                    .map(|x|x.to_string())
-                                    .unwrap_or("none".to_string());
-                                x.service_name = Some(name);
-                                let ips = x.ip.split(",")
-                                    .map(|x|x.to_string())
-                                    .collect::<Vec<_>>()
-                                    .iter()
-                                    .filter(|x|!x.is_empty())
-                                    .filter(|x|!x.contains("127.0.0.1"))
-                                    .map(|x|x.to_string())
-                                    .collect::<Vec<_>>()
-                                    .join(",");
-                                x.ip = ips;
-                                x
-                            })
-                            .map(|x|x.clone())
-                            .collect::<Vec<_>>()
-                            .as_slice()
-                    );
-                },
-                Err(err) => {
-                    error!("{}", err);
-                    continue;
+        for (group, idx) in result {
+            for idx in idx {
+                match self.client
+                    .get_all_instances(
+                        idx.to_string(),
+                        Some(group.to_string().clone()),
+                        vec![],
+                        false,
+                    )
+                    .await{
+                    Ok(mut x) => {
+                        ins.extend_from_slice(
+                            x
+                                .iter_mut()
+                                .map(|x|{
+                                    let name = x.service_name.clone().unwrap_or("@@none".to_string())
+                                        .split("@@")
+                                        .collect::<Vec<_>>()
+                                        .last()
+                                        .map(|x|x.to_string())
+                                        .unwrap_or("none".to_string());
+                                    x.service_name = Some(name);
+                                    let ips = x.ip.split(",")
+                                        .map(|x|x.to_string())
+                                        .collect::<Vec<_>>()
+                                        .iter()
+                                        .filter(|x|!x.is_empty())
+                                        .filter(|x|!x.contains("127.0.0.1"))
+                                        .map(|x|x.to_string())
+                                        .collect::<Vec<_>>()
+                                        .join(",");
+                                    x.ip = ips;
+                                    x
+                                })
+                                .map(|x|x.clone())
+                                .collect::<Vec<_>>()
+                                .as_slice()
+                        );
+                    },
+                    Err(err) => {
+                        error!("{}", err);
+                        continue;
+                    }
                 }
             }
+
         }
         let result = ins
             .iter()
