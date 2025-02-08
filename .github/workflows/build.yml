@@ -47,20 +47,20 @@ jobs:
           else
             echo "::set-output name=version::${{ github.sha }}"
           fi
-      - name: Clean Build Directory
-        run: |
-          rm -rf target/release/*.dSYM
-          rm -rf target/release/deps/
-          rm -rf target/release/.fingerprint/
-          rm -rf target/release/build/
-          rm -rf target/release/examples/
-          rm -rf target/release/*.d
-          rm -rf target/release/*.rlib
+
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: build-artifacts-${{ steps.version.outputs.version }}
-          path: target/release/
+          path: |
+            target/release/
+            !target/release/deps/
+            !target/release/.fingerprint/
+            !target/release/build/
+            !target/release/examples/
+            !target/release/*.d
+            !target/release/*.rlib
+            !target/release/*.dSYM
           if-no-files-found: error
           compression-level: 6
 
