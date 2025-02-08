@@ -54,7 +54,8 @@ pub async fn endpoint(request: HttpRequest, data: web::Data<Vec<HttpServiceNode>
             return response.body(res.body().await.unwrap_or(Bytes::new()));
         }
     }
-    if let web_path = data.iter().filter(|x| x.endpoint.starts_with("path@")).map(|x|x.clone()).collect::<Vec<HttpServiceNode>>(){
+    let web_path = data.iter().filter(|x| x.endpoint.starts_with("path@")).map(|x|x.clone()).collect::<Vec<HttpServiceNode>>();
+    {
         for x in web_path.iter(){
             let endpoint = x.endpoint.split("@").collect::<Vec<&str>>()
                 .last()
