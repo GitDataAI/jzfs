@@ -144,7 +144,7 @@ impl AppNaming {
 }
 
 
-#[derive(Clone,Debug,Deserialize,Serialize,PartialEq,Hash,Eq)]
+#[derive(Clone, Debug, Ord, Deserialize, Serialize, PartialEq, Hash, Eq, PartialOrd)]
 pub struct HttpServiceNode {
     pub endpoint: String,
     pub ips: Vec<String>,

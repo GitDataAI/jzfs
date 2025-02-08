@@ -36,7 +36,8 @@ async fn main() -> std::io::Result<()>{
     tokio::spawn(async move {
         let mut http_server_list = Vec::new();
         loop {
-            if let Ok(list) = naming.clone().list_http_server(vec!["api","web"]).await{
+            if let Ok(mut list) = naming.clone().list_http_server(vec!["api", "web"]).await{
+                list.sort();
                 if http_server_list != list{
                     info!("Receive service configuration updates and start preparing the routing registration process");
                     http_server_list.clear();
