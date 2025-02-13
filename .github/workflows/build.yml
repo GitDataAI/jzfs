@@ -14,38 +14,50 @@ jobs:
     runs-on: [self-hosted]
     outputs:
       version: "${{ steps.version.outputs.version }}"
+    env:
+      CARGO_INCREMENTAL: 0
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get -q update
+          sudo apt-get -q install -y \
+            build-essential \
+            openssl \
+            libssl-dev \
+            pkg-config \
+            cmake
 
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: nightly
-          override: true
+          toolchain: nightly-2025-02-01
+          targets: x86_64-unknown-linux-musl
 
       - name: Cache dependencies
-        uses: Swatinem/rust-cache@v2.2.1
-
-      - name: Base Tool
-        run: |
-          sudo apt update \
-          && sudo apt install build-essential openssl libssl-dev pkg-config -y \
-          && sudo apt install cmake gcc -y
+        uses: Swatinem/rust-cache@v2
 
       - name: Build project
         run: |
-          export ALL_PORT=80
-          cargo build --release --workspace
+          mkdir -p target/release
+          cargo build --release --workspace \
+            --locked \
+            --target-dir ./target
 
       - name: Get version
         id: version
+        shell: bash
         run: |
-          if [[ -n "$GITHUB_REF" && "$GITHUB_REF" == "refs/tags/"* ]]; then
-            echo "::set-output name=version::${GITHUB_REF/refs\/tags\//}"
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            sanitized_version="${GITHUB_REF#refs/tags/}"
+            sanitized_version=$(echo "$sanitized_version" | sed 's/[^a-zA-Z0-9_.-]//g')
+            echo "version=$sanitized_version" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=version::${{ github.sha }}"
+            echo "version=$GITHUB_SHA" >> $GITHUB_OUTPUT
           fi
 
       - name: Upload Build Artifacts
@@ -53,16 +65,11 @@ jobs:
         with:
           name: build-artifacts-${{ steps.version.outputs.version }}
           path: |
-            target/release/
-            !target/release/deps/
-            !target/release/.fingerprint/
-            !target/release/build/
-            !target/release/examples/
-            !target/release/*.d
-            !target/release/*.rlib
-            !target/release/*.dSYM
-          if-no-files-found: error
-          compression-level: 6
+            target/x86_64-unknown-linux-musl/release/
+            !target/**/*.d
+            !target/**/*.rlib
+            !target/**/*.dSYM
+          retention-days: 3
 
   push-images:
     name: Build and Push Docker Images
@@ -71,22 +78,21 @@ jobs:
     strategy:
       matrix:
         image:
-          - { name: migrator, dockerfile: ./docker/migrator.Dockerfile }
-          - { name: gateway, dockerfile: ./docker/gateway.Dockerfile }
-          - { name: gitdata-auth, dockerfile: ./docker/auth.Dockerfile }
-          - { name: gitdata-mq, dockerfile: ./docker/mq.Dockerfile }
-          - { name: gitdata-user, dockerfile: ./docker/user.Dockerfile }
+          - { name: migrator, dockerfile: ./docker/migrator.Dockerfile, context: ./docker }
+          - { name: gateway, dockerfile: ./docker/gateway.Dockerfile, context: . }
+          - { name: gitdata-auth, dockerfile: ./docker/auth.Dockerfile, context: . }
+          - { name: gitdata-mq, dockerfile: ./docker/mq.Dockerfile, context: . }
+          - { name: gitdata-user, dockerfile: ./docker/user.Dockerfile, context: . }
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Docker Login
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          registry: docker.io
 
       - name: Download Build Artifacts
         uses: actions/download-artifact@v4
@@ -94,7 +100,24 @@ jobs:
           name: build-artifacts-${{ needs.build.outputs.version }}
           path: ./target/release/
 
-      - name: Build and Push ${{ matrix.image.name }}
-        run: |
-          docker build -t gitdatateam/${{ matrix.image.name }}:${{ needs.build.outputs.version }} -f ${{ matrix.image.dockerfile }} .
-          docker push gitdatateam/${{ matrix.image.name }}:${{ needs.build.outputs.version }}
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            image=moby/buildkit:master
+          buildkitd-config: |
+            [registry."docker.io"]
+              mirrors = ["mirror.ghcr.io"]
+
+      - name: Build and Push
+        uses: docker/build-push-action@v4
+        with:
+          context: ${{ matrix.image.context }}
+          file: ${{ matrix.image.dockerfile }}
+          tags: |
+            gitdatateam/${{ matrix.image.name }}:${{ needs.build.outputs.version }}
+            gitdatateam/${{ matrix.image.name }}:latest
+          push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64

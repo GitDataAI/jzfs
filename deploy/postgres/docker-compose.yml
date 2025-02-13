@@ -1,0 +1,84 @@
+version: "3"
+
+services:
+  master:
+    container_name: "${COMPOSE_PROJECT_NAME:-citus}_master"
+    image: "citusdata/citus:12.1.1"
+    ports:
+      - "${COORDINATOR_EXTERNAL_PORT:-5432}:5432"
+    labels: ["com.citusdata.role=Master"]
+    environment: &AUTH
+      POSTGRES_USER: "gitdata"
+      POSTGRES_PASSWORD: "1313113aA"
+      PGUSER: "gitdata"
+      PGPASSWORD: "1313113aA"
+      POSTGRES_HOST_AUTH_METHOD: "md5"
+    networks:
+      citus_network:
+        ipv4_address: 172.25.0.10
+
+  worker_1:
+    container_name: "${COMPOSE_PROJECT_NAME:-citus}_worker_1"
+    image: "citusdata/citus:12.1.1"
+    labels: ["com.citusdata.role=Worker"]
+    depends_on:
+      - manager
+    environment: *AUTH
+    command: "/wait-for-manager.sh"
+    volumes:
+      - healthcheck-volume:/healthcheck
+    networks:
+      citus_network:
+        ipv4_address: 172.25.0.11
+
+  worker_2:
+    container_name: "${COMPOSE_PROJECT_NAME:-citus}_worker_2"
+    image: "citusdata/citus:12.1.1"
+    labels: ["com.citusdata.role=Worker"]
+    depends_on:
+      - manager
+    environment: *AUTH
+    command: "/wait-for-manager.sh"
+    volumes:
+      - healthcheck-volume:/healthcheck
+    networks:
+      citus_network:
+        ipv4_address: 172.25.0.12
+
+  worker_3:
+    container_name: "${COMPOSE_PROJECT_NAME:-citus}_worker_3"
+    image: "citusdata/citus:12.1.1"
+    labels: ["com.citusdata.role=Worker"]
+    depends_on:
+      - manager
+    environment: *AUTH
+    command: "/wait-for-manager.sh"
+    volumes:
+      - healthcheck-volume:/healthcheck
+    networks:
+      citus_network:
+        ipv4_address: 172.25.0.13
+
+  manager:
+    container_name: "${COMPOSE_PROJECT_NAME:-citus}_manager"
+    image: "citusdata/membership-manager:0.3.0"
+    volumes:
+      - "${DOCKER_SOCK:-/var/run/docker.sock}:/var/run/docker.sock"
+      - healthcheck-volume:/healthcheck
+    depends_on:
+      - master
+    environment: *AUTH
+    networks:
+      citus_network:
+        ipv4_address: 172.25.0.14
+
+networks:
+  citus_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/24
+          gateway: 172.25.0.1
+
+volumes:
+  healthcheck-volume:

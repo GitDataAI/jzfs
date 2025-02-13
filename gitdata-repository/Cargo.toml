@@ -1,21 +1,46 @@
 [package]
-name = "gitdata-repository"
+name = "lib-fs"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
 homepage.workspace = true
 
+[[bin]]
+path = "src/bin/http.rs"
+name = "gitdata-jzfs-http"
+
+[[bin]]
+path = "src/bin/ssh.rs"
+name = "gitdata-jzfs-ssh"
+
+[[bin]]
+path = "src/bin/api.rs"
+name = "gitdata-jzfs-api"
+
 [dependencies]
-actix-web = { version = "4.9.0",  features = ["default","secure-cookies"] }
+tokio = { version = "1", features = ["full"] }
+git2 = { version = "0.20.0", features = ["ssh","https"] }
+tarpc = { version = "0.35.0", features = ["full"] }
+serde = { version = "1.0.217", features = ["derive"] }
 actix-session = { workspace = true, features = ["redis-session","redis-pool"]}
-
-tokio = { version = "1.0.0", features = ["rt", "rt-multi-thread", "macros"] }
-tracing-subscriber = { version = "0.3.19", features = ["default"] }
-
+hex-wrapper = { version = "1.4.1", features = ["default"] }
+russh = { version = "0.50.2",features = ["flate2"] }
+russh-keys = { version = "0.49.2", features = ["legacy-ed25519-pkcs8-parser"] }
+async-trait = "0.1.85"
+bytes = { version = "1.9.0", features = ["default"] }
+futures-core = { version = "0.3.31", features = ["default"] }
+async-fn-stream = { version = "0.2.2", features = [] }
+flate2 = { version = "1", features = ["default" ] }
+actix-web = "4.9.0"
+futures-util = "0.3.31"
+anyhow = "1.0.95"
+rand = "0.9.0"
+log = "0.4.25"
+serde_json = { version = "1.0.135", features = [] }
+uuid = { version = "1.13.1", features = ["v4"] }
+futures = "0.3"
 lib-config = { workspace = true }
 lib-entity = { workspace = true }
-anyhow = "1.0.95"
-serde = { version = "1.0.217", features = ["derive"] }
-captcha-rs = { version = "0.2.11", features = [] }
-serde_json = { version = "1" ,features = ["alloc"] }
-sha256 = { version = "1.5.0", features = ["async"] }
+lib-mq = { workspace = true }
+lazy_static = "1.5.0"
+tracing-subscriber = "0.3.19"

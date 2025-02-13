@@ -7,10 +7,10 @@ homepage.workspace = true
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }
-actix-session = { workspace = true, features = ["default", "redis-pool","redis-session"] }
-actix-web = { workspace = true, features = ["cookies"] }
+actix-session = { path = "../libs/lib-session", features = ["default", "redis-pool","redis-session"] }
+lib-config = { path = "../libs/lib-config" }
+actix-web = { version = "4.9.0", features = ["cookies"] }
 awc = { version = "3.5.1", features = ["cookies"] }
-lib-config = { workspace = true }
 tracing-subscriber = "0.3.19"
 log = "0.4.25"
 thiserror = "2.0.11"

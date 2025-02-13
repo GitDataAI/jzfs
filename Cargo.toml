@@ -9,35 +9,23 @@ homepage = "https://gitdata.ai"
 
 
 [workspace.dependencies]
-tokio = "1"
-sea-orm = "1"
-serde = "1"
-uuid = "1"
-nacos-sdk = "0.4"
-sysinfo = "0.33.1"
-toml = "0.8.19"
-lazy_static = "1.5.0"
-lib-config = { path = "lib-config" }
-lib-entity = { path = "lib-entity" }
-lib-mq = { path = "lib-mq" }
-lib-fs = { path = "lib-jzfs" }
-actix-session = { path = "lib-session", features = ["redis-session","redis-pool"]}
-actix-web = "4.9.0"
+lib-config = { path = "libs/lib-config" }
+lib-entity = { path = "libs/lib-entity" }
+lib-mq = { path = "libs/lib-mq" }
+actix-session = { path = "libs/lib-session", features = ["redis-session","redis-pool"]}
+
+
 [workspace]
 members = [
     "gateway",
     "gitdata-auth",
-    "gitdata-emails",
     "gitdata-jobs",
     "gitdata-repository",
     "gitdata-user",
-    "lib-config",
-    "lib-entity",
-    "lib-jobs", "lib-jzfs",
-    "lib-mq",
-    "lib-session"
-]
-exclude = [
-    "gitdata-website"
+    "libs/lib-config",
+    "libs/lib-entity",
+    "libs/lib-jobs",
+    "libs/lib-mq",
+    "libs/lib-session"
 ]
 resolver = "2"

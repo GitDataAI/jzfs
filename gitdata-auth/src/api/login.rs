@@ -1,10 +1,12 @@
-use crate::server::passwd::PasswordAuth;
-use crate::server::AppAuthState;
 use actix_session::Session;
-use actix_web::{web, HttpRequest, Responder};
+use actix_web::HttpRequest;
+use actix_web::Responder;
+use actix_web::web;
 use lib_entity::session::USER_SESSION_KEY;
 use lib_entity::write::AppWrite;
 
+use crate::server::AppAuthState;
+use crate::server::passwd::PasswordAuth;
 
 /*
  * 登录
@@ -16,21 +18,19 @@ use lib_entity::write::AppWrite;
  * @Author: ZhenYi
  */
 pub async fn auth_password(
-    state: web::Data<AppAuthState>,
-    param: web::Json<PasswordAuth>,
-    session: Session,
-    request: HttpRequest,
-)
-    -> impl Responder
-{
-    let captcha = match session.get::<String>("captcha"){
+    state : web::Data<AppAuthState>,
+    param : web::Json<PasswordAuth>,
+    session : Session,
+    request : HttpRequest,
+) -> impl Responder {
+    let captcha = match session.get::<String>("captcha") {
         Ok(captcha) => match captcha {
             Some(captcha) => captcha,
             None => return AppWrite::error("captcha error".to_string()),
         },
         Err(_) => return AppWrite::error("captcha error".to_string()),
     };
-    let fingerprint = match session.get::<String>("fingerprint"){
+    let fingerprint = match session.get::<String>("fingerprint") {
         Ok(fingerprint) => match fingerprint {
             Some(fingerprint) => fingerprint,
             None => return AppWrite::error("fingerprint error".to_string()),
@@ -55,15 +55,11 @@ pub async fn auth_password(
         }
     }
     let param = param.into_inner();
-    match state
-        .auth_password(param)
-        .await{
+    match state.auth_password(param).await {
         Ok(model) => {
             session.insert(USER_SESSION_KEY.to_string(), &model).ok();
             AppWrite::ok(model)
-        },
+        }
         Err(err) => AppWrite::error(err.to_string()),
     }
 }
-
-
