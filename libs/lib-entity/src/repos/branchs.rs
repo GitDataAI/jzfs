@@ -6,11 +6,11 @@ use uuid::Uuid;
 #[sea_orm(table_name = "branchs")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub uid: Uuid,
-    pub repo_id: Uuid,
-    pub name: String,
-    pub head: Option<String>,
-    pub protect: bool,
+    pub uid : Uuid,
+    pub repo_id : Uuid,
+    pub name : String,
+    pub head : Option<String>,
+    pub protect : bool,
 }
 impl ActiveModelBehavior for ActiveModel {}
 #[derive(Copy, Clone, Debug, EnumIter)]
@@ -76,10 +76,7 @@ impl BranchMigration {
                     .string()
                     .not_null(),
             )
-            .col(
-                sea_orm_migration::prelude::ColumnDef::new(BranchMigration::Head)
-                    .string(),
-            )
+            .col(sea_orm_migration::prelude::ColumnDef::new(BranchMigration::Head).string())
             .col(
                 sea_orm_migration::prelude::ColumnDef::new(BranchMigration::Protect)
                     .boolean()

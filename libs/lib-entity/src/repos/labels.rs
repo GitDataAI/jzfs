@@ -5,14 +5,14 @@ use uuid::Uuid;
 #[sea_orm(table_name = "labels")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub uid: Uuid,
-    pub repo_id: Uuid,
-    pub url: String,
-    pub name: String,
-    pub color: String,
+    pub uid : Uuid,
+    pub repo_id : Uuid,
+    pub url : String,
+    pub name : String,
+    pub color : String,
     #[sea_orm(column_name = "description")]
-    pub description: Option<String>,
-    pub created: i64,
+    pub description : Option<String>,
+    pub created : i64,
 }
 impl ActiveModelBehavior for ActiveModel {}
 #[derive(Copy, Clone, Debug, EnumIter)]
@@ -86,16 +86,12 @@ impl LabelsMigration {
                     .string()
                     .not_null(),
             )
-            .col(
-                sea_orm_migration::prelude::ColumnDef::new(LabelsMigration::Description)
-                    .string(),
-            )
+            .col(sea_orm_migration::prelude::ColumnDef::new(LabelsMigration::Description).string())
             .col(
                 sea_orm_migration::prelude::ColumnDef::new(LabelsMigration::Created)
                     .big_integer()
                     .not_null(),
             )
-            
             .take()
     }
     pub fn drop() -> sea_orm_migration::prelude::TableDropStatement {
