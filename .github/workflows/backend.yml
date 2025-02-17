@@ -1,4 +1,4 @@
-name: Build and Push Backend with GitHub Actions
+name: Build and Push Backend
 
 on:
   workflow_call:
@@ -49,11 +49,23 @@ jobs:
           apt update \
           && apt install -y curl gcc musl-dev openssl libssl-dev pkg-config cmake
 
-      - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.7
-        env:
-          SCCACHE_GHA_ENABLED: "true"
-          RUSTC_WRAPPER: "sccache"
+      - name: Cache Cargo registry and git checkouts
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Cache Cargo target directory
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ${{ runner.os }}-target-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-target-
 
       - name: Install latest nightly
         uses: actions-rs/toolchain@v1
@@ -61,10 +73,11 @@ jobs:
           toolchain: nightly
           override: true
 
-      - run: cargo build --release
+      - name: Build project
+        run: cargo build --release
 
-      - run: ls -lha
-
+      - name: List files in workspace
+        run: ls -lha
 
       - name: Docker Login
         uses: docker/login-action@v3
