@@ -41,6 +41,8 @@ jobs:
             echo "commit version"
             echo "::set-output name=version::${{ github.sha }}"
           fi
+          cp vite-project/package.json .
+          cp vite-project/pnpm-lock.json .
 
   
 
