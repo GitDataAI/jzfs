@@ -15,10 +15,11 @@ WORKDIR /app
 
 COPY .cargo Cargo.toml Cargo.lock ./
 RUN touch lib.rs \
-    && touch main.rs
+    && touch main.rs \
+    && echo "fn main() {}" > main.rs
 RUN cargo build --release
 RUN rm -rf lib.rs main.rs
-COPY app bin blob model lib.rs main.rs router.rs ./
+COPY . .
 
 RUN cargo build --release
 
