@@ -48,7 +48,7 @@ pub async fn refs(
             .body("Repo Not Found"),
     };
 
-    let path = PathBuf::from(format!("{}/{}/{}/.git", GIT_ROOT, repo.node_uid, repo.uid));
+    let path = PathBuf::from(format!("{}/{}/{}/", GIT_ROOT, repo.node_uid, repo.uid));
 
     if !path.exists() {
         return Response::builder()

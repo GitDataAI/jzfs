@@ -105,14 +105,14 @@ mod tests {
     use crate::blob::GitBlob;
     #[test]
     fn test_branch() -> io::Result<()> {
-        let blob = GitBlob::new("/home/zhenyi/文档/gitdata".into()).unwrap();
+        let blob = GitBlob::new("/home/zhenyi/文档/gitdata/.git".into()).unwrap();
         let branches = blob.blob()?;
         dbg!(branches);
         Ok(())
     }
     #[test]
     fn test_blob() -> io::Result<()> {
-        let blob = GitBlob::new("/home/zhenyi/文档/gitdata".into()).unwrap();
+        let blob = GitBlob::new("/home/zhenyi/文档/gitdata/.git".into()).unwrap();
         let branches = blob.branch()?;
         dbg!(branches);
         Ok(())

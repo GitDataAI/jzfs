@@ -74,7 +74,7 @@ pub async fn pack(
 
     cmd.arg("--stateless-rpc");
     cmd.arg(".");
-    let path = format!("{}/{}/{}/.git", GIT_ROOT, repo.node_uid, repo.uid);
+    let path = format!("{}/{}/{}/", GIT_ROOT, repo.node_uid, repo.uid);
     cmd.current_dir(path);
     if let Some(version) = version {
         cmd.env("GIT_PROTOCOL", version);
