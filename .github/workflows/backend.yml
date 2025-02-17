@@ -1,4 +1,4 @@
-name: Build and Push with GitHub Actions Artifacts
+name: Build and Push Backend with GitHub Actions
 
 on:
   workflow_call:
@@ -10,7 +10,7 @@ on:
 
 jobs:
   build:
-    name: Build
+    name: Build Backend
     runs-on: [self-hosted]
     outputs:
       version: "${{ steps.version.outputs.version }}"
@@ -20,6 +20,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Print Event
         run: |
           echo "Event Name: ${{ github.event_name }}"
@@ -41,9 +42,34 @@ jobs:
           else
             echo "commit version"
             echo "::set-output name=version::${{ github.sha }}"
-            fi
+          fi
 
+      - name: Set System Dep
+        run: |
+          apt update \
+          && apt install -y curl gcc musl-dev openssl libssl-dev pkg-config cmake
 
+      - name: Install Rust
+        id: rust
+        run: |
+          curl -o /usr/local/bin/rustup-init --proto '=https' --tlsv1.2 -sSf https://rsproxy.cn/rustup-init.sh \
+          && chmod +x /usr/local/bin/rustup-init \
+          && /usr/local/bin/rustup-init --default-toolchain nightly -y \
+          && source $HOME/.cargo/env
+        env:
+          CARGO_HOME: ${{ github.workspace }}/cargo
+
+      - name: Cache Rust dependencies
+        id: cache-rust
+        uses: actions/cache@v3
+        with:
+          path: ${{ github.workspace }}/cargo
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Build Rust project
+        run: |
+          cargo build --release
 
       - name: Docker Login
         uses: docker/login-action@v3
@@ -51,10 +77,8 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
 
       - name: Build and Push GitDataOs
         uses: docker/build-push-action@v4
@@ -67,16 +91,3 @@ jobs:
           file: ./Dockerfile
           cache-to: type=gha,mode=max
           platforms: linux/amd64
-
-      - name: Build and Push GitDataWeb
-        uses: docker/build-push-action@v4
-        with:
-          tags: |
-            gitdatateam/gitdataweb:${{ steps.version.outputs.version }}
-            gitdatateam/gitdataweb:latest
-          push: true
-          file: ./vite-project/Dockerfile
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          platforms: linux/amd64
-          context: ./vite-project
