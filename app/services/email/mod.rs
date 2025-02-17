@@ -1,6 +1,5 @@
 use std::io;
 use std::sync::Arc;
-use async_static::async_static;
 use lettre::{AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor};
 use lettre::message::header::ContentType;
 use lettre::transport::smtp::authentication::Credentials;
@@ -54,7 +53,7 @@ impl EmailEvent {
                     .to(x.email.parse().unwrap())
                     .subject("GitData Code")
                     .header(ContentType::TEXT_HTML)
-                    .body(CAPTCHA.replace("123456", &*x.code))
+                    .body(CAPTCHA.replace("123456", &x.code))
                     .unwrap();
                 match self.tx.send(email).await {
                     Ok(_) => info!("Email sent {} successfully!", x.email),
