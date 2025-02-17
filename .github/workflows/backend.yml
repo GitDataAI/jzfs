@@ -61,11 +61,10 @@ jobs:
           toolchain: nightly
           override: true
 
-      - run: cargo build --release
+      - run: | 
+            cargo build --release \
+          && ls -lh
 
-      - name: ls dir
-        run: |
-          ls -lh
 
       - name: Docker Login
         uses: docker/login-action@v3
@@ -87,3 +86,4 @@ jobs:
           file: ./Dockerfile
           cache-to: type=gha,mode=max
           platforms: linux/amd64
+          context: ${{ github.workspace }}

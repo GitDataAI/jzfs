@@ -1,9 +1,6 @@
 .idea
 
-# Added by cargo
-
-/target
-# Logs
+target
 logs
 *.log
 npm-debug.log*
@@ -16,17 +13,6 @@ node_modules
 **/node_modules
 **/dist
 **/.idea
-dist-ssr
-*.local
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
 charts/templates/configMap.yaml
 data
