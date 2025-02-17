@@ -12,16 +12,7 @@ RUN /usr/local/bin/rustup-init --default-toolchain nightly -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 WORKDIR /app
-
-COPY .cargo Cargo.toml Cargo.lock ./
-RUN touch lib.rs \
-    && touch main.rs \
-    && echo "fn main() {}" > main.rs
-RUN cargo build --release
-RUN rm -rf lib.rs main.rs
-RUN mv target /tmp
 COPY . .
-RUN mv /tmp/target .
 RUN cargo build --release
 
 FROM ubuntu:22.04
