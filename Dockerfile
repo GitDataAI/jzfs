@@ -19,8 +19,9 @@ RUN touch lib.rs \
     && echo "fn main() {}" > main.rs
 RUN cargo build --release
 RUN rm -rf lib.rs main.rs
+RUN mv target /tmp
 COPY . .
-
+RUN mv /tmp/target .
 RUN cargo build --release
 
 FROM ubuntu:22.04
