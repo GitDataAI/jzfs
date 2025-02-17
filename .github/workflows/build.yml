@@ -20,6 +20,28 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      - name: Print Event
+        run: |
+          echo "Event Name: ${{ github.event_name }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "SHA: ${{ github.sha }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "Action: ${{ github.action }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "Workflow Run ID: ${{ github.run_id }}"
+          echo "Head Repository: ${{ github.head_repository }}"
+          echo "Base Repository: ${{ github.base_repository }}"
+
+      - name: Get version
+        id: version
+        run: |
+          if [[ -n "$GITHUB_REF" && "$GITHUB_REF" == "refs/tags/"* ]]; then
+            echo "tag version"
+            echo "::set-output name=version::${GITHUB_REF/refs\/tags\//}"
+          else
+            echo "commit version"
+            echo "::set-output name=version::${{ github.sha }}"
+            fi
 
       - name: Install system dependencies
         if: runner.os == 'Linux'
@@ -48,17 +70,8 @@ jobs:
             --locked \
             --target-dir ./target
 
-      - name: Get version
-        id: version
-        shell: bash
-        run: |
-          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
-            sanitized_version="${GITHUB_REF#refs/tags/}"
-            sanitized_version=$(echo "$sanitized_version" | sed 's/[^a-zA-Z0-9_.-]//g')
-            echo "version=$sanitized_version" >> $GITHUB_OUTPUT
-          else
-            echo "version=$GITHUB_SHA" >> $GITHUB_OUTPUT
-          fi
+
+
 
       - name: Docker Login
         uses: docker/login-action@v3
@@ -74,7 +87,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           tags: |
-            gitdatateam/gitdataos:${{ needs.build.outputs.version }}
+            gitdatateam/gitdataos:${{ steps.version.outputs.version }}
             gitdatateam/gitdataos:latest
           push: true
           cache-from: type=gha
@@ -104,7 +117,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           tags: |
-            gitdatateam/gitdataweb:${{ needs.build.outputs.version }}
+            gitdatateam/gitdataweb:${{ steps.version.outputs.version }}
             gitdatateam/gitdataweb:latest
           push: true
           file: ./vite-project/Dockerfile
