@@ -37,7 +37,11 @@ spec:
           ports:
             - name: http
               containerPort: {{ .Values.service.targetPort }}
+              hostPort: 80
               protocol: TCP
+          env:
+            - name: PORT
+              value: "80"
           envFrom:
             - configMapRef:
                 name: {{ .Values.config }}

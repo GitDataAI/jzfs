@@ -7,14 +7,19 @@ use redis::aio::ConnectionManager;
 use redis::Client;
 use std::env;
 use std::time::Duration;
+use lazy_static::lazy_static;
 use tracing::info;
 use gitdata::app::services::AppState;
 use gitdata::router::router;
 
+lazy_static!{
+    pub static ref PORT:u16 = std::env::var("PORT").expect("PORT must setting").parse().expect("PORT must be number");
+}
+
 #[tokio::main]
 async fn main() -> Result<(), std::io::Error> {
     tracing_subscriber::fmt().init();
-    let listener = TcpListener::bind("0.0.0.0:80");
+    let listener = TcpListener::bind(format!("0.0.0.0:{}", *PORT));
     let state = AppState::init_env().await?;
     let app = router()
         .at("/", get(index))
