@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-single
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-single
+  template:
+    metadata:
+      labels:
+        app: redis-single
+    spec:
+      initContainers:
+        - name: init-0
+          image: busybox
+          imagePullPolicy: IfNotPresent
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          command: [ "sysctl", "-w", "net.core.somaxconn=511" ]
+          securityContext:
+            privileged: true
+        - name: init-1
+          image: busybox
+          imagePullPolicy: IfNotPresent
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          command: [ "sh", "-c", "echo never > /sys/kernel/mm/transparent_hugepage/enabled" ]
+          securityContext:
+            privileged: true
+      containers:
+        - name: redis-single
+          image: redis:6.0.8
+          imagePullPolicy: IfNotPresent
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+            - name: redis-config
+              mountPath: /usr/local/etc/redis/redis.conf
+              subPath: redis.conf
+          command: [ "redis-server" ,"/usr/local/etc/redis/redis.conf" ]
+          env:
+            - name: TZ
+              value: "Asia/Shanghai"
+      volumes:
+        - name: timezone
+          hostPath:
+            path: /usr/share/zoneinfo/Asia/Shanghai
+        - name: redis-data
+          hostPath:
+            path: /var/lib/docker/redis/single
+            type: DirectoryOrCreate
+        - name: redis-config
+          configMap:
+            name: gitdataos-configmap
+            items:
+              - key: redis.conf
+                path: redis.conf
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-redis-single
+  labels:
+    app: redis-single
+spec:
+  selector:
+    app: redis-single
+  ports:
+    - name: redis-single
+      port: 6379
+      targetPort: 6379
+      nodePort: 30012
+  type: NodePort
+

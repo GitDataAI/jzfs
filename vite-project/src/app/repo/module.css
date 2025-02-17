@@ -1,0 +1,123 @@
+.repo {
+    position: absolute;
+    display: grid;
+    gap: 20px;
+    @media screen and (max-width: 768px){
+        width: 100%;
+        display: none;
+    }
+    @media screen and (max-width: 1024px){
+        width: 100%;
+    }
+    @media screen and (min-width: 1024px){
+        width: 80%;
+        left: 10%;
+    }
+    @media screen and (min-width: 1440px){
+        width: 70%;
+        left: 15%;
+    }
+    @media screen and (min-width: 1920px){
+        width: 60%;
+        left: 20%;
+    }
+}
+@keyframes fadeinout {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+.repo-bodt {
+    animation: fadeinout 1s linear forwards;
+}
+
+.repo-header {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 20px;
+}
+.repo-header-tab {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    background-color: #fff;
+}
+.repo-header-action {
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    justify-content: end;
+    gap: 10px;
+    button {
+        border: 1px #d0d0d0 solid;
+        height: 2rem;
+        color: #6c6c6c;
+    }
+    .bg-default-100 {
+        background-color: #ffffff;
+    }
+}
+.repo-file {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 20px;
+}
+.repo-header-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    border-bottom: 1px #cfcfcf solid;
+    .bordered {
+        font-size: 1rem;
+        padding-left: 20px;
+        padding-bottom: 5px;
+    }
+}
+.repo-file-body {
+    width: 100%;
+    height: auto;
+    .repo-file-body-header {
+        width: 100%;
+        display: flex;
+        border: 1px red solid;
+    }
+    .repo-file-body-main {
+        width: 100%;
+    }
+    .file-tree {
+        width: 100%;
+    }
+    .folder-header {
+        cursor: pointer;
+        padding: 4px 0;
+        transition: background-color 0.2s;
+    }
+
+    .folder-header:hover {
+        background-color: #f0f0f0;
+    }
+
+    .file-item {
+        padding: 4px 0;
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 8px;
+        cursor: pointer;
+        transition: background-color 2s;
+        .file-item-commit {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: space-between;
+        }
+        &:hover {
+            background-color: #f0f0f0;
+        }
+    }
+
+    .folder-icon, .file-item span {
+        margin-right: 8px;
+    }
+}

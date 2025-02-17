@@ -29,9 +29,16 @@ jobs:
               run: |
                 curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
-            - name: Deploy
+            - name: DeployOs
               uses: WyriHaximus/github-action-helm3@v3
               with:
-                  exec: /usr/local/bin/helm upgrade gateway --install ./deploy/gitdata --namespace gitdataai --set-string nacos=${{ secrets.NACOS }}  --set-string tag=${{ steps.version.outputs.version }}
+                  exec: /usr/local/bin/helm upgrade gitdataos --install ./charts --namespace gitdata
+                  kubeconfig: ${{ secrets.KUBECONTENT }}
+                  overrule_existing_kubeconfig: 'true'
+
+            - name: DeployWeb
+              uses: WyriHaximus/github-action-helm3@v3
+              with:
+                  exec: /usr/local/bin/helm upgrade gitdataweb --install ./vite-project/charts --namespace gitdata
                   kubeconfig: ${{ secrets.KUBECONTENT }}
                   overrule_existing_kubeconfig: 'true'

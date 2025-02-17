@@ -1,31 +1,68 @@
-[workspace.package]
-version = "0.1.0"
+[package]
+name = "GitDataOS"
 edition = "2024"
-authors = [
-    "ZhenYi <434836402@qq.com>"
-]
-homepage = "https://gitdata.ai"
+version = "0.1.0"
+
+[[bin]]
+path = "main.rs"
+name = "GitDataOS"
+[[bin]]
+path = "bin/api.rs"
+name = "ts"
+
+[lib]
+path = "lib.rs"
+name = "gitdata"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+tracing-subscriber = { version = "0.3" }
+tracing = { version = "0.1" }
+poem = { version = "3", features = [
+    "multipart",
+    "session",
+    "requestid",
+    "redis",
+    "redis-session",
+    "serde_yaml",
+    "static-files",
+    "httpdate",
+    "cookie",
+    "acme",
+    "async-compression",
+    "base64",
+]}
 
 
+sea-orm = { version = "1", features = ["sqlx-all","runtime-tokio","chrono","uuid"] }
 
-[workspace.dependencies]
-lib-config = { path = "libs/lib-config" }
-lib-entity = { path = "libs/lib-entity" }
-lib-mq = { path = "libs/lib-mq" }
-actix-session = { path = "libs/lib-session", features = ["redis-session","redis-pool"]}
-
-
-[workspace]
-members = [
-    "gateway",
-    "gitdata-auth",
-    "gitdata-jobs",
-    "gitdata-repository",
-    "gitdata-user",
-    "libs/lib-config",
-    "libs/lib-entity",
-    "libs/lib-jobs",
-    "libs/lib-mq",
-    "libs/lib-session"
-]
-resolver = "2"
+captcha-rs = { version = "0.2.11", features = [] }
+uuid = { version = "1",features = ["v4","serde"]}
+git2 = { version = "0.20.0",features = ["zlib-ng-compat"] }
+flate2 = { version = "1.0.35", features = ["default"] }
+serde = { version = "1", features = ["derive"] }
+chrono = { version = "0.4.39", features = ["default","clock"]}
+serde_json = "1.0.138"
+bytes = { version = "1.10.0", features = [] }
+redis = { version = "0.27", features = [
+    "aio",
+    "tokio-comp",
+    "connection-manager",
+] }
+async-stream = { version = "0.3.6", features = []}
+futures = { version = "0.3.31"}
+lettre = {version = "0.11.10",features = [
+    "smtp-transport",
+    "serde",
+    "rustls-tls",
+    "rustls-native-certs",
+    "hostname",
+    "tokio1",
+    "tokio1-rustls-tls",
+    "tokio1-native-tls"
+]}
+rand = "0.7.3"
+lazy_static = "1.5.0"
+async_static = "0.1.3"
+once_cell = { version = "1.20.3", features = [] }
+sha256 = { version = "1.5.0", features = ["tokio"] }

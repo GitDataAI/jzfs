@@ -1,7 +1,10 @@
-[alias]
-lint = "clippy --workspace --tests --examples --bins -- -Dclippy::todo"
-ci-min = "hack check --workspace --no-default-features"
-ci-check-min-examples = "hack check --workspace --no-default-features --examples"
-ci-check = "check --workspace --tests --examples --bins"
-ci-test = "test --workspace --lib --tests --all-features --examples --bins --no-fail-fast"
-ci-doctest = "test --workspace --doc --all-features --no-fail-fast"
+[source.crates-io]
+replace-with = 'rsproxy-sparse'
+[source.rsproxy]
+registry = "https://rsproxy.cn/crates.io-index"
+[source.rsproxy-sparse]
+registry = "sparse+https://rsproxy.cn/index/"
+[registries.rsproxy]
+index = "https://rsproxy.cn/crates.io-index"
+[net]
+git-fetch-with-cli = true

@@ -16,14 +16,6 @@ jobs:
       version: "${{ steps.version.outputs.version }}"
     env:
       CARGO_INCREMENTAL: 0
-    strategy:
-      matrix:
-        image:
-          - { name: migrator, dockerfile: ./docker/migrator.Dockerfile, context: ./docker }
-          - { name: gateway, dockerfile: ./docker/gateway.Dockerfile, context: . }
-          - { name: gitdata-auth, dockerfile: ./docker/auth.Dockerfile, context: . }
-          - { name: gitdata-mq, dockerfile: ./docker/mq.Dockerfile, context: . }
-          - { name: gitdata-user, dockerfile: ./docker/user.Dockerfile, context: . }
 
     steps:
       - name: Checkout code
@@ -74,24 +66,45 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver-opts: |
-            image=moby/buildkit:master
-          buildkitd-config: |
-            [registry."docker.io"]
-              mirrors = ["mirror.ghcr.io"]
 
-      - name: Build and Push
+      - name: Build and Push GitDataOs
         uses: docker/build-push-action@v4
         with:
-          context: ${{ matrix.image.context }}
-          file: ${{ matrix.image.dockerfile }}
           tags: |
-            gitdatateam/${{ matrix.image.name }}:${{ needs.build.outputs.version }}
-            gitdatateam/${{ matrix.image.name }}:latest
+            gitdatateam/gitdataos:${{ needs.build.outputs.version }}
+            gitdatateam/gitdataos:latest
           push: true
+          cache-from: type=gha
+          file: ./Dockerfile
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          version: 10
+          run_install: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Build and Push GitDataWeb
+        run: |
+          cd vite-project
+          pnpm install
+          pnpm run build
+
+      - name: Build and Push GitDataOs
+        uses: docker/build-push-action@v4
+        with:
+          tags: |
+            gitdatateam/gitdataweb:${{ needs.build.outputs.version }}
+            gitdatateam/gitdataweb:latest
+          push: true
+          file: ./vite-project/Dockerfile
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64

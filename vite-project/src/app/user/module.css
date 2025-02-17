@@ -1,0 +1,192 @@
+.user {
+    position: absolute;
+    display: grid;
+    gap: 20px;
+    @media screen and (max-width: 768px){
+        width: 100%;
+        display: none;
+    }
+    @media screen and (max-width: 1024px){
+        width: 100%;
+    }
+    @media screen and (min-width: 1024px){
+        width: 80%;
+        left: 10%;
+    }
+    @media screen and (min-width: 1440px){
+        width: 70%;
+        left: 15%;
+    }
+    @media screen and (min-width: 1920px){
+        width: 60%;
+        left: 20%;
+    }
+}
+
+.user-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    background-color: #fff;
+}
+.user-header-tabs {
+    margin-top: 2rem;
+}
+
+@keyframes fadeinout {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+.user-bodt {
+    animation: fadeinout 1s linear forwards;
+}
+
+.user-body {
+    position: absolute;
+    width: 100%;
+    top: calc(3rem + 2rem + 2rem);
+    height: auto;
+}
+
+
+.user-active {
+    display: flex;
+    justify-content: space-between;
+}
+.user-active-profile {
+    flex: 0 0 200px;
+    padding: 10px;
+    .avatar {
+        left: 50%;
+        transform: translateX(-50%);
+    }
+    .user-active-profile-info {
+        padding: 10px;
+    }
+    .user-active-profile-action {
+        padding: 10px;
+        width: 100%;
+    }
+   .user-active-profile-infos {
+    li {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #ccc;
+        margin-bottom: 5px;
+        padding: 5px 0;
+
+        span, a {
+            display: inline-flex;
+            align-items: center;
+        }
+
+        a {
+            margin-left: 10px;
+        }
+    }
+}
+
+
+
+}
+.user-active-active {
+    flex: 1;
+    padding: 10px;
+}
+.user-repo-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin-top: 10px;
+    margin-left: 10px;
+}
+
+.user-repo-item {
+    display: flex;
+    @media screen and (max-width: 768px){
+        width: 100%;
+        margin-left: 0;
+    }
+    @media screen and (max-width: 1024px){
+        width: 100%;
+        margin-left: 0;
+    }
+    @media screen and (min-width: 1024px){
+        width: 100%;
+        margin-left: 0;
+    }
+    @media screen and (min-width: 1440px){
+        width: 45%;
+        margin-left: 3%;
+    }
+    @media screen and (min-width: 1920px){
+        width: 47%;
+        margin-left: 3%;
+    }
+    padding: 5px;
+    margin-top: 10px;
+    .justify-center {
+        justify-content: left;
+    }
+    .footer {
+        span {
+            display: inline-block;
+            margin-left: 10px;
+        }
+    }
+    .user-repo-main-infos {
+        display: flex;
+        align-items: center;
+        margin-top: 10px;
+        color: #818181;
+        font-weight: 300;
+        font-size: 12px;
+    }
+}
+
+.user-repo {
+    display: flex;
+    justify-content: space-between;
+}
+
+.user-repo-main {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    h1 {
+        margin-left: 1rem;
+        font-size: 2rem;
+    }
+    .user-repo-main-header {
+        margin-left: 10px;
+        display: grid;
+        @media screen and (min-width: 1024px){
+            grid-template-columns: 4fr 1fr 1fr 1fr;
+        }
+        @media screen and (max-width: 1024px){
+            grid-template-columns: 1fr;
+        }
+        .user-repo-sort {
+            height: 2.5rem;
+            width: 80%;
+            margin-left: 10%;
+            @media screen and (max-width: 1024px){
+                display: none;
+            }
+            .mainWrapper {
+                height: 2.5rem;
+            }
+        }
+       .btn {
+           background: #11a57b;
+           color: white;
+           border: 1px solid #11a57b;
+       }
+        .user-repo-search {
+            height: 2.5rem;
+        }
+    }
+}
