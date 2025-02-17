@@ -1,6 +1,6 @@
 FROM ubuntu:22.04
 WORKDIR /tmps
-COPY . .
+COPY target .
 RUN ls .
 WORKDIR /app
 RUN cp /tmps/target/release/GitDataOS .
