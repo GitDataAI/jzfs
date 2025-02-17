@@ -42,22 +42,21 @@ jobs:
             echo "::set-output name=version::${{ github.sha }}"
           fi
 
-      - name: Install Node.js via NVM
-        id: nvm
-        run: |
-          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash \
-          && . "$HOME/.nvm/nvm.sh" \
-          && nvm install 22 \
-          && nvm use 22 \
-          && npm install -g pnpm
 
-      - name: Cache Node.js dependencies
-        id: cache-node
-        uses: actions/cache@v3
+      - name: Install Node.js
+        uses: actions/setup-node@v4
         with:
-          path: ~/.pnpm-store
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: ${{ runner.os }}-pnpm-
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
       - name: Install project dependencies
         run: |
