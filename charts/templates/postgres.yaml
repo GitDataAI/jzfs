@@ -58,6 +58,7 @@ spec:
           envFrom:
             - configMapRef:
                 name: gitdataos-configmap
+                optional: true
           volumeMounts:
             - mountPath: /var/lib/postgresql/data
               name: postgredb
