@@ -43,34 +43,6 @@ jobs:
             echo "::set-output name=version::${{ github.sha }}"
             fi
 
-      - name: Install system dependencies
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get -q update
-          sudo apt-get -q install -y \
-            build-essential \
-            openssl \
-            libssl-dev \
-            pkg-config \
-            cmake
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: nightly-2025-02-01
-          targets: x86_64-unknown-linux-musl
-
-      - name: Cache dependencies
-        uses: Swatinem/rust-cache@v2
-
-      - name: Build project
-        run: |
-          mkdir -p target/release
-          cargo build --release --workspace \
-            --locked \
-            --target-dir ./target
-
-
 
 
       - name: Docker Login
@@ -78,6 +50,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -94,18 +67,6 @@ jobs:
           file: ./Dockerfile
           cache-to: type=gha,mode=max
           platforms: linux/amd64
-
-      - uses: pnpm/action-setup@v4
-        name: Install pnpm
-        with:
-          version: 10
-          run_install: false
-
-      - name: Install Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'pnpm'
 
       - name: Build and Push GitDataWeb
         run: |
