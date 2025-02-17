@@ -68,18 +68,10 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
       - name: Build and Push GitDataWeb
-        uses: docker/build-push-action@v4
-        with:
-          tags: |
-            gitdatateam/gitdataweb:${{ steps.version.outputs.version }}
-            gitdatateam/gitdataweb:latest
-          push: true
-          cache-from: type=gha
-          file: ./vite-project/Dockerfile
-          cache-to: type=gha,mode=max
-          platforms: linux/amd64
-          context: ./vite-project
+        run: |
+          cd vite-project 
+          docker build -t gitdatateam/gitdataweb:${{ steps.version.outputs.version }} .
+          docker push gitdatateam/gitdataweb:${{ steps.version.outputs.version }}
+          docker tag gitdatateam/gitdataweb:${{ steps.version.outputs.version }} gitdatateam/gitdataweb:latest
+          docker push gitdatateam/gitdataweb:latest
