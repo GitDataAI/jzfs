@@ -61,8 +61,7 @@ jobs:
           toolchain: nightly
           override: true
 
-      - run: | 
-            cargo build --release 
+      - run: cargo build --release
 
       - run: ls -lha
 
