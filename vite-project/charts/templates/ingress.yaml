@@ -24,7 +24,7 @@ metadata:
     heritage: Helm
     release:  gitdataweb
 spec:
-  ingressClassName: ingress-nginx
+  ingressClassName: nginx
   rules:
     - host: jzhub.io
       http:
@@ -63,7 +63,7 @@ metadata:
     heritage: Helm
     release:  gitdataweb-api
 spec:
-  ingressClassName: ingress-nginx
+  ingressClassName: nginx
   rules:
     - host: jzhub.io
       http:
