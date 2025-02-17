@@ -68,7 +68,7 @@ jobs:
           cache-to: type=gha,mode=max
           platforms: linux/amd64
 
-      - name: Build and Push GitDataOs
+      - name: Build and Push GitDataWeb
         uses: docker/build-push-action@v4
         with:
           tags: |
