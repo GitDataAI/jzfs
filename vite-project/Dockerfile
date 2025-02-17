@@ -1,11 +1,13 @@
 FROM guergeiro/pnpm AS builder
 WORKDIR /app
-RUN mkdir /app/node_modules
-COPY . .
-RUN rm -rf /app/node_modules
+
 RUN pnpm config set registry https://registry.npmmirror.com
 RUN pnpm add -g pnpm
 
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install
+
+COPY . .
 RUN pnpm install
 
 RUN echo "Current working directory: $(pwd)"
