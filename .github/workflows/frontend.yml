@@ -42,20 +42,23 @@ jobs:
             echo "::set-output name=version::${{ github.sha }}"
           fi
 
-
-      - name: Install Node.js
+      - name: Install Node.js and pnpm
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'pnpm'
 
-      - uses: pnpm/action-setup@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
           version: 10
+
+      - name: Install project dependencies and build
         run: |
           cd vite-project \
           && pnpm install \
           && pnpm run build \
+          && cd ..
 
       - name: Docker Login
         uses: docker/login-action@v3
