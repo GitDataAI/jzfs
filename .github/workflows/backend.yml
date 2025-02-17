@@ -49,27 +49,17 @@ jobs:
           apt update \
           && apt install -y curl gcc musl-dev openssl libssl-dev pkg-config cmake
 
-      - name: Install Rust
-        id: rust
-        run: |
-          curl -o /usr/local/bin/rustup-init --proto '=https' --tlsv1.2 -sSf https://rsproxy.cn/rustup-init.sh \
-          && chmod +x /usr/local/bin/rustup-init \
-          && /usr/local/bin/rustup-init --default-toolchain nightly -y \
-          && source $HOME/.cargo/env
-        env:
-          CARGO_HOME: ${{ github.workspace }}/cargo
-
-      - name: Cache Rust dependencies
-        id: cache-rust
-        uses: actions/cache@v3
+      - uses: actions-rs/toolchain@v1
         with:
-          path: ${{ github.workspace }}/cargo
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
+          toolchain: nightly
 
-      - name: Build Rust project
+      - uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release
+      - name: Build and Push GitDataOs
         run: |
-          cargo build --release
+          ls -lh
 
       - name: Docker Login
         uses: docker/login-action@v3
