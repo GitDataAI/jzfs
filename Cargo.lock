@@ -7,7 +7,6 @@ name = "GitDataOS"
 version = "0.1.0"
 dependencies = [
  "async-stream",
- "async_static",
  "bytes",
  "captcha-rs",
  "chrono",
@@ -16,7 +15,6 @@ dependencies = [
  "git2",
  "lazy_static",
  "lettre",
- "once_cell",
  "poem",
  "rand 0.7.3",
  "redis",
@@ -24,6 +22,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha256",
+ "tempfile",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -265,17 +264,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.98",
-]
-
-[[package]]
-name = "async_static"
-version = "0.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "07531825344b91dedbf4f1f14170a1bee47a0ed71f921466750df3e56909bc55"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 1.0.109",
 ]
 
 [[package]]
@@ -3609,9 +3597,9 @@ checksum = "55937e1799185b12863d447f42597ed69d9928686b8d88a1df17376a097d8369"
 
 [[package]]
 name = "tempfile"
-version = "3.16.0"
+version = "3.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "38c246215d7d24f48ae091a2902398798e05d978b24315d6efbc00ede9a8bb91"
+checksum = "22e5a0acb1f3f55f65cc4a866c361b2fb2a0ff6366785ae6fbb5f85df07ba230"
 dependencies = [
  "cfg-if",
  "fastrand",
