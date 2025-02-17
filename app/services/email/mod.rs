@@ -30,7 +30,7 @@ lazy_static! {
 
 #[derive(Clone)]
 pub struct EmailEvent {
-    tx : Arc<tokio::sync::mpsc::UnboundedSender<EmailType>>,
+    tx : Arc<AsyncSmtpTransport<Tokio1Executor>>,
 }
 
 impl EmailEvent {
@@ -42,35 +42,23 @@ impl EmailEvent {
                 .credentials(creds)
                 .build();
 
-        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-        tokio::spawn(async move {
-            EmailEvent::listen(rx, mailer).await;
-        });
-        Ok(EmailEvent { tx : Arc::new(tx) })
+        Ok(EmailEvent { tx : Arc::new(mailer) })
     }
     pub async fn send(&self, email_type : EmailType) {
-        self.tx.send(email_type).ok();
-    }
-    pub async fn listen(
-        mut rx : tokio::sync::mpsc::UnboundedReceiver<EmailType>,
-        mailer : AsyncSmtpTransport<Tokio1Executor>,
-    ) {
-        while let Some(email_type) = rx.recv().await {
-            info!("Will Send Email to {:?}",email_type);
-            match email_type {
-                EmailType::Captcha(x) => {
-                    let email = Message::builder()
-                        .from(SMTP_USERNAME.to_owned().parse().unwrap())
-                        .reply_to(SMTP_USERNAME.to_owned().parse().unwrap())
-                        .to(x.email.parse().unwrap())
-                        .subject("GitData Code")
-                        .header(ContentType::TEXT_HTML)
-                        .body(CAPTCHA.replace("123456", &*x.code))
-                        .unwrap();
-                    match mailer.send(email).await {
-                        Ok(_) => info!("Email sent {} successfully!", x.email),
-                        Err(e) => error!("Could not send email: {e:?}"),
-                    }
+        info!("Will Send Email to {:?}",email_type);
+        match email_type {
+            EmailType::Captcha(x) => {
+                let email = Message::builder()
+                    .from(SMTP_USERNAME.to_owned().parse().unwrap())
+                    .reply_to(SMTP_USERNAME.to_owned().parse().unwrap())
+                    .to(x.email.parse().unwrap())
+                    .subject("GitData Code")
+                    .header(ContentType::TEXT_HTML)
+                    .body(CAPTCHA.replace("123456", &*x.code))
+                    .unwrap();
+                match self.tx.send(email).await {
+                    Ok(_) => info!("Email sent {} successfully!", x.email),
+                    Err(e) => error!("Could not send email: {e:?}"),
                 }
             }
         }
