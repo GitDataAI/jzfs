@@ -27,7 +27,7 @@ pub async fn auth_passwd(
             Ok(captcha_parma) => captcha_parma,
             Err(_) => return AppWrite::error("captcha error".to_string()),
         };
-        if captcha != *captcha_parma{
+        if captcha.to_lowercase() != captcha_parma.to_lowercase(){
             return AppWrite::error("captcha error".to_string());
         }
     }
@@ -58,7 +58,7 @@ pub async fn auth_apply(
             Ok(captcha_parma) => captcha_parma,
             Err(_) => return AppWrite::error("captcha error".to_string()),
         };
-        if captcha != *captcha_parma{
+        if captcha.to_lowercase() != captcha_parma.to_lowercase(){
             return AppWrite::error("captcha error".to_string());
         }
     }
