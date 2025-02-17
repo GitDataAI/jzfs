@@ -17,7 +17,7 @@ spec:
         apptype: gitdataweb
     spec:
       containers:
-        - name: gitdata-ui
+        - name: gitdataweb
           image: {{ .Values.image }}
           imagePullPolicy: Always
           ports:
