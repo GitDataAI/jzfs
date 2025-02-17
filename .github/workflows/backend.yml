@@ -49,15 +49,16 @@ jobs:
           apt update \
           && apt install -y curl gcc musl-dev openssl libssl-dev pkg-config cmake
 
-      - uses: actions-rs/toolchain@v1
+
+      - name: Install latest nightly
+        uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
+          override: true
 
-      - uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release
-      - name: Build and Push GitDataOs
+      - run: cargo build --release
+
+      - name: ls dir
         run: |
           ls -lh
 
