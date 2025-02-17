@@ -49,24 +49,6 @@ jobs:
           apt update \
           && apt install -y curl gcc musl-dev openssl libssl-dev pkg-config cmake
 
-      - name: Cache Cargo registry and git checkouts
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
-
-      - name: Cache Cargo target directory
-        uses: actions/cache@v3
-        with:
-          path: target
-          key: ${{ runner.os }}-target-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-target-
-
       - name: Install latest nightly
         uses: actions-rs/toolchain@v1
         with:
