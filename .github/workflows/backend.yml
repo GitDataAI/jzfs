@@ -62,8 +62,9 @@ jobs:
           override: true
 
       - run: | 
-            cargo build --release \
-          && ls -lh
+            cargo build --release 
+
+      - run: ls -lha
 
 
       - name: Docker Login
