@@ -49,6 +49,11 @@ jobs:
           apt update \
           && apt install -y curl gcc musl-dev openssl libssl-dev pkg-config cmake
 
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.7
+        env:
+          SCCACHE_GHA_ENABLED: "true"
+          RUSTC_WRAPPER: "sccache"
 
       - name: Install latest nightly
         uses: actions-rs/toolchain@v1
