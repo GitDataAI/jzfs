@@ -68,12 +68,6 @@ jobs:
           cache-to: type=gha,mode=max
           platforms: linux/amd64
 
-      - name: Build and Push GitDataWeb
-        run: |
-          cd vite-project
-          pnpm install
-          pnpm run build
-
       - name: Build and Push GitDataOs
         uses: docker/build-push-action@v4
         with:
