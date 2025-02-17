@@ -14,7 +14,7 @@ use gitdata::router::router;
 #[tokio::main]
 async fn main() -> Result<(), std::io::Error> {
     tracing_subscriber::fmt().init();
-    let listener = TcpListener::bind("127.0.0.1:3080");
+    let listener = TcpListener::bind("0.0.0.0:80");
     let state = AppState::init_env().await?;
     let app = router()
         .at("/", get(index))

@@ -29,7 +29,7 @@ securityContext: {}
 service:
   type: ClusterIP
   port: 80
-  targetPort: 3080
+  targetPort: 80
 
 resources:
    limits:
