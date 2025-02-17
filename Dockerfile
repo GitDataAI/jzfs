@@ -13,11 +13,12 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 
 WORKDIR /app
 
-COPY Cargo.toml Cargo.lock ./
-
+COPY .cargo Cargo.toml Cargo.lock ./
+RUN touch lib.rs \
+    && touch main.rs
 RUN cargo build --release
-
-COPY . .
+RUN rm -rf lib.rs main.rs
+COPY app bin blob model lib.rs main.rs router.rs ./
 
 RUN cargo build --release
 

@@ -6,9 +6,6 @@ version = "0.1.0"
 [[bin]]
 path = "main.rs"
 name = "GitDataOS"
-[[bin]]
-path = "bin/api.rs"
-name = "ts"
 
 [lib]
 path = "lib.rs"
