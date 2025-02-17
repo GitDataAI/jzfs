@@ -27,9 +27,6 @@ lazy_static! {
     pub static ref SMTP_PASSWORD: String = std::env::var("SMTP_PASSWORD").expect("SMTP_PASSWORD not set");
 }
 
-async_static! {
-    pub static ref SMTP: EmailEvent = EmailEvent::new().await.unwrap();
-}
 
 #[derive(Clone)]
 pub struct EmailEvent {
@@ -59,6 +56,7 @@ impl EmailEvent {
         mailer : AsyncSmtpTransport<Tokio1Executor>,
     ) {
         while let Some(email_type) = rx.recv().await {
+            info!("Will Send Email to {:?}",email_type);
             match email_type {
                 EmailType::Captcha(x) => {
                     let email = Message::builder()

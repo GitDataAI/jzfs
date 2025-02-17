@@ -2,12 +2,14 @@ use std::{env, io};
 use std::time::Duration;
 use sea_orm::{ConnectOptions, ConnectionTrait, Database, DatabaseBackend, DatabaseConnection, Statement};
 use tracing::info;
+use crate::app::services::email::EmailEvent;
 use crate::model::CREATE_TABLE;
 
 #[derive(Clone)]
 pub struct AppState {
     pub read: DatabaseConnection,
     pub write: DatabaseConnection,
+    pub email: EmailEvent,
 }
 
 
@@ -64,6 +66,7 @@ impl AppState {
         Ok(AppState {
             read,
             write,
+            email: EmailEvent::new().await?,
         })
     }
 }

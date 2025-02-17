@@ -1,7 +1,7 @@
-use std::io;
-use serde::{Deserialize, Serialize};
+use crate::app::services::email::EmailType;
 use crate::app::services::AppState;
-use crate::app::services::email::{EmailType, SMTP};
+use serde::{Deserialize, Serialize};
+use std::io;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct EmailCaptcha {
@@ -20,7 +20,7 @@ impl EmailCaptcha {
 impl AppState {
     pub async fn email_captcha(&self, email: String) -> io::Result<EmailCaptcha> {
         let captcha = EmailCaptcha::generate_captcha(email);
-        SMTP.await.send(EmailType::Captcha(captcha.clone())).await;
+        self.email.send(EmailType::Captcha(captcha.clone())).await;
         Ok(captcha)
     }
 }
