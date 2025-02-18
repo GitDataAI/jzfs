@@ -14,12 +14,16 @@ import { UserApi } from "@/api/UserApi";
 import {toast} from "@pheralb/toast";
 import {Modal, useDisclosure} from "@heroui/modal";
 import LayoutModelRepository from "@/app/Layout.Model.Repository.tsx";
+import AuthLayout from "@/app/auth/layout.tsx";
+import {useState} from "react";
 
 export const Header = () => {
     const nav = useNavigate();
     const user = useUser();
     const api = new UserApi();
     const RepoModal = useDisclosure();
+    const Auth = useDisclosure();
+    const [AuthPosition, setAuthPosition] = useState<"login" | "apply" | "reset">("login")
     return (
         <div>
             <header className="header">
@@ -38,9 +42,29 @@ export const Header = () => {
                                    <span >企业</span>
                                </div>
                                <div className="header-login">
-                                   <span onClick={()=>nav("/auth/login")}>登录</span>
-                                   <span onClick={()=>nav("/auth/apply")}>注册</span>
+                                   <span onClick={()=>{
+                                       Auth.onOpen()
+                                       setAuthPosition("login")
+                                   }}>登录</span>
+                                   <span onClick={()=>{
+                                       Auth.onOpen()
+                                       setAuthPosition("apply")
+                                   }}>注册</span>
                                </div>
+                               <div style={{
+                                   position: "fixed",
+                                   zIndex: 9999
+                               }}>
+                                   <Modal
+                                       backdrop="blur"
+                                       isOpen={Auth.isOpen}
+                                       size={"2xl"}
+                                       onClose={Auth.onClose}
+                                       onOpenChange={Auth.onOpenChange} >
+                                       <AuthLayout position={AuthPosition} onClose={Auth.onClose} setPosition={setAuthPosition}/>
+                                   </Modal>
+                               </div>
+
                            </>
                     ):(
                         <>
