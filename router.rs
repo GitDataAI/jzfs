@@ -25,7 +25,7 @@ pub fn router() -> Route {
                     "/static",
                     Route::new()
                         .at("/upload_avatar", post(upload_avatar))
-                        .at("/:path", post(down_avatar))
+                        .at("/img/:path", get(down_avatar))
                 )
                 .nest(
                     "/user",

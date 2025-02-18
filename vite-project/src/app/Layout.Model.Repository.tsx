@@ -35,6 +35,7 @@ const LayoutModelRepository = (props: LayoutModelRepositoryProps) => {
                 text: jsonb['msg'],
             })
             props.onClose()
+            window.location.reload();
         } else {
             toast.error({
                 text: jsonb['msg'],

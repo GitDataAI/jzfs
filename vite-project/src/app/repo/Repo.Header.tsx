@@ -37,7 +37,6 @@ export const RepoHeader = (props: { setTab: (arg0: string) => void, info: Reposi
                         </Badge>
                     }/>
 
-
                     <Tab key="pr" title={
                         <Badge color="primary" placement={"top-right"} content={props.info.nums_pullrequest} size="sm">
                         <span style={{

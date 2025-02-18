@@ -16,6 +16,7 @@ import {RepoClone} from "@/app/repo/Repo.Clone.tsx";
 import {RepoEmpty} from "@/app/repo/Repo.Empty.tsx";
 import {RepoREADME} from "@/app/repo/Repo.README.tsx";
 import {Tab, Tabs} from "@heroui/tabs";
+import {useNavigate} from "react-router-dom";
 
 interface RepoFileProps {
     info: Repository,
@@ -43,6 +44,7 @@ const RepoFile = (props: RepoFileProps) => {
     const Clone = useDisclosure();
     const Exec = useRef(false);
     const [ README, setREADME ] = useState<Uint8Array | null>(null);
+    const nav = useNavigate();
     useEffect(() => {
         // console.log(props)
         // setBhtc([])
@@ -52,7 +54,7 @@ const RepoFile = (props: RepoFileProps) => {
         if (Exec.current) {
             setLoad(true)
             return;
-        };
+        }
         setHttpURL("https://" + window.location.host + "/git/" + props.owner + "/" + props.repo + ".git")
         api.Bhtc(props.owner, props.repo)
             .then(res=>{
@@ -131,7 +133,9 @@ const RepoFile = (props: RepoFileProps) => {
                                     <BreadcrumbItem separator={""}>
                                         <Avatar color={"default"} radius={"sm"} src={props.info.avatar || "https://cdn.iconscout.com/icon/premium/png-128-thumb/repository-4-559990.png"}/>
                                     </BreadcrumbItem>
-                                    <BreadcrumbItem>{props.owner}</BreadcrumbItem>
+                                    <BreadcrumbItem onClick={()=>{
+                                        nav("/" + props.owner)
+                                    }}>{props.owner}</BreadcrumbItem>
                                     <BreadcrumbItem>{props.repo}</BreadcrumbItem>
                                 </Breadcrumbs>
                                 <div className="repo-header-action">

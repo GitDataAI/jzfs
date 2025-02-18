@@ -59,7 +59,46 @@ const UserActive = (props: {props: UserDashBored}) => {
                         <Avatar
                             className="w-24 h-24 text-large avatar"
                             src={prop.user.avatar}
+                            onClick={()=>{
+                                if (Edit) {
+                                    const upicon = document.querySelector("#avatar-upload")
+                                    const event = new MouseEvent('click', {
+                                        'view': window,
+                                        'bubbles': true,
+                                        'cancelable': true
+                                    });
+                                    if (upicon) {
+                                        upicon.dispatchEvent(event)
+                                    }
+                                }
+                            }}
                         />
+                        <input id="avatar-upload" style={{
+                            display: "none"
+                        }} type="file"  accept="image/*" onChange={(e)=>{
+                            if (e.target.files && e.target.files.length > 0) {
+                                const file = e.target.files[0];
+                                const  form = new FormData();
+                                form.append("file", file);
+
+                                const xhr = new XMLHttpRequest();
+                                xhr.open("post", "/api/static/upload_avatar", true);
+                                xhr.onload = function () {
+                                    toast.success({
+                                        text: "Upload Success",
+                                    });
+                                    setTimeout(()=>{
+                                        // window.location.reload()
+                                    }, 1000)
+                                }
+                                xhr.onerror =  function () {
+                                    toast.error({
+                                        text: "Upload Failed",
+                                    });
+                                };
+                                xhr.send(form);
+                            }
+                        }}/>
                         <div className={"user-active-profile-info"}>
                     <span style={{
                         fontSize: "1.5rem",
