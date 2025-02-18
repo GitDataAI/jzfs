@@ -151,3 +151,10 @@
         margin-right: 8px;
     }
 }
+.repo-empty {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+}
