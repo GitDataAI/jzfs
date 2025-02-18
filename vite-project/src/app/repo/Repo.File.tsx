@@ -17,7 +17,12 @@ import {RepoEmpty} from "@/app/repo/Repo.Empty.tsx";
 import {RepoREADME} from "@/app/repo/Repo.README.tsx";
 import {Tab, Tabs} from "@heroui/tabs";
 import {useNavigate} from "react-router-dom";
+import dayjs from "dayjs"
+import relativeTime from "dayjs/plugin/relativeTime"
 
+
+
+dayjs.extend(relativeTime);
 interface RepoFileProps {
     info: Repository,
     owner: string,
@@ -245,6 +250,16 @@ function FileItem({ tree }: { tree: Tree }) {
     if (commit){
         commit.msg = commit.msg.substring(0, 50);
     }
+    const relative_time = () => {
+        if (commit){
+            const date = new Date(Number(commit.time) * 1000);
+            const to_now = dayjs().to(dayjs(date));
+            return <>{to_now}</>
+        } else {
+            return <>N/A</>
+        }
+    }
+
     return (
         <div className="file-item">
             <div>
@@ -255,7 +270,9 @@ function FileItem({ tree }: { tree: Tree }) {
                 commit && (
                     <div className={"file-item-commit"}>
                         <div>{commit.msg}</div>
-                        <div>{commit.time}</div>
+                        <div>
+                            {relative_time()}
+                        </div>
                     </div>
                 )
             }
@@ -278,6 +295,8 @@ function Folder({ tree }: { tree: Tree }) {
             return a.name.localeCompare(b.name);
         }
     })
+
+
     return (
         <div className="folder-container">
             <div
