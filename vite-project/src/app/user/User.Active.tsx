@@ -10,11 +10,13 @@ import {language} from "@/language.ts";
 import {location} from "@/location.ts";
 import {UserApi} from "@/api/UserApi.tsx";
 import {toast} from "@pheralb/toast";
+import useUser from "@/state/useUser.tsx";
 
 const UserActive = (props: {props: UserDashBored}) => {
     const prop = props.props;
     const [Edit, setEdit] = useState(false)
     const user = new UserApi();
+    const store = useUser();
     const [Form, setFrom] = useState({
         description: prop.user.description || "",
         website: prop.user.website || "",
@@ -58,27 +60,38 @@ const UserActive = (props: {props: UserDashBored}) => {
                     }}>{prop.user.username}</span><br/>
                             <span>{prop.user.name}</span>
                         </div>
-                        <div className={"user-active-profile-action"}>
-                            <Button onPress={()=>{
-                                if (Edit) {
-                                    UpTional().then()
-                                }
-                                setEdit(true)
-                            }} className={"button button-primary"} color={"secondary"}>
-                                {
-                                    Edit ? "Save" : "Edit Profile"
-                                }
-                            </Button>&nbsp;&nbsp;&nbsp;
-                            {
-                                Edit && (
+                        {
+                            (store.user && store.user.uid == prop.user.uid) ? (
+                                <div className={"user-active-profile-action"}>
                                     <Button onPress={()=>{
-                                        setEdit(false)
-                                    }}>
-                                        Cancel
-                                    </Button>
-                                )
-                            }
-                        </div>
+                                        if (Edit) {
+                                            UpTional().then()
+                                        }
+                                        setEdit(true)
+                                    }} className={"button button-primary"} color={"secondary"}>
+                                        {
+                                            Edit ? "Save" : "Edit Profile"
+                                        }
+                                    </Button>&nbsp;&nbsp;&nbsp;
+                                    {
+                                        Edit && (
+                                            <Button onPress={()=>{
+                                                setEdit(false)
+                                            }}>
+                                                Cancel
+                                            </Button>
+                                        )
+                                    }
+                                </div>
+                            ): (
+                                <div className={"user-active-profile-action"}>
+                                    <Button className={"button button-primary"} color={"secondary"}>
+                                        Follow
+                                    </Button>&nbsp;&nbsp;&nbsp;
+                                </div>
+                            )
+                        }
+
                         {
                             !Edit ? (
                                 <ul className={"user-active-profile-infos"}>
