@@ -66,6 +66,7 @@ export interface UserDashBored {
     stars: Star[];
     follow: Follow[];
     followed: Follow[];
+    readme?: Uint8Array
 }
 
 export interface Branches {

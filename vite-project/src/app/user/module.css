@@ -53,7 +53,7 @@
 
 .user-active {
     display: flex;
-    justify-content: space-between;
+    gap: 20px;
 }
 .user-active-profile {
     flex: 0 0 200px;

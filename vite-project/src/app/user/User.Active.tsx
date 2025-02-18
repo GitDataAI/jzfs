@@ -1,22 +1,24 @@
 import {UserDashBored} from "@/types.ts";
-import {Avatar, Button, Card, CardBody, Input, Select, SelectItem} from "@heroui/react";
+import {Avatar, Button, Card, CardBody, Code, Input, Select, SelectItem} from "@heroui/react";
 import {CgWebsite} from "react-icons/cg";
 import {MdLocationOn, MdOutlineDescription} from "react-icons/md";
 import {TbTimezone} from "react-icons/tb";
 import {FaLanguage} from "react-icons/fa";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {timezone} from "@/timezone.ts";
 import {language} from "@/language.ts";
 import {location} from "@/location.ts";
 import {UserApi} from "@/api/UserApi.tsx";
 import {toast} from "@pheralb/toast";
 import useUser from "@/state/useUser.tsx";
+import {RepoREADME} from "@/app/repo/Repo.README.tsx";
 
 const UserActive = (props: {props: UserDashBored}) => {
     const prop = props.props;
     const [Edit, setEdit] = useState(false)
     const user = new UserApi();
     const store = useUser();
+    const [Readme, setReadme] = useState<Uint8Array | null>(null)
     const [Form, setFrom] = useState({
         description: prop.user.description || "",
         website: prop.user.website || "",
@@ -43,6 +45,11 @@ const UserActive = (props: {props: UserDashBored}) => {
                 setEdit(false)
             })
     }
+    useEffect(() => {
+        if (prop.readme){
+            setReadme(prop.readme)
+        }
+    }, []);
 
     return (
         <div className="user-active user-bodt">
@@ -212,10 +219,17 @@ const UserActive = (props: {props: UserDashBored}) => {
                 </CardBody>
             </Card>
             <Card style={{
-                marginLeft: "1rem"
+                width: "100%"
             }}>
                 <CardBody>
                     <div className="user-active-active">
+                        {
+                            Readme && (
+                                <RepoREADME file={Readme} title={
+                                    <Code>{prop.user.username + " / readme"}</Code>
+                                }/>
+                            )
+                        }
                     </div>
                 </CardBody>
             </Card>

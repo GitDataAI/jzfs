@@ -42,7 +42,7 @@ const RepoFile = (props: RepoFileProps) => {
     const [ HttpURL, setHttpURL] = useState("");
     const Clone = useDisclosure();
     const Exec = useRef(false);
-    const [ README, setREADME ] = useState<Uint8Array>(new Uint8Array());
+    const [ README, setREADME ] = useState<Uint8Array | null>(null);
     useEffect(() => {
         // console.log(props)
         // setBhtc([])
@@ -198,21 +198,25 @@ const RepoFile = (props: RepoFileProps) => {
                                         </CardBody>
                                     </Card>
                                 </div>
-                                <Card style={{
-                                    marginTop: "1rem"
-                                }}>
-                                    <CardBody>
-                                        <Tabs>
-                                            {
-                                                README&&(
-                                                    <Tab key="readme" title="README">
-                                                        <RepoREADME file={README}/>
-                                                    </Tab>
-                                                )
-                                            }
-                                        </Tabs>
-                                    </CardBody>
-                                </Card>
+                                {
+                                    ( README ) && (
+                                        <Card style={{
+                                            marginTop: "1rem"
+                                        }}>
+                                            <CardBody>
+                                                <Tabs>
+                                                    {
+                                                        README &&(
+                                                            <Tab key="readme" title="README">
+                                                                <RepoREADME file={README}/>
+                                                            </Tab>
+                                                        )
+                                                    }
+                                                </Tabs>
+                                            </CardBody>
+                                        </Card>
+                                    )
+                                }
                             </div>
                         </>
                         )
