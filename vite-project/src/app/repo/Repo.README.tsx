@@ -1,11 +1,13 @@
 import Markdown from "react-markdown";
-import {Card, CardBody} from "@heroui/react";
+import {Card, CardBody, CardHeader} from "@heroui/react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import rehypeRaw from 'rehype-raw';
 import "./markdown.css"
+import {ReactNode} from "react";
 
-interface RepoREADMEProps {
-    file: Uint8Array
+export interface RepoREADMEProps {
+    file: Uint8Array,
+    title?: ReactNode
 }
 
 export const RepoREADME = (props: RepoREADMEProps) => {
@@ -13,12 +15,14 @@ export const RepoREADME = (props: RepoREADMEProps) => {
     const markdown = str.replace(/\\n/g, "\n");
     return (
         <Card>
+            {
+                props.title && <CardHeader>{props.title}</CardHeader>
+            }
             <CardBody>
                 <Markdown
                     className="markdown-content"
                     components={{
                         code: function ({children, className}) {
-                            console.log(className)
                             const match = /language-(\w+)/.exec(className || "");
                             if (match) {
                                 return (
@@ -37,6 +41,19 @@ export const RepoREADME = (props: RepoREADMEProps) => {
                                 );
                             }
                         },
+                        img({className, src, alt,height}) {
+                            return (
+                                <img
+                                    className={className}
+                                    src={src}
+                                    alt={alt}
+                                    height={height}
+                                    style={{
+                                        height: {height} + "px"
+                                    }}
+                                />
+                            )
+                        }
                     }}
                     rehypePlugins={[rehypeRaw]}
                 >{markdown}</Markdown>

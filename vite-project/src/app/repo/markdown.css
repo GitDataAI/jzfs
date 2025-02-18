@@ -28,6 +28,11 @@
     margin: 1.2em 0;
     color: #444;
 }
+.markdown-content img {
+    margin: 1.2em 0;
+    color: #444;
+    max-height: 70px
+}
 
 .markdown-content a {
     color: #2980b9;
