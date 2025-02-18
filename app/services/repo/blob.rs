@@ -2,6 +2,7 @@ use sea_orm::QueryFilter;
 use sea_orm::{ColumnTrait, EntityTrait};
 use std::collections::HashMap;
 use std::io;
+use serde::{Deserialize, Serialize};
 use crate::app::services::AppState;
 use crate::blob::blob::{Branches, Commit};
 use crate::blob::GitBlob;
@@ -34,4 +35,20 @@ impl AppState {
             .ok_or(io::Error::new(io::ErrorKind::Other, "Not Found"))
             .map_err(|x| io::Error::new(io::ErrorKind::Other, x))
     }
+    pub async fn repo_blob_file(&self, param: RepoBlobFile) -> io::Result<Vec<u8>> {
+        let RepoBlobFile { owner, repo, paths, sha } = param;
+        let repo = self.repo_info(owner, repo).await?;
+        let path = format!("{}/{}/{}", crate::app::http::GIT_ROOT, repo.node_uid, repo.uid);
+        let blob = GitBlob::new(path.into())
+            .map_err(|x| io::Error::new(io::ErrorKind::Other, x))?;
+        blob.file(paths,sha)
+    }
+}
+
+#[derive(Deserialize,Serialize,Clone)]
+pub struct RepoBlobFile {
+    pub owner: String,
+    pub repo: String,
+    pub paths: String,
+    pub sha: String,
 }

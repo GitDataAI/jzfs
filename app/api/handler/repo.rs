@@ -5,7 +5,8 @@ use crate::app::services::AppState;
 use crate::model::users::users;
 use poem::session::Session;
 use poem::web::{Data, Json, Path};
-use poem::{handler, IntoResponse};
+use poem::{handler, IntoResponse, Response};
+use crate::app::services::repo::blob::RepoBlobFile;
 
 #[handler]
 pub async fn repo_tree(
@@ -90,6 +91,27 @@ pub async fn repo_create(
         },
         Err(err) => {
             AppWrite::error(err.to_string())
+        }
+    }
+}
+
+#[handler]
+pub async fn repo_file(
+    param: Json<RepoBlobFile>,
+    status: Data<&AppState>,
+) 
+-> impl IntoResponse
+{
+    match status.repo_blob_file(param.0).await {
+        Ok(file) => {
+            Response::builder()
+                .content_type("application/octet-stream")
+                .body(file)
+        },
+        Err(err) => {
+            Response::builder()
+                .status(poem::http::StatusCode::NOT_FOUND)
+                .body(err.to_string())
         }
     }
 }
