@@ -10,6 +10,10 @@ export default defineConfig({
         target: 'http://localhost:3080',
         changeOrigin: true,
       },
+      "/git" : {
+        target: 'http://localhost:3080',
+        changeOrigin: true,
+      }
     },
   },
   build: {
