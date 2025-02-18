@@ -30,6 +30,8 @@ pub struct Model {
     pub nums_tag: i32,
     pub nums_branch: i32,
     
+    pub topic: Vec<String>,
+    
     pub ssh: String,
     pub http: String,
     

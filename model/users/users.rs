@@ -25,6 +25,7 @@ pub struct Model {
     pub language: Option<String>,
     pub theme: Option<String>,
     pub location: Option<String>,
+    pub topic: Vec<String>,
     
     pub setting: Vec<String>,
     

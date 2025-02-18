@@ -35,6 +35,7 @@ impl AppState {
             email: Set(parma.email),
             name: Set(parma.username),
             updated_at: Set(chrono::Local::now().naive_local()),
+            topic: Set(Vec::new())
         };
         let user = user.insert(&self.write).await.map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
         Ok(user)
