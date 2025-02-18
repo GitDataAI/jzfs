@@ -4,6 +4,7 @@ use sea_orm::{EntityTrait, QueryFilter};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::app::services::AppState;
+use crate::blob::GitBlob;
 use crate::model::repository::repository;
 use crate::model::users::{follow, star, users};
 
@@ -14,6 +15,7 @@ pub struct UserDashBored {
     pub stars: Vec<star::Model>,
     pub follow: Vec<follow::Model>,
     pub followed: Vec<follow::Model>,
+    pub readme: Option<String>,
 }
 
 impl AppState {
@@ -66,13 +68,27 @@ impl AppState {
             .all(&self.read)
             .await
             .map_err(|_| io::Error::new(io::ErrorKind::Other, "Database Err"))?;
-        
+        let readme = if let Ok(repo) = self.repo_info(user.clone().username, "readme".to_string()).await {
+            let path = format!("{}/{}/{}", crate::app::http::GIT_ROOT, repo.node_uid, repo.uid);
+            if let Ok(blob) = GitBlob::new(path.into()){
+                if let Ok(blob) = blob.file_readme() {
+                    Some(std::str::from_utf8(&blob).unwrap().to_string())
+                }else { 
+                    None
+                }
+            }else { 
+                None
+            }
+        }else { 
+            None
+        };
         Ok(UserDashBored {
             user,
             repos,
             stars,
             follow,
             followed,
+            readme,
         })
     }
 }

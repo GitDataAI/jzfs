@@ -1,8 +1,8 @@
+use crate::blob::GitBlob;
+use git2::Oid;
 use std::io;
 use std::path::PathBuf;
 use std::str::FromStr;
-use git2::Oid;
-use crate::blob::GitBlob;
 
 
 impl GitBlob {
@@ -23,13 +23,28 @@ impl GitBlob {
             .ok_or(io::Error::new(io::ErrorKind::Other, "Failed to find blob 1"))?;
         let content = blob.content();
         Ok(content.to_vec())
-    }    
+    }
+    pub fn file_readme(&self) -> io::Result<Vec<u8>> {
+           if let Ok(tree) = self.repository.find_tree(self.repository.head()
+            .map_err(|_| io::Error::new(io::ErrorKind::Other, "Failed to find head"))?
+            .peel_to_tree().map_err(|_| io::Error::new(io::ErrorKind::Other, "Failed to find tree"))?
+            .id()) {
+            if let Ok(blob) = tree.get_path(&PathBuf::from_str("README.md").map_err(|x| io::Error::new(io::ErrorKind::Other, x.to_string()))?) {
+                if let Ok(blob) = blob.to_object(&self.repository) {
+                    if let Some(blob) = blob.as_blob() {
+                        return Ok(blob.content().to_vec());
+                    }
+                }
+            }
+        }
+        Err(io::Error::new(io::ErrorKind::Other, "Failed to find README.md"))
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::io;
     use crate::blob::GitBlob;
+    use std::io;
 
     #[test]
     fn test_file() -> io::Result<()> {
