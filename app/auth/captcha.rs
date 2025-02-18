@@ -15,7 +15,7 @@ impl Default for CaptchaImage {
 impl CaptchaImage {
     pub fn new() -> CaptchaImage {
         let captcha = CaptchaBuilder::new()
-            .length(4)
+            .length(3)
             .width(130)
             .height(40)
             .dark_mode(false)
