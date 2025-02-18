@@ -13,6 +13,9 @@ import {
 import {RepoApi} from "@/api/RepoApi.tsx";
 import {Modal, useDisclosure} from "@heroui/modal";
 import {RepoClone} from "@/app/repo/Repo.Clone.tsx";
+import {RepoEmpty} from "@/app/repo/Repo.Empty.tsx";
+import {RepoREADME} from "@/app/repo/Repo.README.tsx";
+import {Tab, Tabs} from "@heroui/tabs";
 
 interface RepoFileProps {
     info: Repository,
@@ -39,13 +42,17 @@ const RepoFile = (props: RepoFileProps) => {
     const [ HttpURL, setHttpURL] = useState("");
     const Clone = useDisclosure();
     const Exec = useRef(false);
+    const [ README, setREADME ] = useState<Uint8Array>(new Uint8Array());
     useEffect(() => {
         // console.log(props)
         // setBhtc([])
         // setDafaultBranch(null)
         // setTree(null)
         // setLoad(false);
-        if (Exec.current) return;
+        if (Exec.current) {
+            setLoad(true)
+            return;
+        };
         setHttpURL("https://" + window.location.host + "/git/" + props.owner + "/" + props.repo + ".git")
         api.Bhtc(props.owner, props.repo)
             .then(res=>{
@@ -62,6 +69,16 @@ const RepoFile = (props: RepoFileProps) => {
                                     if (!DefaultBranch){
                                         setDafaultBranch(branch)
                                         setTree(jsonb)
+                                        // find readme.md
+                                        for (const child of jsonb.child) {
+                                            if (child.name === "README.md"){
+                                                api.File(props.owner, props.repo, "README.md", branch.head).then(res=>{
+                                                    if (res.status === 200 && res.data){
+                                                        setREADME(res.data)
+                                                    }
+                                                })
+                                            }
+                                        }
                                     }
                                     if (Bhtc.find((value) => value.branch.name === branch.name)){
                                         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -78,6 +95,10 @@ const RepoFile = (props: RepoFileProps) => {
         Exec.current = true;
 
     }, [ props]);
+
+    useEffect(() => {
+
+    }, [Blob]);
     return (
         <div className="repo-file repo-bodt">
             {
@@ -87,7 +108,7 @@ const RepoFile = (props: RepoFileProps) => {
                     </>
                 ) : (
                    <> {
-                       (Load && Tree && Bhtc && DefaultBranch && Blob) && (
+                       (Load) && (
                         <>
                             <div
                                 style={{
@@ -154,9 +175,20 @@ const RepoFile = (props: RepoFileProps) => {
                                         </CardHeader>
                                         <CardBody className="repo-file-body-file">
                                             <Card className="repo-file-body-file-left">
-                                                <CardBody>
-                                                    <RepoFileList tree={Tree}/>
-                                                </CardBody>
+                                                {
+                                                    Tree ? (
+                                                        <CardBody>
+                                                            <RepoFileList tree={Tree}/>
+                                                        </CardBody>
+                                                    ):(
+                                                        <>
+                                                            <CardBody>
+                                                                <RepoEmpty/>
+                                                            </CardBody>
+                                                        </>
+                                                    )
+                                                }
+
                                             </Card>
                                             <Card className="repo-file-body-file-right">
                                                 <CardBody>
@@ -166,6 +198,21 @@ const RepoFile = (props: RepoFileProps) => {
                                         </CardBody>
                                     </Card>
                                 </div>
+                                <Card style={{
+                                    marginTop: "1rem"
+                                }}>
+                                    <CardBody>
+                                        <Tabs>
+                                            {
+                                                README&&(
+                                                    <Tab key="readme" title="README">
+                                                        <RepoREADME file={README}/>
+                                                    </Tab>
+                                                )
+                                            }
+                                        </Tabs>
+                                    </CardBody>
+                                </Card>
                             </div>
                         </>
                         )

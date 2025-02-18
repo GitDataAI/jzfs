@@ -20,4 +20,12 @@ export class RepoApi extends Http {
     async Tree(owner: string, repo: string,branch: string,head:string){
         return await this.post<string>(`/repo/${owner}/${repo}/branch/${branch}/${head}/tree`,{})
     }
+    async File(owner:string, repo: string,path: string, sha: string) {
+        return await this.post<Uint8Array>(`/repo/file`, {
+            owner: owner,
+            repo: repo,
+            paths: path,
+            sha: sha
+        })
+    }
 }
