@@ -72,6 +72,7 @@ impl AppState {
             std::fs::create_dir_all(&par)
                 .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
         }
+        let model = repo.clone();
         let repo = git2::Repository::init_bare(&path)
             .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
         repo.set_head(&format!("refs/heads/{}", parma.default_branch)).map_err(
@@ -161,6 +162,7 @@ impl AppState {
             tmp.close().ok();
         }
         txn.commit().await.map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+        self.repo_sync(model.uid).await.ok();
         Ok(())
     }
 }
