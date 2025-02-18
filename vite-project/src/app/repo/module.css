@@ -86,6 +86,36 @@
     .repo-file-body-main {
         width: 100%;
     }
+    .repo-file-body-main-header {
+        display: flex;
+        gap: 20px;
+        justify-content: space-between;
+        align-items: center;
+        .branch-checkout {
+            width: 100px;
+        }
+        .repo-file-body-main-header-left {
+            display: flex;
+            gap: 16px;
+        }
+        .repo-file-body-main-header-right {
+            display: flex;
+            flex-direction: row-reverse;
+            gap: 16px;
+        }
+    }
+    .repo-file-body-file {
+        display: grid;
+        @media screen and (min-width: 1024px) {
+            grid-template-columns: 3fr 1fr;
+            gap: 20px;
+        }
+        @media screen and (max-width: 1024px){
+            .repo-file-body-file-right {
+                display: none;
+            }
+        }
+    }
     .file-tree {
         width: 100%;
     }

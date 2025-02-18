@@ -1,7 +1,18 @@
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {Blob, Branches, Commits, Repository, Tree} from "@/types.ts";
-import {Avatar, Badge, BreadcrumbItem, Breadcrumbs, Button} from "@heroui/react";
+import {
+    Avatar,
+    Badge,
+    BreadcrumbItem,
+    Breadcrumbs,
+    Button,
+    Card,
+    CardBody,
+    CardHeader,
+} from "@heroui/react";
 import {RepoApi} from "@/api/RepoApi.tsx";
+import {Modal, useDisclosure} from "@heroui/modal";
+import {RepoClone} from "@/app/repo/Repo.Clone.tsx";
 
 interface RepoFileProps {
     info: Repository,
@@ -19,23 +30,31 @@ const RepoFile = (props: RepoFileProps) => {
     const [Tree, setTree] = useState< Tree | null>(null)
     const [DefaultBranch, setDafaultBranch] = useState<Branches | null>()
     const [Load, setLoad] = useState(false)
+    const [Blob, setBlob] = useState<Blob | null>(null)
+    // const [Branches, setBranches] = useState<string[]>([])
     const [Edit] = useState({
         edit: false
     })
     const api = new RepoApi();
+    const [ HttpURL, setHttpURL] = useState("");
+    const Clone = useDisclosure();
+    const Exec = useRef(false);
     useEffect(() => {
         // console.log(props)
         // setBhtc([])
         // setDafaultBranch(null)
         // setTree(null)
         // setLoad(false);
-
+        if (Exec.current) return;
+        setHttpURL("https://" + window.location.host + "/git/" + props.owner + "/" + props.repo + ".git")
         api.Bhtc(props.owner, props.repo)
             .then(res=>{
                 if (res.status === 200 && res.data){
                     const json:Blob = JSON.parse(res.data).data;
+                    setBlob(json);
                     for (const jsonKey in json) {
                         const branch: Branches =  JSON.parse(jsonKey);
+                        // setBranches((pre)=> [...pre, branch.name])
                         api.Tree(props.owner, props.repo, branch.name,branch.head)
                             .then(res=>{
                                 const jsonb:Tree | undefined = JSON.parse(res.data).data;
@@ -56,8 +75,9 @@ const RepoFile = (props: RepoFileProps) => {
                     }
                 }
             })
+        Exec.current = true;
 
-    }, [props]);
+    }, [ props]);
     return (
         <div className="repo-file repo-bodt">
             {
@@ -67,8 +87,24 @@ const RepoFile = (props: RepoFileProps) => {
                     </>
                 ) : (
                    <> {
-                       (Load && Tree && Bhtc && DefaultBranch) && (
+                       (Load && Tree && Bhtc && DefaultBranch && Blob) && (
                         <>
+                            <div
+                                style={{
+                                    position: "fixed",
+                                    zIndex: 9999
+                                }}
+                            >
+                                <Modal
+                                    backdrop="blur"
+                                    isOpen={Clone.isOpen}
+                                    size={"2xl"}
+                                    onClose={Clone.onClose}
+                                    onOpenChange={Clone.onOpenChange}
+                                >
+                                    <RepoClone owner={props.owner} repo={props.repo} http={HttpURL}/>
+                                </Modal>
+                            </div>
                             <div className="repo-header-title">
                                 <Breadcrumbs key={"bordered"} variant={"light"} className="bordered"  separator="/">
                                     <BreadcrumbItem separator={""}>
@@ -96,21 +132,39 @@ const RepoFile = (props: RepoFileProps) => {
                                 </div>
                             </div>
                             <div className="repo-file-body">
-                                <div className="repo-file-body-header">
-                                    {/*<Select defaultSelectedKeys={DefaultBranch.name} selectedKeys={DefaultBranch.name} value={DefaultBranch.name} label={"Branch"}>*/}
-                                    {/*    {*/}
-                                    {/*        Bhtc.map((value, index)=>{*/}
-                                    {/*            return (*/}
-                                    {/*                <SelectItem key={index+"br"} value={value.branch.name}>*/}
-                                    {/*                    {value.branch.name}*/}
-                                    {/*                </SelectItem>*/}
-                                    {/*            )*/}
-                                    {/*        })*/}
-                                    {/*    }*/}
-                                    {/*</Select>*/}
-                                </div>
                                 <div className="repo-file-body-main">
-                                    <RepoFileList tree={Tree}/>
+                                    <Card>
+                                        <CardHeader className="repo-file-body-main-header">
+                                           <div className="repo-file-body-main-header-left">
+
+                                           </div>
+                                            <div className="repo-file-body-main-header-right">
+                                                <Button
+                                                    color="success"
+                                                    style={{
+                                                        color: "white"
+                                                    }}
+                                                    onPress={()=>{
+                                                        Clone.onOpen()
+                                                    }}
+                                                >
+                                                    Clone
+                                                </Button>
+                                           </div>
+                                        </CardHeader>
+                                        <CardBody className="repo-file-body-file">
+                                            <Card className="repo-file-body-file-left">
+                                                <CardBody>
+                                                    <RepoFileList tree={Tree}/>
+                                                </CardBody>
+                                            </Card>
+                                            <Card className="repo-file-body-file-right">
+                                                <CardBody>
+
+                                                </CardBody>
+                                            </Card>
+                                        </CardBody>
+                                    </Card>
                                 </div>
                             </div>
                         </>
@@ -134,14 +188,13 @@ function FileItem({ tree }: { tree: Tree }) {
         }
     })[0];
     if (commit){
-        // 前10个字符
         commit.msg = commit.msg.substring(0, 50);
     }
     return (
         <div className="file-item">
             <div>
                 <span>📄 </span>
-                <a href={tree.id}>{tree.name}</a>
+                <a>{tree.name}</a>
             </div>
             {
                 commit && (
