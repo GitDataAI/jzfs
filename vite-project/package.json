@@ -10,7 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@github/relative-time-element": "^4.4.5",
     "@heroui/button": "^2.2.10",
     "@heroui/dropdown": "^2.3.10",
     "@heroui/input": "^2.4.10",
@@ -23,6 +22,7 @@
     "@heroui/user": "^2.2.7",
     "@pheralb/toast": "^0.2.3",
     "axios": "^1.7.9",
+    "dayjs": "^1.11.13",
     "framer-motion": "^12.4.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
