@@ -1,43 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import React from 'react';
 import "./layout.css"
-type AuthLayoutProps = unknown;
+import Login from "@/app/auth/Login.tsx";
+import Apply from "@/app/auth/Apply.tsx";
+import Reset from "@/app/auth/Reset.tsx";
+import {ModalContent} from "@heroui/modal";
 
-const AuthLayout: React.FC<AuthLayoutProps> = () => {
-  const [width, setWidth] = useState(window.innerWidth);
 
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-expect-error
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [height, setHeight] = useState(window.innerHeight);
+interface AuthLayoutProps {
+  onClose?: () => void,
+  position: "login" | "apply" | "reset",
+  setPosition: (position: "login" | "apply" | "reset") => void
+}
 
-  useEffect(() => {
-    const handleResize = () => {
-      setWidth(window.innerWidth);
-      setHeight(window.innerHeight);
-    };
+const AuthLayout: React.FC<AuthLayoutProps> = (props: AuthLayoutProps) => {
 
-    window.addEventListener('resize', handleResize);
-
-    // Cleanup the event listener on component unmount
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
-
-  return (
-    <div className="authLayout">
-      {width > 600 ? (
-        <div className="authLayout-loginWindowsLarge">
-          <Outlet />
-        </div>
-      ) : (
-        <div className="authLayout-loginWindowsSmall">
-          <Outlet />
-        </div>
-      )}
-    </div>
-  );
+    return (
+        <ModalContent>
+          {
+            props.position === "login" && <Login setPosition={props.setPosition}/>
+          }
+          {
+            props.position === "apply" && <Apply setPosition={props.setPosition}/>
+          }
+          {
+            props.position === "reset" && <Reset setPosition={props.setPosition}/>
+          }
+        </ModalContent>
+    );
 };
 
 export default AuthLayout;
