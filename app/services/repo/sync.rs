@@ -1,10 +1,10 @@
 use crate::app::services::AppState;
 use crate::model::repository::tree;
+use chrono::DateTime;
 use sea_orm::ActiveValue::Set;
-use sea_orm::{ColumnTrait, IntoActiveModel};
 use sea_orm::{ActiveModelTrait, EntityTrait, QueryFilter};
+use sea_orm::{ColumnTrait, IntoActiveModel};
 use std::io;
-use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
 impl AppState {
@@ -16,21 +16,23 @@ impl AppState {
         let branch = blob.branch()?;
         
         let mut arch = repo.clone().into_active_model();
-        arch.nums_branch = Set(branch.len() as i32);
         if branch.iter().any(|x|x.name != repo.default_branch) {
             if branch.len() == 1 {
                 arch.default_branch = Set(branch[0].name.clone());
+                arch.nums_branch = Set(branch.len() as i32);
                 arch.updated_at = Set(chrono::Local::now().naive_local());
                 arch.update(&self.write).await.ok();
             } else { 
                 // find main or master or first branch
                 if branch.iter().any(|x|x.name == "main" || x.name == "master") {
                     arch.default_branch = Set(branch[0].name.clone());
+                    arch.nums_branch = Set(branch.len() as i32);
                     arch.updated_at = Set(chrono::Local::now().naive_local());
                     arch.update(&self.write).await.ok();
                 }else if branch.len() == 1 {
                     if let Some(first) = branch.first() {
                         arch.default_branch = Set(first.name.clone());
+                        arch.nums_branch = Set(branch.len() as i32);
                         arch.updated_at = Set(chrono::Local::now().naive_local());
                         arch.update(&self.write).await.ok();
                     }
@@ -41,7 +43,7 @@ impl AppState {
         let mut rec = 0;
         let mut commit_len = 0;
         let branch = blob.blob()?;
-        for (branch, commits) in branch {
+        for (branch, commits) in branch.clone() {
             if let Ok(time) = branch.time.parse::<i64>(){
                 if time > rec {
                     rec = time;
@@ -81,10 +83,12 @@ impl AppState {
         if commit_len > 0 {
             let mut arch = repo.clone().into_active_model();
             arch.nums_commit = Set(commit_len as i32);
+            arch.nums_branch = Set(branch.len() as i32);
             arch.update(&self.write).await.ok();
         }
         if rec != 0 {
             let mut arch = repo.clone().into_active_model();
+            arch.nums_branch = Set(branch.len() as i32);
             arch.updated_at = Set(DateTime::from_timestamp(rec, 0).unwrap().naive_local());
             arch.update(&self.write).await.ok();
         }
