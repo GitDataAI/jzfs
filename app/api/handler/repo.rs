@@ -28,6 +28,7 @@ pub async fn repo_tree(
     }
 }
 
+
 #[handler]
 pub async fn repo_bhct(
     path: Path<(String,String)>,
@@ -231,4 +232,33 @@ pub async fn repo_watch(
             AppWrite::error(err.to_string())
         }
     }
+}
+
+#[handler]
+pub async fn repo_access(
+    session: &Session,
+    status: Data<&AppState>,
+)
+ -> impl IntoResponse
+{
+    let uid = match session.get::<String>("user"){
+        Some(uid) => match serde_json::from_str::<users::Model>(&uid) {
+            Ok(uid) => uid.uid,
+            Err(_) => {
+                return AppWrite::unauthorized("请先登录".to_string())
+            }
+        },
+        None => {
+            return AppWrite::unauthorized("请先登录".to_string())
+        }
+    };
+    let access = match status.user_access_owner(uid).await {
+        Ok(access) => {
+            access
+        },
+        Err(err) => {
+            return AppWrite::error(err.to_string())
+        }
+    };
+    AppWrite::ok(access)
 }

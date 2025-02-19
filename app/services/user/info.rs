@@ -6,7 +6,7 @@ use uuid::Uuid;
 use crate::app::services::AppState;
 use crate::blob::GitBlob;
 use crate::model::repository::repository;
-use crate::model::users::{follow, star, users};
+use crate::model::users::{follow, star, users, watch};
 
 #[derive(Deserialize,Serialize)]
 pub struct UserDashBored {
@@ -15,6 +15,7 @@ pub struct UserDashBored {
     pub stars: Vec<star::Model>,
     pub follow: Vec<follow::Model>,
     pub followed: Vec<follow::Model>,
+    pub watch: Vec<watch::Model>,
     pub readme: Option<String>,
 }
 
@@ -68,6 +69,11 @@ impl AppState {
             .all(&self.read)
             .await
             .map_err(|_| io::Error::new(io::ErrorKind::Other, "Database Err"))?;
+        let watch = watch::Entity::find()
+            .filter(watch::Column::UserId.eq(user.uid))
+            .all(&self.read)
+            .await
+            .map_err(|_| io::Error::new(io::ErrorKind::Other, "Database Err"))?;
         let readme = if let Ok(repo) = self.repo_info(user.clone().username, "readme".to_string()).await {
             let path = format!("{}/{}/{}", crate::app::http::GIT_ROOT, repo.node_uid, repo.uid);
             if let Ok(blob) = GitBlob::new(path.into()){
@@ -89,6 +95,7 @@ impl AppState {
             follow,
             followed,
             readme,
+            watch,
         })
     }
 }

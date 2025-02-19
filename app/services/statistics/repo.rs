@@ -38,7 +38,7 @@ impl AppState {
         {
             statistics_repo::Entity::update_many()
                 .col_expr(statistics_repo::Column::Count, Expr::col(statistics_repo::Column::Count).add(1))
-                .filter(statistics_repo::Column::Uid.eq(uid))
+                .filter(statistics_repo::Column::Uid.eq(model.uid))
                 .filter(statistics_repo::Column::Years.eq(year))
                 .filter(statistics_repo::Column::Mount.eq(month))
                 .filter(statistics_repo::Column::Days.eq(day))
@@ -47,7 +47,7 @@ impl AppState {
                 .await
                 .map(|_| ())
                 .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
-        }else { 
+        } else { 
             statistics_repo::Entity::insert(statistics_repo::ActiveModel {
                 uid: Set(Uuid::new_v4()),
                 repo_uid: Set(uid),
