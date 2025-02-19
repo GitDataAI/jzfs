@@ -13,7 +13,7 @@ const RepoLayout = () => {
     const [RepoInfo, setRepoInfo] = useState<null | Repository>()
     const api = new RepoApi();
     const { owner, repo } = useParams() as { owner: string, repo: string }
-    useEffect(() => {
+    const UpData = () => {
         api.GetInfo(owner, repo)
             .then(res => {
                 if (res.status !== 200) {
@@ -25,9 +25,10 @@ const RepoLayout = () => {
                     setLoad(true);
                 }
             })
-    }, []);
+    }
     useEffect(() => {
         console.log(Tab)
+        UpData()
     }, [Tab]);
     return (
         <div>
@@ -36,7 +37,7 @@ const RepoLayout = () => {
                     <div className="repo">
                         <RepoHeader setTab={setTab} info={RepoInfo} owner={owner} repo={repo}/>
                         {
-                            Tab === "file" && <RepoFile info={RepoInfo} owner={owner} repo={repo}/>
+                            Tab === "file" && <RepoFile info={RepoInfo} owner={owner} repo={repo} upDate={UpData}/>
                         }
                     </div>
                 )

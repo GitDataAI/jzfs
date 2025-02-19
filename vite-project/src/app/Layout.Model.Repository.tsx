@@ -1,7 +1,21 @@
 import {ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/modal";
-import {Button, Checkbox, CheckboxGroup, Divider, Form, Input, Radio, RadioGroup} from "@heroui/react";
+import {
+    Button,
+    Checkbox,
+    CheckboxGroup,
+    Divider,
+    Form,
+    Input,
+    Radio,
+    RadioGroup,
+    Select,
+    SelectItem,
+} from "@heroui/react";
 import {RepoApi} from "@/api/RepoApi.tsx";
 import {toast} from "@pheralb/toast";
+import {useEffect, useState} from "react";
+import {RepoAccess} from "@/types.ts";
+import useUser from "@/state/useUser.tsx";
 
 
 interface LayoutModelRepositoryProps {
@@ -10,6 +24,22 @@ interface LayoutModelRepositoryProps {
 
 const LayoutModelRepository = (props: LayoutModelRepositoryProps) => {
     const repo = new RepoApi();
+    const [Access, setAccess] = useState<RepoAccess[]>([])
+    const user = useUser();
+    useEffect(() => {
+        setAccess([])
+        repo.Access().then(res=>{
+            if (res.status === 200 && res.data){
+                const json = JSON.parse(res.data);
+                const data:RepoAccess[] = json.data;
+                console.log(data)
+                for (let i = 0; i < data.length; i++) {
+                    console.log(data[i])
+                    setAccess((pre)=>[...pre, data[i]])
+                }
+            }
+        })
+    }, []);
     const CreateRepo = async (action: string) => {
         const json = JSON.parse(action)
         const payload = {
@@ -18,8 +48,17 @@ const LayoutModelRepository = (props: LayoutModelRepositoryProps) => {
             visibility: json['visibility'] !== 'Public',
             auto_init: true,
             readme: json['readme'] === "true",
-            default_branch: json['default_branch']
+            default_branch: json['default_branch'],
+            owner: json['owner'],
         };
+        console.log(payload);
+        if (!payload.owner || payload.owner === "") {
+            toast.error({
+                text: "Owner is required",
+            })
+            return;
+        }
+
         const res = await repo
             .CreateRepo(
                 payload.name,
@@ -27,7 +66,8 @@ const LayoutModelRepository = (props: LayoutModelRepositoryProps) => {
                 payload.visibility,
                 payload.auto_init,
                 payload.readme,
-                payload.default_branch
+                payload.default_branch,
+                payload.owner
             );
         const jsonb = JSON.parse(res.data);
         if (res.status === 200 && jsonb['code'] === 200) {
@@ -64,6 +104,25 @@ const LayoutModelRepository = (props: LayoutModelRepositoryProps) => {
                                 width: "100%",
                             }}
                         >
+                            <Select
+                                isRequired
+                                defaultSelectedKeys={[user.dash!.user.uid]}
+                                name={"owner"}
+                                labelPlacement="outside"
+                                label="Owner"
+                                title="Select Owner">
+                                {
+                                    Access.map((item) => {
+                                        return (
+                                            <SelectItem style={{
+                                                display: "flex"
+                                            }} key={item.owner_uid} value={item.owner_uid} itemID={item.owner_uid}>
+                                                {item.name}
+                                            </SelectItem>
+                                        );
+                                    })
+                                }
+                            </Select>
                             <Input
                                 isRequired
                                 errorMessage="Repository name must be between 2 and 100 characters"

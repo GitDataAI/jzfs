@@ -46,7 +46,13 @@ export interface Repository {
     avatar?: string;
     topic: string[];
 }
-
+export interface Watch {
+    uid: string;
+    user_id: string;
+    repository_id: string;
+    level: number;
+    created_at: DateTime;
+}
 export interface Star {
     uid: string;
     user_id: string;
@@ -68,7 +74,8 @@ export interface UserDashBored {
     stars: Star[];
     follow: Follow[];
     followed: Follow[];
-    readme?: Uint8Array
+    readme?: Uint8Array;
+    watch: Watch[]
 }
 
 export interface Branches {
@@ -102,3 +109,9 @@ export interface Tree {
     commit: Commits[]
 }
 
+export interface RepoAccess {
+    owner_uid: string,
+    name: string,
+    avatar?: string,
+    repos: string[]
+}
