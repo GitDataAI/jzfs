@@ -16,3 +16,4 @@ node_modules
 
 charts/templates/configMap.yaml
 data
+deploy
