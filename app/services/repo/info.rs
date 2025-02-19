@@ -6,6 +6,7 @@ use sea_orm::prelude::Expr;
 use uuid::Uuid;
 use crate::app::services::AppState;
 use crate::app::services::statistics::repo::{STAR, WATCH};
+use crate::model::origin::organization;
 use crate::model::repository::repository;
 use crate::model::users::{star, users, watch};
 
@@ -17,14 +18,24 @@ impl AppState {
     )
     -> io::Result<repository::Model>
     {
-        let user = users::Entity::find()
-            .filter(users::Column::Username.eq(owner))
+        let owner_uid =if let Some(x) = users::Entity::find()
+            .filter(users::Column::Username.eq(owner.clone()))
             .one(&self.read)
             .await
             .map_err(|x| io::Error::new(io::ErrorKind::Other, x))?
-            .ok_or(io::Error::new(io::ErrorKind::Other, "user not found"))?;
+        {
+            x.uid
+        }else {
+            organization::Entity::find()
+                .filter(organization::Column::Username.eq(owner))
+                .one(&self.read)
+                .await
+                .map_err(|x| io::Error::new(io::ErrorKind::Other, x))?
+                .ok_or(io::Error::new(io::ErrorKind::Other, "owner not found"))?
+                .uid
+        };
         repository::Entity::find()
-            .filter(repository::Column::OwnerId.eq(user.uid))
+            .filter(repository::Column::OwnerId.eq(owner_uid))
             .filter(repository::Column::Name.eq(repo))
             .one(&self.read)
             .await
