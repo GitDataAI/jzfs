@@ -10,6 +10,7 @@ pub async fn user_now(
     session: &Session,
     state: web::Data<&AppState>,
 ) -> impl IntoResponse {
+    session.renew();
     let uid = match session.get::<String>("user"){
         Some(uid) => match serde_json::from_str::<users::Model>(&uid) {
             Ok(uid) => uid.uid,

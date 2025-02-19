@@ -82,6 +82,7 @@ pub async fn auth_logout(
 )
  -> impl IntoResponse
 {
+    session.renew();
     session.purge();
     AppWrite::<()>::success("success".to_string())
 }

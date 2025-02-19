@@ -14,7 +14,7 @@ pub async fn upload_avatar(
     state: web::Data<&AppState>,
     session: &Session,
 )  -> impl IntoResponse {
-
+    session.renew();
     let uid = match session.get::<String>("user"){
         Some(uid) => match serde_json::from_str::<users::Model>(&uid) {
             Ok(uid) => uid.uid,
@@ -53,7 +53,6 @@ pub async fn down_avatar(
     path: web::Path<String>,
 ) -> impl IntoResponse {
     let avatar = format!("{}/static/{}",GIT_ROOT,path.0);
-    dbg!(&avatar);
     let mut header = HeaderMap::new();
     header.append("Content-Type", "image/png".parse().unwrap());
     if std::path::Path::new(&avatar).exists() {
