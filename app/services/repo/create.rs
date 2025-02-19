@@ -20,6 +20,7 @@ pub struct ReposCreateParma {
     pub auto_init: bool,
     pub readme: bool,
     pub default_branch: String,
+    pub owner: Uuid,
 }
 impl AppState {
     async fn check_repo_name(&self,users_uid: Uuid, name: String) -> io::Result<bool> {
@@ -35,6 +36,18 @@ impl AppState {
         if !self.check_repo_name(users_uid, parma.name.clone()).await? {
             return Err(io::Error::new(io::ErrorKind::Other, "repository name already exists"));
         }
+        let access = self.user_access_owner(users_uid).await?;
+        if access.iter().any(|x| x.owner_uid != users_uid) {
+            return Err(io::Error::new(io::ErrorKind::Other, "access forbid"));
+        }
+        let owner_uid = {
+            if parma.owner == users_uid {
+                users_uid
+            } else {
+                let owner = access.iter().find(|x| x.owner_uid == parma.owner).unwrap();
+                owner.owner_uid
+            }
+        };
         let txn = self.write.begin().await
             .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
         let action = repository::ActiveModel {
@@ -51,7 +64,7 @@ impl AppState {
             nums_tag: Set(0),
             nums_branch: Set(0),
             ssh: Set("".to_string()),
-            owner_id: Set(users_uid),
+            owner_id: Set(owner_uid),
             name: Set(parma.name),
             description: Set(parma.description),
             visibility: Set(parma.private),

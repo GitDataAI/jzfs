@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::app::services::AppState;
 use crate::model::origin::{members, organization};
+use crate::model::repository::repository;
 use crate::model::users::users;
 
 #[derive(Deserialize,Serialize,Clone)]
@@ -13,6 +14,7 @@ pub struct AccessOwner {
     pub owner_uid: Uuid,
     pub name: String,
     pub avatar: Option<String>,
+    pub repos: Vec<String>,
 }
 
 
@@ -24,10 +26,16 @@ impl AppState {
             .one(&self.read)
             .await
             .map_err(|x| io::Error::new(io::ErrorKind::Other, x))?{
+            let respo = repository::Entity::find()
+                .filter(repository::Column::OwnerId.eq(x.uid))
+                .all(&self.read)
+                .await
+                .map_err(|x| io::Error::new(io::ErrorKind::Other, x))?;
             result.push(AccessOwner {
                 owner_uid: x.uid,
                 name: x.username,
                 avatar: x.avatar,
+                repos: respo.iter().map(|x| x.name.clone()).collect(),
             })
         }
         let members = members::Entity::find()
@@ -42,10 +50,16 @@ impl AppState {
                 .one(&self.read)
                 .await
                 .map_err(|x| io::Error::new(io::ErrorKind::Other, x))?{
+                let respo = repository::Entity::find()
+                    .filter(repository::Column::OwnerId.eq(x.uid))
+                    .all(&self.read)
+                    .await
+                    .map_err(|x| io::Error::new(io::ErrorKind::Other, x))?;
                 result.push(AccessOwner{
                     owner_uid: x.uid,
                     name: x.username,
                     avatar: x.avatar,
+                    repos: respo.iter().map(|x| x.name.clone()).collect(),
                 })
             }
         }

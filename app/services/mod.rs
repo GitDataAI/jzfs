@@ -17,7 +17,9 @@ pub mod auth;
 pub mod user;
 pub mod repo;
 pub mod email;
-
+pub mod recommend;
+pub mod statistics;
+pub mod access;
 impl AppState {
     pub async fn init_env() -> io::Result<AppState> {
         let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
