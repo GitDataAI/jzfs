@@ -87,9 +87,6 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-send-timeout: "1800"
     nginx.ingress.kubernetes.io/client-body-buffer-size: "10G"
     nginx.ingress.kubernetes.io/client-body-max-size: "10G"
-    nginx.ingress.kubernetes.io/proxy-buffer-size: "10G"
-    nginx.ingress.kubernetes.io/proxy-buffers-number: "10"
-    nginx.ingress.kubernetes.io/proxy-buffering: "on"
     nginx.ingress.kubernetes.io/proxy-body-size: "10G"
 
 
