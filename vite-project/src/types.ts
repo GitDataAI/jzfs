@@ -16,6 +16,7 @@ export interface UserModel {
     location?: string;
     created_at: DateTime;
     updated_at: DateTime;
+    topic: string[];
 }
 
 
@@ -43,6 +44,7 @@ export interface Repository {
     updated_at: DateTime;
     created_by: string;
     avatar?: string;
+    topic: string[];
 }
 
 export interface Star {
