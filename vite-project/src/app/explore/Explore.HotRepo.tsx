@@ -73,7 +73,7 @@ const RankList = (props: {repos: HotRepo[]}) => {
                                 gap: "10px",
                             }}
                                  onPress={()=>{
-                                     nav(`${value.owner}/${model.name}`)
+                                     nav(`/${value.owner}/${model.name}`)
                                  }}
                                  className={"explore-hot-repo-item-item"}>
                                 <div style={{
