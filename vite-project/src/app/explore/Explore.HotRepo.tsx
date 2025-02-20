@@ -1,9 +1,14 @@
-import {HotRepo} from "@/types.ts";
+import {HotRepo, UserModel} from "@/types.ts";
 import {useEffect, useState} from "react";
 import {Avatar, Card, CardBody, CardHeader} from "@heroui/react";
 import {Listbox, ListboxItem} from "@heroui/listbox";
 import {createAvatar} from "@dicebear/core";
 import {lorelei} from "@dicebear/collection";
+import {useNavigate} from "react-router-dom";
+import {UserApi} from "@/api/UserApi.tsx";
+import {toast} from "@pheralb/toast";
+import {AppWrite} from "@/api/Http.tsx";
+import { FaFire } from "react-icons/fa";
 
 interface ExploreHotProps {
     hot: HotRepo[]
@@ -50,8 +55,9 @@ export const ExploreHotRepo = (props: ExploreHotProps) => {
 
     )
 }
-
+const userApi = new UserApi();
 const RankList = (props: {repos: HotRepo[]}) => {
+    const nav = useNavigate();
     return(
         <CardBody>
             <Listbox>
@@ -69,14 +75,47 @@ const RankList = (props: {repos: HotRepo[]}) => {
                             <ListboxItem style={{
                                 display: "flex",
                                 gap: "10px",
-                            }} className={"explore-hot-repo-item-item"}>
+                            }}
+                                 onPress={()=>{
+                                    userApi.InfoByUid(model.owner_id)
+                                        .then(res=>{
+                                            if (res.status !== 200){
+                                                toast.error({
+                                                    text: "Owner Err"
+                                                })
+                                            }
+                                            const json: AppWrite<UserModel> = JSON.parse(res.data);
+                                            if (json.code === 200 && json.data && res.status) {
+                                                nav(`/${json.data.username}/${model.name}`)
+                                            }else {
+                                                toast.error({
+                                                    text: "Owner Err"
+                                                })
+                                            }
+                                        })
+                                 }}
+                                 className={"explore-hot-repo-item-item"}>
                                 <div style={{
                                     display: "flex",
-                                    gap: "10px",
+                                    justifyContent: "space-between",
                                     alignItems: "center",
+                                    width: "100%",
                                 }}>
-                                    <Avatar src={model.avatar} size={"sm"}/>
-                                    <span>{model.name}</span>
+                                    <div style={{
+                                        display: "flex",
+                                        gap: "10px",
+                                        alignItems: "center",
+                                    }}>
+                                        <Avatar src={model.avatar} size={"sm"}/>
+                                        <span>{model.name}</span>
+                                    </div>
+                                    <div style={{
+                                        display: "flex",
+                                        gap: "10px",
+                                    }}>
+                                        <FaFire />
+                                        {value.complex}
+                                    </div>
                                 </div>
                             </ListboxItem>
                         )

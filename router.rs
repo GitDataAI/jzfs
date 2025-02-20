@@ -3,7 +3,7 @@ use crate::app::api::handler::auth::{auth_apply, auth_captcha, auth_check, auth_
 use crate::app::api::handler::explore::explore_repo_hot;
 use crate::app::api::handler::repo::{repo_access, repo_bhct, repo_create, repo_file, repo_fork, repo_info, repo_star, repo_tree, repo_watch};
 use crate::app::api::handler::static_file::{down_avatar, upload_avatar};
-use crate::app::api::handler::users::{user_dashbored, user_now, user_update_optional};
+use crate::app::api::handler::users::{user_dashbored, user_info_by_uid, user_now, user_update_optional};
 use crate::app::http::git_router;
 
 pub fn router() -> Route {
@@ -39,6 +39,7 @@ pub fn router() -> Route {
                         .at("/now",get(user_now))
                         .at("/uptional", patch(user_update_optional))
                         .at("/:username/dashbored", get(user_dashbored))
+                        .at("/uid/:uid", post(user_info_by_uid))
                 )
                 .nest(
                     "/repo",

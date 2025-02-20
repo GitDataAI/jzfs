@@ -2,6 +2,7 @@ use crate::app::api::write::AppWrite;
 use crate::app::services::AppState;
 use poem::session::Session;
 use poem::{handler, web, IntoResponse};
+use uuid::Uuid;
 use crate::app::services::user::update::UserUpdateOptional;
 use crate::model::users::users;
 
@@ -74,6 +75,21 @@ pub async fn user_update_optional(
         }
     };
     match state.user_update_optional(uid, form.0).await{
+        Ok(x) => {
+            AppWrite::ok(x)
+        },
+        Err(err) => {
+            AppWrite::error(err.to_string())
+        }
+    }
+}
+
+#[handler]
+pub async fn user_info_by_uid(
+    state: web::Data<&AppState>,
+    uid: web::Path<Uuid>,
+) -> impl IntoResponse {
+    match state.user_info_by_uid(uid.0).await{
         Ok(x) => {
             AppWrite::ok(x)
         },

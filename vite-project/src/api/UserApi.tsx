@@ -22,4 +22,7 @@ export class UserApi extends Http {
             language: language,
         })
     }
+    async InfoByUid(uid: string) {
+        return await this.post<string>('/user/uid/'+uid,{})
+    }
 }

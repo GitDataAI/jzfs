@@ -60,7 +60,7 @@ pub async fn repo_info(
     let (owner, repo) = path.0;
     match status.repo_info(owner,repo).await {
         Ok(info) => {
-            dbg!(status.statistics_repo(info.uid,CLICK.to_string()).await);
+            status.statistics_repo(info.uid,CLICK.to_string()).await.ok();
             AppWrite::ok(info)
         },
         Err(err) => {
