@@ -15,11 +15,11 @@ impl Default for CaptchaImage {
 impl CaptchaImage {
     pub fn new() -> CaptchaImage {
         let captcha = CaptchaBuilder::new()
-            .length(3)
-            .width(130)
-            .height(40)
+            .length(5)
+            .width(110)
+            .height(35)
             .dark_mode(false)
-            .complexity(1) // min: 1, max: 10
+            .complexity(0) // min: 1, max: 10
             .compression(40) // min: 1, max: 99
             .build();
         let text = captcha.text.clone();
