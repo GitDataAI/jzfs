@@ -16,6 +16,13 @@ pub struct AccessOwner {
     pub avatar: Option<String>,
     pub repos: Vec<String>,
 }
+#[derive(Deserialize,Serialize,Clone)]
+pub struct AccessOwnerModel {
+    pub owner_uid: Uuid,
+    pub name: String,
+    pub avatar: Option<String>,
+    pub repos: Vec<repository::Model>,
+}
 
 
 impl AppState {
@@ -60,6 +67,52 @@ impl AppState {
                     name: x.username,
                     avatar: x.avatar,
                     repos: respo.iter().map(|x| x.name.clone()).collect(),
+                })
+            }
+        }
+        Ok(result)
+    }
+    pub async fn user_access_owner_model(&self, uid: Uuid) -> io::Result<Vec<AccessOwnerModel>> {
+        let mut result = Vec::new();
+        if let Some(x) = users::Entity::find()
+            .filter(users::Column::Uid.eq(uid))
+            .one(&self.read)
+            .await
+            .map_err(|x| io::Error::new(io::ErrorKind::Other, x))?{
+            let respo = repository::Entity::find()
+                .filter(repository::Column::OwnerId.eq(x.uid))
+                .all(&self.read)
+                .await
+                .map_err(|x| io::Error::new(io::ErrorKind::Other, x))?;
+            result.push(AccessOwnerModel {
+                owner_uid: x.uid,
+                name: x.username,
+                avatar: x.avatar,
+                repos: respo,
+            })
+        }
+        let members = members::Entity::find()
+            .filter(members::Column::UsersUid.eq(uid))
+            .filter(members::Column::Access.gte(2))
+            .all(&self.read)
+            .await
+            .map_err(|x| io::Error::new(io::ErrorKind::Other, x))?;
+        for x in members {
+            if let Some(x) = organization::Entity::find()
+                .filter(organization::Column::Uid.eq(x.group_uid))
+                .one(&self.read)
+                .await
+                .map_err(|x| io::Error::new(io::ErrorKind::Other, x))?{
+                let respo = repository::Entity::find()
+                    .filter(repository::Column::OwnerId.eq(x.uid))
+                    .all(&self.read)
+                    .await
+                    .map_err(|x| io::Error::new(io::ErrorKind::Other, x))?;
+                result.push(AccessOwnerModel{
+                    owner_uid: x.uid,
+                    name: x.username,
+                    avatar: x.avatar,
+                    repos: respo,
                 })
             }
         }

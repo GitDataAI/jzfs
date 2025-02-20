@@ -84,7 +84,6 @@ impl AppState {
                     .await
                     .map_err(|x| io::Error::new(io::ErrorKind::Other, x))?;
                 txn.commit().await.map_err(|x| io::Error::new(io::ErrorKind::Other, x))?;
-                self.statistics_repo(repos_uid, STAR.to_string()).await.ok();
                 Ok(())
             },
             None => {

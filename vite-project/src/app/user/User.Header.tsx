@@ -32,7 +32,7 @@ export const UserHeader = (props: { setTab: (arg0: string)=> void }) => {
             }} selectedKey={Tabes}>
                 <Tab key="active" title={
                     <div className="flex items-center">
-                        <IconWrapper className=" bg-orange-200 text-black">
+                        <IconWrapper className="  text-black">
                             <VscLayersActive />
                         </IconWrapper>
                         <span className="ml-2">Active</span>
@@ -40,7 +40,7 @@ export const UserHeader = (props: { setTab: (arg0: string)=> void }) => {
                 }/>
                 <Tab key="reposiotry" title={
                     <div className="flex items-center">
-                        <IconWrapper className=" bg-yellow-300 text-black">
+                        <IconWrapper className="  text-black">
                             <RiGitRepositoryLine />
                         </IconWrapper>
                         <span className="ml-2">Reposiotry</span>
@@ -48,7 +48,7 @@ export const UserHeader = (props: { setTab: (arg0: string)=> void }) => {
                 }/>
                 <Tab key="package" title={
                     <div className="flex items-center">
-                        <IconWrapper className=" bg-blue-500 text-white">
+                        <IconWrapper className="  text-black">
                             <GoPackage />
                         </IconWrapper>
                         <span className="ml-2">Package</span>
@@ -56,7 +56,7 @@ export const UserHeader = (props: { setTab: (arg0: string)=> void }) => {
                 }/>
                 <Tab key="product" title={
                     <div className="flex items-center">
-                        <IconWrapper className=" bg-green-500 text-white">
+                        <IconWrapper className="  text-black">
                             <MdProductionQuantityLimits />
                         </IconWrapper>
                         <span className="ml-2">Product</span>
@@ -64,7 +64,7 @@ export const UserHeader = (props: { setTab: (arg0: string)=> void }) => {
                 }/>
                 <Tab key="star" title={
                     <div className="flex items-center">
-                        <IconWrapper className=" bg-indigo-500 text-white">
+                        <IconWrapper className="  text-black">
                             <CiStar />
                         </IconWrapper>
                         <span className="ml-2">Star</span>
@@ -72,7 +72,7 @@ export const UserHeader = (props: { setTab: (arg0: string)=> void }) => {
                 }/>
                 <Tab key="follow" title={
                     <div className="flex items-center">
-                        <IconWrapper className=" bg-red-300 text-black">
+                        <IconWrapper className="  text-black">
                             <RiUserFollowLine />
                         </IconWrapper>
                         <span className="ml-2">Follow</span>
@@ -80,7 +80,7 @@ export const UserHeader = (props: { setTab: (arg0: string)=> void }) => {
                 }/>
                 <Tab key="setting" title={
                     <div className="flex items-center">
-                        <IconWrapper className=" bg-gray-300 text-black">
+                        <IconWrapper className="  text-black">
                             <CiSettings />
                         </IconWrapper>
                         <span className="ml-2">Setting</span>

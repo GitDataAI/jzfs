@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@dicebear/collection": "^9.2.2",
+    "@dicebear/core": "^9.2.2",
     "@heroui/button": "^2.2.10",
     "@heroui/dropdown": "^2.3.10",
     "@heroui/input": "^2.4.10",

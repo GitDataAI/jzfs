@@ -115,3 +115,24 @@ export interface RepoAccess {
     avatar?: string,
     repos: string[]
 }
+
+
+export interface HotTime {
+    years: number;
+    month: number;
+    day: number;
+}
+
+export interface HotTimeParma {
+    start: HotTime;
+    end: HotTime;
+    limit: number;
+}
+
+export interface HotRepo {
+    complex: number;
+    click: number;
+    fork: number;
+    star: number;
+    model: Repository;
+}

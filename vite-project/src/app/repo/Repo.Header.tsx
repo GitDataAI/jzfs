@@ -48,7 +48,7 @@ export const RepoHeader = (props: { setTab: (arg0: string) => void, info: Reposi
                         <div style={{
                             display: "flex"
                         }}>
-                            <IconWrapper className="bg-cyan-100 text-success">
+                            <IconWrapper className="">
                                 <FileIcon className="text-lg " />
                             </IconWrapper>
                             <span style={{
@@ -71,7 +71,7 @@ export const RepoHeader = (props: { setTab: (arg0: string) => void, info: Reposi
                     <Tab key="issues" title={
                         <Badge color="primary" placement={"top-right"} content={props.info.nums_issue} size="sm">
 
-                            <IconWrapper className="bg-success/10 text-success">
+                            <IconWrapper className="">
                                 <BugIcon className="text-lg " />
                             </IconWrapper>
                             <span style={{
@@ -83,7 +83,7 @@ export const RepoHeader = (props: { setTab: (arg0: string) => void, info: Reposi
                     <Tab key="pr" title={
                         <Badge color="primary" placement={"top-right"} content={props.info.nums_pullrequest} size="sm">
 
-                            <IconWrapper className="bg-primary/10 text-primary">
+                            <IconWrapper className="">
                                 <PullRequestIcon className="text-lg " />
                             </IconWrapper>
                             <span style={{
@@ -95,7 +95,7 @@ export const RepoHeader = (props: { setTab: (arg0: string) => void, info: Reposi
                         <div style={{
                             display: "flex"
                         }}>
-                            <IconWrapper className="bg-secondary/10 text-secondary">
+                            <IconWrapper className="">
                                 <ChatIcon className="text-lg " />
                             </IconWrapper>
                             <span style={{
@@ -107,7 +107,7 @@ export const RepoHeader = (props: { setTab: (arg0: string) => void, info: Reposi
                         <div style={{
                             display: "flex"
                         }}>
-                            <IconWrapper className="bg-warning/10 text-warning">
+                            <IconWrapper className="">
                                 <PlayCircleIcon className="text-lg " />
                             </IconWrapper>
                             <span style={{
@@ -119,7 +119,7 @@ export const RepoHeader = (props: { setTab: (arg0: string) => void, info: Reposi
                         <div style={{
                             display: "flex"
                         }}>
-                            <IconWrapper className="bg-default/50 text-foreground">
+                            <IconWrapper className="">
                                 <LayoutIcon className="text-lg " />
                             </IconWrapper>
                             <span style={{
@@ -131,8 +131,8 @@ export const RepoHeader = (props: { setTab: (arg0: string) => void, info: Reposi
                         <div style={{
                             display: "flex"
                         }}>
-                            <IconWrapper className="bg-amber-400 text-foreground">
-                                <SettingIcon className="text-lg text-amber-800"/>
+                            <IconWrapper className="">
+                                <SettingIcon className="text-lg "/>
                             </IconWrapper>
                             <span style={{
                                 padding: "3px"
