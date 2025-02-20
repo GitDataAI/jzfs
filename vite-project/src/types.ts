@@ -134,5 +134,6 @@ export interface HotRepo {
     click: number;
     fork: number;
     star: number;
+    owner: string;
     model: Repository;
 }

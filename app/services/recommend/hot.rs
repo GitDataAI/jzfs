@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io;
 use uuid::Uuid;
+use crate::model::origin::organization;
 // Click * 0.05 + Fork * 0.3 + Watch * 0.3 + Star * 0.8
 
 #[derive(Deserialize,Serialize,Clone,Debug)]
@@ -28,6 +29,7 @@ pub struct HotRepo {
     pub click: i64,
     pub fork: i64,
     pub star: i64,
+    pub owner: String,
     pub model: repository::Model
 }
 
@@ -80,7 +82,19 @@ impl AppState {
                 .one(&self.read)
                 .await
                 .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+           
             if let Some(repo) = repo {
+                let owner = self.user_info_by_uid(repo.owner_id).await;
+                let name = if let Ok(e) = owner {
+                    e.name
+                } else {
+                    let group = organization::Entity::find_by_id(idx.uid).one(&self.read).await;
+                    if let Ok(Some(e)) = group {
+                        e.name
+                    }else {
+                        continue
+                    }
+                };
                 if let Some(v) = statistics.get_mut(&repo.uid) {
                     match idx.rtype.as_str() {
                         "click" => v.click += idx.count,
@@ -94,6 +108,7 @@ impl AppState {
                         click: 1,
                         fork: 1,
                         star: 1,
+                        owner: name,
                         model: repo.clone(),
                     };
                     match idx.rtype.as_str() {
