@@ -93,7 +93,7 @@ export const RepoFork = (props: RepoForkProps) => {
                             return (
                                 <SelectItem style={{
                                     display: "flex"
-                                }} key={item.owner_uid} value={item.owner_uid} itemID={item.owner_uid}>
+                                }} key={item.owner_uid} itemID={item.owner_uid}>
                                     {item.name}
                                 </SelectItem>
                             );

@@ -6,6 +6,7 @@ import {Repository} from "@/types.ts";
 import {useParams} from "react-router-dom";
 import {toast} from "@pheralb/toast";
 import RepoFile from "@/app/repo/Repo.File.tsx";
+import {RepoSetting} from "@/app/repo/Repo.Setting.tsx";
 
 const RepoLayout = () => {
     const [Tab, setTab] = useState("file")
@@ -27,7 +28,6 @@ const RepoLayout = () => {
             })
     }
     useEffect(() => {
-        console.log(Tab)
         UpData()
     }, [Tab]);
     return (
@@ -38,6 +38,9 @@ const RepoLayout = () => {
                         <RepoHeader setTab={setTab} info={RepoInfo} owner={owner} repo={repo}/>
                         {
                             Tab === "file" && <RepoFile info={RepoInfo} owner={owner} repo={repo} upDate={UpData}/>
+                        }
+                        {
+                            Tab === "setting" && <RepoSetting  info={RepoInfo} owner={owner} repo={repo} upDate={UpData}/>
                         }
                     </div>
                 )

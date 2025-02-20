@@ -12,6 +12,7 @@ import {UserApi} from "@/api/UserApi.tsx";
 import {toast} from "@pheralb/toast";
 import useUser from "@/state/useUser.tsx";
 import {RepoREADME} from "@/app/repo/Repo.README.tsx";
+import {useNavigate} from "react-router-dom";
 
 const UserActive = (props: {props: UserDashBored}) => {
     const prop = props.props;
@@ -19,6 +20,7 @@ const UserActive = (props: {props: UserDashBored}) => {
     const user = new UserApi();
     const store = useUser();
     const [Readme, setReadme] = useState<Uint8Array | null>(null)
+    const nav = useNavigate();
     const [Form, setFrom] = useState({
         description: prop.user.description || "",
         website: prop.user.website || "",
@@ -53,7 +55,9 @@ const UserActive = (props: {props: UserDashBored}) => {
 
     return (
         <div className="user-active user-bodt">
-            <Card>
+            <Card style={{
+                maxHeight: "calc(100vh - 8rem)",
+            }}>
                 <CardBody>
                     <div className="user-active-profile">
                         <Avatar
@@ -80,7 +84,6 @@ const UserActive = (props: {props: UserDashBored}) => {
                                 const file = e.target.files[0];
                                 const  form = new FormData();
                                 form.append("file", file);
-
                                 const xhr = new XMLHttpRequest();
                                 xhr.open("post", "/api/static/upload_avatar", true);
                                 xhr.onload = function () {
@@ -103,6 +106,7 @@ const UserActive = (props: {props: UserDashBored}) => {
                     <span style={{
                         fontSize: "1.5rem",
                         fontWeight: "bold"
+
                     }}>{prop.user.username}</span><br/>
                             <span>{prop.user.name}</span>
                         </div>
@@ -206,7 +210,7 @@ const UserActive = (props: {props: UserDashBored}) => {
                                             {
                                                 location.map((value) => {
                                                     return (
-                                                        <SelectItem key={value} value={value}>
+                                                        <SelectItem key={value} >
                                                             {value}
                                                         </SelectItem>
                                                     )
@@ -224,7 +228,7 @@ const UserActive = (props: {props: UserDashBored}) => {
                                             {
                                                 timezone.map((value) => {
                                                     return (
-                                                        <SelectItem key={value.value} value={value.value}>
+                                                        <SelectItem key={value.value} >
                                                             {value.label}
                                                         </SelectItem>
                                                     )
@@ -242,7 +246,7 @@ const UserActive = (props: {props: UserDashBored}) => {
                                             {
                                                 language.map((value) => {
                                                     return (
-                                                        <SelectItem key={value} value={value}>
+                                                        <SelectItem key={value} >
                                                             {value}
                                                         </SelectItem>
                                                     )
@@ -264,8 +268,16 @@ const UserActive = (props: {props: UserDashBored}) => {
                     <div className="user-active-active">
                         {
                             Readme && (
-                                <RepoREADME file={Readme} title={
-                                    <Code>{prop.user.username + " / readme"}</Code>
+                                <RepoREADME
+                                    file={Readme}
+                                    title={
+                                    <Code
+                                        style={{
+                                            cursor: "pointer"
+                                        }}
+                                        onClick={()=>{
+                                        nav("/"+prop.user.username + "/" + "readme?tab=file")
+                                    }}>{prop.user.username + " / readme"}</Code>
                                 }/>
                             )
                         }

@@ -158,3 +158,8 @@
     align-items: center;
     gap: 20px;
 }
+.repo-setting {
+    display: grid;
+    grid-template-columns: 1fr 4fr;
+    gap: 20px;
+}

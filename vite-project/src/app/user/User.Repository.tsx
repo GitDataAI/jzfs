@@ -127,11 +127,11 @@ const UserRepository = (props: {props: UserDashBored}) => {
                             }
                         }
                     }}>
-                        <SelectItem key="rand" value={'rand'}>rand</SelectItem>
-                        <SelectItem key="name" value={'name'}>name</SelectItem>
-                        <SelectItem key="star" value={'star'}>star</SelectItem>
-                        <SelectItem key="watch" value={'watch'}>watch</SelectItem>
-                        <SelectItem key="fork" value={'fork'}>fork</SelectItem>
+                        <SelectItem key="rand" >rand</SelectItem>
+                        <SelectItem key="name" >name</SelectItem>
+                        <SelectItem key="star" >star</SelectItem>
+                        <SelectItem key="watch" >watch</SelectItem>
+                        <SelectItem key="fork" >fork</SelectItem>
                     </Select>
                     <Select size={"sm"} label="up-to-date" className="user-repo-sort">
                         <SelectItem key="new">recent</SelectItem>

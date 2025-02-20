@@ -114,11 +114,10 @@ const LayoutModelRepository = (props: LayoutModelRepositoryProps) => {
                                 {
                                     Access.map((item) => {
                                         return (
-                                            <SelectItem style={{
-                                                display: "flex"
-                                            }} key={item.owner_uid} value={item.owner_uid} itemID={item.owner_uid}>
+                                            <SelectItem style={{ display: "flex" }} key={item.owner_uid}  itemID={item.owner_uid}>
                                                 {item.name}
                                             </SelectItem>
+
                                         );
                                     })
                                 }

@@ -69,11 +69,9 @@ export const Header = () => {
                     ):(
                         <>
                             <div className="header-menu">
-                                <span >首页</span>
-                                <span >仓库</span>
-                                <span >组织</span>
-                                <span >社区</span>
-                                <span >竞赛</span>
+                                <span onClick={()=>{nav("/explore")}}>explore</span>
+                                <span  onClick={()=>{nav("/market")}}>marketplace</span>
+                                <span  onClick={()=>{nav("/community")}}>community</span>
                             </div>
                             <div className={"header-right"}>
                                 <Input
@@ -159,7 +157,9 @@ export const Header = () => {
 
                                         </DropdownSection>
                                         <DropdownSection showDivider >
-                                            <DropdownItem key="setting">Setting</DropdownItem>
+                                            <DropdownItem key="setting" onPress={()=>{
+                                                nav(user.dash?.user.username+"?tab=setting")
+                                            }} >Setting</DropdownItem>
                                             <DropdownItem key="help">Help & Feedback</DropdownItem>
                                             <DropdownItem key="sync" onPress={()=>{
                                                 if (user.dash?.user.username) {

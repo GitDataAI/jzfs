@@ -152,11 +152,11 @@
 
 .login-captcha-half {
     width: 40%;
-    height: 35px;
     margin-bottom: 1rem;
     border: 1px solid #ccc;
     box-sizing: border-box;
     cursor: pointer;
+    object-fit: cover;
 }
 
 .login-label {

@@ -1,6 +1,12 @@
 import {Tab, Tabs} from "@heroui/tabs";
 import {useSearchParams} from "react-router-dom";
 import {useEffect, useState} from "react";
+import {VscLayersActive} from "react-icons/vsc";
+import {IconWrapper} from "@/app/repo/Repo.Icons.tsx";
+import {RiGitRepositoryLine, RiUserFollowLine} from "react-icons/ri";
+import {GoPackage} from "react-icons/go";
+import {MdProductionQuantityLimits} from "react-icons/md";
+import {CiSettings, CiStar} from "react-icons/ci";
 
 export const UserHeader = (props: { setTab: (arg0: string)=> void }) => {
     const [Query , setQuery] = useSearchParams();
@@ -15,7 +21,7 @@ export const UserHeader = (props: { setTab: (arg0: string)=> void }) => {
            setTab(Query.get("tab") as string)
            props.setTab(Query.get("tab") as string)
        }
-    },[Query])
+    },[Query,props,setQuery])
     return (
         <div className="user-header">
             <Tabs variant="bordered" className="user-header-tabs" onSelectionChange={(x)=>{
@@ -24,12 +30,62 @@ export const UserHeader = (props: { setTab: (arg0: string)=> void }) => {
                 setQuery(Query)
                 props.setTab(x.toString())
             }} selectedKey={Tabes}>
-                <Tab key="active" title="Active"/>
-                <Tab key="reposiotry" title="Reposiotry"/>
-                <Tab key="package" title="Package"/>
-                <Tab key="release" title="Release"/>
-                <Tab key="star" title="Star"/>
-                <Tab key="follow" title="Follow"/>
+                <Tab key="active" title={
+                    <div className="flex items-center">
+                        <IconWrapper className=" bg-orange-200 text-black">
+                            <VscLayersActive />
+                        </IconWrapper>
+                        <span className="ml-2">Active</span>
+                    </div>
+                }/>
+                <Tab key="reposiotry" title={
+                    <div className="flex items-center">
+                        <IconWrapper className=" bg-yellow-300 text-black">
+                            <RiGitRepositoryLine />
+                        </IconWrapper>
+                        <span className="ml-2">Reposiotry</span>
+                    </div>
+                }/>
+                <Tab key="package" title={
+                    <div className="flex items-center">
+                        <IconWrapper className=" bg-blue-500 text-white">
+                            <GoPackage />
+                        </IconWrapper>
+                        <span className="ml-2">Package</span>
+                    </div>
+                }/>
+                <Tab key="product" title={
+                    <div className="flex items-center">
+                        <IconWrapper className=" bg-green-500 text-white">
+                            <MdProductionQuantityLimits />
+                        </IconWrapper>
+                        <span className="ml-2">Product</span>
+                    </div>
+                }/>
+                <Tab key="star" title={
+                    <div className="flex items-center">
+                        <IconWrapper className=" bg-indigo-500 text-white">
+                            <CiStar />
+                        </IconWrapper>
+                        <span className="ml-2">Star</span>
+                    </div>
+                }/>
+                <Tab key="follow" title={
+                    <div className="flex items-center">
+                        <IconWrapper className=" bg-red-300 text-black">
+                            <RiUserFollowLine />
+                        </IconWrapper>
+                        <span className="ml-2">Follow</span>
+                    </div>
+                }/>
+                <Tab key="setting" title={
+                    <div className="flex items-center">
+                        <IconWrapper className=" bg-gray-300 text-black">
+                            <CiSettings />
+                        </IconWrapper>
+                        <span className="ml-2">Setting</span>
+                    </div>
+                }/>
             </Tabs>
         </div>
     )

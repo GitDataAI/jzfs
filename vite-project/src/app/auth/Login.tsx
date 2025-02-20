@@ -118,6 +118,7 @@ const Login = (props: LoginProps) => {
                             className="login-captcha-half"
                             onClick={GetCaptcha}
                             src={Captcha.image}
+                            height={35}
                             alt="captcha"
                         />
                     </div>
