@@ -84,6 +84,9 @@ impl AppState {
                 .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
            
             if let Some(repo) = repo {
+                if repo.visibility {
+                    continue;
+                }
                 let owner = self.user_info_by_uid(repo.owner_id).await;
                 let name = if let Ok(e) = owner {
                     e.name
