@@ -36,7 +36,7 @@ export const RepoFork = (props: RepoForkProps) => {
         visibility: boolean,
     }) => {
         repo.Fork(
-            Owner,
+            props.owner,
             props.repo,
             payload.owner,
             payload.name,

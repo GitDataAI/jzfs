@@ -17,20 +17,20 @@ export const RepoHeader = (props: { setTab: (arg0: string) => void, info: Reposi
     const [Query , setQuery] = useSearchParams();
     const [ Tabes, setTab ] = useState("file");
     const State = useRef(false);
-    useEffect(()=>{
-        if (State.current) return;
-        if (!Query.get("tab")){
-            Query.set("tab","file")
-            setQuery(Query)
-            setTab("file")
-            props.setTab("file")
-            State.current = true
-        } else {
-            setTab(Query.get("tab") as string)
-            props.setTab(Query.get("tab") as string)
-            State.current = true
-        }
-    },[props])
+    // useEffect(()=>{
+    //     if (State.current) return;
+    //     if (!Query.get("tab")){
+    //         Query.set("tab","file")
+    //         setQuery(Query)
+    //         setTab("file")
+    //         props.setTab("file")
+    //         State.current = true
+    //     } else {
+    //         setTab(Query.get("tab") as string)
+    //         props.setTab(Query.get("tab") as string)
+    //         State.current = true
+    //     }
+    // },[props])
     useEffect(()=>{
         setTab(Query.get("tab") as string)
         props.setTab(Query.get("tab") as string)

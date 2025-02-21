@@ -11,17 +11,21 @@ import {CiSettings, CiStar} from "react-icons/ci";
 export const UserHeader = (props: { setTab: (arg0: string)=> void }) => {
     const [Query , setQuery] = useSearchParams();
     const [ Tabes, setTab ] = useState("active");
+    // useEffect(()=>{
+    //    if (!Query.get("tab")){
+    //        Query.set("tab","active")
+    //        setQuery(Query)
+    //        setTab("active")
+    //        props.setTab("active")
+    //    } else {
+    //        setTab(Query.get("tab") as string)
+    //        props.setTab(Query.get("tab") as string)
+    //    }
+    // },[Query,props,setQuery])
     useEffect(()=>{
-       if (!Query.get("tab")){
-           Query.set("tab","active")
-           setQuery(Query)
-           setTab("active")
-           props.setTab("active")
-       } else {
-           setTab(Query.get("tab") as string)
-           props.setTab(Query.get("tab") as string)
-       }
-    },[Query,props,setQuery])
+        setTab(Query.get("tab") as string)
+        props.setTab(Query.get("tab") as string)
+    },[Query, Tabes, props, setQuery])
     return (
         <div className="user-header">
             <Tabs variant="bordered" className="user-header-tabs" onSelectionChange={(x)=>{

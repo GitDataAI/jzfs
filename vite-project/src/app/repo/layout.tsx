@@ -9,7 +9,7 @@ import RepoFile from "@/app/repo/Repo.File.tsx";
 import {RepoSetting} from "@/app/repo/Repo.Setting.tsx";
 
 const RepoLayout = () => {
-    const [Tab, setTab] = useState("file")
+    const [Tab, setTab] = useState("")
     const [Load, setLoad] = useState(false);
     const [RepoInfo, setRepoInfo] = useState<null | Repository>()
     const api = new RepoApi();
@@ -29,7 +29,7 @@ const RepoLayout = () => {
     }
     useEffect(() => {
         UpData()
-    }, [Tab]);
+    }, [repo,owner]);
     return (
         <div>
             {
@@ -37,7 +37,7 @@ const RepoLayout = () => {
                     <div className="repo">
                         <RepoHeader setTab={setTab} info={RepoInfo} owner={owner} repo={repo}/>
                         {
-                            Tab === "file" && <RepoFile info={RepoInfo} owner={owner} repo={repo} upDate={UpData}/>
+                            (Tab === "file" || Tab === "" || Tab === undefined) && <RepoFile info={RepoInfo} owner={owner} repo={repo} upDate={UpData}/>
                         }
                         {
                             Tab === "setting" && <RepoSetting  info={RepoInfo} owner={owner} repo={repo} upDate={UpData}/>

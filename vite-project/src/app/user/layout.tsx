@@ -35,7 +35,7 @@ const LayoutUser = () => {
                         <UserHeader setTab={setTab}/>
                         <div className="user-body">
                             {
-                                Tab === "active" && <UserActive props={dashbored}/>
+                                (Tab === "active" || Tab === "" || Tab === undefined )&& <UserActive props={dashbored}/>
                             }
                             {
                                 Tab === "reposiotry" && <UserRepository props={dashbored}/>
