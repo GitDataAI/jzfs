@@ -131,7 +131,7 @@ const RepoFile = (props: RepoFileProps) => {
                         <ModalHeader>
                             Fork Repository for &nbsp;<Code size="lg">{props.owner}/{props.repo}</Code>
                         </ModalHeader>
-                        <RepoFork owner={props.owner} repo={props.repo}/>
+                        <RepoFork owner={props.owner} repo={props.repo} close={fork.onClose}/>
                     </ModalContent>
                 </Modal>
             </div>

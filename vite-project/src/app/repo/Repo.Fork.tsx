@@ -5,31 +5,34 @@ import {RepoApi} from "@/api/RepoApi.tsx";
 import useUser from "@/state/useUser.tsx";
 import {Button, Divider, Form, Input, Radio, RadioGroup, Select, SelectItem} from "@heroui/react";
 import {toast} from "@pheralb/toast";
+import {useNavigate} from "react-router-dom";
 
 export interface RepoForkProps {
     owner: string,
     repo: string,
+    close: () => void
 }
 
 export const RepoFork = (props: RepoForkProps) => {
     const repo = new RepoApi();
     const [Access, setAccess] = useState<RepoAccess[]>([])
+    const nav = useNavigate();
     const user = useUser();
     useEffect(() => {
         setAccess([])
-        repo.Access().then(res=>{
-            if (res.status === 200 && res.data){
+        repo.Access().then(res => {
+            if (res.status === 200 && res.data) {
                 const json = JSON.parse(res.data);
-                const data:RepoAccess[] = json.data;
+                const data: RepoAccess[] = json.data;
                 for (let i = 0; i < data.length; i++) {
                     console.log(data[i])
-                    setAccess((pre)=>[...pre, data[i]])
+                    setAccess((pre) => [...pre, data[i]])
                 }
             }
         })
     }, []);
     const [Owner, setOwner] = useState(user.dash!.user.username);
-    const Fork = (payload:{
+    const Fork = (payload: {
         owner: string,
         name: string,
         description: string,
@@ -43,13 +46,15 @@ export const RepoFork = (props: RepoForkProps) => {
             payload.visibility,
             payload.description
         )
-            .then(res=>{
-                if (res.status === 200 && res.data){
+            .then(res => {
+                if (res.status === 200 && res.data) {
                     const json = JSON.parse(res.data);
-                    if (json['code'] === 200){
+                    if (json['code'] === 200) {
                         toast.success({
                             text: json['msg'],
                         })
+                        props.close();
+                        nav("/" + Owner + "/" + payload.name)
                     } else {
                         toast.error({
                             text: json['msg'],
@@ -58,7 +63,7 @@ export const RepoFork = (props: RepoForkProps) => {
                 }
             })
     }
-    return(
+    return (
         <ModalBody>
             <Form
                 id="LayoutModelRepositoryFork"
@@ -81,7 +86,7 @@ export const RepoFork = (props: RepoForkProps) => {
                     name={"owner"}
                     labelPlacement="outside"
                     label="Owner"
-                    onSelectionChange={(pr)=>{
+                    onSelectionChange={(pr) => {
                         const d = Access.find((x) => x.owner_uid === pr.currentKey);
                         if (d) {
                             setOwner(d.name);
@@ -102,8 +107,8 @@ export const RepoFork = (props: RepoForkProps) => {
                 </Select>
                 <Input
                     isRequired
-                    errorMessage={(v)=>{
-                        if (v.isInvalid){
+                    errorMessage={(v) => {
+                        if (v.isInvalid) {
                             return v.validationErrors[0].toString()
                         }
                     }}
@@ -122,7 +127,7 @@ export const RepoFork = (props: RepoForkProps) => {
                         const owner = Access.find((x) => x.name === Owner);
                         if (owner) {
                             if (owner.repos.includes(value)) {
-                                return "Repository name already exists" ;
+                                return "Repository name already exists";
                             }
                         }
                         return true;
@@ -161,7 +166,7 @@ export const RepoFork = (props: RepoForkProps) => {
                     gap: "1rem",
                     marginRight: "auto"
                 }}>
-                    <Button color="danger" variant="light" type="button" >
+                    <Button color="danger" variant="light" type="button" onPress={props.close}>
                         Close
                     </Button>
                     <Button color="primary" variant="flat" type="reset">
