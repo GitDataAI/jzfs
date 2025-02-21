@@ -3,6 +3,7 @@ use sea_orm::ColumnTrait;
 use std::io;
 use chrono::Utc;
 use sea_orm::{EntityTrait, Set};
+use tracing::{error, info};
 use uuid::Uuid;
 use crate::app::http::GIT_ROOT;
 use crate::app::services::AppState;
@@ -26,7 +27,7 @@ impl AppState {
         if access.iter().any(|x| x.owner_uid != parma.owner_uid) {
             return Err(io::Error::new(io::ErrorKind::Other, "you can't fork your own repository"));
         }
-        if let Some(repo) = repository::Entity::find()
+        let repo_uid = if let Some(repo) = repository::Entity::find()
             .filter(repository::Column::Uid.eq(repo_uid))
             .one(&self.read)
             .await
@@ -66,12 +67,22 @@ impl AppState {
             // Copy dir
             copy_dir::copy_dir(path, new_path)?;
             self.statistics_repo(repo.uid, FORK.to_string()).await.ok();
-            self.repo_sync(fork_model.uid).await.ok();
+            fork_model.uid
         } else {
             return Err(io::Error::new(io::ErrorKind::Other, "repo not found"));
-        }
+        };
         txn.commit().await
             .map_err(|x| io::Error::new(io::ErrorKind::Other, x))?;
+        match self.repo_sync(repo_uid).await{
+            Ok(_) => {
+                info!("fork success")
+            }
+            Err(x) => {
+                error!("fork error: {}", x);
+            }
+        }
+        
+      
         Ok(())
     }
 }
