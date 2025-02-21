@@ -161,3 +161,29 @@ create table if not exists watch
     created_at    timestamp not null
 );
 
+create table if not exists branch
+(
+    uid      uuid    not null
+        primary key,
+    repo_uid uuid    not null,
+    protect  boolean not null,
+    name     varchar not null,
+    head     varchar not null,
+    time     text    not null
+);
+
+create table if not exists commit
+(
+    uid         uuid                not null
+        primary key,
+    id          varchar             not null,
+    branch_uid  uuid                not null,
+    branch_name varchar             not null,
+    message     varchar             not null,
+    author      varchar             not null,
+    email       varchar             not null,
+    status      varchar             not null,
+    runner      character varying[] not null,
+    time        varchar             not null,
+    repo_uid    uuid                not null
+);
