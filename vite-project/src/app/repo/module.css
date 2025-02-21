@@ -40,7 +40,6 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 20px;
     background-color: #fff;
 }
 .repo-header-action {
@@ -162,4 +161,22 @@
     display: grid;
     grid-template-columns: 1fr 4fr;
     gap: 20px;
+}
+
+.repo-header-tabs {
+    margin-top: 2rem;
+    width: 100%;
+    div {
+        width: 100%;
+    }
+    @media screen and (min-width: 1024px){
+        button {
+            width: 10%;
+        }
+    }
+    @media screen and (max-width: 1024px){
+        button {
+            width: auto;
+        }
+    }
 }

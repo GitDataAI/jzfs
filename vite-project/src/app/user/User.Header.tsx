@@ -38,56 +38,56 @@ export const UserHeader = (props: { setTab: (arg0: string)=> void }) => {
                     <div className="flex items-center">
                         <IconWrapper className="  text-black">
                             <VscLayersActive />
+                            <span className="ml-2">Active</span>
                         </IconWrapper>
-                        <span className="ml-2">Active</span>
                     </div>
                 }/>
                 <Tab key="reposiotry" title={
                     <div className="flex items-center">
                         <IconWrapper className="  text-black">
                             <RiGitRepositoryLine />
+                            <span className="ml-2">Reposiotry</span>
                         </IconWrapper>
-                        <span className="ml-2">Reposiotry</span>
                     </div>
                 }/>
                 <Tab key="package" title={
                     <div className="flex items-center">
                         <IconWrapper className="  text-black">
                             <GoPackage />
+                            <span className="ml-2">Package</span>
                         </IconWrapper>
-                        <span className="ml-2">Package</span>
                     </div>
                 }/>
                 <Tab key="product" title={
                     <div className="flex items-center">
                         <IconWrapper className="  text-black">
                             <MdProductionQuantityLimits />
+                            <span className="ml-2">Product</span>
                         </IconWrapper>
-                        <span className="ml-2">Product</span>
                     </div>
                 }/>
                 <Tab key="star" title={
                     <div className="flex items-center">
                         <IconWrapper className="  text-black">
                             <CiStar />
+                            <span className="ml-2">Star</span>
                         </IconWrapper>
-                        <span className="ml-2">Star</span>
                     </div>
                 }/>
                 <Tab key="follow" title={
                     <div className="flex items-center">
                         <IconWrapper className="  text-black">
                             <RiUserFollowLine />
+                            <span className="ml-2">Follow</span>
                         </IconWrapper>
-                        <span className="ml-2">Follow</span>
                     </div>
                 }/>
                 <Tab key="setting" title={
                     <div className="flex items-center">
                         <IconWrapper className="  text-black">
                             <CiSettings />
+                            <span className="ml-2">Setting</span>
                         </IconWrapper>
-                        <span className="ml-2">Setting</span>
                     </div>
                 }/>
             </Tabs>

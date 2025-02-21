@@ -38,7 +38,7 @@ export const RepoHeader = (props: { setTab: (arg0: string) => void, info: Reposi
     return (
         <div className="repo-header">
             <div className="repo-header-tab">
-                <Tabs variant="bordered" className="user-header-tabs" onSelectionChange={(x)=>{
+                <Tabs variant="bordered" className="repo-header-tabs" onSelectionChange={(x)=>{
                     setTab(x.toString());
                     Query.set("tab",x.toString())
                     setQuery(Query)
@@ -50,10 +50,11 @@ export const RepoHeader = (props: { setTab: (arg0: string) => void, info: Reposi
                         }}>
                             <IconWrapper className="">
                                 <FileIcon className="text-lg " />
+                                <span style={{
+                                    padding: "3px"
+                                }}>Files</span>
                             </IconWrapper>
-                            <span style={{
-                                padding: "3px"
-                            }}>Files</span>
+
                         </div>
                     }/>
                     <Tab key="wiki" title={
@@ -62,10 +63,11 @@ export const RepoHeader = (props: { setTab: (arg0: string) => void, info: Reposi
                         }}>
                             <IconWrapper className="bg-white text-foreground">
                                 <WikiIcon className="text-lg " />
+                                <span style={{
+                                    padding: "3px"
+                                }}>Wiki</span>
                             </IconWrapper>
-                            <span style={{
-                                padding: "3px"
-                            }}>Wiki</span>
+
                         </div>
                     }/>
                     <Tab key="issues" title={
@@ -73,10 +75,10 @@ export const RepoHeader = (props: { setTab: (arg0: string) => void, info: Reposi
 
                             <IconWrapper className="">
                                 <BugIcon className="text-lg " />
+                                <span style={{
+                                    padding: "3px"
+                                }}>Issues</span>
                             </IconWrapper>
-                            <span style={{
-                                padding: "3px"
-                            }}>Issues</span>
                         </Badge>
                     }/>
 
@@ -85,10 +87,10 @@ export const RepoHeader = (props: { setTab: (arg0: string) => void, info: Reposi
 
                             <IconWrapper className="">
                                 <PullRequestIcon className="text-lg " />
+                                <span style={{
+                                    padding: "3px"
+                                }}>Pull Request</span>
                             </IconWrapper>
-                            <span style={{
-                                padding: "3px"
-                            }}>Pull Request</span>
                         </Badge>
                     }/>
                     <Tab key="discission" title={
@@ -97,10 +99,11 @@ export const RepoHeader = (props: { setTab: (arg0: string) => void, info: Reposi
                         }}>
                             <IconWrapper className="">
                                 <ChatIcon className="text-lg " />
+                                <span style={{
+                                    padding: "3px"
+                                }}>Discussion</span>
                             </IconWrapper>
-                            <span style={{
-                                padding: "3px"
-                            }}>Discission</span>
+
                         </div>
                     }/>
                     <Tab key="action" title={
@@ -109,10 +112,10 @@ export const RepoHeader = (props: { setTab: (arg0: string) => void, info: Reposi
                         }}>
                             <IconWrapper className="">
                                 <PlayCircleIcon className="text-lg " />
+                                <span style={{
+                                    padding: "3px"
+                                }}>Actions</span>
                             </IconWrapper>
-                            <span style={{
-                                padding: "3px"
-                            }}>Actions</span>
                         </div>
                     }/>
                     <Tab key="project" title={
@@ -121,10 +124,10 @@ export const RepoHeader = (props: { setTab: (arg0: string) => void, info: Reposi
                         }}>
                             <IconWrapper className="">
                                 <LayoutIcon className="text-lg " />
+                                <span style={{
+                                    padding: "3px"
+                                }}>Project</span>
                             </IconWrapper>
-                            <span style={{
-                                padding: "3px"
-                            }}>Project</span>
                         </div>
                     }/>
                     <Tab key="setting" title={
@@ -133,10 +136,10 @@ export const RepoHeader = (props: { setTab: (arg0: string) => void, info: Reposi
                         }}>
                             <IconWrapper className="">
                                 <SettingIcon className="text-lg "/>
+                                <span style={{
+                                    padding: "3px"
+                                }}>Setting</span>
                             </IconWrapper>
-                            <span style={{
-                                padding: "3px"
-                            }}>Setting</span>
                         </div>
                     }/>
                 </Tabs>
