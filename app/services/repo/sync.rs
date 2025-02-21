@@ -1,5 +1,5 @@
 use crate::app::services::AppState;
-use crate::model::repository::tree;
+use crate::model::repository::{branches, commits, tree};
 use chrono::DateTime;
 use sea_orm::ActiveValue::Set;
 use sea_orm::{ActiveModelTrait, EntityTrait, QueryFilter};
@@ -51,6 +51,56 @@ impl AppState {
             }
             if commits.len() > commit_len { 
                 commit_len = commits.len();
+            }
+            let branch_uid = if let Some(x) = branches::Entity::find()
+                .filter(branches::Column::RepoUid.eq(repo_uid))
+                .filter(branches::Column::Name.eq(branch.name.clone()))
+                .one(&self.read)
+                .await
+                .map_err(|_| io::Error::new(io::ErrorKind::Other, "Failed to get branches"))?
+            {
+                let mut xs = x.clone().into_active_model();
+                xs.head = Set(branch.head.clone());
+                xs.time = Set(branch.time);
+                xs.update(&self.write).await.ok();
+                x.uid
+            } else {
+                let res = branches::ActiveModel {
+                    uid: Set(Uuid::new_v4()),
+                    repo_uid: Set(repo_uid),
+                    protect: Set(false),
+                    name: Set(branch.name.clone()),
+                    head: Set(branch.head.clone()),
+                    time: Set(branch.time),
+                }
+                    .insert(&self.write).await.map_err(|_| io::Error::new(io::ErrorKind::Other, "Failed to insert branches"))?;
+                res.uid
+            };
+            for commit in commits {
+                if commits::Entity::find()
+                    .filter(commits::Column::RepoUid.eq(repo_uid))
+                    .filter(commits::Column::BranchUid.eq(branch_uid))
+                    .filter(commits::Column::Id.eq(commit.id.clone()))
+                    .one(&self.read)
+                    .await
+                    .map_err(|x| io::Error::new(io::ErrorKind::Other, x.to_string()))?
+                    .is_none()
+                {
+                    let _ = commits::ActiveModel {
+                        uid: Set(Uuid::new_v4()),
+                        repo_uid: Set(repo_uid),
+                        branch_uid: Set(branch_uid),
+                        id: Set(commit.id.clone()),
+                        message: Set(commit.msg.clone()),
+                        time: Set(commit.time),
+                        author: Set(commit.author.clone()),
+                        email: Set(commit.email.clone()),
+                        status: Set(String::new()),
+                        branch_name: Set(branch.name.clone()),
+                        runner: Set(vec![]),
+                    }
+                        .insert(&self.write).await;
+                }
             }
             
             if tree::Entity::find()
