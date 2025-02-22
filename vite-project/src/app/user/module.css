@@ -68,13 +68,22 @@
 
 
 .user-active {
-    display: flex;
+    display: grid;
     gap: 20px;
+    @media screen and (min-width: 1420px){
+        grid-template-columns: 1fr 3fr;
+    }
+    @media screen and (max-width: 1420px){
+        grid-template-columns: 1fr;
+    }
 }
 .user-active-profile {
     flex: 0 0 200px;
     padding: 10px;
     .avatar {
+        position: relative;
+        width: 15vh;
+        height: 15vh;
         left: 50%;
         transform: translateX(-50%);
     }
@@ -179,11 +188,14 @@
     .user-repo-main-header {
         margin-left: 10px;
         display: grid;
-        @media screen and (min-width: 1024px){
+        @media screen and (min-width: 1800px){
             grid-template-columns: 4fr 1fr 1fr 1fr;
         }
         @media screen and (max-width: 1024px){
             grid-template-columns: 1fr;
+        }
+        @media screen and (max-width: 1800px){
+            grid-template-columns: 4fr 1fr 1fr;
         }
         .user-repo-sort {
             height: 2.5rem;
@@ -200,6 +212,9 @@
            background: #11a57b;
            color: white;
            border: 1px solid #11a57b;
+           @media screen and (max-width: 1800px){
+               display: none;
+           }
        }
         .user-repo-search {
             height: 2.5rem;

@@ -46,4 +46,7 @@ export class RepoApi extends Http {
             private: prv
         })
     }
+    async OneCommit(owner: string, repo: string, branch: string, sha: string){
+        return await this.get<string>(`/repo/${owner}/${repo}/branch/${branch}/sha/${sha}`)
+    }
 }

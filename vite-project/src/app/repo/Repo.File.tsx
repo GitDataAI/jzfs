@@ -1,5 +1,5 @@
 import {useEffect, useRef, useState} from "react";
-import {Blob, Branches, Commits, Repository, Tree} from "@/types.ts";
+import {Blob, Branches, Commits, DBCommit, Repository, Tree} from "@/types.ts";
 import {
     Avatar,
     Badge,
@@ -8,7 +8,10 @@ import {
     Button,
     Card,
     CardBody,
-    CardHeader, Code,
+    CardHeader,
+    Code,
+    Select,
+    SelectItem,
 } from "@heroui/react";
 import {RepoApi} from "@/api/RepoApi.tsx";
 import {Modal, ModalContent, ModalHeader, useDisclosure} from "@heroui/modal";
@@ -41,12 +44,14 @@ interface BhtcItem {
 }
 
 const RepoFile = (props: RepoFileProps) => {
-    const [Bhtc, setBhtc] = useState<BhtcItem[]>([])
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [_Bhtc, setBhtc] = useState<BhtcItem[]>([])
     const [Tree, setTree] = useState<Tree | null>(null)
     const [DefaultBranch, setDafaultBranch] = useState<Branches | null>()
     const [Load, setLoad] = useState(false)
     const [Blob, setBlob] = useState<Blob | null>(null)
-    // const [Branches, setBranches] = useState<string[]>([])
+    const [Branches, setBranches] = useState<Branches[]>([])
+    const [Head, setHead] = useState<DBCommit | null>(null)
     const user = useUser();
 
     const [Edit] = useState({
@@ -60,61 +65,103 @@ const RepoFile = (props: RepoFileProps) => {
     const nav = useNavigate();
     const fork = useDisclosure();
     useEffect(() => {
-        if (Exec.current) {
-            setLoad(true)
-            return;
-        }
-        setHttpURL("https://" + window.location.host + "/git/" + props.owner + "/" + props.repo + ".git")
-        api.Bhtc(props.owner, props.repo)
-            .then(res => {
-                if (res.status === 200 && res.data) {
-                    const json: Blob = JSON.parse(res.data).data;
-                    setBlob(json);
-                    for (const jsonKey in json) {
-                        const branch: Branches = JSON.parse(jsonKey);
-                        // setBranches((pre)=> [...pre, branch.name])
-                        api.Tree(props.owner, props.repo, branch.name, branch.head)
-                            .then(res => {
-                                const jsonb: Tree | undefined = JSON.parse(res.data).data;
-                                if (res.status === 200 && res.data && jsonb) {
-                                    if (!DefaultBranch) {
-                                        setDafaultBranch(branch)
-                                        setTree(jsonb)
-                                        // find readme.md
-                                        for (const child of jsonb.child) {
-                                            if (child.name === "README.md") {
-                                                api.File(props.owner, props.repo, "README.md", branch.head).then(res => {
-                                                    if (res.status === 200 && res.data) {
-                                                        setREADME(res.data)
-                                                    }
-                                                })
-                                            }
-                                        }
-                                    }
-                                    if (Bhtc.find((value) => value.branch.name === branch.name)) {
-                                        setBhtc((prev) => [...prev, {
-                                            index: branch.name,
-                                            branch: branch,
-                                            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                                            // @ts-expect-error
-                                            commit: json[jsonKey],
-                                            tree: jsonb
-                                        }]);
-                                        console.log("skip")
-                                    }
-                                    setLoad(true);
-                                }
-                            })
-                    }
-                }
-            })
-        Exec.current = true;
+        const abortController = new AbortController();
+        const {signal} = abortController;
 
-    }, [props]);
+        const fetchData = async () => {
+            try {
+                setLoad(false);
+                const httpURL = `https://${window.location.host}/git/${encodeURIComponent(props.owner)}/${encodeURIComponent(props.repo)}.git`;
+                setHttpURL(httpURL);
+
+                const res = await api.Bhtc(props.owner, props.repo);
+                if (res.status !== 200 || !res.data) return;
+
+                const jsonData: Blob = JSON.parse(res.data).data;
+                setBlob(jsonData);
+
+                const branches: Branches[] = Object.keys(jsonData).map(key => JSON.parse(key));
+                setBranches(branches)
+                const branchPromises = branches.map(async (branch) => {
+                    const treeRes = await api.Tree(props.owner, props.repo, branch.name, branch.head);
+                    if (treeRes.status !== 200 || !treeRes.data) return null;
+
+                    const jsonb: Tree | undefined = JSON.parse(treeRes.data).data;
+                    if (!jsonb) return null;
+                    const defbr = branches.find(value => value.name === props.info.default_branch);
+
+                    if (!DefaultBranch) {
+                        if (defbr && branch.name === props.info.default_branch){
+                            setDafaultBranch(defbr);
+                            setTree(jsonb);
+                        } else if (!defbr){
+                            setDafaultBranch(branch);
+                            setTree(jsonb);
+                        }
+                        const readmeChild = jsonb.child.find(child => child.name === "README.md");
+                        if (readmeChild) {
+                            const readmeRes = await api.File(props.owner, props.repo, "README.md", branch.head);
+                            if (readmeRes.status === 200 && readmeRes.data) setREADME(readmeRes.data);
+                        }
+                    }
+
+                    return {
+                        index: branch.name,
+                        branch,
+                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                        // @ts-expect-error
+                        commit: jsonData[JSON.stringify(branch)],
+                        tree: jsonb
+                    };
+                });
+
+                const validBranches = (await Promise.all(branchPromises)).filter(Boolean) as BhtcItem[];
+                setBhtc(prev => [...prev, ...validBranches]);
+
+            } catch (err) {
+                if (!signal.aborted) console.error('Fetch error:', err);
+            } finally {
+                if (!signal.aborted) setLoad(true);
+            }
+        };
+
+        if (!Exec.current) {
+            fetchData();
+            Exec.current = true;
+        }
+
+        return () => abortController.abort();
+    }, [props.owner, props.repo]);
 
     useEffect(() => {
 
     }, [Blob]);
+    useEffect(() => {
+        const handle = async () => {
+            if (DefaultBranch) {
+                const head = DefaultBranch.head;
+                const commitRes = await api.OneCommit(props.owner, props.repo, props.info.default_branch, head);
+                if (commitRes.status !== 200 && !commitRes.data) return;
+                if (commitRes.data) {
+                    setHead(JSON.parse(commitRes.data).data);
+                }
+            }
+        }
+        handle().catch().then()
+    }, [DefaultBranch]);
+    const UpdateTree = async (default_branches: Branches) => {
+        if (!Load) return;
+        const treeRes = await api.Tree(props.owner, props.repo, default_branches.name, default_branches.head);
+        if (treeRes.status !== 200 || !treeRes.data) return;
+        const jsonb: Tree | undefined = JSON.parse(treeRes.data).data;
+        if (!jsonb) return;
+        setTree(jsonb);
+        const readmeChild = jsonb.child.find(child => child.name === "README.md");
+        if (readmeChild) {
+            const readmeRes = await api.File(props.owner, props.repo, "README.md", default_branches.head);
+            if (readmeRes.status === 200 && readmeRes.data) setREADME(readmeRes.data);
+        }
+    }
     return (
         <div className="repo-file repo-bodt">
             <div style={{
@@ -252,7 +299,43 @@ const RepoFile = (props: RepoFileProps) => {
                                         <Card>
                                             <CardHeader className="repo-file-body-main-header">
                                                 <div className="repo-file-body-main-header-left">
-
+                                                    <Select
+                                                        showScrollIndicators={false}
+                                                        isRequired
+                                                        disallowEmptySelection
+                                                        defaultSelectedKeys={[DefaultBranch!.name]}
+                                                        selectedKeys={[DefaultBranch!.name]} value={DefaultBranch!.name}
+                                                        className="branch-select"
+                                                        onSelectionChange={(key) => {
+                                                        const currentKey = key.currentKey;
+                                                        if (currentKey) {
+                                                            const default_branches = Branches.find((value) => value.name === currentKey);
+                                                            if (default_branches) {
+                                                                setDafaultBranch(default_branches);
+                                                                UpdateTree(default_branches).then(() => {
+                                                                }).catch(() => {
+                                                                })
+                                                            }
+                                                        }
+                                                    }}>
+                                                        {
+                                                            Branches.map(value => {
+                                                                return (
+                                                                    <SelectItem key={value.name}>
+                                                                        {value.name}
+                                                                    </SelectItem>
+                                                                )
+                                                            })
+                                                        }
+                                                    </Select>
+                                                    {
+                                                        (Head !== null) && (
+                                                            <div className="head-message">
+                                                                {Head.message}
+                                                                {/*// TODO Status*/}
+                                                            </div>
+                                                        )
+                                                    }
                                                 </div>
                                                 <div className="repo-file-body-main-header-right">
                                                     <Button
@@ -334,7 +417,7 @@ function FileItem({tree}: { tree: Tree }) {
         }
     })[0];
     if (commit) {
-        commit.msg = commit.msg.substring(0, 50);
+        commit.msg = commit.msg.substring(0, 50)
     }
     const relative_time = () => {
         if (commit) {

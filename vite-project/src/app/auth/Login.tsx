@@ -52,7 +52,12 @@ const Login = (props: LoginProps) => {
                 return;
             }
             if (data.code !== 200) {
-                toast.error({text: '登陆失败,请检查用户名或者密码是否正确'});
+                if (data.msg === "captcha error"){
+                    toast.error({text: '验证码错误'});
+                }else {
+                    toast.error({text: '登陆失败,请检查用户名或者密码是否正确'});
+
+                }
                 return;
             }
             toast.success({text: '登陆成功'});
