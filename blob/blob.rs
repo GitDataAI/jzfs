@@ -46,12 +46,9 @@ impl GitBlob {
             };
             let head_id = head.id().to_string();
             let time = chrono::DateTime::from_timestamp(head.time().seconds(),0).unwrap();
-            
+            let mut parent = head.clone();
             loop {
-                let parent = match head.parent(0){
-                    Ok(x) => x,
-                    Err(_) => break,
-                };
+                
                 let parent_id = parent.id().to_string();
                 let time = chrono::DateTime::from_timestamp(parent.time().seconds(),0).unwrap().timestamp().to_string();
                 let msg = parent.message().unwrap_or("").to_string();
@@ -68,6 +65,10 @@ impl GitBlob {
                     break;
                 }
                 head = parent;
+                parent = match head.parent(0){
+                    Ok(x) => x,
+                    Err(_) => break,
+                };
             }
             branches.insert(Branches {
                 name,
