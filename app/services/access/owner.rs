@@ -15,6 +15,7 @@ pub struct AccessOwner {
     pub name: String,
     pub avatar: Option<String>,
     pub repos: Vec<String>,
+    pub repo_uids: Vec<Uuid>,
 }
 #[derive(Deserialize,Serialize,Clone)]
 pub struct AccessOwnerModel {
@@ -43,6 +44,7 @@ impl AppState {
                 name: x.username,
                 avatar: x.avatar,
                 repos: respo.iter().map(|x| x.name.clone()).collect(),
+                repo_uids: respo.iter().map(|x| x.uid).collect(),
             })
         }
         let members = members::Entity::find()
@@ -67,6 +69,7 @@ impl AppState {
                     name: x.username,
                     avatar: x.avatar,
                     repos: respo.iter().map(|x| x.name.clone()).collect(),
+                    repo_uids: respo.iter().map(|x| x.uid).collect(),
                 })
             }
         }

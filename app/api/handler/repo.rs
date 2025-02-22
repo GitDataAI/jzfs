@@ -1,23 +1,24 @@
-use std::collections::HashMap;
 use crate::app::api::write::AppWrite;
-use crate::app::services::repo::create::ReposCreateParma;
-use crate::app::services::AppState;
-use crate::model::users::users;
-use poem::session::Session;
-use poem::web::{Data, Json, Path};
-use poem::{handler, IntoResponse, Response};
 use crate::app::services::repo::blob::RepoBlobFile;
+use crate::app::services::repo::create::ReposCreateParma;
 use crate::app::services::repo::fork::ForkParma;
 use crate::app::services::statistics::repo::CLICK;
+use crate::app::services::AppState;
+use crate::model::users::users;
+use actix_session::Session;
+use actix_web::http::StatusCode;
+use actix_web::web::Data;
+use actix_web::web::{Json, Path};
+use actix_web::{HttpResponseBuilder, Responder};
+use std::collections::HashMap;
 
-#[handler]
 pub async fn repo_tree(
     path: Path<(String,String, String,String)>,
-    status: Data<&AppState>,
+    status: Data<AppState>,
 ) 
--> impl IntoResponse
+-> impl Responder
 {
-    let (owner, repo,branch,head) = path.0;
+    let (owner, repo,branch,head) = path.into_inner();
     match status.repo_blob_tree(owner,repo,branch,head).await {
         Ok(tree) => {
             AppWrite::ok(tree)
@@ -29,14 +30,13 @@ pub async fn repo_tree(
 }
 
 
-#[handler]
 pub async fn repo_bhct(
     path: Path<(String,String)>,
-    status: Data<&AppState>,
+    status: Data<AppState>,
 ) 
--> impl IntoResponse
+-> impl Responder
 {
-    let (owner, repo) = path.0;
+    let (owner, repo) = path.into_inner();
     match status.repo_blob_bhct(owner,repo).await {
         Ok(bhct) => {
             let bt = bhct.iter().map(|(b,c)|{
@@ -50,14 +50,13 @@ pub async fn repo_bhct(
         }
     }
 }
-#[handler]
 pub async fn repo_info(
     path: Path<(String,String)>,
-    status: Data<&AppState>,
+    status: Data<AppState>,
 )
-    -> impl IntoResponse
+    -> impl Responder
 {
-    let (owner, repo) = path.0;
+    let (owner, repo) = path.into_inner();
     match status.repo_info(owner,repo).await {
         Ok(info) => {
             status.statistics_repo(info.uid,CLICK.to_string()).await.ok();
@@ -69,23 +68,25 @@ pub async fn repo_info(
     }
 }
 
-#[handler]
 pub async fn repo_create(
-    session: &Session,
+    session: Session,
     parma: Json<ReposCreateParma>,
-    state: Data<&AppState>,
+    state: Data<AppState>,
 )
- -> impl IntoResponse
+ -> impl Responder
 {
 
     let uid = match session.get::<String>("user"){
-        Some(uid) => match serde_json::from_str::<users::Model>(&uid) {
+       Ok(Some(uid)) => match serde_json::from_str::<users::Model>(&uid) {
             Ok(uid) => uid.uid,
             Err(_) => {
                 return AppWrite::unauthorized("请先登录".to_string())
             }
         },
-        None => {
+        Ok(None) => {
+            return AppWrite::unauthorized("请先登录".to_string())
+        }
+        Err(_) => {
             return AppWrite::unauthorized("请先登录".to_string())
         }
     };
@@ -99,45 +100,45 @@ pub async fn repo_create(
     }
 }
 
-#[handler]
 pub async fn repo_file(
     param: Json<RepoBlobFile>,
-    status: Data<&AppState>,
+    status: Data<AppState>,
 ) 
--> impl IntoResponse
+-> impl Responder
 {
     match status.repo_blob_file(param.0).await {
         Ok(file) => {
-            Response::builder()
+            HttpResponseBuilder::new(StatusCode::OK)
                 .content_type("application/octet-stream")
                 .body(file)
         },
         Err(err) => {
-            Response::builder()
-                .status(poem::http::StatusCode::NOT_FOUND)
+            HttpResponseBuilder::new(StatusCode::NOT_FOUND)
                 .body(err.to_string())
         }
     }
 }
 
-#[handler]
 pub async fn repo_fork(
-    session: &Session,
+    session: Session,
     path: Path<(String,String)>,
     parma: Json<ForkParma>,
-    status: Data<&AppState>,
+    status: Data<AppState>,
 ) 
- -> impl IntoResponse
+ -> impl Responder
 {
-    let (owner, repo) = path.0;
+    let (owner, repo) = path.into_inner();
     let uid = match session.get::<String>("user"){
-        Some(uid) => match serde_json::from_str::<users::Model>(&uid) {
+        Ok(Some(uid)) => match serde_json::from_str::<users::Model>(&uid) {
             Ok(uid) => uid.uid,
             Err(_) => {
                 return AppWrite::unauthorized("请先登录".to_string())
             }
         },
-        None => {
+        Ok(None) => {
+            return AppWrite::unauthorized("请先登录".to_string())
+        },
+        Err(_) => {
             return AppWrite::unauthorized("请先登录".to_string())
         }
     };
@@ -159,23 +160,25 @@ pub async fn repo_fork(
     }
 }
 
-#[handler]
 pub async fn repo_star(
-    session: &Session,
+    session: Session,
     path: Path<(String,String)>,
-    status: Data<&AppState>,
+    status: Data<AppState>,
 ) 
--> impl IntoResponse
+-> impl Responder
 {
-    let (owner, repo) = path.0;
+    let (owner, repo) = path.into_inner();
     let uid = match session.get::<String>("user"){
-        Some(uid) => match serde_json::from_str::<users::Model>(&uid) {
+        Ok(Some(uid)) => match serde_json::from_str::<users::Model>(&uid) {
             Ok(uid) => uid.uid,
             Err(_) => {
                 return AppWrite::unauthorized("请先登录".to_string())
             }
         },
-        None => {
+        Ok(None) => {
+            return AppWrite::unauthorized("请先登录".to_string())
+        },
+        Err(_) => {
             return AppWrite::unauthorized("请先登录".to_string())
         }
     };
@@ -196,23 +199,25 @@ pub async fn repo_star(
         }
     }
 }
-#[handler]
 pub async fn repo_watch(
-    session: &Session,
+    session: Session,
     path: Path<(String,String, i32)>,
-    status: Data<&AppState>,
+    status: Data<AppState>,
 ) 
--> impl IntoResponse
+-> impl Responder
 {
-    let (owner, repo,level) = path.0;
+    let (owner, repo,level) = path.into_inner();
     let uid = match session.get::<String>("user"){
-        Some(uid) => match serde_json::from_str::<users::Model>(&uid) {
+        Ok(Some(uid)) => match serde_json::from_str::<users::Model>(&uid) {
             Ok(uid) => uid.uid,
             Err(_) => {
                 return AppWrite::unauthorized("请先登录".to_string())
             }
         },
-        None => {
+        Ok(None) => {
+            return AppWrite::unauthorized("请先登录".to_string())
+        },
+        Err(_) => {
             return AppWrite::unauthorized("请先登录".to_string())
         }
     };
@@ -234,21 +239,23 @@ pub async fn repo_watch(
     }
 }
 
-#[handler]
 pub async fn repo_access(
-    session: &Session,
-    status: Data<&AppState>,
+    session: Session,
+    status: Data<AppState>,
 )
- -> impl IntoResponse
+ -> impl Responder
 {
     let uid = match session.get::<String>("user"){
-        Some(uid) => match serde_json::from_str::<users::Model>(&uid) {
+        Ok(Some(uid)) => match serde_json::from_str::<users::Model>(&uid) {
             Ok(uid) => uid.uid,
             Err(_) => {
                 return AppWrite::unauthorized("请先登录".to_string())
             }
         },
-        None => {
+        Ok(None) => {
+            return AppWrite::unauthorized("请先登录".to_string())
+        },
+        Err(_) => {
             return AppWrite::unauthorized("请先登录".to_string())
         }
     };

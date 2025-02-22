@@ -9,6 +9,7 @@ use tracing::info;
 use uuid::Uuid;
 use crate::app::http::GIT_ROOT;
 use crate::app::services::AppState;
+use crate::app::services::repo::sync::RepoSync;
 use crate::model::repository::repository;
 use crate::model::users::users;
 
@@ -176,7 +177,8 @@ impl AppState {
             tmp.close().ok();
         }
         txn.commit().await.map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
-        self.repo_sync(model.uid).await.ok();
+        RepoSync::send(model.uid).await;
+
         Ok(())
     }
 }

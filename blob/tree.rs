@@ -1,11 +1,10 @@
 #![allow(unused)]
 
-
 use crate::blob::GitBlob;
 use git2::{BranchType, DiffOptions, Tree, TreeWalkResult};
 use serde::{Deserialize, Serialize};
 use std::io;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use crate::blob::blob::Commit;
 
 #[derive(Clone,Debug,Hash,PartialEq,Eq,Serialize,Deserialize)]
@@ -18,129 +17,129 @@ pub struct GitTree {
     pub commit: Vec<Commit>,
 }
 
-
 impl GitBlob {
     pub fn tree(&self, branches: String) -> io::Result<GitTree> {
-        let head = match self.repository.find_branch(&branches, BranchType::Local){
-            Ok(head) => head,
-            Err(e) => return Err(io::Error::new(io::ErrorKind::Other, e.message())),
-        };
-        let head = head.into_reference();
-        let tree = match head.peel_to_tree() {
-            Ok(tree) => tree,
-            Err(e) => return Err(io::Error::new(io::ErrorKind::Other, e.message())),
-        };
-        let mut commit = match head.peel_to_commit() {
-            Ok(commit) => commit,
-            Err(e) => return Err(io::Error::new(io::ErrorKind::Other, e.message())),
-        };
-        let mut commits = vec![];
-        while let Ok(parent) = commit.parent(0) {
-            if let Ok(now) = commit.tree() {
-                if let Ok(pre) = parent.tree() {
-                    if let Ok(diff) = self.repository.diff_tree_to_tree(
-                        Some(&tree),
-                        Some(&parent.tree().unwrap()),
-                        Some(&mut DiffOptions::new())
-                    ){
-                        let mut deltas = vec![];
-                        // diff.foreach(&mut |delta, _ | {
-                        //     deltas.push(PathBuf::from(delta.new_file().path().unwrap_or(PathBuf::new().as_path())));
-                        //     true
-                        // },None, None,None);
-                        for delta in diff.deltas() {
-                            deltas.push(PathBuf::from(delta.new_file().path().unwrap_or(PathBuf::new().as_path())));
-                        }
-                        commits.push((Commit {
-                            id: commit.id().to_string(),
-                            msg: commit.message().unwrap_or("").to_string(),
-                            time: chrono::DateTime::from_timestamp(commit.time().seconds(),0).unwrap().timestamp().to_string(),
-                            author: commit.author().name().unwrap_or("").to_string(),
-                            email: commit.author().email().unwrap_or("").to_string(),
-                        },deltas));
-                        
-                    }
+        let head = self.repository.find_branch(&branches, BranchType::Local)
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e.message()))?;
+        let head_ref = head.into_reference();
+        let tree = head_ref.peel_to_tree()
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e.message()))?;
+        let mut commit = head_ref.peel_to_commit()
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e.message()))?;
+
+        let mut path_commits = std::collections::HashMap::new();
+        let mut limit = 0;
+        while limit < 20000 {
+            let parent = match commit.parent(0) {
+                Ok(p) => p,
+                Err(_) => break,
+            };
+
+            let now_tree = commit.tree().map_err(|e| io::Error::new(io::ErrorKind::Other, e.message()))?;
+            let pre_tree = parent.tree().map_err(|e| io::Error::new(io::ErrorKind::Other, e.message()))?;
+
+            let diff = self.repository.diff_tree_to_tree(
+                Some(&now_tree),
+                Some(&pre_tree),
+                Some(&mut DiffOptions::new())
+            ).map_err(|e| io::Error::new(io::ErrorKind::Other, e.message()))?;
+
+            let cmt = Commit {
+                id: commit.id().to_string(),
+                msg: commit.message().unwrap_or("").to_string(),
+                time: chrono::DateTime::from_timestamp(commit.time().seconds(),0)
+                    .unwrap().timestamp().to_string(),
+                author: commit.author().name().unwrap_or("").to_string(),
+                email: commit.author().email().unwrap_or("").to_string(),
+            };
+
+            for delta in diff.deltas() {
+                if let Some(path) = delta.new_file().path() {
+                    let path = Path::new("/").join(path); // 标准化路径
+                    path_commits.entry(path)
+                        .or_insert_with(|| cmt.clone());
                 }
             }
+
             commit = parent;
+            limit += 1;
         }
-        let mut rootless = GitTree {
-            id: "".to_string(),
-            dir: "".to_string(),
-            name: "".to_string(),
+
+        let mut root_tree = GitTree {
+            id: String::new(),
+            dir: String::new(),
+            name: String::new(),
             child: vec![],
             is_dir: true,
             commit: vec![],
         };
-        
-        let _ = tree.walk(git2::TreeWalkMode::PreOrder, |root, entry| {
-            let mut paths = root.split('/').collect::<Vec<_>>();
-            paths.push(entry.name().unwrap_or("/"));
-            paths = paths
-                .iter()
-                .filter(|x|!x.is_empty()).copied()
+
+        tree.walk(git2::TreeWalkMode::PreOrder, |root, entry| {
+            let name = entry.name().unwrap_or_default().to_string();
+            let path = Path::new(root).join(&name);
+
+            let normalized_path = Path::new("/").join(
+                path.strip_prefix("/").unwrap_or(&path)
+            );
+
+            let commit = path_commits.get(&normalized_path)
+                .cloned()
+                .into_iter()
+                .collect();
+
+            let components = normalized_path.iter()
+                .filter(|s| !s.is_empty())
                 .collect::<Vec<_>>();
-            let name = entry.name().unwrap_or("/").to_string();
-            let id = entry.id().to_string();
-            let mut cs: Vec<Commit> = vec![];
-            let ph = PathBuf::new().join(root).join(name.clone());
-            for (cmt,diff) in commits.iter() {
-                for i in diff{
-                    if i.eq(ph.as_path()) {
-                        cs.push(cmt.clone());
-                    }
-                    if !cs.is_empty() {
-                        break;
-                    }
-                }
-                
-            }
-            match entry.kind() {
-                Some(git2::ObjectType::Tree) => {
-                    if let Ok(x) = rootless.tree_walk(paths, name, id, true,cs) {
-                        rootless = x;
-                    }
-                }
-                Some(git2::ObjectType::Blob) => {
-                    if let Ok(x) = rootless.tree_walk(paths, name, id, false,cs) {
-                        rootless = x;
-                    }
-                }
-                _=>{}
-            };
-            TreeWalkResult::Ok
-        });
-        Ok(rootless)
-    }
-}
 
-
-impl GitTree {
-    pub fn tree_walk(&mut self, path: Vec<&str>, name: String, id: String, is_dir: bool, commit: Vec<Commit>) -> io::Result<GitTree> {
-        if path.len() == 1 {
-            self.child.push(Self {
-                id,
-                dir: path.join("/"),
-                name,
+            let node = GitTree {
+                id: entry.id().to_string(),
+                dir: components[..components.len()-1].iter()
+                    .map(|s| s.to_str().unwrap_or_default())
+                    .collect::<Vec<_>>()
+                    .join("/"),
+                name: components.last()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or_default()
+                    .to_string(),
                 child: vec![],
-                is_dir,
-                commit
-            });
-            Ok(self.clone())
-        } else {
-            let mut path = path.clone();
-            let dir = path.remove(0);
-            let mut child = self.child.clone();
-            for child in child.iter_mut() {
-                if child.dir == dir {
-                    child.tree_walk(path.clone(), name.clone(), id.clone(), is_dir,commit.clone())?;
+                is_dir: matches!(entry.kind(), Some(git2::ObjectType::Tree)),
+                commit,
+            };
+
+            let mut current = &mut root_tree;
+            for part in components.iter().take(components.len().saturating_sub(1)) {
+                let part_str = part.to_str().unwrap_or_default();
+                if !current.child.iter().any(|c| c.name == part_str) {
+                    current.child.push(GitTree {
+                        id: String::new(),
+                        dir: current.dir.clone(),
+                        name: part_str.to_string(),
+                        child: vec![],
+                        is_dir: true,
+                        commit: vec![],
+                    });
                 }
+                current = current.child
+                    .iter_mut()
+                    .find(|c| c.name == part_str)
+                    .unwrap();
             }
-            self.child = child;
-            Ok(self.clone())
-        }
+
+            if let Some(existing) = current.child.iter_mut()
+                .find(|c| c.name == node.name)
+            {
+                *existing = node;
+            } else {
+                current.child.push(node);
+            }
+
+            TreeWalkResult::Ok
+        }).ok();
+
+        Ok(root_tree.child.first().unwrap_or(&root_tree).clone())
     }
 }
+
 #[cfg(test)]
 mod tests {
     use crate::blob::GitBlob;
@@ -152,7 +151,7 @@ mod tests {
         let branch = blob.repository.find_branch("main", git2::BranchType::Local).unwrap();
         
         let res = blob.tree("main".to_string())?;
-        dbg!(res);
+        dbg!(res.child.len());
         Ok(())
     }
 }

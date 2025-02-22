@@ -1,71 +1,126 @@
+use std::collections::HashSet;
 use crate::app::services::AppState;
 use crate::model::repository::{branches, commits, tree};
-use chrono::DateTime;
+use chrono::{DateTime, Utc};
 use sea_orm::ActiveValue::Set;
-use sea_orm::{ActiveModelTrait, EntityTrait, QueryFilter};
+use sea_orm::{ActiveModelTrait, EntityTrait, QueryFilter, TransactionTrait};
 use sea_orm::{ColumnTrait, IntoActiveModel};
 use std::io;
+use std::sync::Arc;
+use futures::StreamExt;
+use tokio::sync::mpsc::UnboundedSender;
+use tokio::sync::OnceCell;
+use tracing::{error, info, warn};
 use uuid::Uuid;
+use crate::model::repository::repository::ActiveModel;
 
-impl AppState {
-    pub async fn repo_sync(&self, repo_uid: Uuid) -> io::Result<()> {
-        let repo = self.repo_get_by_uid(repo_uid).await?;
-        let path = format!("{}/{}/{}", crate::app::http::GIT_ROOT, repo.node_uid, repo.uid);
-        let blob = crate::blob::GitBlob::new(path.into())
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;     
-        let branch = blob.branch()?;
-        
-        let mut arch = repo.clone().into_active_model();
-        if branch.iter().any(|x|x.name != repo.default_branch) {
-            if branch.len() == 1 {
-                arch.default_branch = Set(branch[0].name.clone());
-                arch.nums_branch = Set(branch.len() as i32);
-                arch.updated_at = Set(chrono::Local::now().naive_local());
-                arch.update(&self.write).await.ok();
-            } else { 
-                // find main or master or first branch
-                if branch.iter().any(|x|x.name == "main" || x.name == "master") {
-                    arch.default_branch = Set(branch[0].name.clone());
-                    arch.nums_branch = Set(branch.len() as i32);
-                    arch.updated_at = Set(chrono::Local::now().naive_local());
-                    arch.update(&self.write).await.ok();
-                }else if branch.len() == 1 {
-                    if let Some(first) = branch.first() {
-                        arch.default_branch = Set(first.name.clone());
-                        arch.nums_branch = Set(branch.len() as i32);
-                        arch.updated_at = Set(chrono::Local::now().naive_local());
-                        arch.update(&self.write).await.ok();
+pub static REPO_SYNC: OnceCell<RepoSync> = OnceCell::const_new();
+
+#[derive(Clone)]
+pub struct RepoSync {
+    pub db: AppState,
+    pub rx: UnboundedSender<Uuid>,
+}
+
+impl RepoSync {
+    pub async fn init() -> Self {
+        REPO_SYNC.get_or_init(|| async {
+            let (rx, mut tx) = tokio::sync::mpsc::unbounded_channel::<Uuid>();
+            let db = AppState::init_env().await.expect("Failed to init app state");
+            let db_arc = Arc::new(db.clone());
+            tokio::spawn(async move {
+                let db_arc = db_arc.clone();
+                while let Some(repo_uid) = tx.recv().await {
+                    let db_arc = db_arc.clone();
+                    match db_arc.repo_sync(repo_uid).await {
+                        Ok(_) => info!("Repo sync success {}", repo_uid),
+                        Err(e) => error!("Repo sync error: {}", e),
                     }
                 }
-                
-            }
+            });
+            Self { db, rx }
+        })
+        .await.clone()
+    }
+
+    pub async fn send(repo_uid: Uuid) {
+        info!("Repo sync start {}", repo_uid);
+        Self::init().await.rx.send(repo_uid).ok();
+    }
+}
+
+impl AppState {
+    async fn update_repo_model(
+        &self,
+        mut arch: ActiveModel,
+        branch_len: usize,
+        default_branch: Option<&str>,
+    ) {
+        if let Some(name) = default_branch {
+            arch.default_branch = Set(name.to_string());
         }
-        let mut rec = 0;
-        let mut commit_len = 0;
-        let branch = blob.blob()?;
-        for (branch, commits) in branch.clone() {
-            if let Ok(time) = branch.time.parse::<i64>(){
-                if time > rec {
-                    rec = time;
-                }
+        arch.nums_branch = Set(branch_len as i32);
+        arch.updated_at = Set(Utc::now().naive_utc());
+        if let Err(e) = arch.update(&self.write).await {
+            warn!("Failed to update repo: {}", e);
+        }
+    }
+
+    pub async fn repo_sync(&self, repo_uid: Uuid) -> io::Result<()> {
+        let repo = self.repo_get_by_uid(repo_uid).await?;
+        let path = format!(
+            "{}/{}/{}",
+            crate::app::http::GIT_ROOT,
+            repo.node_uid,
+            repo.uid
+        );
+        let blob = crate::blob::GitBlob::new(path.into())
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+        let branches = blob.branch()?;
+
+        let default_exists = branches.iter().any(|x| x.name == repo.default_branch);
+        if !default_exists {
+            let new_default = branches
+                .iter()
+                .find(|x| x.name == "main" || x.name == "master")
+                .or_else(|| branches.first())
+                .map(|x| x.name.as_str());
+
+            self.update_repo_model(
+                repo.clone().into_active_model(),
+                branches.len(),
+                new_default,
+            )
+            .await;
+        }
+
+        let mut latest_timestamp = 0;
+        let mut max_commits = 0;
+        let branch_data = blob.blob()?;
+
+        for (branch, commits) in branch_data.clone() {
+            if let Ok(time) = branch.time.parse::<i64>() {
+                latest_timestamp = latest_timestamp.max(time);
             }
-            if commits.len() > commit_len { 
-                commit_len = commits.len();
-            }
-            let branch_uid = if let Some(x) = branches::Entity::find()
+            max_commits = max_commits.max(commits.len());
+
+            let branch_uid = match branches::Entity::find()
                 .filter(branches::Column::RepoUid.eq(repo_uid))
-                .filter(branches::Column::Name.eq(branch.name.clone()))
+                .filter(branches::Column::Name.eq(&branch.name))
                 .one(&self.read)
                 .await
-                .map_err(|_| io::Error::new(io::ErrorKind::Other, "Failed to get branches"))?
+                .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?
             {
-                let mut xs = x.clone().into_active_model();
-                xs.head = Set(branch.head.clone());
-                xs.time = Set(branch.time);
-                xs.update(&self.write).await.ok();
-                x.uid
-            } else {
-                let res = branches::ActiveModel {
+                Some(existing) => {
+                    let mut model = existing.clone().into_active_model();
+                    model.head = Set(branch.head.clone());
+                    model.time = Set(branch.time.clone());
+                    if let Err(e) = model.update(&self.write).await {
+                        warn!("Failed to update branch: {}", e);
+                    }
+                    existing.uid
+                }
+                None => branches::ActiveModel {
                     uid: Set(Uuid::new_v4()),
                     repo_uid: Set(repo_uid),
                     protect: Set(false),
@@ -73,75 +128,118 @@ impl AppState {
                     head: Set(branch.head.clone()),
                     time: Set(branch.time),
                 }
-                    .insert(&self.write).await.map_err(|_| io::Error::new(io::ErrorKind::Other, "Failed to insert branches"))?;
-                res.uid
+                .insert(&self.write)
+                .await
+                .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?
+                .uid,
             };
-            for commit in commits {
-                if commits::Entity::find()
+
+            let commit_ids: HashSet<_> = commits.iter().map(|c| c.id.clone()).collect();
+            let existing_ids: HashSet<_> = {
+                let mut ids_stream = commits::Entity::find()
                     .filter(commits::Column::RepoUid.eq(repo_uid))
                     .filter(commits::Column::BranchUid.eq(branch_uid))
-                    .filter(commits::Column::Id.eq(commit.id.clone()))
-                    .one(&self.read)
+                    .filter(commits::Column::Id.is_in(commits.iter().map(|c| &c.id)))
+                    .stream(&self.read)
                     .await
-                    .map_err(|x| io::Error::new(io::ErrorKind::Other, x.to_string()))?
-                    .is_none()
-                {
-                    let _ = commits::ActiveModel {
-                        uid: Set(Uuid::new_v4()),
-                        repo_uid: Set(repo_uid),
-                        branch_uid: Set(branch_uid),
-                        id: Set(commit.id.clone()),
-                        message: Set(commit.msg.clone()),
-                        time: Set(commit.time),
-                        author: Set(commit.author.clone()),
-                        email: Set(commit.email.clone()),
-                        status: Set(String::new()),
-                        branch_name: Set(branch.name.clone()),
-                        runner: Set(vec![]),
-                    }
-                        .insert(&self.write).await;
+                    .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+
+                let mut existing = HashSet::new();
+                while let Some(Ok(record)) = ids_stream.next().await {
+                    existing.insert(record.id);
                 }
-            }
+                existing
+            };
+
+            let to_insert: Vec<_> = commits
+                .iter()
+                .filter(|c| !existing_ids.contains(&c.id))
+                .map(|commit| commits::ActiveModel {
+                    uid: Set(Uuid::new_v4()),
+                    repo_uid: Set(repo_uid),
+                    branch_uid: Set(branch_uid),
+                    id: Set(commit.id.clone()),
+                    message: Set(commit.msg.clone()),
+                    time: Set(commit.time.clone()),
+                    author: Set(commit.author.clone()),
+                    email: Set(commit.email.clone()),
+                    status: Set(String::new()),
+                    branch_name: Set(branch.name.clone()),
+                    runner: Set(vec![]),
+                })
+                .collect();
+
+            if !to_insert.is_empty() {
+                let txn = self
+                    .write
+                    .begin()
+                    .await
+                    .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+                for chunk in to_insert.chunks(1000) {
+                    commits::Entity::insert_many(chunk.to_vec())
+                        .exec(&txn)
+                        .await
+                        .map_err(|e| {
+                            error!("Batch insert failed: {}", e);
+                            io::Error::new(io::ErrorKind::Other, e.to_string())
+                        })?;
+                }
             
+                txn.commit()
+                    .await
+                    .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+            }
+            drop(to_insert);
+            drop(existing_ids);
+            drop(commit_ids);
+
             if tree::Entity::find()
                 .filter(tree::Column::RepoUid.eq(repo_uid))
-                .filter(tree::Column::Branch.eq(branch.name.clone()))
-                .filter(tree::Column::Head.eq(branch.head.clone()))
+                .filter(tree::Column::Branch.eq(&branch.name))
+                .filter(tree::Column::Head.eq(&branch.head))
                 .one(&self.read)
                 .await
-                .map_err(|_| io::Error::new(io::ErrorKind::Other, "Failed to get tree"))?
-                .is_some()
+                .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?
+                .is_none()
             {
-                continue
+                
+                match blob.tree(branch.name.clone()) {
+                    Ok(tree) => {
+                        let model = tree::ActiveModel {
+                            uid: Set(Uuid::new_v4()),
+                            repo_uid: Set(repo_uid),
+                            head: Set(branch.head.clone()),
+                            content: Set(serde_json::to_string(&tree)?),
+                            branch: Set(branch.name.clone()),
+                        };
+                        if let Err(e) = model.insert(&self.write).await {
+                            warn!("Failed to insert tree: {}", e);
+                        } else {  
+                            drop(tree)
+                        }
+                    }
+                    Err(e) => warn!("Failed to get tree: {}", e),
+                }
             }
-            let tree = match blob.tree(branch.name.clone()) {
-                Ok(tree) => tree,
-                Err(_) => {
-                    continue
-                },
-            };
-            let _ = tree::ActiveModel {
-                uid: Set(Uuid::new_v4()),
-                repo_uid: Set(repo_uid),
-                head: Set(branch.head),
-                content: Set(serde_json::to_string(&tree)?),
-                branch: Set(branch.name),
+        }
+        if max_commits > 0 {
+            self.update_repo_model(repo.clone().into_active_model(), branch_data.len(), None)
+                .await;
+        }
+        if latest_timestamp != 0 {
+            let mut arch = repo.into_active_model();
+            arch.updated_at = Set(
+                DateTime::from_timestamp(latest_timestamp, 0)
+                    .unwrap()
+                    .naive_utc(),
+            );
+            if let Err(e) = arch.update(&self.write).await {
+                warn!("Failed to update timestamp: {}", e);
             }
-                .insert(&self.write).await;
-            
         }
-        if commit_len > 0 {
-            let mut arch = repo.clone().into_active_model();
-            arch.nums_commit = Set(commit_len as i32);
-            arch.nums_branch = Set(branch.len() as i32);
-            arch.update(&self.write).await.ok();
-        }
-        if rec != 0 {
-            let mut arch = repo.clone().into_active_model();
-            arch.nums_branch = Set(branch.len() as i32);
-            arch.updated_at = Set(DateTime::from_timestamp(rec, 0).unwrap().naive_local());
-            arch.update(&self.write).await.ok();
-        }
+        drop(blob);
+        drop(branch_data);
+
         Ok(())
     }
 }
