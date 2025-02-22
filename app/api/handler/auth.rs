@@ -5,22 +5,22 @@ use crate::app::services::auth::passwd::AuthPasswd;
 use crate::app::services::email::capctah::EmailCaptcha;
 use crate::app::services::user::check::UserCheckParma;
 use crate::app::services::AppState;
-use poem::session::Session;
-use poem::web::Json;
-use poem::{handler, web, IntoResponse, Request};
+use actix_session::Session;
+use actix_web::web::Json;
+use actix_web::{web, HttpRequest, Responder};
 
-#[handler]
 pub async fn auth_passwd(
-    session: &Session,
+    session: Session,
     parma: Json<AuthPasswd>,
-    request: &Request,
-    state: web::Data<&AppState>
+    request: HttpRequest,
+    state: web::Data<AppState>
 )
- -> impl IntoResponse
+ -> impl Responder
 {
     let captcha = match session.get::<String>("captcha") {
-        Some(captcha) => captcha,
-        None => return AppWrite::<()>::error("captcha error".to_string()),
+        Ok(Some(captcha)) => captcha,
+        Ok(None) => return AppWrite::<()>::error("captcha error".to_string()),
+        Err(_) => return AppWrite::<()>::error("captcha error".to_string()),
     };
     if let Some(captcha_parma) = request.headers().get("x-captcha") {
         let captcha_parma= match captcha_parma.to_str() {
@@ -33,25 +33,25 @@ pub async fn auth_passwd(
     }
     match state.auth_passwd(parma.0).await {
         Ok(user) => {
-            session.set("user", serde_json::to_string(&user).unwrap());
+            session.insert("user", serde_json::to_string(&user).unwrap()).ok();
             AppWrite::success("success".to_string())
         }
         Err(err) => AppWrite::error(err.to_string()),
     }
 }
 
-#[handler]
 pub async fn auth_apply(
-    session: &Session,
+    session: Session,
     parma: Json<ApplyParma>,
-    request: &Request,
-    state: web::Data<&AppState>
+    request: HttpRequest,
+    state: web::Data<AppState>
 )
- -> impl IntoResponse
+ -> impl Responder
 {
     let captcha = match session.get::<String>("captcha") {
-        Some(captcha) => captcha,
-        None => return AppWrite::<()>::error("captcha error".to_string()),
+        Ok(Some(captcha)) => captcha,
+        Ok(None) => return AppWrite::<()>::error("captcha error".to_string()),
+        Err(_) => return AppWrite::<()>::error("cache error".to_string()),
     };
     if let Some(captcha_parma) = request.headers().get("x-captcha") {
         let captcha_parma= match captcha_parma.to_str() {
@@ -62,84 +62,80 @@ pub async fn auth_apply(
             return AppWrite::error("captcha error".to_string());
         }
     }
-    if let Some(x) = session.get::<bool>("next") {
+    if let Ok(Some(x)) = session.get::<bool>("next") {
         if !x {
             return AppWrite::error("captcha error".to_string());
         }
     }
     match state.auth_apply(parma.0).await {
         Ok(user) => {
-            session.set("user", serde_json::to_string(&user).unwrap());
+            session.insert("user", serde_json::to_string(&user).unwrap()).ok();
             AppWrite::success("success".to_string())
         }
         Err(err) => AppWrite::error(err.to_string()),
     }
 }
 
-#[handler]
 pub async fn auth_logout(
-    session: &Session,
+    session: Session,
 )
- -> impl IntoResponse
+ -> impl Responder
 {
     session.renew();
     session.purge();
     AppWrite::<()>::success("success".to_string())
 }
 
-#[handler]
 pub async fn auth_captcha(
-    session: &Session,
+    session: Session,
 )
- -> impl IntoResponse
+ -> impl Responder
 {
     let captcha = CaptchaImage::new();
-    session.set("captcha", captcha.text);
+    session.insert("captcha", captcha.text).ok();
     captcha.base64
 }
 
 
-#[handler]
 pub async fn auth_email_send(
     parma: Json<EmailCaptcha>,
-    state: web::Data<&AppState>,
-    session: &Session,
-) 
--> impl IntoResponse
+    state: web::Data<AppState>,
+    session: Session,
+)
+-> impl Responder
 {
     match state.email_captcha(parma.0.email).await {
         Ok(captcha) => {
-            session.set("captcha", captcha.code);
+            session.insert("captcha", captcha.code).ok();
             AppWrite::<()>::success("success".to_string())
         },
         Err(err) => AppWrite::error(err.to_string()),
     }
 }
-#[handler]
 pub async fn auth_email_check(
-    session: &Session,
+    session: Session,
     parma: Json<EmailCaptcha>,
-) 
--> impl IntoResponse
+)
+-> impl Responder
 {
     let captcha = match session.get::<String>("captcha") {
-        Some(captcha) => captcha,
-        None => return AppWrite::<()>::error("captcha error".to_string()),
+        Ok(Some(captcha)) => captcha,
+        Ok(None) => return AppWrite::<()>::error("captcha error".to_string()),
+        Err(_) => return AppWrite::<()>::error("cache error".to_string()),
     };
     if captcha != parma.0.code {
         return AppWrite::error("captcha error".to_string());
     }
-    session.set("captcha", "".to_string());
-    session.set("next", true);
+    session.insert("captcha", "".to_string()).ok();
+    session.insert("next", true).ok();
     AppWrite::<()>::success("success".to_string())
 }
 
-#[handler]
 pub async fn auth_check(
     parma: Json<UserCheckParma>,
-    state: web::Data<&AppState>,
+    state: web::Data<AppState>,
 )
- -> impl IntoResponse
+ -> impl Responder
 {
     match state.users_check(parma.0).await {
         Ok(user) => {

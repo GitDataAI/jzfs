@@ -1,22 +1,26 @@
 use crate::app::http::{GitPack, GIT_ROOT};
 use crate::app::services::AppState;
-use poem::http::StatusCode;
-use poem::web::{Data, Path};
-use poem::{handler, IntoResponse, Request, Response};
+
 use std::path::PathBuf;
 use std::process::Stdio;
+use actix_web::{HttpRequest, HttpResponseBuilder, Responder};
+use actix_web::http::StatusCode;
+use actix_web::web::{Data, Path};
 use tokio::process::Command;
 use tracing::info;
 
 
-#[handler]
 pub async fn refs(
-    request: &Request,
+    request: HttpRequest,
     path: Path<(String, String)>,
-    status: Data<&AppState>,
-) -> impl IntoResponse {
+    status: Data<AppState>,
+) -> impl Responder {
     let version = request.headers().get("Git-Protocol").and_then(|x| x.to_str().ok());
-    let mut response = Response::builder().status(StatusCode::OK);
+    let mut response = HttpResponseBuilder::new(StatusCode::OK);
+    response
+        .insert_header(("Pragma", "no-cache"))
+        .insert_header(("Cache-Control", "no-cache, max-age=0, must-revalidate"))
+        .insert_header(("Expires", "Fri, 01 Jan 1980 00:00:00 GMT"));
     let url = request.uri().to_string().split("/")
         .map(|x| x.replace("/", ""))
         .filter(|x| !x.is_empty())
@@ -25,34 +29,31 @@ pub async fn refs(
     let mut cmd = Command::new("git");
 
     let server = if url.iter().any(|x| x.contains("git-upload-pack")) {
-        response = response.header("Content-Type", "application/x-git-upload-pack-advertisement");
+        response.insert_header(("Content-Type", "application/x-git-upload-pack-advertisement"));
         cmd.arg("upload-pack");
         GitPack::UploadPack
     } else if url.iter().any(|x| x.contains("git-receive-pack")) {
-        response = response.header("Content-Type", "application/x-git-receive-pack-advertisement");
+        response.insert_header(("Content-Type", "application/x-git-receive-pack-advertisement"));
         cmd.arg("receive-pack");
         GitPack::ReceivePack
     } else {
-        return Response::builder()
-            .status(StatusCode::NOT_ACCEPTABLE)
+        return HttpResponseBuilder::new(StatusCode::BAD_REQUEST)
             .body("Protoc Not Support");
     };
 
-    let (owner, repo) = path.0;
+    let (owner, repo) = path.into_inner();
     let repo = repo.replace(".git", "");
     info!("repository ops: {}", format!("{}/{}", owner, repo));
     let repo = match status.repo_info(owner, repo).await {
         Ok(repo) => repo,
-        Err(_) => return Response::builder()
-            .status(StatusCode::NOT_FOUND)
+        Err(_) => return HttpResponseBuilder::new(StatusCode::BAD_REQUEST)
             .body("Repo Not Found"),
     };
 
     let path = PathBuf::from(format!("{}/{}/{}/", GIT_ROOT, repo.node_uid, repo.uid));
 
     if !path.exists() {
-        return Response::builder()
-            .status(StatusCode::NOT_FOUND)
+        return HttpResponseBuilder::new(StatusCode::NOT_FOUND)
             .body("repository not found");
     }
 
@@ -74,8 +75,7 @@ pub async fn refs(
         }
         Err(e) => {
             eprintln!("Error running command: {}", e);
-            return Response::builder()
-                .status(StatusCode::INTERNAL_SERVER_ERROR)
+            return HttpResponseBuilder::new(StatusCode::BAD_REQUEST)
                 .body(e.to_string())
         }
     };
@@ -95,8 +95,5 @@ pub async fn refs(
 
     result.push_str(std::str::from_utf8(&output.stdout).unwrap());
     response
-        .header("Pragma", "no-cache")
-        .header("Cache-Control", "no-cache, max-age=0, must-revalidate")
-        .header("Expires", "Fri, 01 Jan 1980 00:00:00 GMT")
         .body(result)
 }

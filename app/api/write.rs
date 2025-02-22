@@ -1,7 +1,8 @@
-use poem::Response;
+use actix_web::body::BoxBody;
+use actix_web::{HttpRequest, HttpResponse, Responder};
 use serde::Serialize;
-use serde_json::Number;
 use serde_json::Value;
+use serde_json::{json, Number};
 
 #[derive(Serialize)]
 pub struct AppWrite<T : Serialize> {
@@ -128,34 +129,19 @@ where
 //     }
 // }
 
-// impl<T : Serialize> Responder for AppWrite<T> {
-//     type Body = BoxBody;
-// 
-//     fn respond_to(self, req : &HttpRequest) -> HttpResponse<Self::Body> {
-//         let mut value = Value::default();
-//         value["code"] = Value::Number(Number::from(self.code));
-//         value["msg"] = Value::String(self.msg);
-//         if let Some(data) = self.data {
-//             value["data"] = json!(data);
-//         }
-//         HttpResponse::Ok()
-//             .insert_header(("Content-Type", "application/json"))
-//             .body(value.to_string())
-//             .respond_to(req)
-//     }
-// }
+impl<T : Serialize> Responder for AppWrite<T> {
+    type Body = BoxBody;
 
-impl <T : Serialize + Send> poem::IntoResponse for AppWrite<T> {
-    fn into_response(self) -> Response {
+    fn respond_to(self, req : &HttpRequest) -> HttpResponse<Self::Body> {
         let mut value = Value::default();
         value["code"] = Value::Number(Number::from(self.code));
         value["msg"] = Value::String(self.msg);
         if let Some(data) = self.data {
-            value["data"] = serde_json::to_string(&data).unwrap().parse().unwrap();
+            value["data"] = json!(data);
         }
-        Response::builder()
-            .status(poem::http::StatusCode::OK)
-            .header("Content-Type", "application/json")
-            .body(serde_json::to_string(&value).unwrap())
+        HttpResponse::Ok()
+            .insert_header(("Content-Type", "application/json"))
+            .body(value.to_string())
+            .respond_to(req)
     }
 }

@@ -3,31 +3,31 @@ use std::io::Read;
 use crate::app::http::{GitPack, GIT_ROOT};
 use crate::app::services::AppState;
 use flate2::bufread::GzDecoder;
-use poem::http::StatusCode;
-use poem::web::{Data, Path};
-use poem::{handler, Body, IntoResponse, Request, Response};
 use std::io;
 use std::io::Cursor;
 use std::process::Stdio;
 use bytes::Bytes;
 use std::process::Command;
+use actix_web::{HttpRequest, HttpResponse, HttpResponseBuilder, Responder};
+use actix_web::http::StatusCode;
+use actix_web::web::{Data, Path};
 use async_stream::stream;
-use tracing::{error, info};
+use tracing::{error};
+use crate::app::services::repo::sync::RepoSync;
 
-#[handler]
 pub async fn pack(
-    request: &Request,
+    request: HttpRequest,
     payload: Bytes,
     path: Path<(String, String)>,
-    status: Data<&AppState>,
-) -> impl IntoResponse {
-    let mut bytes = if let Some(zip) = request.header("content-encoding") {
+    status: Data<AppState>,
+) -> impl Responder {
+
+    let bytes = if let Some(zip) = request.headers().get("content-encoding") {
         if zip == "gzip" {
             let mut decoder = GzDecoder::new(Cursor::new(payload.clone()));
             let mut decoded_data = Vec::new();
             if let Err(e) = io::copy(&mut decoder, &mut decoded_data) {
-                return Response::builder()
-                    .status(StatusCode::BAD_REQUEST)
+                return HttpResponseBuilder::new(StatusCode::BAD_REQUEST)
                     .body(e.to_string());
             }
             decoded_data
@@ -40,8 +40,13 @@ pub async fn pack(
 
     let version = request.headers().get("Git-Protocol").and_then(|x| x.to_str().ok());
 
-    let mut response = Response::builder()
-        .status(StatusCode::OK);
+    let mut response = HttpResponse::build(StatusCode::OK);
+    response
+        .insert_header(("Pragma", "no-cache"))
+        .insert_header(("Cache-Control", "no-cache, max-age=0, must-revalidate"))
+        .insert_header(("Expires", "Fri, 01 Jan 1980 00:00:00 GMT"))
+        .insert_header(("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload"))
+        .insert_header(("X-Frame-Options", "DENY"));
     let url = request.uri().path().split("/")
         .map(|x| x.replace("/", ""))
         .filter(|x| !x.is_empty())
@@ -50,25 +55,24 @@ pub async fn pack(
     let mut cmd = Command::new("git");
 
     let _server = if url.iter().any(|x| x.contains("git-upload-pack")) {
-        response = response.header("Content-Type", "application/x-git-upload-pack-result");
+        response.insert_header(("Content-Type", "application/x-git-upload-pack-result"));
         cmd.arg("upload-pack");
         GitPack::UploadPack
     } else if url.iter().any(|x| x.contains("git-receive-pack")) {
-        response = response.header("Content-Type", "application/x-git-receive-pack-result");
+        response.insert_header(("Content-Type", "application/x-git-receive-pack-result"));
         cmd.arg("receive-pack");
         GitPack::ReceivePack
     } else {
-        return Response::builder()
-            .status(StatusCode::NOT_ACCEPTABLE)
+        return HttpResponseBuilder::new(StatusCode::BAD_REQUEST)
             .body("Protoc Not Support");
     };
 
-    let (owner, repo) = path.0;
+    let (owner, repo) = path.into_inner();
     let repo = repo.replace(".git", "");
     let repo = match status.repo_info(owner, repo).await {
         Ok(repo) => repo,
-        Err(_) => return Response::builder()
-            .status(StatusCode::NOT_FOUND)
+        Err(_) =>
+            return HttpResponseBuilder::new(StatusCode::BAD_REQUEST)
             .body("Repo Not Found"),
     };
 
@@ -87,8 +91,7 @@ pub async fn pack(
         Ok(child) => child,
         Err(e) => {
             eprintln!("Error running command: {}", e);
-            return Response::builder()
-                .status(StatusCode::INTERNAL_SERVER_ERROR)
+            return HttpResponseBuilder::new(StatusCode::BAD_REQUEST)
                 .body(e.to_string());
         }
     };
@@ -98,13 +101,12 @@ pub async fn pack(
     let _stderr = child.stderr.take().unwrap();
 
     if let Err(e) = stdin.write_all(&bytes) {
-        return Response::builder()
-            .status(StatusCode::INTERNAL_SERVER_ERROR)
+        return HttpResponseBuilder::new(StatusCode::BAD_REQUEST)
             .body(e.to_string());
     }
     drop(stdin);
 
-    let body = Body::from_bytes_stream(stream! {
+    let body = actix_web::body::BodyStream::new(stream! {
         let mut buffer = [0; 8192];
         loop {
             match stdout.read(&mut buffer) {
@@ -121,24 +123,7 @@ pub async fn pack(
             }
         }
     });
-    let status = status.clone();
-    tokio::spawn(async move {
-        match status.repo_sync(repo.uid).await{
-            Ok(_) => {
-                info!("Repo sync success");
-            }
-            Err(e) => {
-                error!("Error syncing repo: {}", e);
-            }
-        }
-    });
-
-
+    RepoSync::send(repo.uid).await;
     response
-        .header("Pragma", "no-cache")
-        .header("Cache-Control", "no-cache, max-age=0, must-revalidate")
-        .header("Expires", "Fri, 01 Jan 1980 00:00:00 GMT")
-        .header("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
-        .header("X-Frame-Options", "DENY")
         .body(body)
 }
