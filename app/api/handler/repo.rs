@@ -269,3 +269,20 @@ pub async fn repo_access(
     };
     AppWrite::ok(access)
 }
+
+pub async fn repo_commit_one(
+    path: Path<(String,String,String,String)>,
+    status: Data<AppState>,
+) 
+-> impl Responder
+{
+    let (owner, repo, branch, sha) = path.into_inner();
+    match status.repo_commit_one(owner,repo,branch,sha).await {
+        Ok(commit) => {
+            AppWrite::ok(commit)
+        },
+        Err(err) => {
+            AppWrite::error(err.to_string())
+        }
+    }
+}
