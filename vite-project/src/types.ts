@@ -72,8 +72,8 @@ export interface UserDashBored {
     user: UserModel;
     repos: Repository[];
     stars: Star[];
-    follow: Follow[];
-    followed: Follow[];
+    following: Follow[];
+    followers: Follow[];
     readme?: Uint8Array;
     watch: Watch[]
 }
@@ -113,7 +113,8 @@ export interface RepoAccess {
     owner_uid: string,
     name: string,
     avatar?: string,
-    repos: string[]
+    repos: string[],
+    repo_uids: string[]
 }
 
 
