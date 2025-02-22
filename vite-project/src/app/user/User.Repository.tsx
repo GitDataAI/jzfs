@@ -22,6 +22,7 @@ import {useEffect, useState} from "react";
 import {Modal, useDisclosure} from "@heroui/modal";
 import LayoutModelRepository from "@/app/Layout.Model.Repository.tsx";
 import {useNavigate} from "react-router-dom";
+import useUser from "@/state/useUser.tsx";
 
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -36,6 +37,7 @@ const UserRepository = (props: {props: UserDashBored}) => {
     const RepoModal = useDisclosure();
     const nav = useNavigate();
     const [Type, setType] = useState("all");
+    const user = useUser();
     useEffect(() => {
         setRepos(props.props.repos)
     }, [props.props.repos]);
@@ -137,9 +139,13 @@ const UserRepository = (props: {props: UserDashBored}) => {
                         <SelectItem key="new">recent</SelectItem>
                         <SelectItem key="copy">old</SelectItem>
                     </Select>
-                    <Button onPress={RepoModal.onOpen} className="user-repo-sort btn" color="success">
-                        New Repository
-                    </Button>
+                    {
+                        (user.user && (user.user.uid === props.props.user.uid)) && (
+                            <Button onPress={RepoModal.onOpen} className="user-repo-sort btn" color="success">
+                                New Repository
+                            </Button>
+                        )
+                    }
                 </div>
                 <div className="user-repo-list">
                 {

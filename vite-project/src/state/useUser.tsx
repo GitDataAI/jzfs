@@ -32,10 +32,8 @@ const useUser = create<UserState>()(
                     setUser: (user: UserModel) => set({user: user, isLogin: true}),
                     setLogin: (isLogin: boolean) => set({isLogin: isLogin}),
                     logout: () => {
-                        authApi.LoginOut().then(() => {
-                            toast.success({text: '退出成功'});
-                        });
-                        set({user: undefined, isLogin: false})
+                        authApi.LoginOut().then(() => {});
+                        set({user: undefined, isLogin: false, dash: undefined})
                     },
                     getUser: () => get().user,
                     getIsLogin: () => get().isLogin,
