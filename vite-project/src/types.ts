@@ -138,3 +138,18 @@ export interface HotRepo {
     owner: string;
     model: Repository;
 }
+
+
+export interface DBCommit {
+    uid: string,
+    id: string, // sha
+    repo_uid: string,
+    branch_uid: string,
+    branch_name: string,
+    author: string,
+    email: string,
+    message: string,
+    time: string,
+    status: string,
+    runner: string[],
+}
