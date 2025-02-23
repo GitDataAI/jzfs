@@ -8,8 +8,8 @@ use actix_web::{
     cookie::{Key, SameSite},
     web, App, HttpServer, Responder,
 };
-use gitdata::app::services::AppState;
-use gitdata::router::router;
+use gitdata::services::AppState;
+use gitdata::route::router;
 
 lazy_static::lazy_static! {
     pub static ref PORT: u16 = std::env::var("PORT")
@@ -49,7 +49,6 @@ async fn main() -> std::io::Result<()> {
             )
             .service(web::resource("/").to(index))
             .configure(router)
-            // 在此添加其他路由
     })
     .bind(format!("0.0.0.0:{}", *PORT))?
     .run()

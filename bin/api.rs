@@ -5,7 +5,7 @@ use russh::keys::PrivateKey;
 use russh::server::{Config, Server};
 use russh::{MethodSet, SshId};
 use tracing::info;
-use gitdata::app::ssh::server::SSHServer;
+use gitdata::ssh::server::SSHServer;
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
