@@ -51,13 +51,17 @@ create table if not exists repository
 
 create table if not exists tokens
 (
-    uid        uuid default uuid_generate_v4() not null
+    uid         uuid default uuid_generate_v4() not null
         primary key,
-    user_id    uuid                            not null,
-    token      text                            not null,
-    created_at timestamp                       not null,
-    updated_at timestamp                       not null,
-    expires_at timestamp                       not null
+    user_id     uuid                            not null,
+    token       text                            not null,
+    created_at  timestamp                       not null,
+    updated_at  timestamp                       not null,
+    expires_at  timestamp                       not null,
+    name        text                            not null,
+    description text,
+    access      text                            not null,
+    use_history text[]
 );
 
 create table if not exists stars
