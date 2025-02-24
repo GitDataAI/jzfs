@@ -153,3 +153,33 @@ export interface DBCommit {
     status: string,
     runner: string[],
 }
+
+export interface TokenCreate {
+  name: string;
+  description?: string;
+  expire: number;
+  access: number;
+}
+
+export interface TokenCreateReopens {
+  uid: string;
+  token: string;
+  expire: number;
+}
+
+export interface TokenDelete {
+  uid: string;
+  name: string;
+}
+
+export interface TokenModel {
+  uid: string;
+  user_id: string;
+  name: string;
+  description?: string;
+  access: string;
+  use_history: string[];
+  created_at: DateTime;
+  updated_at: DateTime;
+  expires_at: DateTime;
+}

@@ -3,9 +3,11 @@ use crate::services::AppState;
 
 use std::path::PathBuf;
 use std::process::Stdio;
-use actix_web::{HttpRequest, HttpResponseBuilder, Responder};
+use actix_web::{HttpMessage, HttpRequest, HttpResponseBuilder, Responder};
+use actix_web::http::header::Header;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Path};
+use actix_web_httpauth::headers::authorization::{Authorization, Basic};
 use tokio::process::Command;
 use tracing::info;
 
@@ -15,6 +17,48 @@ pub async fn refs(
     path: Path<(String, String)>,
     status: Data<AppState>,
 ) -> impl Responder {
+
+    let (owner, repo) = path.into_inner();
+    
+    let auth = match Authorization::<Basic>::parse(&request){
+        Ok(auth) => auth,
+        Err(_) => {
+            return HttpResponseBuilder::new(StatusCode::UNAUTHORIZED)
+                .insert_header(("WWW-Authenticate", "Basic realm=\"GitData\""))
+                .body("Unauthorized")
+        }
+    };
+    let schema = auth.into_scheme();
+    let username = schema.user_id().to_string();
+    let password = match schema.password(){
+        Some(password) => password.to_string(),
+        None => {
+            return HttpResponseBuilder::new(StatusCode::UNAUTHORIZED)
+                .insert_header(("WWW-Authenticate", "Basic realm=\"GitData\""))
+                .body("Unauthorized")
+        }
+    };
+    let (user,token) = if let Ok(res) = status.self_token_find(username, password).await {
+        let user = res.0;
+        let token = res.1;
+        (user,token)
+    }else {
+        return HttpResponseBuilder::new(StatusCode::UNAUTHORIZED)
+            .insert_header(("WWW-Authenticate", "Basic realm=\"GitData\""))
+            .body("Unauthorized")
+    };
+    if token.access == *"read" {
+        return HttpResponseBuilder::new(StatusCode::UNAUTHORIZED)
+            .insert_header(("WWW-Authenticate", "Basic realm=\"GitData\""))
+            .body("Unauthorized");
+    }
+    if let Ok(access) = status.user_access_owner(user.uid).await {
+        if !access.iter().any(|x|x.repos.contains(&repo.replace(".git",""))){
+            return HttpResponseBuilder::new(StatusCode::UNAUTHORIZED)
+                .insert_header(("WWW-Authenticate", "Basic realm=\"GitData\""))
+                .body("Unauthorized");
+        }
+    }
     let version = request.headers().get("Git-Protocol").and_then(|x| x.to_str().ok());
     let mut response = HttpResponseBuilder::new(StatusCode::OK);
     response
@@ -35,13 +79,13 @@ pub async fn refs(
     } else if url.iter().any(|x| x.contains("git-receive-pack")) {
         response.insert_header(("Content-Type", "application/x-git-receive-pack-advertisement"));
         cmd.arg("receive-pack");
+        
         GitPack::ReceivePack
     } else {
         return HttpResponseBuilder::new(StatusCode::BAD_REQUEST)
             .body("Protoc Not Support");
     };
-
-    let (owner, repo) = path.into_inner();
+    
     let repo = repo.replace(".git", "");
     info!("repository ops: {}", format!("{}/{}", owner, repo));
     let repo = match status.repo_info(owner, repo).await {

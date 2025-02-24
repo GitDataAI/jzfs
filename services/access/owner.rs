@@ -10,6 +10,7 @@ use crate::model::repository::repository;
 use crate::model::users::users;
 
 #[derive(Deserialize,Serialize,Clone)]
+#[derive(Debug)]
 pub struct AccessOwner {
     pub owner_uid: Uuid,
     pub name: String,

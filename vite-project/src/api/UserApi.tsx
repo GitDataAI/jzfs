@@ -1,4 +1,5 @@
-import {Http} from "@/api/Http.tsx";
+import {AppWrite, Http} from "@/api/Http.tsx";
+import {TokenCreate, TokenCreateReopens, TokenDelete, TokenModel} from "@/types.ts";
 
 export class UserApi extends Http {
     async GetNow() {
@@ -24,5 +25,14 @@ export class UserApi extends Http {
     }
     async InfoByUid(uid: string) {
         return await this.post<string>('/user/uid/'+uid,{})
+    }
+    async TokenList(){
+        return await this.patch<string>('/user/token',{})
+    }
+    async TokenCreate(parma: TokenCreate){
+        return await this.post<AppWrite<TokenCreateReopens>>('/user/token',parma)
+    }
+    async TokenDelete(parma: TokenDelete){
+        return await this.put<AppWrite<string>>('/user/token',parma)
     }
 }
