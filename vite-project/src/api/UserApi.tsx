@@ -1,5 +1,5 @@
 import {AppWrite, Http} from "@/api/Http.tsx";
-import {TokenCreate, TokenCreateReopens, TokenDelete, TokenModel} from "@/types.ts";
+import {TokenCreate, TokenCreateReopens, TokenDelete} from "@/types.ts";
 
 export class UserApi extends Http {
     async GetNow() {
