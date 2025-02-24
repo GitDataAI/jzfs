@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::io;
 use std::net::SocketAddr;
 use tracing::info;
-use crate::services::AppState;
+use crate::services::{AppState, AppStateHandle};
 use crate::ssh::handle::SSHandle;
 
 
@@ -17,7 +17,7 @@ impl SSHServer {
         }
     }
     pub async fn from_env() -> io::Result<Self> {
-        let app = AppState::init_env().await?;
+        let app = AppStateHandle::get().await;
         Ok(SSHServer::new(app))
     }
 }
