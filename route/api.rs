@@ -1,10 +1,10 @@
-use actix_web::web;
-use actix_web::web::{delete, get, patch, post, scope};
 use crate::api::handler::auth::{auth_apply, auth_captcha, auth_check, auth_email_check, auth_email_send, auth_logout, auth_passwd};
 use crate::api::handler::explore::explore_repo_hot;
 use crate::api::handler::repo::{repo_access, repo_bhct, repo_commit_one, repo_create, repo_file, repo_fork, repo_info, repo_star, repo_tree, repo_watch};
 use crate::api::handler::static_file::{down_avatar, upload_avatar};
 use crate::api::handler::users::{user_dashbored, user_info_by_uid, user_now, user_token_create, user_token_delete, user_token_list, user_update_optional};
+use actix_web::web;
+use actix_web::web::{get, patch, post, put, scope};
 
 pub fn api_router(cfg: &mut web::ServiceConfig) {
     cfg
@@ -35,7 +35,7 @@ pub fn api_router(cfg: &mut web::ServiceConfig) {
                 .route("/uid/{uid}", post().to(user_info_by_uid))
                 .route("/token",post().to(user_token_create))
                 .route("/token",patch().to(user_token_list))
-                .route("/token",delete().to(user_token_delete))
+                .route("/token",put().to(user_token_delete))
         )
         .service(
             scope("/repo")

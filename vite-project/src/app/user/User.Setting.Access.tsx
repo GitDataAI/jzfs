@@ -4,6 +4,7 @@ import {UserApi} from "@/api/UserApi.tsx";
 import {useEffect, useState} from "react";
 import {Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, useDisclosure} from "@heroui/modal";
 import {AppWrite} from "@/api/Http.tsx";
+import {toast} from "@pheralb/toast";
 
 
 const api = new UserApi();
@@ -80,7 +81,7 @@ export const UserSettingAccess = (_props: { props: UserDashBored }) => {
                         <ModalHeader>
                             New Personal access tokens
                         </ModalHeader>
-                        <NewToken setRes={SetRes}/>
+                        <NewToken setRes={SetRes} onClose={TokenModal.onClose} openProduct={TokenResModel.onOpen}/>
                     </ModalContent>
                 </Modal>
                 {
@@ -94,7 +95,6 @@ export const UserSettingAccess = (_props: { props: UserDashBored }) => {
                             <ModalContent>
                                 <Card>
                                     <CardBody>
-                                        <Divider/>
                                         <span>This token will only be displayed once, please keep it safe afterwards</span>
                                         <div style={{
                                             marginTop: "20px",
@@ -160,6 +160,23 @@ const TokenItem = (props: { props: TokenModel }) => {
                             padding: '0.5rem 1rem',
                             height: 'fit-content'
                         }}
+                        onPress={()=>{
+                            api.TokenDelete({
+                                name: props.props.name,
+                                uid: props.props.uid
+                            }).then(res=>{
+                                const json:AppWrite<string> = JSON.parse(res.data);
+                                if (json.code === 200 && res.status === 200) {
+                                    toast.success({
+                                        text: "Delete Success"
+                                    })
+                                }else {
+                                    toast.error({
+                                        text: "Delete Failed:" + json.msg
+                                    })
+                                }
+                            })
+                        }}
                     >
                         Delete
                     </Button>
@@ -189,7 +206,9 @@ const EmptyAccess = (props: { props: "Token" | "SSH" }) => {
 }
 
 interface NewTokenProps {
-    setRes: (value: (((prevState: (TokenCreateReopens | undefined)) => (TokenCreateReopens | undefined)) | TokenCreateReopens | undefined)) => void
+    setRes: (value: (((prevState: (TokenCreateReopens | undefined)) => (TokenCreateReopens | undefined)) | TokenCreateReopens | undefined)) => void,
+    onClose: () => void,
+    openProduct: () => void
 }
 
 const NewToken = (props: NewTokenProps) => {
@@ -207,9 +226,12 @@ const NewToken = (props: NewTokenProps) => {
             access: parseInt(From.access)
         }).then(res => {
             if (res.status === 200) {
-                const json = res.data;
+                const json:AppWrite<TokenCreateReopens> = JSON.parse(res.data);
+                console.log(json.data)
                 if (json.code === 200 && json.data) {
                     props.setRes(json.data)
+                    props.onClose();
+                    props.openProduct();
                 }
             }
         })
@@ -241,7 +263,7 @@ const NewToken = (props: NewTokenProps) => {
                                    description: e.target.value
                                })
                            }}/>
-                    <Input  name="expire" isRequired typeof="number" label="Expiration date"
+                    <Input name="expire" isRequired typeof="number" label="Expiration date"
                            placeholder="Expiration date(days or -1 no-limit)" onChange={(e) => {
                         setFrom({
                             ...From,
