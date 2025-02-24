@@ -12,3 +12,8 @@ pub mod services;
 pub mod http;
 pub mod ssh;
 pub mod lfs;
+
+pub mod cmd{
+    pub mod ssh;
+    pub mod http;
+}
