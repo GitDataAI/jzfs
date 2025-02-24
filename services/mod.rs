@@ -1,6 +1,7 @@
 use std::{env, io};
 use std::time::Duration;
 use sea_orm::{ConnectOptions, ConnectionTrait, Database, DatabaseBackend, DatabaseConnection, Statement};
+use tokio::sync::OnceCell;
 use tracing::info;
 use crate::services::email::EmailEvent;
 use crate::model::CREATE_TABLE;
@@ -73,3 +74,13 @@ impl AppState {
     }
 }
 
+
+pub struct AppStateHandle;
+static STATE:OnceCell<AppState> = OnceCell::const_new();
+impl AppStateHandle {
+    pub async fn get() -> AppState {
+        STATE.get_or_init(|| async {
+            AppState::init_env().await.unwrap()
+        }).await.clone()
+    }
+}
