@@ -299,35 +299,39 @@ const RepoFile = (props: RepoFileProps) => {
                                         <Card>
                                             <CardHeader className="repo-file-body-main-header">
                                                 <div className="repo-file-body-main-header-left">
-                                                    <Select
-                                                        showScrollIndicators={false}
-                                                        isRequired
-                                                        disallowEmptySelection
-                                                        defaultSelectedKeys={[DefaultBranch!.name]}
-                                                        selectedKeys={[DefaultBranch!.name]} value={DefaultBranch!.name}
-                                                        className="branch-select"
-                                                        onSelectionChange={(key) => {
-                                                        const currentKey = key.currentKey;
-                                                        if (currentKey) {
-                                                            const default_branches = Branches.find((value) => value.name === currentKey);
-                                                            if (default_branches) {
-                                                                setDafaultBranch(default_branches);
-                                                                UpdateTree(default_branches).then(() => {
-                                                                }).catch(() => {
-                                                                })
-                                                            }
-                                                        }
-                                                    }}>
-                                                        {
-                                                            Branches.map(value => {
-                                                                return (
-                                                                    <SelectItem key={value.name}>
-                                                                        {value.name}
-                                                                    </SelectItem>
-                                                                )
-                                                            })
-                                                        }
-                                                    </Select>
+                                                    {
+                                                        DefaultBranch && (
+                                                            <Select
+                                                                showScrollIndicators={false}
+                                                                isRequired
+                                                                disallowEmptySelection
+                                                                defaultSelectedKeys={[DefaultBranch!.name]}
+                                                                selectedKeys={[DefaultBranch!.name]} value={DefaultBranch!.name}
+                                                                className="branch-select"
+                                                                onSelectionChange={(key) => {
+                                                                    const currentKey = key.currentKey;
+                                                                    if (currentKey) {
+                                                                        const default_branches = Branches.find((value) => value.name === currentKey);
+                                                                        if (default_branches) {
+                                                                            setDafaultBranch(default_branches);
+                                                                            UpdateTree(default_branches).then(() => {
+                                                                            }).catch(() => {
+                                                                            })
+                                                                        }
+                                                                    }
+                                                                }}>
+                                                                {
+                                                                    Branches.map(value => {
+                                                                        return (
+                                                                            <SelectItem key={value.name}>
+                                                                                {value.name}
+                                                                            </SelectItem>
+                                                                        )
+                                                                    })
+                                                                }
+                                                            </Select>
+                                                        )
+                                                    }
                                                     {
                                                         (Head !== null) && (
                                                             <div className="head-message">
