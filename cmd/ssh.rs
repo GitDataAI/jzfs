@@ -26,8 +26,9 @@ impl SSHHandle {
         let version = format!("SSH-2.0-Gitdata {}", env!("CARGO_PKG_VERSION"));
         config.server_id = SshId::Standard(version);
         config.methods = MethodSet::all();
+        config.channel_buffer_size = 5;
         let mut server = SSHServer::from_env().await?;
-        server.run_on_address(Arc::new(config), "0.0.0.0:2322").await?;
+        server.run_on_address(Arc::new(config), "0.0.0.0:30322").await?;
         println!("{:?}", start.elapsed());
         Ok(())
     }

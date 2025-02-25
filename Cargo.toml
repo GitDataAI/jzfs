@@ -17,12 +17,11 @@ name = "gitdata"
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }
-tracing-subscriber = { version = "0.3" }
+tracing-subscriber = { version = "0.3",features = ["env-filter"] }
 tracing = { version = "0.1" }
 actix-web = { version = "4.9.0", features = ["cookies"] }
 actix-session = { version = "0.10.1", features = ["redis-pool","redis-session"] }
 actix-multipart = { version = "0.7.2", features = ["derive"] }
-deadpool-redis = { version = "0.19.0", features = ["tokio"] }
 actix-web-httpauth = { version = "0.8.2", features = [] }
 
 sea-orm = { version = "1", features = ["sqlx-all","runtime-tokio","chrono","uuid"] }
@@ -52,8 +51,6 @@ rand = { version = "0.9.0", features = []}
 lazy_static = "1.5.0"
 sha256 = { version = "1.5.0", features = ["tokio"] }
 copy_dir = { version = "0.1.3" }
-rand_core = { version = "0.6.4", features = ["getrandom"] }
-russh = { version = "0.50.2", features = ["flate2","legacy-ed25519-pkcs8-parser"] }
+russh = {  version = "0.50.4", features = [] }
 futures-util = "0.3.31"
-
-procfs = { version = "0.17.0", features = [] }
+env_logger = { version = "0.11.6", features = ["color","auto-color"] }

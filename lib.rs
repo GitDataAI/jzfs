@@ -1,3 +1,5 @@
+#![feature(lock_value_accessors)]
+
 pub mod model;
 pub mod blob;
 pub mod route {

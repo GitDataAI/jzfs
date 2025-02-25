@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::io;
 use std::net::SocketAddr;
 use tracing::info;
@@ -27,10 +26,6 @@ impl russh::server::Server for SSHServer {
 
     fn new_client(&mut self, _: Option<SocketAddr>) -> Self::Handler {
         info!("New Client");
-        SSHandle {
-            app: self.app.clone(),
-            stdin: HashMap::new(),
-            user: None,
-        }
+        SSHandle::new(self.app.clone())
     }
 }
