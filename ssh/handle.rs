@@ -14,6 +14,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::process::ChildStdin;
 use tokio::sync::mpsc::Sender;
 use tracing::error;
+use crate::services::repo::sync::RepoSync;
 
 pub struct SSHandle {
     pub app: AppState,
@@ -303,6 +304,7 @@ impl russh::server::Handler for SSHandle {
                             .await;
                         let _ = session_handle.eof(channel_id).await;
                         let _ = session_handle.close(channel_id).await;
+                        RepoSync::send(repo.uid).await;
                         break;
                     }
                 }
