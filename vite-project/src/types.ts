@@ -183,3 +183,18 @@ export interface TokenModel {
   updated_at: DateTime;
   expires_at: DateTime;
 }
+
+export interface SSHKeyCreateParma {
+    name: string;
+    description?: string;
+    public_key: string;
+}
+
+export interface SSHKeyModel {
+    uid: string;
+    user_id: string;
+    name: string;
+    description?: string;
+    created_at: DateTime;
+    updated_at: DateTime;
+}

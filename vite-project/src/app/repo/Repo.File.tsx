@@ -59,6 +59,7 @@ const RepoFile = (props: RepoFileProps) => {
     })
     const api = new RepoApi();
     const [HttpURL, setHttpURL] = useState("");
+    const [SSHURL, setSSHURL] = useState("");
     const Clone = useDisclosure();
     const Exec = useRef(false);
     const [README, setREADME] = useState<Uint8Array | null>(null);
@@ -73,6 +74,8 @@ const RepoFile = (props: RepoFileProps) => {
                 setLoad(false);
                 const httpURL = `https://${window.location.host}/git/${encodeURIComponent(props.owner)}/${encodeURIComponent(props.repo)}.git`;
                 setHttpURL(httpURL);
+                const sshURL = `git@${window.location.host}/${encodeURIComponent(props.owner)}/${encodeURIComponent(props.repo)}.git`;
+                setSSHURL(sshURL);
 
                 const res = await api.Bhtc(props.owner, props.repo);
                 if (res.status !== 200 || !res.data) return;
@@ -204,7 +207,7 @@ const RepoFile = (props: RepoFileProps) => {
                                         onClose={Clone.onClose}
                                         onOpenChange={Clone.onOpenChange}
                                     >
-                                        <RepoClone owner={props.owner} repo={props.repo} http={HttpURL}/>
+                                        <RepoClone owner={props.owner} repo={props.repo} http={HttpURL} ssh={SSHURL}/>
                                     </Modal>
                                 </div>
                                 <div className="repo-header-title">

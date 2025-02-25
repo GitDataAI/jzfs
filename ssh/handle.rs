@@ -13,7 +13,7 @@ use tokio::io::AsyncRead;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::process::ChildStdin;
 use tokio::sync::mpsc::Sender;
-use tracing::{info, error};
+use tracing::error;
 
 pub struct SSHandle {
     pub app: AppState,

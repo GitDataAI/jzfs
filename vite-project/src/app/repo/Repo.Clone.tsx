@@ -6,7 +6,8 @@ import useUser from "@/state/useUser.tsx";
 interface RepoCloneProps {
     owner: string,
     repo: string,
-    http: string
+    http: string,
+    ssh: string
 }
 
 export const RepoClone = (props: RepoCloneProps) => {
@@ -16,7 +17,7 @@ export const RepoClone = (props: RepoCloneProps) => {
             <ModalHeader>
                 Clone Repository for &nbsp;<Code size="lg">{props.owner}/{props.repo}</Code>
             </ModalHeader>
-            <ModalBody >
+            <ModalBody>
                 <Divider/>
                 <Tabs>
                     <Tab key="http" title="HTTP">
@@ -30,14 +31,17 @@ export const RepoClone = (props: RepoCloneProps) => {
                                 <Divider/>
 
                                 <div className="p-5">
-                                    To download the code, please copy the following command to the terminal and execute<br/>
+                                    To download the code, please copy the following command to the terminal and
+                                    execute<br/>
                                     <Snippet>{"git clone " + props.http}</Snippet>
                                 </div>
                                 {
                                     user.dash && (
                                         <>
                                             <div className="pl-5 pr-5 pb-5">
-                                                To ensure that the identity of the code you submitted is correctly recognized by GitData, please execute the following command to complete the configuration<br/>
+                                                To ensure that the identity of the code you submitted is correctly
+                                                recognized by GitData, please execute the following command to complete the
+                                                configuration<br/>
                                                 <Snippet>
                                                     {"git config --global user.name " + user.getUser()?.username}
                                                     {"git config --global user.email " + user.getUser()?.email}
@@ -54,8 +58,31 @@ export const RepoClone = (props: RepoCloneProps) => {
                             <CardBody>
                                 <div className="pl-5 pr-5 ">
                                     <p>SSH Protocol</p>
-                                    <Code>Todo Support</Code>
+                                    <Snippet>{props.ssh}</Snippet>
                                 </div>
+                                <p className="mt-5">Tips:</p>
+                                <Divider/>
+
+                                <div className="p-5">
+                                    To download the code, please copy the following command to the terminal and
+                                    execute<br/>
+                                    <Snippet>{"git clone " + props.ssh}</Snippet>
+                                </div>
+                                {
+                                    user.dash && (
+                                        <>
+                                            <div className="pl-5 pr-5 pb-5">
+                                                To ensure that the identity of the code you submitted is correctly
+                                                recognized by GitData, please execute the following command to complete the
+                                                configuration<br/>
+                                                <Snippet>
+                                                    {"git config --global user.name " + user.getUser()?.username}
+                                                    {"git config --global user.email " + user.getUser()?.email}
+                                                </Snippet>
+                                            </div>
+                                        </>
+                                    )
+                                }
                             </CardBody>
                         </Card>
                     </Tab>

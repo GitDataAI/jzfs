@@ -1,7 +1,8 @@
 use sea_orm::prelude::{DateTime, Uuid};
 use sea_orm::entity::prelude::*;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
+#[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel,Serialize,Deserialize)]
 #[sea_orm(table_name = "ssh")]
 pub struct Model {
     #[sea_orm(primary_key)]
@@ -9,6 +10,7 @@ pub struct Model {
     pub user_id: Uuid,
     pub name: String,
     pub description: Option<String>,
+    #[serde(skip)]
     pub content: String,
     pub created_at: DateTime,
     pub updated_at: DateTime,

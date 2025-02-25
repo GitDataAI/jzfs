@@ -1,5 +1,5 @@
 import {Http} from "@/api/Http.tsx";
-import {TokenCreate, TokenDelete} from "@/types.ts";
+import {SSHKeyCreateParma, TokenCreate, TokenDelete} from "@/types.ts";
 
 export class UserApi extends Http {
     async GetNow() {
@@ -35,4 +35,14 @@ export class UserApi extends Http {
     async TokenDelete(parma: TokenDelete){
         return await this.put<string>('/user/token',parma)
     }
+    async SSHCreate(parma: SSHKeyCreateParma){
+        return await this.post<string>('/user/ssh',parma);
+    }
+    async SSHDelete(parma: string){
+        return await this.delete<string>(`/user/ssh/${parma}`);
+    }
+    async SSHList(){
+        return await this.patch<string>('/user/ssh',{});
+    }
+
 }
