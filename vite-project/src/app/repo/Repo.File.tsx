@@ -74,7 +74,7 @@ const RepoFile = (props: RepoFileProps) => {
                 setLoad(false);
                 const httpURL = `https://${window.location.host}/git/${encodeURIComponent(props.owner)}/${encodeURIComponent(props.repo)}.git`;
                 setHttpURL(httpURL);
-                const sshURL = `git@${window.location.host}/${encodeURIComponent(props.owner)}/${encodeURIComponent(props.repo)}.git`;
+                const sshURL = `ssh://git@${window.location.host}:2322/${encodeURIComponent(props.owner)}/${encodeURIComponent(props.repo)}.git`;
                 setSSHURL(sshURL);
 
                 const res = await api.Bhtc(props.owner, props.repo);
