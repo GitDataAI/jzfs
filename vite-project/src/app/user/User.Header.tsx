@@ -7,10 +7,13 @@ import {RiGitRepositoryLine, RiUserFollowLine} from "react-icons/ri";
 import {GoPackage} from "react-icons/go";
 import {MdProductionQuantityLimits} from "react-icons/md";
 import {CiSettings, CiStar} from "react-icons/ci";
+import useUser from "@/state/useUser.tsx";
+import {UserDashBored} from "@/types.ts";
 
-export const UserHeader = (props: { setTab: (arg0: string)=> void }) => {
+export const UserHeader = (props: { setTab: (arg0: string) => void, user?: UserDashBored }) => {
     const [Query , setQuery] = useSearchParams();
     const [ Tabes, setTab ] = useState("active");
+    const user = useUser();
     // useEffect(()=>{
     //    if (!Query.get("tab")){
     //        Query.set("tab","active")
@@ -82,14 +85,24 @@ export const UserHeader = (props: { setTab: (arg0: string)=> void }) => {
                         </IconWrapper>
                     </div>
                 }/>
-                <Tab key="setting" title={
-                    <div className="flex items-center">
-                        <IconWrapper className="  text-black">
-                            <CiSettings />
-                            <span className="ml-2">Setting</span>
-                        </IconWrapper>
-                    </div>
-                }/>
+                {
+                    (user.user && props.user) && (
+                        <>
+                            {
+                                (user.user.uid === props.user.user.uid) && (
+                                    <Tab key="setting" title={
+                                        <div className="flex items-center">
+                                            <IconWrapper className="  text-black">
+                                                <CiSettings />
+                                                <span className="ml-2">Setting</span>
+                                            </IconWrapper>
+                                        </div>
+                                    }/>
+                                )
+                            }
+                        </>
+                    )
+                }
             </Tabs>
         </div>
     )

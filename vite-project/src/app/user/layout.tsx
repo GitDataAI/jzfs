@@ -34,7 +34,7 @@ const LayoutUser = () => {
             {
                 (Load && dashbored) && (
                     <div className="user">
-                        <UserHeader setTab={setTab}/>
+                        <UserHeader setTab={setTab} user={dashbored}/>
                         <div className="user-body">
                             {
                                 (Tab === "active" || Tab === "" || Tab === undefined) && <UserActive props={dashbored}/>
