@@ -43,16 +43,3 @@ jobs:
                   exec: /usr/local/bin/helm upgrade gitdataos --install ./charts --namespace gitdata
                   kubeconfig: ${{ secrets.KUBECONTENT }}
                   overrule_existing_kubeconfig: 'true'
-
-            - name: RemoveWeb
-              uses: WyriHaximus/github-action-helm3@v3
-              with:
-                  exec: /usr/local/bin/helm uninstall gitdataweb --namespace gitdata
-                  kubeconfig: ${{ secrets.KUBECONTENT }}
-                  overrule_existing_kubeconfig: 'true'
-            - name: DeployWeb
-              uses: WyriHaximus/github-action-helm3@v3
-              with:
-                  exec: /usr/local/bin/helm upgrade gitdataweb --install ./vite-project/charts --namespace gitdata
-                  kubeconfig: ${{ secrets.KUBECONTENT }}
-                  overrule_existing_kubeconfig: 'true'

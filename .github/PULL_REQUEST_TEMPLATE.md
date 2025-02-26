@@ -1,4 +1,4 @@
-<!-- Thanks for considering contributing actix! -->
+<!-- Thanks for considering contributing gitdata! -->
 <!-- Please fill out the following to make our reviews easy. -->
 
 ## PR Type
