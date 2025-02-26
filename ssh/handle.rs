@@ -57,7 +57,7 @@ impl russh::server::Handler for SSHandle {
         }
 
         let public = public_key.to_string();
-        if public.len() < 100 {
+        if public.len() < 64 {
             return Err(russh::Error::NotAuthenticated);
         }
 
