@@ -3,6 +3,7 @@ use sea_orm::ColumnTrait;
 use std::io;
 use chrono::Utc;
 use sea_orm::{EntityTrait, Set};
+use sea_orm::prelude::Expr;
 use uuid::Uuid;
 use crate::http::GIT_ROOT;
 use crate::services::AppState;
@@ -66,6 +67,12 @@ impl AppState {
             let fork_model = fork.try_into_model().unwrap();
             let new_path = format!("{}/{}/{}/", GIT_ROOT, fork_model.node_uid, fork_model.uid);
             copy_dir::copy_dir(path, new_path)?;
+            repository::Entity::update_many()
+                .filter(repository::Column::Uid.eq(repo_uid))
+                .col_expr(repository::Column::NumsFork, Expr::col(repository::Column::NumsFork).add(1))
+                .exec(&self.write)
+                .await
+                .map_err(|x| io::Error::new(io::ErrorKind::Other, x))?;
             self.statistics_repo(repo.uid, FORK.to_string()).await.ok();
             fork_model.uid
         } else {
