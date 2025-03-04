@@ -5,8 +5,6 @@ on:
         secrets:
             KUBECONTENT:
                 required: true
-            NACOS:
-                required: true
 jobs:
     deployment:
         if: ${{ startsWith(github.ref, 'refs/heads/deployment/') || github.ref == 'refs/heads/main'  }}
