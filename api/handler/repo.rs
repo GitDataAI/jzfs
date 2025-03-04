@@ -2,7 +2,7 @@ use crate::api::write::AppWrite;
 use crate::services::repo::blob::RepoBlobFile;
 use crate::services::repo::create::ReposCreateParma;
 use crate::services::repo::fork::ForkParma;
-use crate::services::statistics::repo::CLICK;
+// use crate::services::statistics::repo::CLICK;
 use crate::services::AppState;
 use crate::model::users::users;
 use actix_session::Session;
@@ -11,6 +11,8 @@ use actix_web::web::Data;
 use actix_web::web::{Json, Path};
 use actix_web::{HttpResponseBuilder, Responder};
 use std::collections::HashMap;
+use serde_json::json;
+use uuid::Uuid;
 
 pub async fn repo_tree(
     path: Path<(String,String, String,String)>,
@@ -57,9 +59,9 @@ pub async fn repo_info(
     -> impl Responder
 {
     let (owner, repo) = path.into_inner();
-    match status.repo_info(owner,repo).await {
+    match status.repo_info_web(owner,repo).await {
         Ok(info) => {
-            status.statistics_repo(info.uid,CLICK.to_string()).await.ok();
+            // status.statistics_repo(info.uid,CLICK.to_string()).await.ok(); // 废弃该统计方式
             AppWrite::ok(info)
         },
         Err(err) => {
@@ -280,6 +282,33 @@ pub async fn repo_commit_one(
     match status.repo_commit_one(owner,repo,branch,sha).await {
         Ok(commit) => {
             AppWrite::ok(commit)
+        },
+        Err(err) => {
+            AppWrite::error(err.to_string())
+        }
+    }
+}
+
+pub async fn repo_uid(
+    path: Path<Uuid>,
+    status: Data<AppState>,
+) 
+-> impl Responder
+{
+    match status.repo_get_by_uid(path.into_inner()).await {
+        Ok(uid) => {
+            let owner = match status.repo_owner_by_uid(uid.owner_id).await {
+                Ok(owner) => {
+                    owner
+                },
+                Err(err) => {
+                    return AppWrite::error(err.to_string())
+                }
+            };
+            AppWrite::ok(json!({
+                "owner": owner,
+                "repo": uid
+            }))
         },
         Err(err) => {
             AppWrite::error(err.to_string())

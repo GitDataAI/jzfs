@@ -55,7 +55,7 @@ impl GitBlob {
 
             for delta in diff.deltas() {
                 if let Some(path) = delta.new_file().path() {
-                    let path = Path::new("/").join(path); // 标准化路径
+                    let path = Path::new("/").join(path);
                     path_commits.entry(path)
                         .or_insert_with(|| cmt.clone());
                 }

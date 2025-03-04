@@ -14,6 +14,7 @@ pub struct DataProductPostParma {
     pub license: String,
     pub price: Option<i64>,
     pub hash: String,
+    pub r#type: String,
 }
 
 impl AppState {
@@ -23,7 +24,7 @@ impl AppState {
         parma: DataProductPostParma,
         repo_uid: Uuid,
     ) -> io::Result<()> {
-        let _repo_model = repository::Entity::find_by_id(repo_uid)
+        let repo = repository::Entity::find_by_id(repo_uid)
             .one(&self.read)
             .await
             .map_err(|_| io::Error::new(io::ErrorKind::NotFound, "repository not found"))?
@@ -38,7 +39,15 @@ impl AppState {
                 return Err(io::Error::new(io::ErrorKind::PermissionDenied, "permission denied"));
             }
         }
-        
+        let path = format!(
+            "{}/{}/{}",
+            crate::http::GIT_ROOT,
+            repo.node_uid,
+            repo.uid
+        );
+        let blob = crate::blob::GitBlob::new(path.into())
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+        let size = blob.size(parma.hash.clone())?;
         let product_model = data_product::ActiveModel {
             uid: Set(Uuid::new_v4()),
             name: Set(parma.name),
@@ -46,11 +55,12 @@ impl AppState {
             license: Set(parma.license),
             price: Set(parma.price),
             hash: Set(parma.hash),
-            size: Default::default(),
+            size: Set(size),
             owner: Set(user_uid),
             created_at: Set(chrono::Local::now().naive_local()),
             updated_at: Set(chrono::Local::now().naive_local()),
             repository_uid: Default::default(),
+            r#type: Set(parma.r#type),
         };
         product_model.insert(&self.write).await.map_err(|_| io::Error::new(io::ErrorKind::Other, "insert product error"))?;
         Ok(())

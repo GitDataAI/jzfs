@@ -34,6 +34,7 @@ pub struct Model {
     
     pub ssh: String,
     pub http: String,
+    pub status: String,
     
     pub created_at: DateTime,
     pub updated_at: DateTime,

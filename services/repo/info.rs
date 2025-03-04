@@ -3,6 +3,7 @@ use chrono::Utc;
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, TransactionTrait};
 use sea_orm::ActiveValue::Set;
 use sea_orm::prelude::Expr;
+use serde_json::{json, Value};
 use uuid::Uuid;
 use crate::services::AppState;
 use crate::services::statistics::repo::{STAR, WATCH};
@@ -17,6 +18,41 @@ impl AppState {
             .await
             .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
             .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "repo not found"))
+    }
+    
+    pub async fn repo_owner_by_uid(&self, owner_uid: Uuid) -> io::Result<Value> {
+        if let Some(user) = users::Entity::find()
+            .filter(users::Column::Uid.eq(owner_uid))
+            .one(&self.read)
+            .await
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
+        {
+            return Ok(serde_json::json!({
+                "uid": user.uid,
+                "username": user.username,
+                "avatar": user.avatar,
+                "email": user.email,
+                "created_at": user.created_at,
+                "updated_at": user.updated_at,
+            }));
+        }
+
+        if let Some(org) = organization::Entity::find()
+            .filter(organization::Column::Uid.eq(owner_uid))
+            .one(&self.read)
+            .await
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
+        {
+            return Ok(serde_json::json!({
+                "uid": org.uid,
+                "username": org.username,
+                "avatar": org.avatar,
+                "email": org.email,
+                "created_at": org.created_at,
+                "updated_at": org.updated_at,
+            }));
+        }
+        Err(io::Error::new(io::ErrorKind::NotFound, "owner not found"))
     }
     async fn find_user_or_org(&self, username: &str) -> io::Result<uuid::Uuid> {
         if let Some(user) = users::Entity::find()
@@ -48,6 +84,41 @@ impl AppState {
             .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
             .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "repo not found"))
     }
+    pub async fn repo_info_web(&self, owner: String, repo: String) -> io::Result<Value> {
+        let owner_uid = self.find_user_or_org(&owner.clone()).await?;
+
+        let info = repository::Entity::find()
+            .filter(repository::Column::OwnerId.eq(owner_uid))
+            .filter(repository::Column::Name.eq(repo.clone()))
+            .one(&self.read)
+            .await
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
+            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "repo not found"))?;
+        
+        let mut value = json!({
+            "owner": owner,
+            "repo": repo,
+            "model": info,
+        });
+        value["fork"] = if let Some(x) = info.fork {
+            let fork = repository::Entity::find_by_id(x)
+                .one(&self.read)
+                .await
+                .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
+                .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "fork repo not found"))?;
+            let from_owner = self.repo_owner_by_uid(fork.owner_id).await?;
+            json!({
+                "owner": from_owner,
+                "repo": fork.name,
+                "model": fork,
+            })
+        }else { 
+            json!({})
+        };
+         Ok(value)
+    }
+    
+    
 
     async fn validate_user_and_repo(&self, user_uid: Uuid, repo_uid: Uuid) -> io::Result<(users::Model, repository::Model)> {
         let user = users::Entity::find_by_id(user_uid)

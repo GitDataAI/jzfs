@@ -75,7 +75,8 @@ impl AppState {
             updated_at: Set(chrono::Local::now().naive_local()),
             http: Set("".to_string()),
             created_by: Set(users_uid),
-            topic: Set(Vec::new())
+            topic: Set(Vec::new()),
+            status: Set("".to_string()),
         };
         action.clone().insert(&txn)
             .await

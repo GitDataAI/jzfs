@@ -65,9 +65,20 @@ impl AppState {
             warn!("Failed to update repo: {}", e);
         }
     }
+    pub async fn set_repo_status(&self, repo_uid: Uuid, status: String) -> io::Result<()> {
+        let repo = self.repo_get_by_uid(repo_uid).await?;
+        let mut arch = repo.clone().into_active_model();
+        arch.status = Set(status);
+        arch.updated_at = Set(Utc::now().naive_utc());
+        if let Err(e) = arch.update(&self.write).await {
+            warn!("Failed to update repo: {}", e);
+        }
+        Ok(())
+    }
 
     pub async fn repo_sync(&self, repo_uid: Uuid) -> io::Result<()> {
         let repo = self.repo_get_by_uid(repo_uid).await?;
+        self.set_repo_status(repo_uid, "Syncing".to_string()).await?;
         let path = format!(
             "{}/{}/{}",
             crate::http::GIT_ROOT,
@@ -239,6 +250,7 @@ impl AppState {
         }
         drop(blob);
         drop(branch_data);
+        self.set_repo_status(repo_uid, "Idle".to_string()).await.ok();
 
         Ok(())
     }

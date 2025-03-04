@@ -3,12 +3,12 @@ use sea_orm::ColumnTrait;
 use std::io;
 use chrono::Utc;
 use sea_orm::{EntityTrait, Set};
-use tracing::{error, info};
 use uuid::Uuid;
 use crate::http::GIT_ROOT;
 use crate::services::AppState;
 use crate::services::statistics::repo::FORK;
 use crate::model::repository::repository;
+use crate::services::repo::sync::RepoSync;
 
 #[derive(serde::Deserialize)]
 pub struct ForkParma {
@@ -58,13 +58,13 @@ impl AppState {
                 created_by: Set(users_uid),
                 topic: Set(repo.topic),
                 avatar: Set(None),
+                status: Set("Sync".to_string()),
             };
             fork.clone().insert(&txn).await
                 .map_err(|x| io::Error::new(io::ErrorKind::Other, x))?;
             let path = format!("{}/{}/{}/", GIT_ROOT, repo.node_uid, repo.uid);
             let fork_model = fork.try_into_model().unwrap();
             let new_path = format!("{}/{}/{}/", GIT_ROOT, fork_model.node_uid, fork_model.uid);
-            // Copy dir
             copy_dir::copy_dir(path, new_path)?;
             self.statistics_repo(repo.uid, FORK.to_string()).await.ok();
             fork_model.uid
@@ -73,14 +73,7 @@ impl AppState {
         };
         txn.commit().await
             .map_err(|x| io::Error::new(io::ErrorKind::Other, x))?;
-        match self.repo_sync(repo_uid).await{
-            Ok(_) => {
-                info!("fork success")
-            }
-            Err(x) => {
-                error!("fork error: {}", x);
-            }
-        }
+        RepoSync::send(repo_uid).await;
         
       
         Ok(())
