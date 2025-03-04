@@ -28,6 +28,7 @@ impl HTTPHandle {
         let redis_store =RedisSessionStore::builder(init_redis_store().await).build().await.map_err(|_| io::Error::new(io::ErrorKind::Other, "Failed to create RedisSessionStore"))?;
         HttpServer::new(move || {
             App::new()
+                .wrap(actix_web::middleware::Compress::default())
                 .wrap(actix_web::middleware::Logger::default())
                 .app_data(web::Data::new(state.clone()))
                 .wrap(

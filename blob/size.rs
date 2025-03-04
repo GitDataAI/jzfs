@@ -31,7 +31,7 @@ fn calculate_tree_size(repo: &Repository, tree: Tree) -> Result<i64, Error> {
     let mut stack = vec![tree];
 
     while let Some(current_tree) = stack.pop() {
-        current_tree.walk(TreeWalkMode::PreOrder, |root, entry| {
+        current_tree.walk(TreeWalkMode::PreOrder, |_, entry| {
             let obj = match repo.find_object(entry.id(), None) {
                 Ok(obj) => obj,
                 Err(_) => return git2::TreeWalkResult::Skip,
