@@ -15,3 +15,4 @@ impl GitBlob {
 pub mod blob;
 pub mod tree;
 pub mod file;
+pub mod size;

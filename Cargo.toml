@@ -54,3 +54,9 @@ copy_dir = { version = "0.1.3" }
 russh = {  version = "0.50.4", features = [] }
 futures-util = "0.3.31"
 env_logger = { version = "0.11.6", features = ["color","auto-color"] }
+
+
+
+console-subscriber = { version = "0.4.1", features = ["default"] }
+[target.'cfg(not(target_env = "msvc"))'.dependencies]
+tikv-jemallocator = "0.6"

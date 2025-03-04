@@ -10,12 +10,13 @@ pub struct EmailCaptcha {
 }
 
 impl EmailCaptcha {
-    pub fn generate_captcha(email : String) -> Self {
-        let rand = rand::random::<u32>() % 100000;
+    pub fn generate_captcha(email: String) -> Self {
+        let rand = rand::random::<u32>() % 900000 + 100000; // 生成 100000 到 999999 之间的随机数
         let code = rand.to_string();
         EmailCaptcha { email, code }
     }
 }
+
 
 impl AppState {
     pub async fn email_captcha(&self, email: String) -> io::Result<EmailCaptcha> {

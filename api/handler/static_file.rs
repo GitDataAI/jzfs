@@ -46,7 +46,7 @@ pub async fn upload_avatar(
         }
     }
 
-    let relative_path = format!("/api/static/img/{}", 
+    let relative_path = format!("/api/v1/static/img/{}", 
         Path::new(&avatar_path)
             .file_name()
             .and_then(|s| s.to_str())

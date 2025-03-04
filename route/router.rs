@@ -5,7 +5,7 @@ use actix_web::web::{scope, ServiceConfig};
 pub fn router(cfg: &mut ServiceConfig) {
     cfg
         .service(
-            scope("/api")
+            scope("/api/v1")
                 .configure(api_router)
         )
         .service(
