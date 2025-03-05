@@ -4,17 +4,25 @@ use std::collections::HashMap;
 use std::io;
 use serde::{Deserialize, Serialize};
 use crate::services::AppState;
-use crate::blob::blob::{Branches, Commit};
 use crate::blob::GitBlob;
-use crate::model::repository::tree;
+use crate::model::repository::{branches, commits, tree};
 
 impl AppState {
-    pub async fn repo_blob_bhct(&self, owner: String, repo: String) ->  io::Result<HashMap<Branches,Vec<Commit>>> {
-        let repo = self.repo_info(owner, repo).await?;
-        let path = format!("{}/{}/{}", crate::http::GIT_ROOT, repo.node_uid, repo.uid);
-        let blob = GitBlob::new(path.into())
-            .map_err(|x| io::Error::new(io::ErrorKind::Other, x))?;
-        blob.blob()
+    pub async fn repo_blob_bhct(&self, owner: String, repo: String) ->  io::Result<HashMap<branches::Model,Vec<commits::Model>>> {
+        let repo = self.repo_info(owner.clone(), repo).await?;
+        let branch = self.branch_list(owner, repo.name).await?;
+        let mut map = HashMap::new();
+        for branch in branch {
+            let commit = commits::Entity::find()
+                .filter(commits::Column::RepoUid.eq(repo.uid))
+                .filter(commits::Column::BranchName.eq(branch.name.clone()))
+                .filter(commits::Column::BranchUid.eq(branch.uid))
+                .all(&self.read)
+                .await
+                .map_err(|x| io::Error::new(io::ErrorKind::Other, x))?;
+            map.insert(branch, commit);
+        }
+        Ok(map)
     }
     pub async fn repo_blob_tree(&self, owner: String, repo: String, branch: String, head: String) -> io::Result<crate::blob::tree::GitTree> {
         let repo = self.repo_info(owner, repo).await?;

@@ -16,7 +16,7 @@ use tikv_jemallocator::Jemalloc;
 static GLOBAL: Jemalloc = Jemalloc;
 
 
-#[actix_web::main]
+#[tokio::main]
 async fn main() -> std::io::Result<()> {
     tracing_subscriber::registry()
         .with(tracing_subscriber::EnvFilter::new("info"))
