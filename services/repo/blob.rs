@@ -29,8 +29,9 @@ impl AppState {
     pub async fn repo_blob_tree(&self, owner: String, repo: String, branch: String, head: String) -> io::Result<crate::blob::tree::GitTree> {
         let key = format!("{}/{}/{}/{}", owner,repo,branch,head);
         if let Ok(mut x) = self.cache.lock() {
-            if let Ok(x) = x.get::<String, String>(key.clone()).await {
-                return serde_json::from_str(&x)
+            if let Ok(xs) = x.get::<String, String>(key.clone()).await {
+                x.expire::<String, String>(key, 60).await.map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+                return serde_json::from_str(&xs)
                     .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e));
             }
             drop(x);
