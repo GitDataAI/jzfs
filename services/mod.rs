@@ -1,5 +1,7 @@
 use std::{env, io};
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
+use deadpool_redis::{Config, Connection, Pool, Runtime};
 use sea_orm::{ConnectOptions, ConnectionTrait, Database, DatabaseBackend, DatabaseConnection, Statement};
 use tokio::sync::OnceCell;
 use tracing::info;
@@ -11,6 +13,7 @@ pub struct AppState {
     pub read: DatabaseConnection,
     pub write: DatabaseConnection,
     pub email: EmailEvent,
+    pub cache: Arc<Mutex<Connection>>,
 }
 
 
@@ -66,13 +69,19 @@ impl AppState {
             }
         }
         info!("Connected to database for write");
-        
+        let pool = init_redis_store().await;
+        let con = pool.get().await.map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
         Ok(AppState {
             read,
             write,
             email: EmailEvent::new().await?,
+            cache: Arc::new(Mutex::new(con))
         })
     }
+}
+async fn init_redis_store() -> Pool {
+    let cfg = Config::from_url(env::var("REDIS_URL").expect("REDIS_URL must be set"));
+    cfg.create_pool(Some(Runtime::Tokio1)).expect("Failed to create Redis pool")
 }
 
 

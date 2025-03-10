@@ -2,9 +2,11 @@ use sea_orm::QueryFilter;
 use sea_orm::{ColumnTrait, EntityTrait};
 use std::collections::HashMap;
 use std::io;
+use deadpool_redis::redis::AsyncCommands;
 use serde::{Deserialize, Serialize};
 use crate::services::AppState;
 use crate::blob::GitBlob;
+use crate::blob::tree::GitTree;
 use crate::model::repository::{branches, commits, tree};
 
 impl AppState {
@@ -25,24 +27,35 @@ impl AppState {
         Ok(map)
     }
     pub async fn repo_blob_tree(&self, owner: String, repo: String, branch: String, head: String) -> io::Result<crate::blob::tree::GitTree> {
-        let repo = self.repo_info(owner, repo).await?;
-        tree::Entity::find()
+        let key = format!("{}/{}/{}/{}", owner,repo,branch,head);
+        if let Ok(mut x) = self.cache.lock() {
+            if let Ok(x) = x.get::<String, String>(key.clone()).await {
+                return serde_json::from_str(&x)
+                    .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e));
+            }
+            drop(x);
+        }
+        let repo = self.repo_info(owner, repo.clone()).await?;
+        let entry = tree::Entity::find()
             .filter(tree::Column::RepoUid.eq(repo.uid))
-            .filter(tree::Column::Branch.eq(branch))
-            .filter(tree::Column::Head.eq(head))
+            .filter(tree::Column::Branch.eq(branch.clone()))
+            .filter(tree::Column::Head.eq(head.clone()))
             .one(&self.read)
             .await
             .map_err(|x| io::Error::new(io::ErrorKind::Other, x))?
-            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Not Found"))
-            .map(|x| serde_json::from_str::<crate::blob::tree::GitTree>(&x.content))
-            .iter()
-            .flatten()
-            .collect::<Vec<_>>()
-            .first()
-            .map(|x|x.to_owned().clone())
-            .ok_or(io::Error::new(io::ErrorKind::Other, "Not Found"))
-            .map_err(|x| io::Error::new(io::ErrorKind::Other, x))
+            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Tree entry not found"))?;
+        let result:GitTree = serde_json::from_str(&entry.content)
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+        if let Ok(mut x) = self.cache.lock() {
+            x.set::<String, String, String>(key.clone(), entry.content).await.map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+            x.expire::<String, String>(key, 60).await.map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+            drop(x);
+        }
+        
+        Ok(result)
+        
     }
+
     pub async fn repo_blob_file(&self, param: RepoBlobFile) -> io::Result<Vec<u8>> {
         let RepoBlobFile { owner, repo, paths, sha } = param;
         let repo = self.repo_info(owner, repo).await?;

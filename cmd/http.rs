@@ -8,6 +8,7 @@ use actix_web::{
     cookie::{Key, SameSite},
     web, App, HttpServer, Responder,
 };
+use deadpool_redis::{Config, Pool, Runtime};
 use tracing::info;
 use crate::route::router;
 use crate::services::AppStateHandle;
@@ -25,7 +26,7 @@ impl HTTPHandle {
     pub async fn run_http(&self) -> std::io::Result<()> {
         info!("Http Starting...");
         let state = AppStateHandle::get().await;
-        let redis_store =RedisSessionStore::builder(init_redis_store().await).build().await.map_err(|_| io::Error::new(io::ErrorKind::Other, "Failed to create RedisSessionStore"))?;
+        let redis_store =RedisSessionStore::builder_pooled(init_redis_store().await).build().await.map_err(|_| io::Error::new(io::ErrorKind::Other, "Failed to create RedisSessionStore"))?;
         HttpServer::new(move || {
             App::new()
                 .wrap(actix_web::middleware::Compress::default())
@@ -58,8 +59,9 @@ impl HTTPHandle {
     }
 }
 
-async fn init_redis_store() -> String {
-    env::var("REDIS_URL").expect("REDIS_URL must be set")
+async fn init_redis_store() -> Pool {
+    let cfg = Config::from_url(env::var("REDIS_URL").expect("REDIS_URL must be set"));
+    cfg.create_pool(Some(Runtime::Tokio1)).expect("Failed to create Redis pool")
 }
 
 fn generate_secret_key() -> Key {

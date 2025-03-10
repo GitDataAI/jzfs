@@ -290,9 +290,7 @@ impl russh::server::Handler for SSHandle {
                     }
                     Pipe::Exit(result) => {
                         let status = result?;
-                        // let _ = tokio::join!(stdout_fut, stderr_fut);
-                        // stdout_fut.await?;
-                        // stderr_fut.await?;
+                        
                         while let Some(eof) = eof_rx.recv().await {
                             if eof {
                                 break;
