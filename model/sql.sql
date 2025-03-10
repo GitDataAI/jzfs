@@ -46,7 +46,8 @@ create table if not exists repository
     updated_at       timestamp                         not null,
     created_by       uuid                              not null,
     avatar           text,
-    topic            text[] default '{}'::text[]       not null
+    topic            text[] default '{}'::text[]       not null,
+    status           text   default ''::text           not null
 );
 
 create table if not exists tokens
@@ -190,4 +191,21 @@ create table if not exists commit
     runner      character varying[] not null,
     time        varchar             not null,
     repo_uid    uuid                not null
+);
+
+create table if not exists data_product
+(
+    uid            uuid      not null
+        primary key,
+    name           text      not null,
+    description    text,
+    hash           text      not null,
+    size           bigint    not null,
+    owner          uuid      not null,
+    repository_uid uuid      not null,
+    type           text      not null,
+    license        text      not null,
+    price          bigint,
+    created_at     timestamp not null,
+    updated_at     timestamp not null
 );
