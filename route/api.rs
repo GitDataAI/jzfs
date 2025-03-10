@@ -2,7 +2,7 @@ use crate::api::handler::auth::{auth_apply, auth_captcha, auth_check, auth_email
 use crate::api::handler::explore::explore_repo_hot;
 use crate::api::handler::repo::{repo_access, repo_bhct, repo_commit_one, repo_create, repo_file, repo_fork, repo_info, repo_star, repo_tree, repo_uid, repo_watch};
 use crate::api::handler::static_file::{down_avatar, upload_avatar};
-use crate::api::handler::users::{user_dashbored, user_info_by_uid, user_now, user_ssh_key_create, user_ssh_key_delete, user_ssh_key_list, user_token_create, user_token_delete, user_token_list, user_update_optional};
+use crate::api::handler::users::{user_dashbored, user_info_by_uid, user_now, user_ssh_key_create, user_ssh_key_delete, user_ssh_key_list, user_token_create, user_token_delete, user_token_list, user_update_optional, user_upload_config};
 use actix_web::web;
 use actix_web::web::{delete, get, patch, post, put, scope};
 use crate::api::handler::product::{product_list, product_post};
@@ -40,6 +40,7 @@ pub fn api_router(cfg: &mut web::ServiceConfig) {
                 .route("/ssh",patch().to(user_ssh_key_list))
                 .route("/ssh",post().to(user_ssh_key_create))
                 .route("/ssh/{uid}", delete().to(user_ssh_key_delete))
+                .route("/config",post().to(user_upload_config))
         )
         .service(
             scope("/repo")

@@ -5,6 +5,7 @@ use crate::services::AppState;
 use uuid::Uuid;
 use crate::services::user::update::UserUpdateOptional;
 use crate::model::users::users;
+use crate::services::user::config::UserConfigUploadParam;
 use crate::services::user::ssh_pubkey::SSHKeyCreateParma;
 use crate::services::user::token::TokenDelete;
 
@@ -277,6 +278,37 @@ pub async fn user_ssh_key_delete(
         }
     };
     match state.ssh_key_delete(uid, parma.into_inner()).await{
+        Ok(x) => {
+            AppWrite::ok(x)
+        },
+        Err(err) => {
+            AppWrite::error(err.to_string())
+        }
+    }
+}
+
+pub async fn user_upload_config(
+    session: Session,
+    state: web::Data<AppState>,
+    form: web::Json<UserConfigUploadParam>,
+)
+    -> impl Responder
+{
+    let uid = match session.get::<String>("user"){
+        Ok(Some(uid)) => match serde_json::from_str::<users::Model>(&uid) {
+            Ok(uid) => uid.uid,
+            Err(_) => {
+                return AppWrite::unauthorized("请先登录".to_string())
+            }
+        },
+        Ok(None) => {
+            return AppWrite::unauthorized("请先登录".to_string())
+        },
+        Err(_) => {
+            return AppWrite::unauthorized("请先登录".to_string())
+        }
+    };
+    match state.users_upload_config(uid, form.0).await{
         Ok(x) => {
             AppWrite::ok(x)
         },
