@@ -11,6 +11,7 @@ pub struct UserConfigUploadParam {
     email: Option<String>,
     location: Option<String>,
     website: Option<String>,
+    language: Option<String>,
     timezone: Option<String>,
     topic: Vec<String>
 }
@@ -37,6 +38,9 @@ impl AppState {
         }
         if let Some(timezone) = param.timezone {
             users.timezone = sea_orm::ActiveValue::Set(Option::from(timezone));
+        }
+        if let Some(language) = param.language {
+            users.language = sea_orm::ActiveValue::Set(Option::from(language));
         }
         users.topic = sea_orm::ActiveValue::Set(param.topic);
         users.updated_at = sea_orm::ActiveValue::Set(chrono::Local::now().naive_local());
