@@ -45,3 +45,19 @@ pub async fn product_post(
         }
     }
 }
+
+pub async fn product_list(
+    parma: Json<crate::services::product::list::ProductListParam>,
+    status: Data<AppState>,
+)
+ -> impl actix_web::Responder
+{
+    match status.product_list(parma.into_inner()).await {
+        Ok(list) => {
+            AppWrite::ok(list)
+        },
+        Err(err) => {
+            AppWrite::error(err.to_string())
+        }
+    }
+}

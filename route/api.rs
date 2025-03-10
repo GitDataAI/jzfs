@@ -5,7 +5,7 @@ use crate::api::handler::static_file::{down_avatar, upload_avatar};
 use crate::api::handler::users::{user_dashbored, user_info_by_uid, user_now, user_ssh_key_create, user_ssh_key_delete, user_ssh_key_list, user_token_create, user_token_delete, user_token_list, user_update_optional};
 use actix_web::web;
 use actix_web::web::{delete, get, patch, post, put, scope};
-use crate::api::handler::product::product_post;
+use crate::api::handler::product::{product_list, product_post};
 
 pub fn api_router(cfg: &mut web::ServiceConfig) {
     cfg
@@ -61,6 +61,8 @@ pub fn api_router(cfg: &mut web::ServiceConfig) {
                     scope("/{owner}/{repo}")
                         .route("/post",post().to(product_post))
                 )
+                .route("/list", get().to(product_list))
         )
+    
     ;
 }
