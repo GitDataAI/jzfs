@@ -23,10 +23,10 @@ pub struct RepoSync {
 }
 
 impl RepoSync {
-    pub async fn init() -> Self {
+    pub async fn init(app_state: AppState) -> Self {
+        let db = app_state.clone();
         REPO_SYNC.get_or_init(|| async {
             let (rx, mut tx) = tokio::sync::mpsc::unbounded_channel::<Uuid>();
-            let db = AppState::init_env().await.expect("Failed to init app state");
             let db_arc = Arc::new(db.clone());
             tokio::spawn(async move {
                 let db_arc = db_arc.clone();
@@ -45,7 +45,13 @@ impl RepoSync {
 
     pub async fn send(repo_uid: Uuid) {
         info!("Repo sync start {}", repo_uid);
-        Self::init().await.rx.send(repo_uid).ok();
+        REPO_SYNC.get()
+            .unwrap()
+            .rx
+            .send(
+                repo_uid
+            )
+            .unwrap();
     }
 }
 

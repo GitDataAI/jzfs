@@ -7,6 +7,8 @@ use tokio::sync::OnceCell;
 use tracing::info;
 use crate::services::email::EmailEvent;
 use crate::model::CREATE_TABLE;
+use crate::services::product::post::DataProductPost;
+use crate::services::repo::sync::RepoSync;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -71,12 +73,15 @@ impl AppState {
         info!("Connected to database for write");
         let pool = init_redis_store().await;
         let con = pool.get().await.map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
-        Ok(AppState {
+        let state = AppState {
             read,
             write,
             email: EmailEvent::new().await?,
             cache: Arc::new(Mutex::new(con))
-        })
+        };
+        DataProductPost::init(state.clone()).await;
+        RepoSync::init(state.clone()).await;
+        Ok(state)
     }
 }
 async fn init_redis_store() -> Pool {

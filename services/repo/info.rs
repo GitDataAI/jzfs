@@ -8,6 +8,7 @@ use uuid::Uuid;
 use crate::services::AppState;
 use crate::services::statistics::repo::{STAR, WATCH};
 use crate::model::origin::organization;
+use crate::model::product::data_product;
 use crate::model::repository::repository;
 use crate::model::users::{star, users, watch};
 
@@ -115,6 +116,26 @@ impl AppState {
         }else { 
             json!({})
         };
+        value["products"] = Value::Array(data_product::Entity::find()
+            .filter(data_product::Column::RepositoryUid.eq(info.uid))
+            .all(&self.read)
+            .await
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
+            .iter()
+            .map(|x| {
+                json!({
+                    "uid": x.uid,
+                    "name": x.name,
+                    "description": x.description,
+                    "license": x.license,
+                    "price": x.price,
+                    "hash": x.hash,
+                    "type": x.r#type,
+                    "created_at": x.created_at,
+                    "updated_at": x.updated_at,
+                })
+            })
+            .collect::<Vec<_>>());
          Ok(value)
     }
     

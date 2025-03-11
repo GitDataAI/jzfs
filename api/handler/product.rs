@@ -1,9 +1,11 @@
-use actix_session::Session;
-use actix_web::web::{Data, Json, Path};
 use crate::api::write::AppWrite;
 use crate::model::users::users;
+use crate::services::product::post::{DataProductPost, DataProductPostParma};
 use crate::services::AppState;
-use crate::services::product::post::DataProductPostParma;
+use actix_files::NamedFile;
+use actix_session::Session;
+use actix_web::web::{Data, Json, Path};
+use uuid::Uuid;
 
 pub async fn product_post(
     session: Session,
@@ -36,7 +38,11 @@ pub async fn product_post(
             return AppWrite::error(err.to_string())
         }
     };
-    match status.product_data_post(uid,parma.into_inner(),repo.uid).await {
+    match DataProductPost::send(
+        uid,
+        parma.into_inner(),
+        repo.uid
+    ).await {
         Ok(_) => {
             AppWrite::ok(())
         },
@@ -58,6 +64,40 @@ pub async fn product_list(
         },
         Err(err) => {
             AppWrite::error(err.to_string())
+        }
+    }
+}
+
+pub async fn product_info(
+    path: Path<Uuid>,
+    status: Data<AppState>,
+)
+ -> impl actix_web::Responder
+{
+    let uuid = path.into_inner();
+    match status.product_info(uuid).await {
+        Ok(info) => {
+            AppWrite::ok(info)
+        },
+        Err(err) => {
+            AppWrite::error(err.to_string())
+        }
+    }
+}
+
+pub async fn product_download(
+    path: Path<Uuid>,
+    status: Data<AppState>,
+)
+ -> impl actix_web::Responder
+{
+    let uuid = path.into_inner();
+    match status.product_data_download_zip(uuid).await {
+        Ok(info) => {
+            info
+        },
+        Err(_) => {
+            NamedFile::open("static/error.html").unwrap()
         }
     }
 }

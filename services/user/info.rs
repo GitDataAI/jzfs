@@ -8,6 +8,7 @@ use crate::services::AppState;
 use crate::blob::GitBlob;
 use crate::model::repository::repository;
 use crate::model::users::{follow, star, users, watch};
+use crate::services::product::list::ProductList;
 
 #[derive(Deserialize, Serialize)]
 pub struct UserDashBored {
@@ -18,6 +19,7 @@ pub struct UserDashBored {
     pub followers: Vec<follow::Model>, 
     pub watch: Vec<watch::Model>,
     pub readme: Option<String>,
+    pub products: Vec<ProductList>,
 }
 
 fn db_error<E: std::error::Error>(e: E) -> io::Error {
@@ -80,6 +82,7 @@ impl AppState {
                 .all(&self.read),
         ).map_err(db_error)?;
         
+        let products = self.product_owner(user.uid).await?;
         
         let readme = match self.repo_info(user.username.clone(), "readme".to_string()).await {
             Ok(repo) => {
@@ -109,6 +112,7 @@ impl AppState {
             followers, 
             watch,
             readme,
+            products,
         })
     }
 }
