@@ -6,8 +6,8 @@ use crate::services::AppState;
 impl AppState {
     pub async fn product_data_download_zip(&self, product: Uuid) -> io::Result<actix_files::NamedFile> {
         let product = self.product_info(product).await?;
-        let repo = self.repo_get_by_uid(product.repository_uid).await?;
-        let hash = product.hash;
+        let repo = self.repo_get_by_uid(product.data.repository_uid).await?;
+        let hash = product.data.hash;
         let path = format!("{}/{}/{}/", GIT_ROOT, repo.node_uid, repo.uid);
         let zip_path = format!("{}/product/{}.zip", path, hash);
         if std::fs::metadata(&zip_path).is_err() {

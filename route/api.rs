@@ -58,13 +58,13 @@ pub fn api_router(cfg: &mut web::ServiceConfig) {
         )
         .service(
             scope("/product")
-                .service(
+                .route("/list", post().to(product_list))
+                .route("/info/{uid}",get().to(product_info))
+                .route("/down/{uid}",get().to(product_download)).service(
                     scope("/{owner}/{repo}")
                         .route("/post",post().to(product_post))
                 )
-                .route("/list", post().to(product_list))
-                .route("/info/{uid}",get().to(product_info))
-                .route("/down/{uid}",get().to(product_download))
+                
         )
     
     ;
