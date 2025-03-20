@@ -1,0 +1,48 @@
+[package]
+name = "jz-api"
+version = "0.1.0"
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+documentation.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description.workspace = true
+homepage.workspace = true
+
+[dependencies]
+actix-web = { version = "4", features = ["cookies"] }
+actix-session = { version = "0.10.1", features = ["redis-pool","redis-session"] }
+actix-files = { version = "0.6.6", features = ["tokio-uring"] }
+actix-multipart = { version = "0.7.2", features = ["derive"] }
+actix-web-lab = { version = "0.24.1", features = ["derive"] }
+actix-settings = { version = "0.8.0", features = [] }
+
+
+tokio = { version = "1", features = ["full"] }
+
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["raw_value"] }
+uuid = { version = "1"}
+chrono = { version = "0.4"}
+
+anyhow = { version = "1", features = ["backtrace"] }
+
+captcha-rs = { version = "0.2.11", features = [] }
+log = "0.4.26"
+
+[dependencies.jz-module]
+workspace = true
+
+[dependencies.jz-model]
+workspace = true
+
+[dependencies.jz-git]
+workspace = true
+
+[dependencies.jz-dragonfly]
+workspace = true
+
+[dependencies.jz-smart]
+workspace = true

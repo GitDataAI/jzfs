@@ -1,65 +1,75 @@
 [package]
-name = "GitDataOS"
-edition = "2024"
+name = "jzfs"
 version = "0.1.0"
+edition = "2024"
 
-[[bin]]
-path = "main.rs"
-name = "GitDataOS"
+[workspace]
+members = [
+    "crates/jz-api", "crates/jz-dragonfly", "crates/jz-email",
+    "crates/jz-git", "crates/jz-jobs", "crates/jz-migration",
+    "crates/jz-model",
+    "crates/jz-module",
+    "crates/jz-openapi",
+    "crates/jz-smart",
+    "crates/jz-ssh",
+    "crates/jz-stream"
+]
 
-[[bin]]
-path = "bin/api.rs"
-name = "GitDataOSTest"
+[workspace.package]
+edition = "2024"
+authors = [
+    "ZhenYi <zy@gitdata.ai>"
+]
+license = "GPL-3"
+documentation = "https://docs.rs/jzfs"
+readme = "README.md"
+keywords = ["jzfs"]
+categories = ["development-tools"]
+description = "JZFS is a file system for the JZ family of microcontrollers."
+homepage = "https://gitdata.ai"
 
-[lib]
-path = "lib.rs"
-name = "gitdata"
 
-[profile.dev]
-opt-level = 0
-
-[profile.release]
-opt-level = 0
-panic = "abort"
-
+[workspace.dependencies]
+jz-model = { path = "crates/jz-model" }
+jz-module = { path = "crates/jz-module" }
+jz-api = { path = "crates/jz-api" }
+jz-openapi = { path = "crates/jz-openapi" }
+jz-smart = { path = "crates/jz-smart" }
+jz-ssh = { path = "crates/jz-ssh" }
+jz-git = { path = "crates/jz-git" }
+jz-stream = { path = "crates/jz-stream" }
+jz-jobs = { path = "crates/jz-jobs" }
+jz-email = { path = "crates/jz-email" }
+jz-migration = { path = "crates/jz-migration" }
+jz-dragonfly = { path = "crates/jz-dragonfly" }
 [dependencies]
 tokio = { version = "1", features = ["full"] }
-tracing-subscriber = { version = "0.3",features = ["env-filter"] }
-tracing = { version = "0.1" }
-actix-web = { version = "4.9.0", features = ["cookies"] }
-actix-session = { version = "0.10.1", features = ["redis-pool","redis-session"] }
-actix-multipart = { version = "0.7.2", features = ["derive"] }
-actix-web-httpauth = { version = "0.8.2", features = [] }
-actix-files = { version = "0.6.6", features = ["tokio-uring"] }
-sea-orm = { version = "1", features = ["sqlx-all","runtime-tokio","chrono","uuid"] }
-captcha-rs = { version = "0.2.11", features = [] }
-uuid = { version = "1",features = ["v4","serde"]}
-git2 = { version = "0.20.0",features = ["zlib-ng-compat"] }
-flate2 = { version = "1.0.35", features = ["default"] }
-serde = { version = "1", features = ["derive"] }
-chrono = { version = "0.4.39", features = ["default","clock"]}
-serde_json = "1.0.138"
-bytes = { version = "1.10.0", features = [] }
-tempfile = { version = "3.17.1", features = ["nightly"] }
-async-stream = { version = "0.3.6", features = []}
-futures = { version = "0.3.31"}
-lettre = {version = "0.11.10",features = [
-    "smtp-transport",
-    "serde",
-    "rustls-tls",
-    "rustls-native-certs",
-    "hostname",
-    "tokio1",
-    "tokio1-rustls-tls",
-    "tokio1-native-tls"
-]}
-deadpool-redis = { version = "0.16.0", features = ["rt_tokio_1"] }
-rand = { version = "0.9.0", features = []}
-lazy_static = "1.5.0"
-sha256 = { version = "1.5.0", features = ["tokio"] }
-copy_dir = { version = "0.1.3" }
-russh = {  version = "0.50.4", features = [] }
-futures-util = "0.3.31"
-zip = { version = "2.2.3", features = [] }
-[target.'cfg(not(target_env = "msvc"))'.dependencies]
-tikv-jemallocator = "0.6"
+tracing = "0.1.41"
+tracing-subscriber = "0.3.19"
+dotenv = "0.15.0"
+
+[dependencies.jz-api]
+workspace = true
+[dependencies.jz-git]
+workspace = true
+[dependencies.jz-model]
+workspace = true
+[dependencies.jz-module]
+workspace = true
+[dependencies.jz-openapi]
+workspace = true
+[dependencies.jz-smart]
+workspace = true
+[dependencies.jz-ssh]
+workspace = true
+[dependencies.jz-stream]
+workspace = true
+[dependencies.jz-jobs]
+workspace = true
+[dependencies.jz-email]
+workspace = true
+[dependencies.jz-migration]
+workspace = true
+
+[dependencies.jz-dragonfly]
+workspace = true

@@ -1,0 +1,23 @@
+[package]
+name = "jz-model"
+version = "0.1.0"
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+documentation.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description.workspace = true
+homepage.workspace = true
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+sea-orm = { version = "1", features = ["sqlx-all", "runtime-tokio"] }
+uuid = { version = "1", features = ["v7","v4"] }
+chrono = { version = "0.4", features = ["clock","serde"] }
+anyhow = "1.0.97"
+
+
+[dependencies.jz-git]
+workspace = true

@@ -1,0 +1,23 @@
+[package]
+name = "jz-migration"
+version = "0.1.0"
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+documentation.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description.workspace = true
+homepage.workspace = true
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+sea-orm = { version = "1" ,features = ["sqlx-all","runtime-tokio"]}
+sea-orm-cli = { version = "1" ,features = ["sqlx", "runtime-tokio"] }
+sea-orm-migration = { version = "1", features = ["runtime-tokio","sqlx-postgres","sqlx-mysql","sqlx-sqlite"] }
+
+dotenv = { version = "0.15.0", features = [] }
+
+[dependencies.jz-model]
+workspace = true
