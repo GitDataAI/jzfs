@@ -2620,6 +2620,7 @@ dependencies = [
  "jz-model",
  "jz-module",
  "jz-smart",
+ "lazy_static",
  "log",
  "serde",
  "serde_json",

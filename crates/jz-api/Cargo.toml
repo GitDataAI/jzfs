@@ -31,6 +31,7 @@ anyhow = { version = "1", features = ["backtrace"] }
 
 captcha-rs = { version = "0.2.11", features = [] }
 log = "0.4.26"
+lazy_static = "1.5.0"
 
 [dependencies.jz-module]
 workspace = true

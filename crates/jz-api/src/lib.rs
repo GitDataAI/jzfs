@@ -12,11 +12,17 @@ use actix_web::cookie::time::Duration;
 use actix_web::cookie::Key;
 use jz_dragonfly::Dragonfly;
 use log::info;
+use lazy_static::lazy_static;
 
 pub struct Api {
     pub module: AppModule,
     pub config: Settings,
 }
+
+lazy_static!{
+    pub static ref PROTS: u16 = std::env::var("PORT").unwrap_or("9000".to_string()).parse().unwrap();
+}
+
 
 impl Api {
     pub fn init(module: AppModule, config: Settings) -> Api {
@@ -54,7 +60,7 @@ impl Api {
                 .service(scope("/api").configure(v1::v1_route))
                 .service(scope("/git").configure(jz_smart::git_router))
         })
-        .try_apply_settings(&self.config)
+        .bind(format!("0.0.0.0:{}", PROTS.to_string()))
         .context("Failed to apply actix settings")?
         .run()
         .await
