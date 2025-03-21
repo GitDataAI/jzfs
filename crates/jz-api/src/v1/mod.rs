@@ -33,6 +33,7 @@ pub fn v1_route(config: &mut actix_web::web::ServiceConfig) {
             )
             .service(
                 scope("/context")
+                    .route("/current", get().to(users::context::current_context))
                     .route("/list", get().to(users::context::list_context))
                     .route("/switch/{uid}", post().to(users::context::switch_context)),
             )

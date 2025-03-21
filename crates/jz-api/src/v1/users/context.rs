@@ -36,3 +36,12 @@ pub async fn list_context(session: Session, module: Data<AppModule>) -> impl Res
        "data": result
     }))
 }
+
+pub async fn current_context(session: Session) -> impl Responder {
+    let uid = crate::utils::context::current_context(session).await;
+    HttpResponse::Ok().json(json!({
+        "code": 0,
+        "msg": "ok",
+        "data": uid
+    }))
+}

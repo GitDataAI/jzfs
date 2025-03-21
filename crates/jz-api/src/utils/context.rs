@@ -30,3 +30,11 @@ pub async fn list_context(session: Session) -> Vec<Uuid> {
         }
     }
 }
+
+pub async fn current_context(session: Session) -> Option<Uuid> {
+    match session.get::<Uuid>("current_uid") {
+        Ok(Some(uid)) => Some(uid),
+        Ok(None) => None,
+        Err(_) => None,
+    }
+}
