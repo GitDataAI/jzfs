@@ -4,6 +4,7 @@ use actix_web::web::{Data, Path};
 use serde_json::json;
 use uuid::Uuid;
 use jz_module::AppModule;
+use crate::utils::request::RequestBody;
 use crate::utils::session::from_session;
 
 pub async fn list_owner_ssh_key(
@@ -16,6 +17,7 @@ pub async fn list_owner_ssh_key(
         Ok(uid) => uid,
         Err(_) => {
             return HttpResponse::Ok().json(json!({
+                "code": 1,
                 "msg": "Unauthorized",
             }))
         }
@@ -25,12 +27,14 @@ pub async fn list_owner_ssh_key(
         Ok(tokens) => tokens,
         Err(e) => {
             return HttpResponse::Ok().json(json!({
+                "code": 1,
                 "msg": e.to_string(),
             }))
         }
     };
 
     HttpResponse::Ok().json(json!({
+        "code": 0,
         "data": tokens,
         "msg": "ok",
     }))
@@ -39,7 +43,7 @@ pub async fn list_owner_ssh_key(
 pub async fn create_owner_ssh_token(
     session: Session,
     module: Data<AppModule>,
-    param: actix_web::web::Json<jz_module::users::ssh_key::SshKeyParam>,
+    param: RequestBody<jz_module::users::ssh_key::SshKeyParam>,
 )
 -> impl actix_web::Responder {
 
@@ -48,18 +52,21 @@ pub async fn create_owner_ssh_token(
         Err(_) => {
             return HttpResponse::Ok().json(json!({
                 "msg": "Unauthorized",
+                "code": 1,
             }))
         }
     };
-    match module.ssh_key_add(uid, param.into_inner()).await {
+    match module.ssh_key_add(uid, param.into_inner().inner).await {
         Ok(_) => {
             HttpResponse::Ok().json(json!({
                 "msg": "ok",
+                "code": 0,
             }))
         }
         Err(e) => {
             HttpResponse::Ok().json(json!({
                 "msg": e.to_string(),
+                "code": 1,
             }))
         }
     }
@@ -76,6 +83,7 @@ pub async fn delete_owner_ssh_token(
         Err(_) => {
             return HttpResponse::Ok().json(json!({
                 "msg": "Unauthorized",
+                "code": 1,
             }))
         }
     };
@@ -83,11 +91,13 @@ pub async fn delete_owner_ssh_token(
         Ok(_) => {
             HttpResponse::Ok().json(json!({
                 "msg": "ok",
+                "code": 0,
             }))
         }
         Err(e) => {
             HttpResponse::Ok().json(json!({
                 "msg": e.to_string(),
+                "code": 1,
             }))
         }
     }
