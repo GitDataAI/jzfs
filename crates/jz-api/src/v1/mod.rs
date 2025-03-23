@@ -25,6 +25,7 @@ pub fn v1_route(config: &mut actix_web::web::ServiceConfig) {
                     .route("/profile",post().to(users::profile::update_profile::update_profile))
                     .route("/profile", get().to(users::profile::get_profile::get_profile))
                     .route("/orgs", post().to(org::member::list::org_owner_list))
+                    .route("/passwd",post().to(users::passwd::update_password::update_password))
                     .service(
                         scope("/{owner}")
                             .route("/repo", post().to(repo::list::repo_user_list))
