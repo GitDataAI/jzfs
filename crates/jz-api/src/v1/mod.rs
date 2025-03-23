@@ -29,6 +29,9 @@ pub fn v1_route(config: &mut actix_web::web::ServiceConfig) {
                     .route("/ssh_key",post().to(users::ssh_key::create_owner_ssh_token))
                     .route("/ssh_key",get().to(users::ssh_key::list_owner_ssh_key))
                     .route("/ssh_key/{uid}",delete().to(users::ssh_key::delete_owner_ssh_token))
+                    .route("/token",post().to(users::token::create_owner_token))
+                    .route("/token",get().to(users::token::list_owner_token))
+                    .route("/token",delete().to(users::token::delete_owner_token))
                     .service(
                         scope("/{owner}")
                             .route("/repo", post().to(repo::list::repo_user_list))
