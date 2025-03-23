@@ -2624,6 +2624,7 @@ dependencies = [
  "log",
  "serde",
  "serde_json",
+ "sha256",
  "tokio",
  "uuid",
 ]
