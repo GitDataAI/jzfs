@@ -1,4 +1,4 @@
-use actix_web::web::{get, post, scope};
+use actix_web::web::{delete, get, post, scope};
 
 pub mod merge;
 pub mod repo;
@@ -26,6 +26,9 @@ pub fn v1_route(config: &mut actix_web::web::ServiceConfig) {
                     .route("/profile", get().to(users::profile::get_profile::get_profile))
                     .route("/orgs", post().to(org::member::list::org_owner_list))
                     .route("/passwd",post().to(users::passwd::update_password::update_password))
+                    .route("/ssh_key",post().to(users::ssh_key::create_owner_ssh_token))
+                    .route("/ssh_key",get().to(users::ssh_key::list_owner_ssh_key))
+                    .route("/ssh_key/{uid}",delete().to(users::ssh_key::delete_owner_ssh_token))
                     .service(
                         scope("/{owner}")
                             .route("/repo", post().to(repo::list::repo_user_list))
