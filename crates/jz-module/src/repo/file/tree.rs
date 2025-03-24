@@ -8,15 +8,15 @@ use jz_dragonfly::redis::AsyncCommands;
 impl AppModule {
     pub async fn repo_tree(
         &self,
-        ops_uid: Option<Uuid>,
+        _ops_uid: Option<Uuid>,
         owner: String,
         repo: String,
         param: GitTreeParam,
     ) -> anyhow::Result<Vec<TreeEntityItem>> {
         let repo = self.repo_info_by_owner_and_name(owner, repo).await?;
         // if repo.is_private {
-        //     if let Some(ops_uid) = ops_uid {
-        //         let user = self.user_info_by_id(ops_uid).await?;
+        //     if let Some(_ops_uid) = _ops_uid {
+        //         let user = self.user_info_by_id(_ops_uid).await?;
         //         if user.uid != repo.owner_uid {
         //             return Err(anyhow::anyhow!("permission denied"));
         //         }
@@ -31,15 +31,15 @@ impl AppModule {
     }
     pub async fn repo_tree_message(
         &self,
-        ops_uid: Option<Uuid>,
+        _ops_uid: Option<Uuid>,
         owner: String,
         repo_name: String,
         param: GitTreeParam,
     ) -> anyhow::Result<Vec<GitCommitTree>> {
         let repo = self.repo_info_by_owner_and_name(owner.clone(), repo_name.clone()).await?;
         // if repo.is_private {
-        //     if let Some(ops_uid) = ops_uid {
-        //         let user = self.user_info_by_id(ops_uid).await?;
+        //     if let Some(_ops_uid) = _ops_uid {
+        //         let user = self.user_info_by_id(_ops_uid).await?;
         //         if user.uid != repo.owner_uid {
         //             return Err(anyhow::anyhow!("permission denied"));
         //         }

@@ -6,6 +6,7 @@ pub mod users;
 pub mod utils;
 pub mod rstatic;
 pub mod org;
+pub mod issues;
 
 pub fn v1_route(config: &mut actix_web::web::ServiceConfig) {
     config.service(

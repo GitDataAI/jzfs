@@ -8,6 +8,8 @@ use uuid::Uuid;
 pub struct Model {
     #[sea_orm(primary_key)]
     pub uid: Uuid,
+    #[sea_orm(auto_increment = true)]
+    pub id: i32,
     pub title: String,
     pub repo_uid: Uuid,
     pub created_by: Uuid,

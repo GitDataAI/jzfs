@@ -14,6 +14,7 @@ pub mod users;
 pub mod email;
 pub mod org;
 pub mod utils;
+pub mod issue;
 
 #[derive(Clone)]
 pub struct AppModule {
