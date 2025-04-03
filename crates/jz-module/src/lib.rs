@@ -1,4 +1,3 @@
-#![feature(str_as_str)]
 
 use std::time::Duration;
 use jz_email::execute::EmailExecute;

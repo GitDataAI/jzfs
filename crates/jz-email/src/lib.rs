@@ -1,4 +1,3 @@
-#![feature(async_iterator)]
 #![allow(unused)]
 
 pub mod execute;

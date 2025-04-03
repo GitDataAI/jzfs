@@ -27,6 +27,10 @@ mod issue {
     pub mod tags;
 }
 
+mod note {
+    pub mod notification;
+}
+
 mod comment {}
 
 mod util {
@@ -43,3 +47,4 @@ pub use repo::*;
 pub use user::*;
 pub use util::*;
 pub use org::*;
+pub use note::*;

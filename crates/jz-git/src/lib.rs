@@ -10,6 +10,9 @@ pub mod tree;
 pub mod tree_dir;
 pub mod blob;
 pub mod clone;
+pub mod pr;
+
+pub mod v2;
 
 pub struct GitParam {
     pub root: PathBuf,
