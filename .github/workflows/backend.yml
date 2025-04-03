@@ -46,8 +46,8 @@ jobs:
 
       - name: Set Basic System
         run: |
-          apt update \
-          && apt install -y curl gcc musl-dev openssl libssl-dev pkg-config cmake
+          apt update  -o Acquire::ForceIPv4=true \
+          && apt install -y curl gcc musl-dev openssl libssl-dev pkg-config cmake -o Acquire::ForceIPv4=true
 
       - name: Install latest nightly
         uses: actions-rs/toolchain@v1
