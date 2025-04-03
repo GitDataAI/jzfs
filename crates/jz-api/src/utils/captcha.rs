@@ -24,7 +24,7 @@ pub fn captcha_check(session: Session, captcha: String) -> anyhow::Result<bool> 
         return Ok(false);
     }
     let text = text.unwrap();
-    Ok(text == captcha)
+    Ok(text.to_lowercase() == captcha.to_lowercase())
 }
 
 pub async fn captcha_check_actix(session: Session, captcha: String) -> Result<(), HttpResponse> {
