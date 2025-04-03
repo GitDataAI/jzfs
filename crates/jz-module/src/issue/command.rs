@@ -90,7 +90,7 @@ impl AppModule {
         ops_uid: Uuid,
     ) -> anyhow::Result<()> {
         let repo = self.repo_info_by_owner_and_name(owner, repo).await?;
-        let issues = self.issues_info_by_id(issues_id,repo.uid).await?;
+        let _issues = self.issues_info_by_id(issues_id,repo.uid).await?;
         let command = comments::Entity::find_by_id(command_uid)
             .one(&self.read)
             .await?;

@@ -67,8 +67,7 @@ impl GitParam {
         let file = param.file;
         let context = param.context;
         let msg = param.msg;
-        let tempdir =
-            tempdir::TempDir::new("jz-git").map_err(|_| anyhow::anyhow!("tempdir error"))?;
+        let tempdir = tempdir::TempDir::new("jz-git").map_err(|_| anyhow::anyhow!("tempdir error"))?;
         let upstream = self.root.join(self.uid.clone());
         let repo = match Repository::clone(upstream.to_str().unwrap(), tempdir.path()) {
             Ok(repo) => repo,
@@ -84,25 +83,31 @@ impl GitParam {
                 return Err(anyhow::anyhow!("set_head error"));
             }
         }
-        let parents = match repo.head() {
-            Ok(head) => match head.peel_to_commit() {
-                Ok(commit) => {
-                    vec![commit]
-                }
-                Err(_) => {
-                    vec![]
-                }
+        let _ = match repo.find_branch(&*branches, git2::BranchType::Local) {
+            Ok(branch) =>    {
+                match repo.checkout_tree(branch.into_reference().peel_to_tree()?.as_object(), None) {
+                    Ok(_) => {}
+                    Err(_) => {
+                        tempdir.close().ok();
+                        return Err(anyhow::anyhow!("checkout_tree error"));
+                    }
+                }; true
             },
             Err(_) => {
-                vec![]
+                false
             }
         };
 
+        let parents = match repo.head() {
+            Ok(head) => match head.peel_to_commit() {
+                Ok(commit) => vec![commit],
+                Err(_) => vec![],
+            },
+            Err(_) => vec![],
+        };
+
         let time = chrono::Local::now().naive_local();
-        let time = git2::Time::new(
-            time.and_utc().timestamp(),
-            time.and_utc().timestamp_subsec_nanos() as i32,
-        );
+        let time = git2::Time::new(time.and_utc().timestamp(), time.and_utc().timestamp_subsec_nanos() as i32);
         let sig = match Signature::new(&user, &email, &time) {
             Ok(sig) => sig,
             Err(_) => {
@@ -112,7 +117,7 @@ impl GitParam {
         };
         let file_path = tempdir.path().join(path);
         if !file_path.exists() {
-            match std::fs::create_dir_all(file_path.clone()) {
+            match std::fs::create_dir_all(&file_path) {
                 Ok(_) => {}
                 Err(_) => {
                     tempdir.close().ok();
@@ -122,11 +127,12 @@ impl GitParam {
         }
         match param.ops {
             1 => {
-                let mut file = match std::fs::File::create(file_path.join(file)) {
+                let full_file_path = file_path.join(&file);
+                let mut file = match std::fs::File::create(&full_file_path) {
                     Ok(file) => file,
                     Err(_) => {
                         tempdir.close().ok();
-                        return Err(anyhow::anyhow!("create_dir_all error"));
+                        return Err(anyhow::anyhow!("create_file error"));
                     }
                 };
                 match file.write_all(&context) {
@@ -135,15 +141,19 @@ impl GitParam {
                         tempdir.close().ok();
                         return Err(anyhow::anyhow!("write_all error"));
                     }
+                };
+                file.flush().ok();
+            }
+            2 => {
+                let full_file_path = file_path.join(&file);
+                match std::fs::remove_file(&full_file_path) {
+                    Ok(_) => {}
+                    Err(_) => {
+                        tempdir.close().ok();
+                        return Err(anyhow::anyhow!("remove_file error"));
+                    }
                 }
             }
-            2 => match std::fs::remove_file(file_path.join(file)) {
-                Ok(_) => {}
-                Err(_) => {
-                    tempdir.close().ok();
-                    return Err(anyhow::anyhow!("remove_file error"));
-                }
-            },
             _ => {
                 tempdir.close().ok();
                 return Err(anyhow::anyhow!("ops error"));
@@ -184,24 +194,29 @@ impl GitParam {
                 return Err(anyhow::anyhow!("find_tree error"));
             }
         };
-        let _commit_oid = match repo.commit(
-            Some("HEAD"),
+        let commit_oid = match repo.commit(
+            Some(&format!("refs/heads/{}", branches)),
             &sig,
             &sig,
             &msg,
             &tree,
-            parents
-                .iter()
-                .map(|x| x)
-                .collect::<Vec<&git2::Commit>>()
-                .as_ref(),
+            parents.iter().collect::<Vec<_>>().as_slice(),
         ) {
             Ok(oid) => oid,
-            Err(_) => {
+            Err(e) => {
+                dbg!(&e);
                 tempdir.close().ok();
                 return Err(anyhow::anyhow!("commit error"));
             }
         };
+        let _ = match repo.find_commit(commit_oid) {
+            Ok(commit) => commit,
+            Err(_) => {
+                tempdir.close().ok();
+                return Err(anyhow::anyhow!("find_commit error"));
+            }
+        };
+
         let mut origin = match repo.find_remote("origin") {
             Ok(origin) => origin,
             Err(_) => {
@@ -231,4 +246,5 @@ impl GitParam {
         tempdir.close().ok();
         Ok(())
     }
+
 }

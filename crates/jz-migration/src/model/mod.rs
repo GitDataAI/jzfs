@@ -5,6 +5,7 @@ use sea_orm_migration::{MigrationTrait, MigratorTrait};
 pub mod org;
 pub mod repo;
 pub mod users;
+pub mod utils;
 
 pub struct Migrator;
 
@@ -15,6 +16,7 @@ impl MigratorTrait for Migrator {
             Box::new(users::UserMigration),
             Box::new(repo::RepoMigration),
             Box::new(org::OrgMigration),
+            Box::new(utils::UtilsMigration),
         ]
     }
 }
