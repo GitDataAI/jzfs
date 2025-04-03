@@ -5,14 +5,19 @@ edition = "2024"
 
 [workspace]
 members = [
-    "crates/jz-api", "crates/jz-dragonfly", "crates/jz-email",
-    "crates/jz-git", "crates/jz-jobs", "crates/jz-migration",
+    "crates/jz-api",
+    "crates/jz-dragonfly",
+    "crates/jz-email",
+    "crates/jz-git",
+    "crates/jz-iris",
+    "crates/jz-jobs",
+    "crates/jz-migration",
     "crates/jz-model",
     "crates/jz-module",
     "crates/jz-openapi",
     "crates/jz-smart",
     "crates/jz-ssh",
-    "crates/jz-stream"
+    "crates/jz-stream",
 ]
 
 [workspace.package]
