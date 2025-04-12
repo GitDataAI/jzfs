@@ -1,7 +1,6 @@
 use crate::GitParam;
-use git2::{Repository, Signature};
 use serde::{Deserialize, Serialize};
-use std::io::Write;
+use std::path::PathBuf;
 
 #[derive(Deserialize, Serialize, Clone)]
 pub struct GitCommit {
@@ -65,185 +64,54 @@ impl GitParam {
         let email = param.email;
         let path = param.path;
         let file = param.file;
-        let context = param.context;
+        let content = param.context;
         let msg = param.msg;
-        let tempdir = tempdir::TempDir::new("jz-git").map_err(|_| anyhow::anyhow!("tempdir error"))?;
-        let upstream = self.root.join(self.uid.clone());
-        let repo = match Repository::clone(upstream.to_str().unwrap(), tempdir.path()) {
-            Ok(repo) => repo,
-            Err(_) => {
-                tempdir.close().ok();
-                return Err(anyhow::anyhow!("clone error"));
-            }
-        };
-        match repo.set_head(&format!("refs/heads/{}", branches)) {
-            Ok(_) => {}
-            Err(_) => {
-                tempdir.close().ok();
-                return Err(anyhow::anyhow!("set_head error"));
-            }
-        }
-        let _ = match repo.find_branch(&*branches, git2::BranchType::Local) {
-            Ok(branch) =>    {
-                match repo.checkout_tree(branch.into_reference().peel_to_tree()?.as_object(), None) {
-                    Ok(_) => {}
-                    Err(_) => {
-                        tempdir.close().ok();
-                        return Err(anyhow::anyhow!("checkout_tree error"));
-                    }
-                }; true
+        let repo = self.repo()?;
+        let blob = repo.blob(&content)?;
+        let file_path = PathBuf::from(path).join(file);
+        let head_commit = match repo.find_branch(&branches, git2::BranchType::Local) {
+            Ok(branch) => {
+                let commit = branch.get().peel_to_commit()?;
+                Some(commit)
             },
-            Err(_) => {
-                false
-            }
-        };
-
-        let parents = match repo.head() {
-            Ok(head) => match head.peel_to_commit() {
-                Ok(commit) => vec![commit],
-                Err(_) => vec![],
-            },
-            Err(_) => vec![],
-        };
-
-        let time = chrono::Local::now().naive_local();
-        let time = git2::Time::new(time.and_utc().timestamp(), time.and_utc().timestamp_subsec_nanos() as i32);
-        let sig = match Signature::new(&user, &email, &time) {
-            Ok(sig) => sig,
-            Err(_) => {
-                tempdir.close().ok();
-                return Err(anyhow::anyhow!("signature error"));
-            }
-        };
-        let file_path = tempdir.path().join(path);
-        if !file_path.exists() {
-            match std::fs::create_dir_all(&file_path) {
-                Ok(_) => {}
-                Err(_) => {
-                    tempdir.close().ok();
-                    return Err(anyhow::anyhow!("create_dir_all error"));
-                }
-            }
-        }
-        match param.ops {
-            1 => {
-                let full_file_path = file_path.join(&file);
-                let mut file = match std::fs::File::create(&full_file_path) {
-                    Ok(file) => file,
-                    Err(_) => {
-                        tempdir.close().ok();
-                        return Err(anyhow::anyhow!("create_file error"));
-                    }
-                };
-                match file.write_all(&context) {
-                    Ok(_) => {}
-                    Err(_) => {
-                        tempdir.close().ok();
-                        return Err(anyhow::anyhow!("write_all error"));
-                    }
-                };
-                file.flush().ok();
-            }
-            2 => {
-                let full_file_path = file_path.join(&file);
-                match std::fs::remove_file(&full_file_path) {
-                    Ok(_) => {}
-                    Err(_) => {
-                        tempdir.close().ok();
-                        return Err(anyhow::anyhow!("remove_file error"));
-                    }
-                }
-            }
-            _ => {
-                tempdir.close().ok();
-                return Err(anyhow::anyhow!("ops error"));
-            }
-        }
-
-        let tree_oid = match repo.index() {
-            Ok(mut index) => {
-                match index.add_all(["*"].iter(), git2::IndexAddOption::DEFAULT, None) {
-                    Ok(_) => match index.write() {
-                        Ok(_) => match index.write_tree() {
-                            Ok(oid) => oid,
-                            Err(_) => {
-                                tempdir.close().ok();
-                                return Err(anyhow::anyhow!("write_tree error"));
-                            }
-                        },
-                        Err(_) => {
-                            tempdir.close().ok();
-                            return Err(anyhow::anyhow!("write error"));
-                        }
-                    },
-                    Err(_) => {
-                        tempdir.close().ok();
-                        return Err(anyhow::anyhow!("add_all error"));
-                    }
-                }
-            }
-            Err(_) => {
-                tempdir.close().ok();
-                return Err(anyhow::anyhow!("index error"));
-            }
-        };
-        let tree = match repo.find_tree(tree_oid) {
-            Ok(tree) => tree,
-            Err(_) => {
-                tempdir.close().ok();
-                return Err(anyhow::anyhow!("find_tree error"));
-            }
-        };
-        let commit_oid = match repo.commit(
-            Some(&format!("refs/heads/{}", branches)),
-            &sig,
-            &sig,
-            &msg,
-            &tree,
-            parents.iter().collect::<Vec<_>>().as_slice(),
-        ) {
-            Ok(oid) => oid,
             Err(e) => {
-                dbg!(&e);
-                tempdir.close().ok();
-                return Err(anyhow::anyhow!("commit error"));
+                if e.code() == git2::ErrorCode::NotFound {
+                    None
+                } else {
+                    return Err(anyhow::anyhow!("find_branch error"));
+                }
             }
         };
-        let _ = match repo.find_commit(commit_oid) {
-            Ok(commit) => commit,
-            Err(_) => {
-                tempdir.close().ok();
-                return Err(anyhow::anyhow!("find_commit error"));
+        let mut tree_builder = match &head_commit {
+            Some(commit) => {
+                let tree = commit.tree()?;
+                repo.treebuilder(Some(&tree))?
             }
+            None => repo.treebuilder(None)?,
         };
-
-        let mut origin = match repo.find_remote("origin") {
-            Ok(origin) => origin,
-            Err(_) => {
-                tempdir.close().ok();
-                return Err(anyhow::anyhow!("find_remote error"));
-            }
-        };
-        let mut callbacks = git2::RemoteCallbacks::new();
-        callbacks.push_update_reference(|_, status| {
-            if status.is_some() {
-                return Err(git2::Error::from_str("Failed to push"));
-            }
-            Ok(())
-        });
-        let mut push_options = git2::PushOptions::new();
-        push_options.remote_callbacks(callbacks);
-        match origin.push(
-            &[format!("refs/heads/{}", branches)],
-            Some(&mut push_options),
-        ) {
-            Ok(_) => {}
-            Err(_) => {
-                tempdir.close().ok();
-                return Err(anyhow::anyhow!("push error"));
-            }
+        tree_builder.insert(file_path, blob, 0o100644)?;
+        let tree = tree_builder.write()?;
+        let tree = repo.find_tree(tree)?;
+        let signature = git2::Signature::now(&user, &email)?;
+        if let Some(head_commit) = head_commit {
+            repo.commit(
+                Some("HEAD"),
+                &signature,
+                &signature,
+                &msg,
+                &tree,
+                &[&head_commit],
+            )?;
+        } else {
+            repo.commit(
+                Some("HEAD"),
+                &signature,
+                &signature,
+                &msg,
+                &tree,
+                &[],
+            )?;
         }
-        tempdir.close().ok();
         Ok(())
     }
 
