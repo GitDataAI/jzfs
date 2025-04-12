@@ -73,7 +73,6 @@ impl GitParam {
                 if let Some(path) = delta.new_file().path() {
                     let path_str = path.to_str().unwrap_or_default().to_string();
 
-                    // 更新文件路径的提交
                     path_commits.entry(path_str.clone())
                         .and_modify(|existing: &mut GitCommit| {
                             if cmt.date > existing.date {
@@ -82,7 +81,6 @@ impl GitParam {
                         })
                         .or_insert_with(|| cmt.clone());
 
-                    // 更新所有父目录路径的提交
                     let mut current_path = Path::new(&path_str);
                     while let Some(parent_path) = current_path.parent() {
                         let parent_str = parent_path.to_str().unwrap_or_default().to_string();
