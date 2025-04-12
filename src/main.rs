@@ -1,5 +1,3 @@
-use jz_api::{Api, Settings};
-
 #[tokio::main]
 async fn main() {
     dotenv::dotenv().ok();
