@@ -17,7 +17,7 @@ async fn main() {
             .await
             .expect("ssh error");
     });
-    Api::init(module, Settings::from_default_template())
+    jz_api::Api::init(module, jz_api::Settings::from_default_template())
         .run()
         .await
         .expect("api error");
