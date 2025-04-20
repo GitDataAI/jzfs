@@ -1,4 +1,7 @@
 
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
 ---
 
 # JZFS
@@ -15,19 +18,39 @@ The immediate next steps for the project are to fill obvious gaps, such as imple
 
 
 ### Added value
-Our central use case is the DataHub, which essentially consists of a metadata catalog and a knowledge graph.
+Our central use case is the DataHub(Like Github, buf for Data),which essentially consists of a Git version control for data and a Git collaboration for data.
 
+In the JZFS DataHub model, each node maintains a copy of the files and all of the history of each file.
+Thus, the node can make reads and writes of all past revisions offline.
+When a node wants to share changes, it specifies a "remote".
+The node can then send its state to that node, called "push", or receive new state from it, called "pull".
+Writes are organized on branches.
+Git is designed to compute differences between versions quickly.
+Generally, Git relies on human action to share and merge changes.
 
-This enables us to create transparency across internal and external data. It forms the basis for a new way of practicing data exchange and contract design for distributed data sources. It is crucial that data exchange works both within the company and in individually controllable data networks (data circles). Our long-term goal is to build data ecosystems that enable new innovations.
+Fault tolerance and trustless-ness are achieved via the separation of remotes from individual nodes. 
+Each node in the network is maintaining it's own copy, its history and coordinating via one or many remotes. 
+If a remote you trust gets corrupted, you have the ability to roll back to a previous good state and switch to a new remote. 
+Even if you lose your copy you can rely on other nodes' copies to restore from.
 
-JZFS data space consists of so-called “DataHubs,” which are virtual data nodes for sharing data and building data networks. 
-A single DataHub manages various data connections and can join together with other hubs to form a network through targeted synchronization. 
+This enables us to create transparency across internal and external data.
+
+It forms the basis for a new way of practicing data exchange and contract design for distributed data sources.
+
+It is crucial that data exchange works both within the company and in individually controllable data networks (data space).
+
+JZFS data space consists of so-called “DataHubs”  like one or many remotes in Git, which are virtual data nodes for sharing data and building data networks.
+A single DataHub manages various data connections and can join together with other hubs to form a network through targeted synchronization.
 Based on data contracts mapped in the network, data can be released to other participants, enabling efficient data exchange.
+
 
 ![](./docs/jzfs-space.png)
 
-JZFS offers technology for exchanging data in data circles. The added value is clear: simple, transparent data management combined with intuitive linking and sharing of data in decentralized networks – data circles.
+JZFS offers git for data technology for exchanging data in data hub and data space. 
+The added value is clear: simple, transparent data management combined with intuitive linking and sharing of data in decentralized networks – data space.
 This enables secure, trustworthy data exchange across organizational boundaries.
+
+JZFS's long-term goal is to build data ecosystems that enable new innovations.
 
 ### License
 
@@ -49,6 +72,21 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 ## Contributors ✨
 
 Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/taoshengshi"><img src="https://avatars.githubusercontent.com/u/33315004?v=4?s=100" width="100px;" alt="taoshengshi"/><br /><sub><b>taoshengshi</b></sub></a><br /><a href="#content-taoshengshi" title="Content">🖋</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
