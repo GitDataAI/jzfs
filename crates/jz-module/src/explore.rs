@@ -100,6 +100,8 @@ impl AppModule {
                     "name": idx.username,
                     "avatar": idx.avatar,
                     "repo": repo,
+                    "followed": idx.nums_fans,
+                    "following": idx.nums_following,
                     "description": idx.description,
                     "created_at": idx.created_at,
                     "updated_at": idx.updated_at,
