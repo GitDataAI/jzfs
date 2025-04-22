@@ -27,14 +27,6 @@ jobs:
               run: |
                 curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
-
-            - name: RemoveOs
-              uses: WyriHaximus/github-action-helm3@v3
-              with:
-                  exec: /usr/local/bin/helm uninstall gitdataos --namespace gitdata
-                  kubeconfig: ${{ secrets.KUBECONTENT }}
-                  overrule_existing_kubeconfig: 'true'
-
             - name: DeployOs
               uses: WyriHaximus/github-action-helm3@v3
               with:
