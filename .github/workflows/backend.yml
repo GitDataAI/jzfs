@@ -94,7 +94,7 @@ jobs:
 
       - name: Build and Push GitDataOs
         run: |
-          docker build -t gitdatateam/gitdataos:${{ steps.version.outputs.version }} .
+          docker build -t gitdatateam/gitdataos:${{ steps.version.outputs.version }} --no-cache .
           docker push gitdatateam/gitdataos:${{ steps.version.outputs.version }}
           docker tag gitdatateam/gitdataos:${{ steps.version.outputs.version }} gitdatateam/gitdataos:latest
           docker push gitdatateam/gitdataos:latest
