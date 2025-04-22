@@ -26,7 +26,7 @@ impl AppModule {
                     .add(repository::Column::Description.contains(param.search))
             }
             let query = repository::Entity::find()
-                .filter(condition)
+                .filter(condition.clone())
                 .order_by_desc(repository::Column::CreatedAt)
                 .offset((param.page - 1) as u64 * param.size as u64)
                 .limit(param.size as u64)
@@ -84,7 +84,7 @@ impl AppModule {
                     .add(users::Column::Description.contains(param.search))
             }
             let query = users::Entity::find()
-                .filter(cond)
+                .filter(cond.clone())
                 .order_by_desc(users::Column::CreatedAt)
                 .offset((param.page - 1) as u64 * param.size as u64)
                 .limit(param.size as u64)
@@ -122,7 +122,7 @@ impl AppModule {
                     .add(organization::Column::Description.contains(param.search))
             }
             let query = organization::Entity::find()
-                .filter(cond)
+                .filter(cond.clone())
                 .order_by_desc(organization::Column::CreatedAt)
                 .offset((param.page - 1) as u64 * param.size as u64)
                 .limit(param.size as u64)
