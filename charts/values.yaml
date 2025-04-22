@@ -7,7 +7,6 @@ namespace: gitdata
 config: gitdataos-configmap
 image:
   repository: gitdatateam/gitdataos
-  pullPolicy: IfNotPresent
   tag: latest
 
 imagePullSecrets: []
