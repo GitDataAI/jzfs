@@ -289,6 +289,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "actix-web-httpauth"
+version = "0.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "456348ed9dcd72a13a1f4a660449fafdecee9ac8205552e286809eb5b0b29bd3"
+dependencies = [
+ "actix-utils",
+ "actix-web",
+ "base64 0.22.1",
+ "futures-core",
+ "futures-util",
+ "log",
+ "pin-project-lite",
+]
+
+[[package]]
 name = "actix-web-lab"
 version = "0.24.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2619,6 +2634,7 @@ dependencies = [
  "jz-git",
  "jz-model",
  "jz-module",
+ "jz-openapi",
  "jz-smart",
  "lazy_static",
  "log",
@@ -2734,6 +2750,52 @@ dependencies = [
 [[package]]
 name = "jz-openapi"
 version = "0.1.0"
+dependencies = [
+ "actix-files",
+ "actix-multipart",
+ "actix-session",
+ "actix-settings",
+ "actix-web",
+ "actix-web-httpauth",
+ "actix-web-lab",
+ "anyhow",
+ "captcha-rs",
+ "chrono",
+ "jz-dragonfly",
+ "jz-git",
+ "jz-model",
+ "jz-module",
+ "jz-smart",
+ "lazy_static",
+ "log",
+ "serde",
+ "serde_json",
+ "sha256",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
+name = "jz-service"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "dotenv",
+ "jz-dragonfly",
+ "jz-email",
+ "jz-git",
+ "jz-jobs",
+ "jz-model",
+ "log",
+ "rand 0.8.5",
+ "sea-orm",
+ "serde",
+ "serde_json",
+ "sha256",
+ "tokio",
+ "uuid",
+]
 
 [[package]]
 name = "jz-smart"

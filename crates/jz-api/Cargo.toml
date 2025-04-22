@@ -47,3 +47,6 @@ workspace = true
 
 [dependencies.jz-smart]
 workspace = true
+
+[dependencies.jz-openapi]
+workspace = true

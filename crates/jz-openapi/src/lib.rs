@@ -1,14 +1,14 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+use actix_web::web::{get, scope};
+use crate::repo::repo_list;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+pub mod repo;
+pub mod bare;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+pub fn openapi_router(cfg: &mut actix_web::web::ServiceConfig) {
+    cfg
+        .service(
+            scope("/repo")
+                .route("",get().to(repo_list))
+        )
+    ;
 }

@@ -132,4 +132,12 @@ impl AppModule {
             .await
             .map_err(|e| anyhow::anyhow!("{}", e))?)
     }
+    pub async fn token_find(&self, token: String) -> anyhow::Result<token::Model> {
+        token::Entity::find()
+            .filter(token::Column::Token.eq(token))
+            .one(&self.read)
+            .await
+            .map_err(|e| anyhow::anyhow!("{}", e))?
+            .ok_or(anyhow::anyhow!("token not found"))
+    }
 }

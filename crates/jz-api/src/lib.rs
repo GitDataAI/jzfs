@@ -59,6 +59,7 @@ impl Api {
                 .route("/", actix_web::web::get().to(|| async { "Hello World!" }))
                 .service(scope("/api").configure(v1::v1_route))
                 .service(scope("/git").configure(jz_smart::git_router))
+                .service(scope("/openapi").configure(jz_openapi::openapi_router))
         })
         .bind(format!("0.0.0.0:{}", PROTS.to_string()))
         .context("Failed to apply actix settings")?

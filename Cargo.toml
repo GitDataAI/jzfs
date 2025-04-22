@@ -14,7 +14,7 @@ members = [
     "crates/jz-migration",
     "crates/jz-model",
     "crates/jz-module",
-    "crates/jz-openapi",
+    "crates/jz-openapi", "crates/jz-service",
     "crates/jz-smart",
     "crates/jz-ssh",
     "crates/jz-stream",

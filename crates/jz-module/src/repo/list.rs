@@ -1,6 +1,26 @@
+use sea_orm::*;
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use uuid::Uuid;
+use jz_model::repository;
 use crate::AppModule;
+
+#[derive(Deserialize,Serialize)]
+pub struct RepositoryListParam {
+    pub r#type: String,
+    pub limit: Option<i64>,
+    pub offset: Option<i64>,
+}
+#[derive(Deserialize,Serialize)]
+pub struct RepositoryListResult {
+    creator: String, // owner name
+    description: Option<String>,
+    id: Uuid,
+    image: Option<String>,
+    runs: Option<i32>,
+    size: Option<String>,
+    r#type: String,
+}
 
 impl AppModule {
     pub async fn repo_list_info(&self,ops_uid: Option<Uuid>, owner_name: String) -> anyhow::Result<Vec<Value>> {
@@ -34,5 +54,58 @@ impl AppModule {
             }));
         }
         Ok(result)
+    }
+    pub async fn repo_list(&self, parma: RepositoryListParam) -> anyhow::Result<serde_json::Value> {
+        let rtype = if parma.r#type == "all" {
+            None
+        } else {
+            let rf = parma.r#type.to_lowercase();
+            if rf == "code" {
+                Some("Code".to_string())
+            }else if rf == "data" {
+                Some("Data".to_string())
+            }else if rf == "model" {
+                Some("Model".to_string())
+            }else { 
+                return Err(anyhow::anyhow!("invalid rtype"));
+            }
+        };
+        let mut condition = Condition::all()
+            .add(repository::Column::IsPrivate.eq(false));
+        if let Some(ref rtype) = rtype {
+            condition = condition.add(repository::Column::Rtype.eq(rtype));
+        };
+        let repos = repository::Entity::find()
+            .filter(condition)
+            .order_by_desc(repository::Column::CreatedAt)
+            .limit(parma.limit.unwrap_or(20) as u64)
+            .offset(parma.offset.unwrap_or(0) as u64)
+            .all(&self.read)
+            .await?;
+        let mut result: Vec<RepositoryListResult> = Vec::new();
+        for i in repos {
+            result.push(RepositoryListResult {
+                creator: i.owner_name,
+                description: i.description,
+                id: i.uid,
+                image: None,
+                runs: None,
+                size: None,
+                r#type: i.rtype,
+            });
+        }
+        let total = repository::Entity::find()
+            .filter(repository::Column::Rtype.eq(parma.r#type))
+            .filter(repository::Column::IsPrivate.eq(false))
+            .count(&self.read)
+            .await?;
+        Ok(json!({
+            "data": result,
+            "limit": parma.limit,
+            "offset": parma.offset,
+            "total": total,
+            "type": rtype,
+        }))
+        
     }
 }
