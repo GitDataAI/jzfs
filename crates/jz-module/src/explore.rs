@@ -20,7 +20,8 @@ impl AppModule {
         if param.rtype == "product" {
             value["type"] = json!("product");
             let mut data = vec![];
-            let mut condition = Condition::all();
+            let mut condition = Condition::all()
+                .add(repository::Column::IsPrivate.eq(false));
             if param.search != "" {
                 condition = condition.add(repository::Column::Name.contains(param.search.clone()))
                     .add(repository::Column::Description.contains(param.search))
