@@ -7,10 +7,12 @@ pub mod utils;
 pub mod rstatic;
 pub mod org;
 pub mod issues;
+mod explore;
 
 pub fn v1_route(config: &mut actix_web::web::ServiceConfig) {
     config.service(
         scope("/v1")
+            .route("/explore", get().to(explore::explore))
             .route("", get().to(v1_hello))
             .route("/check/{name}", get().to(utils::check_name::check_name))
             .service(
