@@ -12,8 +12,8 @@ mod explore;
 pub fn v1_route(config: &mut actix_web::web::ServiceConfig) {
     config.service(
         scope("/v1")
-            .route("/explore", get().to(explore::explore))
             .route("", get().to(v1_hello))
+            .route("/explore", get().to(explore::explore))
             .route("/check/{name}", get().to(utils::check_name::check_name))
             .service(
                 scope("/merge").route("/users/{username}", get().to(merge::users::merge_users)),
