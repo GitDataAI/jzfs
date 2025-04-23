@@ -2,7 +2,7 @@ use sea_orm::*;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use uuid::Uuid;
-use jz_model::repository;
+use jz_model::{repository, users};
 use crate::AppModule;
 
 #[derive(Deserialize,Serialize)]
@@ -13,13 +13,38 @@ pub struct RepositoryListParam {
 }
 #[derive(Deserialize,Serialize)]
 pub struct RepositoryListResult {
-    creator: String, // owner name
-    description: Option<String>,
-    id: Uuid,
-    image: Option<String>,
-    runs: Option<i32>,
-    size: Option<String>,
-    r#type: String,
+    pub author: RepositoryListAuthor,
+    #[serde(rename = "modelInfo")]
+    pub model_info: RepositoryModelInfo,
+    #[serde(rename = "moduleStats")]
+    pub module_stats: RepositoryStats,
+    pub id: Uuid,
+}
+
+#[derive(Deserialize,Serialize)]
+pub struct RepositoryListAuthor {
+    pub name: Option<String>,
+    pub avatar: Option<String>,
+    pub address: Option<String>
+}
+
+#[derive(Deserialize,Serialize)]
+pub struct RepositoryModelInfo {
+    pub name: String,
+    pub version: Option<String>,
+    pub description: Option<String>,
+    #[serde(rename = "displayImage")]
+    pub display_image: Option<String>,
+    pub size: Option<String>,
+    pub category: Option<String>,
+}
+
+#[derive(Deserialize,Serialize)]
+pub struct RepositoryStats {
+    pub runs: Option<i32>,
+    pub price: Option<i32>,
+    #[serde(rename = "APIcompatible")]
+    pub api_compatible: bool,
 }
 
 impl AppModule {
@@ -84,19 +109,60 @@ impl AppModule {
             .await?;
         let mut result: Vec<RepositoryListResult> = Vec::new();
         for i in repos {
-            result.push(RepositoryListResult {
-                creator: i.owner_name,
+            let author = match users::Entity::find()
+                .filter(users::Column::Uid.eq(i.owner_uid))
+                .one(&self.read)
+                .await? {
+                    Some(user) => RepositoryListAuthor {
+                        name: Some(user.username),
+                        avatar: user.avatar,
+                        address: None,
+                    },
+                    None => match self.org_by_uid(i.owner_uid).await {
+                        Ok(org) => RepositoryListAuthor {
+                            name: Some(org.name),
+                            avatar: org.avatar,
+                            address: None,
+                        },
+                        Err(_) => RepositoryListAuthor {
+                            name: None,
+                            avatar: None,
+                            address: None,
+                        },
+                    },
+                };
+            let model_info = RepositoryModelInfo {
+                name: i.name,
+                version: None,
                 description: i.description,
-                id: i.uid,
-                image: None,
-                runs: None,
+                display_image: None,
                 size: None,
-                r#type: i.rtype,
-            });
+                category: None,
+            };
+            let module_stats = RepositoryStats {
+                runs: None,
+                price: None,
+                api_compatible: false,
+            };
+            result.push(
+                RepositoryListResult {
+                    author,
+                    model_info,
+                    module_stats,
+                    id: i.uid,
+                },
+            );
         }
+        let cond = if let Some(ref rtype) = rtype && rtype != "all"{
+            Condition::all()
+                .add(repository::Column::IsPrivate.eq(false))
+                .add(repository::Column::Rtype.eq(rtype))
+        } else {
+            Condition::all()
+                .add(repository::Column::IsPrivate.eq(false))
+        };
         let total = repository::Entity::find()
-            .filter(repository::Column::Rtype.eq(parma.r#type))
-            .filter(repository::Column::IsPrivate.eq(false))
+            .filter(cond)
             .count(&self.read)
             .await?;
         Ok(json!({

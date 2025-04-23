@@ -1,3 +1,4 @@
+#![feature(let_chains)]
 
 use std::time::Duration;
 use jz_email::execute::EmailExecute;
