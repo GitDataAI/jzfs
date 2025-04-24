@@ -10,6 +10,7 @@ pub struct RepositoryListParam {
     pub r#type: String,
     pub limit: Option<i64>,
     pub offset: Option<i64>,
+    pub category: Option<String>,
 }
 #[derive(Deserialize,Serialize)]
 pub struct RepositoryListResult {
