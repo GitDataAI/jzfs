@@ -11,6 +11,7 @@ pub struct RepositoryListParam {
     pub limit: Option<i64>,
     pub offset: Option<i64>,
     pub category: Option<String>,
+    pub id: Option<Uuid>,
 }
 #[derive(Deserialize,Serialize)]
 pub struct RepositoryListResult {
@@ -88,11 +89,11 @@ impl AppModule {
             let rf = parma.r#type.to_lowercase();
             if rf == "code" {
                 Some("Code".to_string())
-            }else if rf == "data" {
+            } else if rf == "data" {
                 Some("Data".to_string())
-            }else if rf == "model" {
+            } else if rf == "model" {
                 Some("Model".to_string())
-            }else { 
+            } else {
                 return Err(anyhow::anyhow!("invalid rtype"));
             }
         };
@@ -101,6 +102,9 @@ impl AppModule {
         if let Some(ref rtype) = rtype {
             condition = condition.add(repository::Column::Rtype.eq(rtype));
         };
+        if let Some(ref uid) = parma.id {
+            condition = condition.add(repository::Column::Uid.eq(uid.clone()));
+        }
         let repos = repository::Entity::find()
             .filter(condition)
             .order_by_desc(repository::Column::CreatedAt)
@@ -114,24 +118,24 @@ impl AppModule {
                 .filter(users::Column::Uid.eq(i.owner_uid))
                 .one(&self.read)
                 .await? {
-                    Some(user) => RepositoryListAuthor {
-                        name: Some(user.username),
-                        avatar: user.avatar,
+                Some(user) => RepositoryListAuthor {
+                    name: Some(user.username),
+                    avatar: user.avatar,
+                    address: None,
+                },
+                None => match self.org_by_uid(i.owner_uid).await {
+                    Ok(org) => RepositoryListAuthor {
+                        name: Some(org.name),
+                        avatar: org.avatar,
                         address: None,
                     },
-                    None => match self.org_by_uid(i.owner_uid).await {
-                        Ok(org) => RepositoryListAuthor {
-                            name: Some(org.name),
-                            avatar: org.avatar,
-                            address: None,
-                        },
-                        Err(_) => RepositoryListAuthor {
-                            name: None,
-                            avatar: None,
-                            address: None,
-                        },
+                    Err(_) => RepositoryListAuthor {
+                        name: None,
+                        avatar: None,
+                        address: None,
                     },
-                };
+                },
+            };
             let model_info = RepositoryModelInfo {
                 name: i.name,
                 version: None,
@@ -154,7 +158,8 @@ impl AppModule {
                 },
             );
         }
-        let cond = if let Some(ref rtype) = rtype && rtype != "all"{
+    let total = if let Some(_) = parma.id {
+        let cond = if let Some(ref rtype) = rtype && rtype != "all" {
             Condition::all()
                 .add(repository::Column::IsPrivate.eq(false))
                 .add(repository::Column::Rtype.eq(rtype))
@@ -162,17 +167,19 @@ impl AppModule {
             Condition::all()
                 .add(repository::Column::IsPrivate.eq(false))
         };
-        let total = repository::Entity::find()
+        repository::Entity::find()
             .filter(cond)
             .count(&self.read)
-            .await?;
-        Ok(json!({
+            .await?
+    } else {
+        1
+    };
+    Ok(json!({
             "data": result,
             "limit": parma.limit,
             "offset": parma.offset,
             "total": total,
             "type": rtype,
         }))
-        
     }
 }
