@@ -26,6 +26,7 @@ pub struct RepositoryListResult {
 #[derive(Deserialize,Serialize)]
 pub struct RepositoryListAuthor {
     pub name: Option<String>,
+    #[serde(rename = "image")]
     pub avatar: Option<String>,
     pub address: Option<String>
 }
@@ -35,7 +36,7 @@ pub struct RepositoryModelInfo {
     pub name: String,
     pub version: Option<String>,
     pub description: Option<String>,
-    #[serde(rename = "displayImage")]
+    #[serde(rename = "image")]
     pub display_image: Option<String>,
     pub size: Option<String>,
     pub category: Option<String>,
