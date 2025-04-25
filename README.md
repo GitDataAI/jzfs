@@ -10,7 +10,7 @@
 
 JZFS is a distributed git storage service for the Rust programming language that prioritizes ease-of-use. It supports both Single Machine as well as some distributed environments, including Kubernetes and more. Note that JZFS does not hide the store; instead, JZFS exposes features based on the target distributed git storage service.
 
-### Current Status and Roadmap
+## Current Status and Roadmap
 
 JZFS is still in the early development stages and is considered **incubating**. There is no commitment to ongoing maintenance or development. As the project evolves, this may change in the future. Therefore, we encourage you to explore, experiment, and contribute to JZFS, but do not attempt to use it in production.
 
@@ -52,6 +52,10 @@ This enables secure, trustworthy data exchange across organizational boundaries.
 
 JZFS's long-term goal is to build data ecosystems that enable new innovations.
 
+### Deploy
+```bash
+docker compose up -d
+```
 ### License
 
 This project is licensed under the [MIT License].
