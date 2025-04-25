@@ -7,16 +7,19 @@ use jz_module::AppModule;
 
 pub mod utils;
 pub mod v1;
+pub mod v2;
 pub use actix_settings::*;
 use actix_web::cookie::time::Duration;
 use actix_web::cookie::Key;
 use jz_dragonfly::Dragonfly;
 use log::info;
 use lazy_static::lazy_static;
+use jz_service::app::AppService;
 
 pub struct Api {
     pub module: AppModule,
     pub config: Settings,
+    pub service: AppService,
 }
 
 lazy_static!{
@@ -25,8 +28,8 @@ lazy_static!{
 
 
 impl Api {
-    pub fn init(module: AppModule, config: Settings) -> Api {
-        Api { module, config }
+    pub fn init(module: AppModule, config: Settings, service: AppService) -> Api {
+        Api { module, config , service }
     }
     pub async fn run(&self) -> anyhow::Result<()> {
         use anyhow::Context;
@@ -57,7 +60,16 @@ impl Api {
                         .build()
                 )
                 .route("/", actix_web::web::get().to(|| async { "Hello World!" }))
-                .service(scope("/api").configure(v1::v1_route))
+                .service(
+                    scope("/api")
+                        .service(
+                            scope("/v1")
+                                .configure(v1::v1_route)
+                        )
+                        .service(
+                            scope("/v2")
+                        )
+                )
                 .service(scope("/git").configure(jz_smart::git_router))
                 .service(scope("/openapi").configure(jz_openapi::openapi_router))
         })
@@ -66,22 +78,6 @@ impl Api {
         .run()
         .await
         .context("Failed to run actix service")?;
-        Ok(())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::Api;
-    use jz_module::AppModule;
-
-    #[tokio::test]
-    async fn test_api() -> anyhow::Result<()> {
-        let module = AppModule::init_env().await.expect("Failed to init module");
-        let _api = Api::init(module, actix_settings::Settings::from_default_template());
-        dbg!("APi Init Ok");
-        // _api.run().await?;
-        dbg!("APi End Ok");
         Ok(())
     }
 }

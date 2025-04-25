@@ -50,3 +50,5 @@ workspace = true
 
 [dependencies.jz-openapi]
 workspace = true
+[dependencies.jz-service]
+workspace = true

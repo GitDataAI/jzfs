@@ -2,7 +2,7 @@
 
 use std::time::Duration;
 use jz_email::execute::EmailExecute;
-use jz_jobs::{Queue, SeaOrmQueue};
+use jz_jobs::{Queue, QueueJobs, SeaOrmQueue};
 use log::info;
 use sea_orm::{ConnectOptions, DatabaseConnection};
 use jz_dragonfly::Dragonfly;
@@ -62,6 +62,7 @@ impl AppModule {
         info!("Init Message Queue Successful");
         self.ioc.inject(queue.clone());
         info!("Init Email Execute");
+        let queue = QueueJobs::new_seaorm(queue);
         let email = EmailExecute::init(queue.clone()).await;
         email.run();
         info!("Init Email Execute Successful");

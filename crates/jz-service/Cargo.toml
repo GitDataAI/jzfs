@@ -12,9 +12,7 @@ description.workspace = true
 homepage.workspace = true
 
 [dependencies]
-jz-model = { workspace = true }
 serde = { version = "1", features = ["derive"] }
-sea-orm = { version = "1", features = ["sqlx-all", "runtime-tokio"] }
 uuid = { version = "1", features = ["v7","v4"] }
 chrono = { version = "0.4", features = ["clock","serde"] }
 tokio = { version = "1", features = ["full"] }
@@ -24,16 +22,27 @@ sha256 = { version = "1", features = ["tokio"] }
 serde_json = "1.0.140"
 log = "0.4.26"
 rand = "0.8.5"
-
-
+[dependencies.sqlx]
+version = "0.8.5"
+features = [
+    "postgres",
+    "mysql",
+    "runtime-tokio",
+    "chrono",
+    "uuid",
+    "ipnet",
+    "json",
+    "mac_address",
+    "rust_decimal",
+    "_sqlite"
+]
 [dependencies.jz-git]
 workspace = true
-
-[dependencies.jz-jobs]
-workspace = true
-
 [dependencies.jz-email]
 workspace = true
-
 [dependencies.jz-dragonfly]
+workspace = true
+[dependencies.jz-model-sqlx]
+workspace = true
+[dependencies.jz-jobs]
 workspace = true

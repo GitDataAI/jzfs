@@ -12,7 +12,7 @@ members = [
     "crates/jz-iris",
     "crates/jz-jobs",
     "crates/jz-migration",
-    "crates/jz-model",
+    "crates/jz-model", "crates/jz-model-sqlx",
     "crates/jz-module",
     "crates/jz-openapi", "crates/jz-service",
     "crates/jz-smart",
@@ -47,6 +47,9 @@ jz-jobs = { path = "crates/jz-jobs" }
 jz-email = { path = "crates/jz-email" }
 jz-migration = { path = "crates/jz-migration" }
 jz-dragonfly = { path = "crates/jz-dragonfly" }
+jz-iris = { path = "crates/jz-iris" }
+jz-service = { path = "crates/jz-service" }
+jz-model-sqlx = { path = "crates/jz-model-sqlx" }
 [dependencies]
 tokio = { version = "1", features = ["full"] }
 tracing = "0.1.41"
@@ -75,6 +78,11 @@ workspace = true
 workspace = true
 [dependencies.jz-migration]
 workspace = true
-
 [dependencies.jz-dragonfly]
+workspace = true
+[dependencies.jz-iris]
+workspace = true
+[dependencies.jz-service]
+workspace = true
+[dependencies.jz-model-sqlx]
 workspace = true

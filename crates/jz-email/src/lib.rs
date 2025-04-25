@@ -8,7 +8,7 @@ pub mod message;
 mod tests {
     use crate::execute::EmailExecute;
     use crate::message;
-    use jz_jobs::{Queue, SeaOrmQueue};
+    use jz_jobs::{Queue, QueueJobs, SeaOrmQueue};
     use sea_orm::Database;
 
     #[tokio::test]
@@ -19,7 +19,8 @@ mod tests {
             .expect("Failed to connect to database");
         let jobs = SeaOrmQueue::new(db, "email".to_string());
         jobs.init().await?;
-        let execute = EmailExecute::init(jobs).await;
+        let queue = QueueJobs::new_seaorm(jobs);
+        let execute = EmailExecute::init(queue).await;
         execute.run();
         execute
             .jobs

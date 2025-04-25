@@ -15,7 +15,9 @@ async fn main() {
             .await
             .expect("ssh error");
     });
-    jz_api::Api::init(module, jz_api::Settings::from_default_template())
+    let service = jz_service::app::AppService::init_env().await
+        .expect("init service error");
+    jz_api::Api::init(module, jz_api::Settings::from_default_template(),service)
         .run()
         .await
         .expect("api error");

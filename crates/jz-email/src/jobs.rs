@@ -1,13 +1,13 @@
 use crate::message::EmailMessage;
-use jz_jobs::{Queue, SeaOrmQueue};
+use jz_jobs::{Queue, QueueJobs, SeaOrmQueue};
 
 #[derive(Clone)]
 pub struct EmailJobs {
-    pub jobs: SeaOrmQueue,
+    pub jobs: QueueJobs,
 }
 
 impl EmailJobs {
-    pub fn init(jobs: SeaOrmQueue) -> EmailJobs {
+    pub fn init(jobs: QueueJobs) -> EmailJobs {
         let us = EmailJobs { jobs };
         us
     }
@@ -46,7 +46,8 @@ mod tests {
             .expect("Failed to connect to database");
         let jobs = SeaOrmQueue::new(db, "email".to_string());
         jobs.init().await.expect("Failed to init jobs");
-        let email_jobs = EmailJobs::init(jobs);
+        let queue = QueueJobs::new_seaorm(jobs);
+        let email_jobs = EmailJobs::init(queue);
         let message = EmailMessage::Captcha {
             email: "test@example.com".to_string(),
             code: "1234".to_string(),

@@ -1,7 +1,7 @@
 use crate::jobs::EmailJobs;
 use crate::message::EmailMessage;
 use async_iterator::Iterator;
-use jz_jobs::{Queue, SeaOrmQueue};
+use jz_jobs::{Queue, QueueJobs, SeaOrmQueue};
 use lazy_static::lazy_static;
 use lettre::message::Mailbox;
 use lettre::message::header::ContentType;
@@ -30,7 +30,7 @@ pub struct EmailExecute {
 }
 
 impl EmailExecute {
-    pub async fn init(sea_orm_queue: SeaOrmQueue) -> Self {
+    pub async fn init(sea_orm_queue: QueueJobs) -> Self {
         let creds = Credentials::new(SMTP_USERNAME.to_owned(), SMTP_PASSWORD.to_owned());
         let mailer: AsyncSmtpTransport<Tokio1Executor> =
             AsyncSmtpTransport::<Tokio1Executor>::relay(&SMTP_ADDR)

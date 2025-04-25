@@ -7,13 +7,13 @@ pub struct ContainerIOC {
 }
 
 impl ContainerIOC {
-    pub async fn init() -> ContainerIOC {
+    pub fn init() -> ContainerIOC {
         Self {
             inner: Arc::new(Mutex::new(vec![])),
         }
     }
 
-    pub async fn take<T: 'static>(&self) -> Option<Arc<T>> {
+    pub fn take<T: 'static>(&self) -> Option<Arc<T>> {
         let inner = self.inner.lock().unwrap();
         for item in inner.iter() {
             if let Some(arc_item) = item.downcast_ref::<Arc<T>>() {
@@ -37,13 +37,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_ioc() {
-        let ioc = ContainerIOC::init().await;
+        let ioc = ContainerIOC::init();
         ioc.inject("str".to_string());
         ioc.inject(2_i32);
         assert_eq!(
-            ioc.take::<String>().await,
+            ioc.take::<String>(),
             Some(Arc::new("str".to_string()))
         );
-        assert_eq!(ioc.take::<i32>().await, Some(Arc::new(2_i32)));
+        assert_eq!(ioc.take::<i32>(), Some(Arc::new(2_i32)));
     }
 }
