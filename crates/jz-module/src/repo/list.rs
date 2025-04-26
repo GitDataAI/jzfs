@@ -143,7 +143,11 @@ impl AppModule {
                 description: i.description,
                 display_image: None,
                 size: None,
-                category: None,
+                category: if let Some(ref cate) = parma.category {
+                    Some(cate.clone())
+                }else { 
+                    None
+                }
             };
             let module_stats = RepositoryStats {
                 runs: None,
