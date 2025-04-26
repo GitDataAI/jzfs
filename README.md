@@ -8,7 +8,7 @@
 
 #### 🚧 Current Status: Incubating - JZFS is not ready for production usage. The API is still evolving and documentation is lacking.
 
-JZFS is a distributed git storage service for the Rust programming language that prioritizes ease-of-use. It supports both Single Machine as well as some distributed environments, including Kubernetes and more. Note that JZFS does not hide the store; instead, JZFS exposes features based on the target distributed git storage service.
+JZFS is a version control filesystem based on Git protocol for data management and publication with a command line interface and a Python API.   With JZFS, you can version control arbitrarily large data, share or consume data, record your data’s provenance, and work computationally reproducible.
 
 ## Current Status and Roadmap
 
