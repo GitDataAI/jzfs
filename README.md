@@ -16,6 +16,41 @@ JZFS is still in the early development stages and is considered **incubating**. 
 
 The immediate next steps for the project are to fill obvious gaps, such as implementing error handling, removing panics throughout the codebase, supporting additional data types, and writing documentation. After that, development will be based on feedback and contributions.
 
+### Reserach Data Management
+
+JZFS is based on Git with extend capabilities, especially with respect to managing large files.
+
+JZFS is a data management software designed to support the various stages
+of the development of digital objects.
+
+Importantly, JZFS can be seen as an overlay on top of existing data
+structures and services: Tracking files does not change the files themselves or the location from which they can
+be retrieved by data processing tools.
+
+JZFS is used to collect
+all experimental metadata about the complete timeline of longitudinal and multimodal animal experiments,
+including MRI, histology, electrophysiology, and behavior.
+
+![](./docs/research-flow.png)
+Project planning and experimental details are recorded in an in-house relational cloud-based database.
+
+A key element for both the database and the data storage is the
+identifier, the study ID for each animal, used in a standardized fle name structure to make the data findable.
+
+Te directory structure for the raw data follows the permit of performing animal experiments. Te data for a
+specific project is organized following the YODA principles (https://handbook.datalad.org/en/latest/basics/101-127-yoda.html), which is compatible with existing standards, e.g., the BIDS structure.
+
+In preparation for publication and to facilitate
+data reproducibility, the experimental raw and processed data is made publicly available on GitData.AI.
+
+
+JZFS is used as the central data management tool (Fig. above) and for version control: It keeps track of which
+files were modified, when, and by whom, and provides the ability to restore previous states. To this end, JZFS
+is agnostic of the data type and provides a unified interface for managing code and data files.
+
+
+####  joint management of code, data, and their relationship
+![](docs/jzfs-joint.png)
 
 ### Added value
 Our central use case is the DataHub(Like Github, buf for Data),which essentially consists of a Git version control for data and a Git collaboration for data.
