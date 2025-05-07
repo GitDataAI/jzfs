@@ -99,7 +99,9 @@ impl AppModule {
             }
         };
         let mut condition = Condition::all()
-            .add(repository::Column::IsPrivate.eq(false));
+            .add(repository::Column::IsPrivate.eq(false))
+            .add(repository::Column::OwnerName.eq("Lilypad".to_string()))
+            ;
         if let Some(ref rtype) = rtype {
             condition = condition.add(repository::Column::Rtype.eq(rtype));
         };
