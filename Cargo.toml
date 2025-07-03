@@ -1,88 +1,30 @@
-[package]
-name = "jzfs"
-version = "0.1.0"
-edition = "2024"
-
-[workspace]
-members = [
-    "crates/jz-api",
-    "crates/jz-dragonfly",
-    "crates/jz-email",
-    "crates/jz-git",
-    "crates/jz-iris",
-    "crates/jz-jobs",
-    "crates/jz-migration",
-    "crates/jz-model", "crates/jz-model-sqlx",
-    "crates/jz-module",
-    "crates/jz-openapi", "crates/jz-service",
-    "crates/jz-smart",
-    "crates/jz-ssh",
-    "crates/jz-stream",
-]
-
 [workspace.package]
+version = "0.0.1"
 edition = "2024"
 authors = [
-    "ZhenYi <zy@gitdata.ai>"
+    "ZhenYi <434836402@qq.com>",
+    "Touyoutaaa <1849625991@qq.com>"
 ]
-license = "GPL-3"
-documentation = "https://docs.rs/jzfs"
+license = "MIT"
+repository = "https://github.com/GitDataAi/jzfs"
+description = "Cargo"
+keywords = ["Cargo", "Rust", "Cargo-Rust"]
 readme = "README.md"
-keywords = ["jzfs"]
-categories = ["development-tools"]
-description = "JZFS is a file system for the JZ family of microcontrollers."
-homepage = "https://gitdata.ai"
+homepage = "https://github.com/GitDataAi/jzfs"
+documentation = "https://github.com/GitDataAi/jzfs"
+publish = false
+[workspace]
+members = [
+    "nfs/nfs_client",
+    "nfs/nfs_serve",
+    "serve/action",
+    "serve/cert",
+    "serve/endpoint",
+    "serve/git-manage",
+    "serve/issues",
+    "serve/openapi",
+    "serve/pull_request",
+    "serve/workhorse"
+]
 
-
-[workspace.dependencies]
-jz-model = { path = "crates/jz-model" }
-jz-module = { path = "crates/jz-module" }
-jz-api = { path = "crates/jz-api" }
-jz-openapi = { path = "crates/jz-openapi" }
-jz-smart = { path = "crates/jz-smart" }
-jz-ssh = { path = "crates/jz-ssh" }
-jz-git = { path = "crates/jz-git" }
-jz-stream = { path = "crates/jz-stream" }
-jz-jobs = { path = "crates/jz-jobs" }
-jz-email = { path = "crates/jz-email" }
-jz-migration = { path = "crates/jz-migration" }
-jz-dragonfly = { path = "crates/jz-dragonfly" }
-jz-iris = { path = "crates/jz-iris" }
-jz-service = { path = "crates/jz-service" }
-jz-model-sqlx = { path = "crates/jz-model-sqlx" }
-[dependencies]
-tokio = { version = "1", features = ["full"] }
-tracing = "0.1.41"
-tracing-subscriber = "0.3.19"
-dotenv = "0.15.0"
-
-[dependencies.jz-api]
-workspace = true
-[dependencies.jz-git]
-workspace = true
-[dependencies.jz-model]
-workspace = true
-[dependencies.jz-module]
-workspace = true
-[dependencies.jz-openapi]
-workspace = true
-[dependencies.jz-smart]
-workspace = true
-[dependencies.jz-ssh]
-workspace = true
-[dependencies.jz-stream]
-workspace = true
-[dependencies.jz-jobs]
-workspace = true
-[dependencies.jz-email]
-workspace = true
-[dependencies.jz-migration]
-workspace = true
-[dependencies.jz-dragonfly]
-workspace = true
-[dependencies.jz-iris]
-workspace = true
-[dependencies.jz-service]
-workspace = true
-[dependencies.jz-model-sqlx]
-workspace = true
+resolver = "3"
