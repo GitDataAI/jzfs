@@ -1,0 +1,15 @@
+[package]
+name = "rpc-session"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description.workspace = true
+keywords.workspace = true
+readme.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+publish.workspace = true
+
+[dependencies]

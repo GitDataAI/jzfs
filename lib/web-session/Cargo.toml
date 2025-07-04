@@ -1,0 +1,25 @@
+[package]
+name = "web-session"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description.workspace = true
+keywords.workspace = true
+readme.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+publish.workspace = true
+
+[dependencies]
+session = { workspace = true }
+actix-web = { workspace = true, features = ["cookies", "secure-cookies"] }
+cookie = { workspace = true, features = []}
+derive_more = "2.0.1"
+actix-utils = { workspace = true }
+tracing = { workspace = true }
+anyhow = { workspace = true }
+dashmap = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+tracing-subscriber = { workspace = true }
