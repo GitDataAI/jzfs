@@ -29,6 +29,9 @@ const GlobalHeaderStyle = styled.div<GlobalHeaderStyleProps>`
     height: 64px;
     display: flex;
     justify-content: space-between;
+    position: absolute;
+    top: 0;
+    left: 0;
 `
 
 const GlobalHeaderStyleLeft = styled.div`
@@ -103,12 +106,12 @@ export const GlobalHeader = (prop: GlobalHeaderProps) => {
                             {
                                 key: item.url,
                                 label: item.name,
-                                onClick: () => {
-                                    window.location.href = item.url;
-                                },
                                 icon: item.icon,
                             }
-                        ))
+                        )),
+                        onClick: (e) => {
+                            window.location.href = e.key;
+                        }
 
                     }}
                 >

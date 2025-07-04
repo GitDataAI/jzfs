@@ -45,7 +45,7 @@ impl CertInterFace for AppCertService {
 
     async fn email_captcha(
         self,
-        context: Context,
+        _context: Context,
         key: String,
         param: CertEmailCaptchaParam,
     ) -> AppResult<()> {
@@ -54,7 +54,7 @@ impl CertInterFace for AppCertService {
 
     async fn email_verify(
         self,
-        context: Context,
+        _context: Context,
         key: String,
         param: CertEmailCaptchaVerify,
     ) -> AppResult<bool> {
@@ -63,7 +63,7 @@ impl CertInterFace for AppCertService {
 
     async fn security_event_register(
         self,
-        context: Context,
+        _context: Context,
         param: SecurityEventRegisterParam,
     ) -> AppResult<Uuid> {
         self.service_security_event_register(param).await
@@ -75,7 +75,7 @@ impl CertInterFace for AppCertService {
 
     async fn sshkey_search(
         self,
-        context: Context,
+        _context: Context,
         param: SshKeySearch,
     ) -> AppResult<crate::models::users::Model> {
         self.service_sshkey_search(param).await
@@ -83,7 +83,7 @@ impl CertInterFace for AppCertService {
 
     async fn access_key_search(
         self,
-        context: Context,
+        _context: Context,
         param: AccessKeySearch,
     ) -> AppResult<crate::models::users::Model> {
         self.service_access_key_search(param).await

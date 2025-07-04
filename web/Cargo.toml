@@ -16,3 +16,7 @@ publish.workspace = true
 [lib]
 path = "rust/lib.rs"
 name = "web"
+
+[[bin]]
+path = "rust/build.rs"
+name = "web-build"
