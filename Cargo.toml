@@ -14,7 +14,7 @@ homepage = "https://github.com/GitDataAi/jzfs"
 documentation = "https://github.com/GitDataAi/jzfs"
 publish = false
 [workspace]
-members = [
+members = [ "lib/rpc-session", "lib/session", "lib/web-session",
     "nfs/nfs_client",
     "nfs/nfs_serve",
     "serve/action",
@@ -41,6 +41,9 @@ issues = { path = "serve/issues"}
 openapi = { path = "serve/openapi"}
 pull_request = { path = "serve/pull_request"}
 workhorse = { path = "serve/workhorse"}
+web-session = { path = "lib/web-session"}
+session = { path = "lib/session"}
+rpc-session = { path = "lib/rpc-session"}
 
 tokio = "1"
 serde = "1"
@@ -49,10 +52,12 @@ actix-web = "4"
 actix-session = "0.10.1"
 actix-cors = "0.7.1"
 actix-web-httpauth = "0.8.2"
+actix-utils = "3.0.1"
 async-trait = "0.1.88"
 lazy_static = "1.5.0"
 rand = "0.9.1"
 chrono = "0.4.41"
+time = "0.3.41"
 uuid = "1.17.0"
 tarpc = "0.36.0"
 git2 = "0.20.2"
@@ -71,3 +76,6 @@ flate2 = "1.1.2"
 bytes = "1.10.1"
 russh = "0.53.0"
 futures = "0.3.31"
+cookie = "0.18.1"
+dashmap = "7.0.0-rc2"
+async-nats = "0.42.0"

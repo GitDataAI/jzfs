@@ -5,3 +5,14 @@ edition.workspace = true
 
 
 [dependencies]
+session = { workspace = true, features = [] }
+sea-orm = { workspace = true, features = ["uuid","chrono","sqlx-all", "pgvector"] }
+serde = { workspace = true, features = ["derive"] }
+chrono = { workspace = true, features = ["clock"] }
+uuid = { workspace = true, features = ["v7","v4","serde"] }
+tarpc = { workspace = true, features = ["full"] }
+async-nats = { workspace = true, features = [] }
+sha256 = { workspace = true }
+rand = { workspace = true, features = ["std_rng"] }
+serde_json = { workspace = true }
+bytes = "1.10.1"
