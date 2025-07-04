@@ -5,7 +5,7 @@ use crate::schema::{AppResult, CertEmailCaptchaParam, MqEmailCode};
 use crate::service::AppCertService;
 
 impl AppCertService {
-    pub async fn email_captcha(&self, key: String, param: CertEmailCaptchaParam) -> AppResult<()> {
+    pub async fn service_email_captcha(&self, key: String, param: CertEmailCaptchaParam) -> AppResult<()> {
         let captcha_length = param.length.unwrap_or(6);
         let random_captcha = rand::rng()
             .sample_iter(&rand::distr::Alphanumeric)

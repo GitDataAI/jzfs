@@ -3,7 +3,7 @@ use crate::schema::{AppResult, CertEmailCaptchaVerify, MqEmailCode};
 use crate::service::AppCertService;
 
 impl AppCertService {
-    pub async fn email_verify(&self, key: String, param: CertEmailCaptchaVerify) -> AppResult<bool> {
+    pub async fn service_email_verify(&self, key: String, param: CertEmailCaptchaVerify) -> AppResult<bool> {
         let Ok(captcha) = self.cache.execute_command::<String>(redis::cmd("GET").arg(key).clone()).await else {
             return AppResult {
                 code: 500,

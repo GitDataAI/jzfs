@@ -24,20 +24,20 @@ pub mod email_verify;
 
 
 impl CertInterFace for AppCertService {
-    async fn user_auth_login(self, context: Context, param: CertAuthLoginParam) -> AppResult<UsersSession> {
-        todo!()
+    async fn user_auth_login(self, _: Context, param: CertAuthLoginParam) -> AppResult<UsersSession> {
+        self.auth_user_login(param).await
     }
 
-    async fn user_auth_register(self, context: Context, param: CertRegisterParam) -> AppResult<UsersSession> {
-        todo!()
+    async fn user_auth_register(self, _: Context, param: CertRegisterParam) -> AppResult<UsersSession> {
+        self.auth_user_register(param).await
     }
 
     async fn email_captcha(self, context: Context, key: String, param: CertEmailCaptchaParam) -> AppResult<()> {
-        todo!()
+        self.service_email_captcha(key, param).await
     }
 
     async fn email_verify(self, context: Context, key: String, param: CertEmailCaptchaVerify) -> AppResult<bool> {
-        todo!()
+        self.service_email_verify(key, param).await
     }
 
     async fn security_event_register(self, context: Context, param: SecurityEventRegisterParam) -> AppResult<Uuid> {
