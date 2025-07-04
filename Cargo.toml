@@ -24,7 +24,8 @@ members = [ "lib/rpc-session", "lib/session", "lib/web-session",
     "serve/issues",
     "serve/openapi",
     "serve/pull_request",
-    "serve/workhorse"
+    "serve/workhorse",
+    "web",
 ]
 
 resolver = "3"
