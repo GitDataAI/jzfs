@@ -104,3 +104,5 @@ data
 charts/templates/configMap.yaml
 .idea
 ddl
+
+**/node_modules
