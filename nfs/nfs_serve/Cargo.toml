@@ -13,3 +13,12 @@ documentation.workspace = true
 publish.workspace = true
 
 [dependencies]
+async-trait = { workspace = true }
+num-traits = { workspace = true }
+num-derive = { workspace = true }
+filetime = { workspace = true }
+byteorder = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+tracing = { workspace = true }
+anyhow = { workspace = true }
+tracing-subscriber = { workspace = true }
