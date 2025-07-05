@@ -124,8 +124,8 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
   <tbody>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/taoshengshi"><img src="https://avatars.githubusercontent.com/u/33315004?v=4?s=100" width="100px;" alt="taoshengshi"/><br /><sub><b>taoshengshi</b></sub></a><br /><a href="#content-taoshengshi" title="Content">🖋</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/lazhenyi"><img src="https://avatars.githubusercontent.com/u/150743559?s=100?v=4" width="100px;" alt="ZhenYi"/><br /><sub><b>ZhenYi</b></sub></a><br /><a href="#content-zhenyi" title="Content">🖋</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/touyoutaaa"><img src="https://avatars.githubusercontent.com/u/143622945?v=4?s=100" width="100px;" alt="touyoutaaa"/><br /><sub><b>touyoutaaa</b></sub></a><br /><a href="#content-touyoutaaa" title="Content">🖋</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/lazhenyi"><img src="https://avatars.githubusercontent.com/u/150743559?s=100?v=4" width="100px;" alt="ZhenYi"/><br /><sub><b>ZhenYi</b></sub></a><br /><a href="#content-zhenyi" title="Content">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/touyoutaaa"><img src="https://avatars.githubusercontent.com/u/143622945?v=4?s=100" width="100px;" alt="touyoutaaa"/><br /><sub><b>touyoutaaa</b></sub></a><br /><a href="#content-touyoutaaa" title="Content">💻</a></td>
     </tr>
   </tbody>
 </table>
