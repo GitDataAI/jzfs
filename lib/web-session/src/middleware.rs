@@ -1,19 +1,24 @@
-use std::fmt;
-use std::pin::Pin;
-use std::rc::Rc;
+use crate::builder::WebSession;
+use crate::config;
+use crate::config::{
+    Configuration, CookieConfiguration, CookieContentSecurity, SessionMiddlewareBuilder,
+    TtlExtensionPolicy,
+};
+use actix_utils::future::{Ready, ready};
+use actix_web::HttpResponse;
 use actix_web::body::MessageBody;
 use actix_web::cookie::{Cookie, CookieJar, Key};
-use actix_web::dev::{forward_ready, ResponseHead, Service, ServiceRequest, ServiceResponse, Transform};
-use session::storage::SessionStorage;
-use crate::config;
-use crate::config::{Configuration, CookieConfiguration, CookieContentSecurity, SessionMiddlewareBuilder, TtlExtensionPolicy};
-use actix_utils::future::{ready, Ready};
+use actix_web::dev::{
+    ResponseHead, Service, ServiceRequest, ServiceResponse, Transform, forward_ready,
+};
 use actix_web::http::header::{HeaderValue, SET_COOKIE};
-use actix_web::HttpResponse;
 use anyhow::Context;
 use dashmap::DashMap;
 use session::SessionStatus;
-use crate::builder::WebSession;
+use session::storage::SessionStorage;
+use std::fmt;
+use std::pin::Pin;
+use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct SessionMiddleware<Store: SessionStorage> {
@@ -78,7 +83,7 @@ fn e500<E: fmt::Debug + fmt::Display + 'static>(err: E) -> actix_web::Error {
         err,
         HttpResponse::InternalServerError().finish(),
     )
-        .into()
+    .into()
 }
 
 #[doc(hidden)]
@@ -125,14 +130,14 @@ where
                                 .save(&session_state, &configuration.session.state_ttl)
                                 .await
                         )
-                            .map_err(e500)?;
+                        .map_err(e500)?;
 
                         set_session_cookie(
                             res.response_mut().head_mut(),
                             session_key,
                             &configuration.cookie,
                         )
-                            .map_err(e500)?;
+                        .map_err(e500)?;
                     }
                 }
 
@@ -153,7 +158,7 @@ where
                                 session_key,
                                 &configuration.cookie,
                             )
-                                .map_err(e500)?;
+                            .map_err(e500)?;
                         }
 
                         SessionStatus::Purge => {
@@ -163,7 +168,7 @@ where
                                 res.response_mut().head_mut(),
                                 &configuration.cookie,
                             )
-                                .map_err(e500)?;
+                            .map_err(e500)?;
                         }
 
                         SessionStatus::Renewed => {
@@ -179,7 +184,7 @@ where
                                 session_key,
                                 &configuration.cookie,
                             )
-                                .map_err(e500)?;
+                            .map_err(e500)?;
                         }
 
                         SessionStatus::Unchanged => {
@@ -198,7 +203,7 @@ where
                                         session_key,
                                         &configuration.cookie,
                                     )
-                                        .map_err(e500)?;
+                                    .map_err(e500)?;
                                 }
                             }
                         }
@@ -251,13 +256,9 @@ async fn load_session_state<Store: SessionStorage>(
 ) -> Result<(Option<String>, DashMap<String, String>), actix_web::Error> {
     if let Some(session_key) = session_key {
         match storage_backend.load(&session_key).await {
-            Ok(state) => {
-                Ok((Some(session_key), state))
-            }
+            Ok(state) => Ok((Some(session_key), state)),
 
-            Err(_) => {
-                Ok((Some(session_key), DashMap::new()))
-            },
+            Err(_) => Ok((Some(session_key), DashMap::new())),
         }
     } else {
         Ok((None, DashMap::new()))
@@ -316,7 +317,7 @@ fn delete_session_cookie(
     } else {
         removal_cookie
     }
-        .finish();
+    .finish();
 
     removal_cookie.make_removal();
 

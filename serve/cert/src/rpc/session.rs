@@ -1,9 +1,9 @@
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 use crate::models::users;
 use crate::models::users::Model;
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
-#[derive(Deserialize,Serialize,Clone,Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct UsersSession {
     pub uid: Uuid,
     pub username: String,
@@ -14,7 +14,6 @@ pub struct UsersSession {
     // Ip Owner Place
     pub localhost: Option<String>,
 }
-
 
 impl From<users::Model> for UsersSession {
     fn from(value: Model) -> Self {

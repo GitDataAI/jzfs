@@ -1,11 +1,14 @@
-use sea_orm::DatabaseConnection;
-use tarpc::context::Context;
-use uuid::Uuid;
-use session::storage::RedisStorage;
 use crate::models::security::Model;
 use crate::rpc::interface::CertInterFace;
 use crate::rpc::session::UsersSession;
-use crate::schema::{AccessKeySearch, AppResult, CertAuthLoginParam, CertEmailCaptchaParam, CertEmailCaptchaVerify, CertRegisterParam, SecurityEventRegisterParam, SshKeySearch};
+use crate::schema::{
+    AccessKeySearch, AppResult, CertAuthLoginParam, CertEmailCaptchaParam, CertEmailCaptchaVerify,
+    CertRegisterParam, SecurityEventRegisterParam, SshKeySearch,
+};
+use sea_orm::DatabaseConnection;
+use session::storage::RedisStorage;
+use tarpc::context::Context;
+use uuid::Uuid;
 
 #[derive(Clone)]
 pub struct AppCertService {

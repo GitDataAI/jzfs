@@ -1,11 +1,11 @@
+use crate::redis;
+use crate::redis::aio::ConnectionLike;
+use crate::redis::{Cmd, FromRedisValue};
 use crate::storage::SessionStorage;
 use async_trait::async_trait;
 use dashmap::DashMap;
 use std::collections::HashMap;
 use time::Duration;
-use crate::redis;
-use crate::redis::aio::ConnectionLike;
-use crate::redis::{Cmd, FromRedisValue};
 
 #[derive(Clone)]
 pub enum RedisStorage {
@@ -13,7 +13,6 @@ pub enum RedisStorage {
     Cluster(deadpool_redis::cluster::Pool),
     Sentinel(deadpool_redis::sentinel::Pool),
 }
-
 
 impl RedisStorage {
     pub fn new_signal(pool: deadpool_redis::Pool) -> Self {
@@ -89,10 +88,8 @@ impl RedisStorage {
 #[async_trait]
 impl SessionStorage for RedisStorage {
     async fn load(&self, id: &str) -> anyhow::Result<DashMap<String, String>> {
-        let cmd = redis::cmd("GET")
-            .arg(id)
-            .clone();
-        let value = self.execute_command::<String>( cmd).await?;
+        let cmd = redis::cmd("GET").arg(id).clone();
+        let value = self.execute_command::<String>(cmd).await?;
         let value = serde_json::from_str::<HashMap<String, String>>(&value)
             .map_err(|err| anyhow::anyhow!(err))?;
         let map = value
@@ -102,24 +99,29 @@ impl SessionStorage for RedisStorage {
         Ok(map)
     }
 
-    async fn save(&self, session: &DashMap<String,String>, ttl: &Duration) -> anyhow::Result<String> {
+    async fn save(
+        &self,
+        session: &DashMap<String, String>,
+        ttl: &Duration,
+    ) -> anyhow::Result<String> {
         let map = session
             .iter()
-            .map(|x|(x.key().clone(),x.value().clone()))
+            .map(|x| (x.key().clone(), x.value().clone()))
             .map(|(k, v)| (k.clone(), v.clone()))
             .collect::<HashMap<String, String>>();
         let map = serde_json::to_string(&map)?;
-        let key = format!("session:{}+{}", uuid::Uuid::new_v4(), uuid::Uuid::now_v7().to_string());
-        self.execute_command::<()>(redis::cmd("SET")
-            .arg(&[
-                &key,
-                &map,
-                "NX",
-                "EX"
-            ])
-            .arg(
-                ttl.whole_seconds()
-            ).clone()).await?;
+        let key = format!(
+            "session:{}+{}",
+            uuid::Uuid::new_v4(),
+            uuid::Uuid::now_v7().to_string()
+        );
+        self.execute_command::<()>(
+            redis::cmd("SET")
+                .arg(&[&key, &map, "NX", "EX"])
+                .arg(ttl.whole_seconds())
+                .clone(),
+        )
+        .await?;
         Ok(key)
     }
 
@@ -129,19 +131,20 @@ impl SessionStorage for RedisStorage {
         Ok(())
     }
 
-    async fn update(&self, key: &str, session: &DashMap<String,String>, ttl: &Duration) -> anyhow::Result<String> {
+    async fn update(
+        &self,
+        key: &str,
+        session: &DashMap<String, String>,
+        ttl: &Duration,
+    ) -> anyhow::Result<String> {
         self.delete(key).await?;
         self.save(session, ttl).await
     }
 
     async fn update_ttl(&self, id: &str, ttl: Duration) -> anyhow::Result<()> {
         let sec = (ttl.as_seconds_f32() as i64).to_string();
-        self.execute_command::<()>(
-            redis::cmd("EXPIRE")
-                .arg(&[&id.to_string(), &sec])
-                .clone(),
-        )
-        .await?;
+        self.execute_command::<()>(redis::cmd("EXPIRE").arg(&[&id.to_string(), &sec]).clone())
+            .await?;
         Ok(())
     }
 }

@@ -102,7 +102,6 @@ pub type offset3 = u64;
 pub type mode3 = u32;
 pub type count3 = u32;
 
-
 #[derive(Copy, Clone, Debug, FromPrimitive, ToPrimitive)]
 #[repr(u32)]
 pub enum nfsstat3 {
@@ -347,7 +346,6 @@ pub enum _time_how {
 }
 XDREnumSerde!(_time_how);
 
-
 #[derive(Copy, Clone, Debug)]
 #[repr(u32)]
 pub enum set_mode3 {
@@ -379,7 +377,6 @@ pub enum set_size3 {
     size(size3),
 }
 XDRBoolUnion!(set_size3, size, size3);
-
 
 #[derive(Copy, Clone, Debug)]
 #[repr(u32)]

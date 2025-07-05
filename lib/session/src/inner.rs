@@ -1,19 +1,17 @@
+use dashmap::DashMap;
+use serde::Serialize;
+use serde::de::DeserializeOwned;
 use std::cell::RefCell;
 use std::rc::Rc;
-use dashmap::DashMap;
-use serde::de::DeserializeOwned;
-use serde::Serialize;
 use time::Duration;
 
-#[derive(Debug,Eq, PartialEq,Clone)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum SessionStatus {
     Unchanged,
     Change,
     Renewed,
     Purge,
 }
-
-
 
 #[derive(Debug)]
 pub struct SessionInner {
@@ -24,7 +22,6 @@ pub struct SessionInner {
 
 #[derive(Clone)]
 pub struct Session(pub Rc<RefCell<SessionInner>>);
-
 
 impl Default for SessionInner {
     fn default() -> Self {
@@ -39,12 +36,18 @@ impl Default for SessionInner {
 impl Session {
     pub fn get<T: DeserializeOwned>(&self, key: &str) -> anyhow::Result<T> {
         let inner = self.0.borrow();
-        let value = inner.map.get(key).ok_or(anyhow::anyhow!("key not found"))?.clone();
+        let value = inner
+            .map
+            .get(key)
+            .ok_or(anyhow::anyhow!("key not found"))?
+            .clone();
         Ok(serde_json::from_str(&value)?)
     }
     pub fn set<T: Serialize>(&self, key: &str, value: T) {
         let mut inner = self.0.borrow_mut();
-        inner.map.insert(key.to_string(), serde_json::to_string(&value).unwrap());
+        inner
+            .map
+            .insert(key.to_string(), serde_json::to_string(&value).unwrap());
         inner.status = SessionStatus::Change;
     }
     pub fn remove(&self, key: &str) {
@@ -60,14 +63,12 @@ impl Session {
     }
 }
 
-
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
-    pub fn test_session(){
+    pub fn test_session() {
         let inner = SessionInner::default();
         let session = Session(Rc::new(RefCell::new(inner)));
         // step 1

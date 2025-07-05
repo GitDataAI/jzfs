@@ -117,7 +117,7 @@ pub trait NFSFileSystem: Sync {
     /// 在这种情况下，将返回文件末尾之前的所有字节。
     /// 如果读取到达文件末尾，必须标记EOF。
     async fn read(&self, id: fileid3, offset: u64, count: u32)
-                  -> Result<(Vec<u8>, bool), nfsstat3>;
+    -> Result<(Vec<u8>, bool), nfsstat3>;
 
     /// 写入文件内容，返回(字节数据, EOF)
     /// 注意，偏移量/计数可能超过文件末尾，

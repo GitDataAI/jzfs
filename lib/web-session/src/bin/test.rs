@@ -1,6 +1,6 @@
-use actix_web::{App, HttpResponse};
 use actix_web::cookie::Key;
 use actix_web::cookie::time::Duration;
+use actix_web::{App, HttpResponse};
 use web_session::builder::WebSession;
 use web_session::config::{PersistentSession, SessionLifecycle, TtlExtensionPolicy};
 use web_session::middleware::SessionMiddleware;
@@ -15,25 +15,22 @@ async fn main() {
     actix_web::HttpServer::new(move || {
         App::new()
             .wrap(
-                SessionMiddleware::builder(
-                    storage.clone(),Key::from([0;64].as_slice())
-                )
-                    .session_lifecycle(
-                        SessionLifecycle::PersistentSession(
-                            PersistentSession {
-                                session_ttl: Duration::hours(12),
-                                ttl_extension_policy: TtlExtensionPolicy::OnEveryRequest,
-                            }
-                        )
-                    )
+                SessionMiddleware::builder(storage.clone(), Key::from([0; 64].as_slice()))
+                    .session_lifecycle(SessionLifecycle::PersistentSession(PersistentSession {
+                        session_ttl: Duration::hours(12),
+                        ttl_extension_policy: TtlExtensionPolicy::OnEveryRequest,
+                    }))
                     .cookie_name("session_id".into())
                     .cookie_path("/".into())
-                    .build()
+                    .build(),
             )
             .service(index)
     })
-        .bind("127.0.0.1:8080").unwrap()
-        .run().await.unwrap();
+    .bind("127.0.0.1:8080")
+    .unwrap()
+    .run()
+    .await
+    .unwrap();
 }
 
 #[actix_web::get("/")]

@@ -1,4 +1,4 @@
-#![allow(dead_code,unused_imports)]
+#![allow(dead_code, unused_imports)]
 
 use crate::nfs::{
     fattr3, fileid3, filename3, ftype3, nfspath3, nfsstat3, nfstime3, sattr3, set_mode3, set_size3,
@@ -237,7 +237,7 @@ impl NFSFileSystem for Storage {
     async fn lookup(&self, dirid: fileid3, filename: &filename3) -> Result<fileid3, nfsstat3> {
         let dir_path = self.get_path_for_id(dirid).ok_or(nfsstat3::NFS3ERR_STALE)?;
 
-        let target_path = dir_path.join(filename.to_string().replace("\"",""));
+        let target_path = dir_path.join(filename.to_string().replace("\"", ""));
 
         // Check if file exists
         if !target_path.exists() {
@@ -325,7 +325,7 @@ impl NFSFileSystem for Storage {
     ) -> Result<(fileid3, fattr3), nfsstat3> {
         let dir_path = self.get_path_for_id(dirid).ok_or(nfsstat3::NFS3ERR_STALE)?;
 
-        let file_path = dir_path.join(filename.to_string().replace("\"",""));
+        let file_path = dir_path.join(filename.to_string().replace("\"", ""));
 
         // Create the file
         let file = OpenOptions::new()
@@ -365,7 +365,7 @@ impl NFSFileSystem for Storage {
     ) -> Result<fileid3, nfsstat3> {
         let dir_path = self.get_path_for_id(dirid).ok_or(nfsstat3::NFS3ERR_STALE)?;
 
-        let file_path = dir_path.join(filename.to_string().replace("\"",""));
+        let file_path = dir_path.join(filename.to_string().replace("\"", ""));
         // Create the file exclusively
         OpenOptions::new()
             .write(true)
@@ -411,7 +411,7 @@ impl NFSFileSystem for Storage {
     async fn remove(&self, dirid: fileid3, filename: &filename3) -> Result<(), nfsstat3> {
         let dir_path = self.get_path_for_id(dirid).ok_or(nfsstat3::NFS3ERR_STALE)?;
 
-        let target_path = dir_path.join(filename.to_string().replace("\"",""));
+        let target_path = dir_path.join(filename.to_string().replace("\"", ""));
 
         if !target_path.exists() {
             return Err(nfsstat3::NFS3ERR_NOENT);
@@ -447,8 +447,8 @@ impl NFSFileSystem for Storage {
             .get_path_for_id(to_dirid)
             .ok_or(nfsstat3::NFS3ERR_STALE)?;
 
-        let from_path = from_dir.join(from_filename.to_string().replace("\"",""));
-        let to_path = to_dir.join(to_filename.to_string().replace("\"",""));
+        let from_path = from_dir.join(from_filename.to_string().replace("\"", ""));
+        let to_path = to_dir.join(to_filename.to_string().replace("\"", ""));
 
         if !from_path.exists() {
             return Err(nfsstat3::NFS3ERR_NOENT);
@@ -506,7 +506,11 @@ impl NFSFileSystem for Storage {
                 continue;
             }
 
-            let filename = entry.file_name().to_string_lossy().to_string().replace("\"","");
+            let filename = entry
+                .file_name()
+                .to_string_lossy()
+                .to_string()
+                .replace("\"", "");
             let metadata = entry.metadata().map_err(|_| nfsstat3::NFS3ERR_IO)?;
             let fattr = self.metadata_to_fattr3(&metadata, entry_id);
 
@@ -561,8 +565,7 @@ impl NFSFileSystem for Storage {
         let id = self.register_path(link_path.clone());
 
         // Get attributes - use symlink_metadata to not follow the link
-        let metadata = fs::symlink_metadata(&link_path)
-            .map_err(|_| nfsstat3::NFS3ERR_IO)?;
+        let metadata = fs::symlink_metadata(&link_path).map_err(|_| nfsstat3::NFS3ERR_IO)?;
 
         let fattr = self.metadata_to_fattr3(&metadata, id);
 

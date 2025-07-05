@@ -4,13 +4,10 @@ use std::io::{Read, Write};
 pub type XDREndian = BigEndian;
 use crate::nfssting::nfsstring;
 
-
-
 pub trait XDR {
     fn serialize<R: Write>(&self, dest: &mut R) -> std::io::Result<()>;
     fn deserialize<R: Read>(&mut self, src: &mut R) -> std::io::Result<()>;
 }
-
 
 #[allow(non_camel_case_types)]
 #[macro_export]
@@ -35,7 +32,6 @@ macro_rules! XDREnumSerde {
         }
     };
 }
-
 
 /// Serializes a bool as a 4 byte big endian integer.
 impl XDR for bool {
@@ -214,7 +210,6 @@ macro_rules! XDRBoolUnion {
         }
     };
 }
-
 
 pub use XDRBoolUnion;
 pub use XDREnumSerde;

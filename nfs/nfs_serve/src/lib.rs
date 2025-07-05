@@ -1,15 +1,15 @@
-#![allow(non_snake_case,non_camel_case_types)]
+#![allow(non_snake_case, non_camel_case_types)]
 
-pub mod vfs;
+pub mod context;
 pub mod nfs;
 pub mod nfs_handlers;
-pub mod xdr;
 pub mod nfssting;
-pub mod context;
+pub mod portmap;
+pub mod portmap_handlers;
 pub mod rpc;
 pub mod rpcwire;
-pub mod portmap_handlers;
-pub mod portmap;
+pub mod vfs;
+pub mod xdr;
 
 pub mod mount;
 pub mod mount_handlers;

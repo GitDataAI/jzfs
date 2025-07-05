@@ -1,7 +1,7 @@
-use actix_web::cookie::{time::Duration, Key, SameSite};
+use crate::middleware::SessionMiddleware;
+use actix_web::cookie::{Key, SameSite, time::Duration};
 use derive_more::derive::From;
 use session::storage::SessionStorage;
-use crate::middleware::SessionMiddleware;
 
 #[derive(Debug, Clone, From)]
 #[non_exhaustive]
@@ -35,14 +35,11 @@ pub enum CookieContentSecurity {
     Signed,
 }
 
-
 #[must_use]
 pub struct SessionMiddlewareBuilder<Store: SessionStorage> {
     storage_backend: Store,
     configuration: Configuration,
 }
-
-
 
 #[derive(Clone)]
 pub(crate) struct Configuration {
@@ -69,7 +66,6 @@ pub(crate) struct CookieConfiguration {
     pub(crate) key: Key,
 }
 
-
 impl<Store: SessionStorage> SessionMiddlewareBuilder<Store> {
     pub(crate) fn new(store: Store, configuration: Configuration) -> Self {
         Self {
@@ -88,17 +84,17 @@ impl<Store: SessionStorage> SessionMiddlewareBuilder<Store> {
     pub fn session_lifecycle<S: Into<SessionLifecycle>>(mut self, session_lifecycle: S) -> Self {
         match session_lifecycle.into() {
             SessionLifecycle::BrowserSession(BrowserSession {
-                                                 state_ttl,
-                                                 state_ttl_extension_policy,
-                                             }) => {
+                state_ttl,
+                state_ttl_extension_policy,
+            }) => {
                 self.configuration.cookie.max_age = None;
                 self.configuration.session.state_ttl = state_ttl;
                 self.configuration.ttl_extension_policy = state_ttl_extension_policy;
             }
             SessionLifecycle::PersistentSession(PersistentSession {
-                                                    session_ttl,
-                                                    ttl_extension_policy,
-                                                }) => {
+                session_ttl,
+                ttl_extension_policy,
+            }) => {
                 self.configuration.cookie.max_age = Some(session_ttl);
                 self.configuration.session.state_ttl = session_ttl;
                 self.configuration.ttl_extension_policy = ttl_extension_policy;
@@ -133,7 +129,6 @@ impl<Store: SessionStorage> SessionMiddlewareBuilder<Store> {
         SessionMiddleware::from_parts(self.storage_backend, self.configuration)
     }
 }
-
 
 pub(crate) fn default_configuration(key: Key) -> Configuration {
     Configuration {

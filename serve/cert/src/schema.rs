@@ -1,49 +1,45 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Serialize,Clone,Debug,Deserialize)]
+#[derive(Serialize, Clone, Debug, Deserialize)]
 pub struct AppResult<T> {
     pub code: i32,
     pub data: Option<T>,
-    pub msg: Option<String>
+    pub msg: Option<String>,
 }
 
-
-#[derive(Deserialize,Serialize,Clone,Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct CertAuthLoginParam {
     pub username: String,
     pub password: String,
 }
 
-#[derive(Deserialize,Serialize,Clone,Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct CertRegisterParam {
     pub username: String,
     pub password: String,
     pub email: String,
 }
 
-
-#[derive(Deserialize,Serialize,Clone,Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct CertEmailCaptchaParam {
     pub email: String,
     pub length: Option<usize>,
 }
 
-#[derive(Deserialize,Serialize,Clone,Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct CertEmailCaptchaVerify {
     pub email: String,
     pub captcha: String,
 }
 
-
-#[derive(Deserialize,Serialize,Clone,Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct MqEmailCode {
     pub email: String,
     pub captcha: String,
 }
 
-
-#[derive(Deserialize,Serialize,Clone,Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct SecurityEventRegisterParam {
     pub title: String,
     pub description: Option<String>,
@@ -58,18 +54,17 @@ pub struct SecurityEventRegisterParam {
     pub user_uid: Uuid,
 }
 
-
-#[derive(Deserialize,Serialize,Clone,Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct SshKeySearch {
     pub public_key: String,
     pub algorithm: Option<String>,
     pub comment: Option<String>,
 }
 
-#[derive(Deserialize,Serialize,Clone,Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct AccessKeySearch {
     pub access_key: String,
-    
+
     pub req_repo_access: i32,
     pub req_email_access: i32,
     pub req_event_access: i32,

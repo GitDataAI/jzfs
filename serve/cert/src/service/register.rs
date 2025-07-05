@@ -1,11 +1,11 @@
-use chrono::Utc;
-use crate::service::AppCertService;
-use sea_orm::*;
-use sha256::Sha256Digest;
-use uuid::Uuid;
 use crate::models::users;
 use crate::rpc::session::UsersSession;
 use crate::schema::{AppResult, CertRegisterParam};
+use crate::service::AppCertService;
+use chrono::Utc;
+use sea_orm::*;
+use sha256::Sha256Digest;
+use uuid::Uuid;
 
 impl AppCertService {
     pub async fn auth_user_register(&self, param: CertRegisterParam) -> AppResult<UsersSession> {
@@ -13,16 +13,17 @@ impl AppCertService {
             .filter(
                 Condition::any()
                     .add(users::Column::Email.eq(&param.email))
-                    .add(users::Column::Username.eq(&param.username))
+                    .add(users::Column::Username.eq(&param.username)),
             )
             .one(&self.db)
-            .await {
+            .await
+        {
             Ok(Some(_)) => {
-                return AppResult{
+                return AppResult {
                     code: 400,
                     data: None,
                     msg: Some("Registration failed: User already exists".to_string()),
-                }
+                };
             }
             _ => {}
         }

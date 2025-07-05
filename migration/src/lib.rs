@@ -1,5 +1,5 @@
-pub use sea_orm_migration::prelude::*;
 use crate::migra::stable;
+pub use sea_orm_migration::prelude::*;
 
 mod migra;
 

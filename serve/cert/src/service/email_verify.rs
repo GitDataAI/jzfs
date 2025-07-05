@@ -1,10 +1,18 @@
-use session::redis;
 use crate::schema::{AppResult, CertEmailCaptchaVerify, MqEmailCode};
 use crate::service::AppCertService;
+use session::redis;
 
 impl AppCertService {
-    pub async fn service_email_verify(&self, key: String, param: CertEmailCaptchaVerify) -> AppResult<bool> {
-        let Ok(captcha) = self.cache.execute_command::<String>(redis::cmd("GET").arg(key).clone()).await else {
+    pub async fn service_email_verify(
+        &self,
+        key: String,
+        param: CertEmailCaptchaVerify,
+    ) -> AppResult<bool> {
+        let Ok(captcha) = self
+            .cache
+            .execute_command::<String>(redis::cmd("GET").arg(key).clone())
+            .await
+        else {
             return AppResult {
                 code: 500,
                 data: None,

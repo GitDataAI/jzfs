@@ -1,8 +1,10 @@
-use uuid::Uuid;
 use crate::models::{security, users};
 use crate::rpc::session::UsersSession;
-use crate::schema::{AccessKeySearch, AppResult, CertAuthLoginParam, CertEmailCaptchaParam, CertEmailCaptchaVerify, CertRegisterParam, SecurityEventRegisterParam, SshKeySearch};
-
+use crate::schema::{
+    AccessKeySearch, AppResult, CertAuthLoginParam, CertEmailCaptchaParam, CertEmailCaptchaVerify,
+    CertRegisterParam, SecurityEventRegisterParam, SshKeySearch,
+};
+use uuid::Uuid;
 
 #[tarpc::service]
 pub trait CertInterFace {
@@ -30,5 +32,4 @@ pub trait CertInterFace {
     async fn access_key_search(param: AccessKeySearch) -> AppResult<users::Model>; //  TODO
 
     // TODO Consider adding mobile phone number verification
-
 }

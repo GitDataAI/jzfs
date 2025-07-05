@@ -7,10 +7,14 @@ pub struct Migration;
 impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         let db = manager.get_connection();
-        db.execute_unprepared(r#"
+        db.execute_unprepared(
+            r#"
             CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-        "#).await?;
-        db.execute_unprepared(r#"
+        "#,
+        )
+        .await?;
+        db.execute_unprepared(
+            r#"
         CREATE TABLE IF NOT EXISTS access_key (
             uid UUID PRIMARY KEY,
             title VARCHAR NOT NULL,
@@ -37,7 +41,9 @@ impl MigrationTrait for Migration {
             created_at TIMESTAMP NOT NULL DEFAULT now(),
             updated_at TIMESTAMP NOT NULL DEFAULT now()
         );
-        "#).await?;
-       Ok(())
+        "#,
+        )
+        .await?;
+        Ok(())
     }
 }

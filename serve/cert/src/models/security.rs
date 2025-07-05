@@ -24,12 +24,11 @@ pub struct Model {
     pub timestamp: chrono::NaiveDateTime,
 }
 
-
 impl Model {
     /// <h3>User Login</h3><br/>
     /// ```
     /// use cert::models::security::Model;
-    /// Model { 
+    /// Model {
     /// uid: Default::default(),
     /// title: Model::USER_LOGIN.to_string(),
     /// description: None,
@@ -46,11 +45,11 @@ impl Model {
     /// }
     /// ```
     pub const USER_LOGIN: &'static str = "user_login";
-    
+
     /// User logout
     /// ```
     /// use cert::models::security::Model;
-    /// Model { 
+    /// Model {
     /// uid: Default::default(),
     /// title: Model::USER_LOGOUT.to_string(),
     /// description: None,
@@ -71,7 +70,7 @@ impl Model {
     /// User reset password
     /// ```
     /// use cert::models::security::Model;
-    /// Model { 
+    /// Model {
     /// uid: Default::default(),
     /// title: Model::USER_RE_PASSWORD.to_string(),
     /// description: None,

@@ -1,4 +1,4 @@
-#![allow(dead_code,unused_imports)]
+#![allow(dead_code, unused_imports)]
 
 use crate::context::RPCContext;
 use crate::nfs;
@@ -10,7 +10,6 @@ use num_derive::{FromPrimitive, ToPrimitive};
 use num_traits::cast::FromPrimitive;
 use std::io::{Read, Write};
 use tracing::{debug, error, trace, warn};
-
 
 #[allow(non_camel_case_types)]
 #[allow(clippy::upper_case_acronyms)]
@@ -875,7 +874,6 @@ pub enum createmode3 {
 }
 XDREnumSerde!(createmode3);
 
-
 pub async fn nfsproc3_create(
     xid: u32,
     input: &mut impl Read,
@@ -955,7 +953,7 @@ pub async fn nfsproc3_create(
                     before: pre_dir_attr,
                     after: post_dir_attr,
                 }
-                    .serialize(output)?;
+                .serialize(output)?;
                 return Ok(());
             }
         }
@@ -1116,7 +1114,6 @@ pub async fn nfsproc3_setattr(
     Ok(())
 }
 
-
 pub async fn nfsproc3_remove(
     xid: u32,
     input: &mut impl Read,
@@ -1199,7 +1196,6 @@ pub async fn nfsproc3_remove(
 
     Ok(())
 }
-
 
 pub async fn nfsproc3_rename(
     xid: u32,
@@ -1429,7 +1425,6 @@ pub async fn nfsproc3_mkdir(
 
     Ok(())
 }
-
 
 #[allow(non_camel_case_types)]
 #[derive(Debug, Default)]
