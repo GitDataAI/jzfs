@@ -26,6 +26,7 @@ members = [ "lib/rpc-session", "lib/session", "lib/web-session",
     "serve/pull_request",
     "serve/workhorse",
     "web",
+    "migration"
 ]
 
 resolver = "3"

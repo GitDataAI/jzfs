@@ -99,7 +99,6 @@ rust-project.json
 
 
 .env
-data
 
 charts/templates/configMap.yaml
 .idea
