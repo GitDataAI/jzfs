@@ -99,7 +99,9 @@ impl AppModule {
             }
         };
         let mut condition = Condition::all()
-            .add(repository::Column::IsPrivate.eq(false));
+            .add(repository::Column::IsPrivate.eq(false))
+            .add(repository::Column::OwnerName.eq("Lilypad".to_string()))
+            ;
         if let Some(ref rtype) = rtype {
             condition = condition.add(repository::Column::Rtype.eq(rtype));
         };
@@ -143,7 +145,11 @@ impl AppModule {
                 description: i.description,
                 display_image: None,
                 size: None,
-                category: None,
+                category: if let Some(ref cate) = parma.category {
+                    Some(cate.clone())
+                }else { 
+                    None
+                }
             };
             let module_stats = RepositoryStats {
                 runs: None,

@@ -49,7 +49,7 @@ impl Api {
                     )
                         .cookie_path("/".to_string())
                         .cookie_name("SessionID".to_string())
-                        .cookie_secure(true)
+                        .cookie_secure(false)
                         .session_lifecycle(
                             BrowserSession::default()
                                 .state_ttl(Duration::days(30))

@@ -2963,8 +2963,11 @@ dependencies = [
  "flate2",
  "jz-git",
  "jz-module",
+ "serde",
+ "serde_json",
  "tokio",
  "tracing",
+ "uuid",
 ]
 
 [[package]]

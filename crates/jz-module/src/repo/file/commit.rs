@@ -24,7 +24,9 @@ impl AppModule {
         let mut commits = git.list_commit(branch)?;
         if offset.is_some() && limit.is_some() {
             commits.drain(0..offset.unwrap() as usize * limit.unwrap() as usize);
-            commits.truncate(limit.unwrap_or(100) as usize);
+            commits.truncate(limit.unwrap_or(20) as usize);
+        }else { 
+            commits.truncate(20);
         }
         Ok(commits)
     }
