@@ -56,7 +56,10 @@
 **JZFS** is an open-source, cloud-native version control filesystem based on Git protocol for data management and publication with a command line interface and a Python API.   With JZFS, you can version control arbitrarily large data, share or consume data, record your data’s provenance, and work computationally reproducible.
 
 JZFS adapts principles of open-source software development and distribution to address the technical challenges of data management, data sharing, and digital provenance collection across the life cycle of digital objects.
-<img style="align: center" alt="joint management of code,data,model,..." src="./docs/jzfs-joint-management.png" width="400" />
+
+<p align="center" width="100%">
+    <img style="align: center" alt="joint management of code,data,model,..." src="./docs/jzfs-joint-management.png" width="400" />
+</p>
 
 Compared with code in software development, data tend not to be as precisely
 identified because data versioning is rarely or only coarsely practiced. Scientific computation
