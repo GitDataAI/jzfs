@@ -7,7 +7,6 @@
     <img alt="JZFS Logo" src="https://github.com/GitDataAI/jzfs/blob/main/docs/jzfs-logo-words.png" width="400px">
   </picture>
 </p>
-
 <h2 align="center">Git Based & Version Control & Joint Management <br/>for code, data, model and their relationship</h2>
 
 >  Delivers distributed data management system that keeps track of your data  from code to PB scale dataset and  ensures reproducibility.
