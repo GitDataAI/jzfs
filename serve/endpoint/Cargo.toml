@@ -15,6 +15,7 @@ publish.workspace = true
 [dependencies]
 workhorse = { workspace = true }
 cert = { workspace = true }
+authd = { workspace = true }
 
 session = { workspace = true, features = [] }
 sea-orm = { workspace = true, features = ["uuid","chrono","sqlx-all", "pgvector"] }

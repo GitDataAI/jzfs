@@ -1,4 +1,4 @@
-use crate::models::{security, users};
+use authd::{security, users};
 use crate::rpc::session::UsersSession;
 use crate::schema::{
     AccessKeySearch, AppResult, CertAuthLoginParam, CertEmailCaptchaParam, CertEmailCaptchaVerify,

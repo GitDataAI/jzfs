@@ -1,4 +1,4 @@
-use crate::models::security;
+use authd::security;
 use crate::schema::{AppResult, SecurityEventRegisterParam};
 use crate::service::AppCertService;
 use chrono::Utc;

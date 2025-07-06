@@ -1,13 +1,15 @@
 use crate::endpoint::Endpoint;
+use crate::utils::parse::user_agent_parse_os;
 use actix_web::http::header::USER_AGENT;
 use actix_web::{HttpRequest, HttpResponse};
-use cert::models::security;
+use authd::security;
 use cert::rpc::session::UsersSession;
 use cert::schema::{CertAuthLoginParam, CertRegisterParam, SecurityEventRegisterParam};
 use serde_json::json;
 use web_session::builder::WebSession;
 
 impl Endpoint {
+
     pub async fn users_login(&self, param: CertAuthLoginParam, web_session: WebSession, req: HttpRequest) -> HttpResponse {
         let context = self.new_context();
         let res = self.cert.user_auth_login(context, param).await;
@@ -17,23 +19,7 @@ impl Endpoint {
                     web_session.0.set(WebSession::USER_SESSION, data.clone());
                     let ip = req.connection_info().realip_remote_addr().map(|x|x.to_string());
                     let user_agent = req.headers().get(USER_AGENT).map(|x|x.to_str().unwrap_or("N/A").to_string());
-                    let device = if let Some(user_agent) = user_agent.as_ref() {
-                        if user_agent.contains("Android") {
-                            Some("Android")
-                        } else if user_agent.contains("iPhone") {
-                            Some("iPhone")
-                        } else if user_agent.contains("iPad") {
-                            Some("iPad")
-                        } else if user_agent.contains("Windows") {
-                            Some("Windows")
-                        } else if user_agent.contains("Macintosh") {
-                            Some("Macintosh")
-                        } else {
-                            None
-                        }
-                    } else {
-                        None
-                    }.map(|x|x.to_string());
+                    let device = user_agent_parse_os(user_agent.clone());
                     let event = SecurityEventRegisterParam {
                         title: security::Model::USER_LOGIN.to_string(),
                         description: None,
@@ -64,23 +50,7 @@ impl Endpoint {
         let context = self.new_context();
         let ip = req.connection_info().realip_remote_addr().map(|x|x.to_string());
         let user_agent = req.headers().get(USER_AGENT).map(|x|x.to_str().unwrap_or("N/A").to_string());
-        let device = if let Some(user_agent) = user_agent.as_ref() {
-            if user_agent.contains("Android") {
-                Some("Android")
-            } else if user_agent.contains("iPhone") {
-                Some("iPhone")
-            } else if user_agent.contains("iPad") {
-                Some("iPad")
-            } else if user_agent.contains("Windows") {
-                Some("Windows")
-            } else if user_agent.contains("Macintosh") {
-                Some("Macintosh")
-            } else {
-                None
-            }
-        } else {
-            None
-        }.map(|x|x.to_string());
+        let device = user_agent_parse_os(user_agent.clone());
         let event = SecurityEventRegisterParam {
             title: security::Model::USER_LOGIN.to_string(),
             description: None,
@@ -107,23 +77,7 @@ impl Endpoint {
                     web_session.0.set(WebSession::USER_SESSION, data.clone());
                     let ip = req.connection_info().realip_remote_addr().map(|x|x.to_string());
                     let user_agent = req.headers().get(USER_AGENT).map(|x|x.to_str().unwrap_or("N/A").to_string());
-                    let device = if let Some(user_agent) = user_agent.as_ref() {
-                        if user_agent.contains("Android") {
-                            Some("Android")
-                        } else if user_agent.contains("iPhone") {
-                            Some("iPhone")
-                        } else if user_agent.contains("iPad") {
-                            Some("iPad")
-                        } else if user_agent.contains("Windows") {
-                            Some("Windows")
-                        } else if user_agent.contains("Macintosh") {
-                            Some("Macintosh")
-                        } else {
-                            None
-                        }
-                    } else {
-                        None
-                    }.map(|x|x.to_string());
+                    let device = user_agent_parse_os(user_agent.clone());
                     let event = SecurityEventRegisterParam {
                         title: security::Model::USER_LOGIN.to_string(),
                         description: None,

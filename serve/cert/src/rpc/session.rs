@@ -1,5 +1,5 @@
-use crate::models::users;
-use crate::models::users::Model;
+use authd::users;
+use authd::users::Model;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 

@@ -1,4 +1,4 @@
-use crate::models::{access_key, users};
+use authd::{access_key, users};
 use crate::schema::{AccessKeySearch, AppResult};
 use crate::service::AppCertService;
 use sea_orm::*;

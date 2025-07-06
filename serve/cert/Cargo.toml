@@ -16,3 +16,4 @@ sha256 = { workspace = true }
 rand = { workspace = true, features = ["std_rng"] }
 serde_json = { workspace = true }
 bytes = "1.10.1"
+authd = { workspace = true }

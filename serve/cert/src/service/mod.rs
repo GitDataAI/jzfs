@@ -1,4 +1,4 @@
-use crate::models::security::Model;
+use authd::security::Model;
 use crate::rpc::interface::CertInterFace;
 use crate::rpc::session::UsersSession;
 use crate::schema::{
@@ -80,7 +80,7 @@ impl CertInterFace for AppCertService {
         self,
         _context: Context,
         param: SshKeySearch,
-    ) -> AppResult<crate::models::users::Model> {
+    ) -> AppResult<authd::users::Model> {
         self.service_sshkey_search(param).await
     }
 
@@ -88,7 +88,7 @@ impl CertInterFace for AppCertService {
         self,
         _context: Context,
         param: AccessKeySearch,
-    ) -> AppResult<crate::models::users::Model> {
+    ) -> AppResult<authd::users::Model> {
         self.service_access_key_search(param).await
     }
 }

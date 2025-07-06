@@ -1,4 +1,4 @@
-use crate::models::{sshkey, users};
+use authd::{sshkey, users};
 use crate::schema::{AppResult, SshKeySearch};
 use crate::service::AppCertService;
 use sea_orm::*;

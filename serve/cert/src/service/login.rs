@@ -1,4 +1,4 @@
-use crate::models::users;
+use authd::users;
 use crate::rpc::session::UsersSession;
 use crate::schema::{AppResult, CertAuthLoginParam};
 use crate::service::AppCertService;

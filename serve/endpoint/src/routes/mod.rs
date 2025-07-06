@@ -1,10 +1,9 @@
 mod cert;
 
-use crate::endpoint::Endpoint;
-use actix_web::web::{post, scope, ServiceConfig};
 use crate::routes::cert::{email_captcha, email_verify, users_login, users_logout, users_register};
+use actix_web::web::{post, scope, ServiceConfig};
 
-pub async fn run(endpoint: Endpoint, cfg: &mut ServiceConfig) {
+pub async fn run(cfg: &mut ServiceConfig) {
     cfg
         .service(
             scope("/api")
