@@ -29,7 +29,7 @@ impl AppCertService {
             }
         }
         AppResult {
-            code: 200,
+            code: 401,
             data: Some(false),
             msg: None,
         }

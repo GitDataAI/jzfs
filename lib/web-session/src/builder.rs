@@ -10,6 +10,8 @@ use std::rc::Rc;
 pub struct WebSession(pub Session);
 
 impl WebSession {
+    pub const USER_SESSION: &'static str = "users_session";
+    pub const USER_EMAIL_CAPTCHA: &'static str = "users_email_captcha";
     pub fn set_session(
         req: &mut ServiceRequest,
         data: impl IntoIterator<Item = (String, String)>,
