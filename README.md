@@ -3,7 +3,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: light)" srcset="https://github.com/GitDataAI/jzfs/blob/main/docs/jzfs-logo-words.png?raw=true">
-    <source media="(prefers-color-scheme: dark)" srcset="https://github.com/GitDataAI/jzfs/blob/main/docs/jzfs-logo-words.png?raw=true">
+    <source media="(prefers-color-scheme: dark)" srcset="https://github.com/GitDataAI/jzfs/blob/main/docs/jzfs-logo-words-light.png?raw=true">
     <img alt="JZFS Logo" src="https://github.com/GitDataAI/jzfs/blob/main/docs/jzfs-logo-words.png" width="400px">
   </picture>
 </p>
