@@ -1,6 +1,6 @@
-use authd::security;
 use crate::schema::{AppResult, SecurityEventRegisterParam};
 use crate::service::AppCertService;
+use authd::security;
 use chrono::Utc;
 use sea_orm::*;
 use uuid::Uuid;

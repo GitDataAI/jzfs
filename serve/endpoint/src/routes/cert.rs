@@ -1,8 +1,10 @@
-use actix_web::{HttpRequest, Responder};
-use actix_web::web::{Data, Json};
-use cert::schema::{CertAuthLoginParam, CertEmailCaptchaParam, CertEmailCaptchaVerify, CertRegisterParam};
-use web_session::builder::WebSession;
 use crate::endpoint::Endpoint;
+use actix_web::web::{Data, Json};
+use actix_web::{HttpRequest, Responder};
+use cert::schema::{
+    CertAuthLoginParam, CertEmailCaptchaParam, CertEmailCaptchaVerify, CertRegisterParam,
+};
+use web_session::builder::WebSession;
 
 pub async fn users_login(
     param: Json<CertAuthLoginParam>,
@@ -10,7 +12,7 @@ pub async fn users_login(
     endpoint: Data<Endpoint>,
     req: HttpRequest,
 ) -> impl Responder {
-    endpoint.users_login(param.into_inner(), session,req).await
+    endpoint.users_login(param.into_inner(), session, req).await
 }
 
 pub async fn users_register(
@@ -19,7 +21,9 @@ pub async fn users_register(
     session: WebSession,
     req: HttpRequest,
 ) -> impl Responder {
-    endpoint.users_register(param.into_inner(), session,req).await
+    endpoint
+        .users_register(param.into_inner(), session, req)
+        .await
 }
 
 pub async fn users_logout(
@@ -27,7 +31,7 @@ pub async fn users_logout(
     session: WebSession,
     req: HttpRequest,
 ) -> impl Responder {
-    endpoint.users_logout(session,req).await
+    endpoint.users_logout(session, req).await
 }
 
 pub async fn email_captcha(
@@ -35,13 +39,16 @@ pub async fn email_captcha(
     session: WebSession,
     param: Json<CertEmailCaptchaParam>,
 ) -> impl Responder {
-    endpoint.email_captcha_send(param.into_inner(),session).await
+    endpoint
+        .email_captcha_send(param.into_inner(), session)
+        .await
 }
 pub async fn email_verify(
     endpoint: Data<Endpoint>,
     session: WebSession,
     param: Json<CertEmailCaptchaVerify>,
 ) -> impl Responder {
-    endpoint.email_captcha_verify(param.into_inner(),session).await
+    endpoint
+        .email_captcha_verify(param.into_inner(), session)
+        .await
 }
-

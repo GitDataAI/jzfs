@@ -1,6 +1,6 @@
-use authd::{access_key, users};
 use crate::schema::{AccessKeySearch, AppResult};
 use crate::service::AppCertService;
+use authd::{access_key, users};
 use sea_orm::*;
 
 impl AppCertService {

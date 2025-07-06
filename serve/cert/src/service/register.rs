@@ -1,7 +1,7 @@
-use authd::users;
 use crate::rpc::session::UsersSession;
 use crate::schema::{AppResult, CertRegisterParam};
 use crate::service::AppCertService;
+use authd::users;
 use chrono::Utc;
 use sea_orm::*;
 use sha256::Sha256Digest;

@@ -9,7 +9,7 @@ pub struct AppResult<T> {
     pub msg: Option<String>,
 }
 
-impl <T> From<anyhow::Error> for AppResult<T> {
+impl<T> From<anyhow::Error> for AppResult<T> {
     fn from(value: Error) -> Self {
         AppResult {
             code: 500,

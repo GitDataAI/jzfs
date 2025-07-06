@@ -1,9 +1,9 @@
-use authd::{security, users};
 use crate::rpc::session::UsersSession;
 use crate::schema::{
     AccessKeySearch, AppResult, CertAuthLoginParam, CertEmailCaptchaParam, CertEmailCaptchaVerify,
     CertRegisterParam, SecurityEventRegisterParam, SshKeySearch,
 };
+use authd::{security, users};
 use uuid::Uuid;
 
 #[tarpc::service]

@@ -1,10 +1,10 @@
-use authd::security::Model;
 use crate::rpc::interface::CertInterFace;
 use crate::rpc::session::UsersSession;
 use crate::schema::{
     AccessKeySearch, AppResult, CertAuthLoginParam, CertEmailCaptchaParam, CertEmailCaptchaVerify,
     CertRegisterParam, SecurityEventRegisterParam, SshKeySearch,
 };
+use authd::security::Model;
 use sea_orm::DatabaseConnection;
 use session::storage::RedisStorage;
 use tarpc::context::Context;

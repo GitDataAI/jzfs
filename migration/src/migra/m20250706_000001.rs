@@ -61,7 +61,8 @@ impl MigrationTrait for Migration {
             user_uid UUID NOT NULL,
             timestamp TIMESTAMP NOT NULL DEFAULT now()
         );
-        "#,)
+        "#,
+        )
         .await?;
         db.execute_unprepared(
             r#"
@@ -78,7 +79,8 @@ impl MigrationTrait for Migration {
         "#,
         )
         .await?;
-        db.execute_unprepared(r#"
+        db.execute_unprepared(
+            r#"
         CREATE TABLE IF NOT EXISTS users (
         uid UUID PRIMARY KEY,
         username VARCHAR NOT NULL,
@@ -124,9 +126,9 @@ impl MigrationTrait for Migration {
         deleted_at TIMESTAMP WITHOUT TIME ZONE,
         last_login_at TIMESTAMP WITHOUT TIME ZONE
     );
-        "#)
+        "#,
+        )
         .await?;
         Ok(())
-        
     }
 }

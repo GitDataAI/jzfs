@@ -34,11 +34,22 @@ impl AppNaCos {
             config,
         })
     }
-    pub async fn get_service_list(&self, service_name: &str, group_name: Option<String>) -> anyhow::Result<Vec<ServiceInstance>> {
-        let services = self.naming.get_all_instances(service_name.to_string(),group_name,vec![], true).await?;
+    pub async fn get_service_list(
+        &self,
+        service_name: &str,
+        group_name: Option<String>,
+    ) -> anyhow::Result<Vec<ServiceInstance>> {
+        let services = self
+            .naming
+            .get_all_instances(service_name.to_string(), group_name, vec![], true)
+            .await?;
         Ok(services)
     }
-    pub async fn rand_get_service(&self, service_name: &str, group_name: Option<String>) -> anyhow::Result<ServiceInstance> {
+    pub async fn rand_get_service(
+        &self,
+        service_name: &str,
+        group_name: Option<String>,
+    ) -> anyhow::Result<ServiceInstance> {
         let services = self.get_service_list(service_name, group_name).await?;
         let index = (rand::random::<i32>() % services.len() as i32) as usize;
         let service = services.get(index).ok_or(anyhow::anyhow!("no service"))?;
@@ -48,7 +59,4 @@ impl AppNaCos {
         let config = self.config.get_config(data_id, group_name).await?;
         Ok(config.content().clone())
     }
-
-
-
 }

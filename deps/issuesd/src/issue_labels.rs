@@ -5,8 +5,10 @@ use serde::{Deserialize, Serialize};
 #[sea_orm(table_name = "issue_labels")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub issue_id: i32,
-    pub issue_label_id: i32,
+    pub uid: Uuid,
+
+    pub issue_uid: Uuid,
+    pub issue_label_uid: Uuid,
     pub name: String,
     pub description: Option<String>,
     pub color: String,

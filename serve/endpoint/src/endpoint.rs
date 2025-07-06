@@ -11,7 +11,6 @@ pub struct Endpoint {
     pub workhorse: WorkHorseInterFaceClient,
 }
 
-
 impl Endpoint {
     pub fn new_context(&self) -> tarpc::context::Context {
         tarpc::context::current()

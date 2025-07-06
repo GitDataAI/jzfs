@@ -1,6 +1,6 @@
-use authd::{sshkey, users};
 use crate::schema::{AppResult, SshKeySearch};
 use crate::service::AppCertService;
+use authd::{sshkey, users};
 use sea_orm::*;
 
 impl AppCertService {

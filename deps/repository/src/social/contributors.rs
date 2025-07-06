@@ -15,8 +15,6 @@ pub struct Model {
     pub name: String,
 }
 
-
-
 impl ActiveModelBehavior for ActiveModel {}
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

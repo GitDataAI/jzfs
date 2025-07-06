@@ -1,5 +1,3 @@
 use crate::service::AppWorkHorse;
 
-impl AppWorkHorse {
-    
-}
+impl AppWorkHorse {}

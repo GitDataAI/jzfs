@@ -9,16 +9,26 @@ use serde_json::json;
 use web_session::builder::WebSession;
 
 impl Endpoint {
-
-    pub async fn users_login(&self, param: CertAuthLoginParam, web_session: WebSession, req: HttpRequest) -> HttpResponse {
+    pub async fn users_login(
+        &self,
+        param: CertAuthLoginParam,
+        web_session: WebSession,
+        req: HttpRequest,
+    ) -> HttpResponse {
         let context = self.new_context();
         let res = self.cert.user_auth_login(context, param).await;
         match res {
             Ok(res) => {
                 if let Some(data) = res.data {
                     web_session.0.set(WebSession::USER_SESSION, data.clone());
-                    let ip = req.connection_info().realip_remote_addr().map(|x|x.to_string());
-                    let user_agent = req.headers().get(USER_AGENT).map(|x|x.to_str().unwrap_or("N/A").to_string());
+                    let ip = req
+                        .connection_info()
+                        .realip_remote_addr()
+                        .map(|x| x.to_string());
+                    let user_agent = req
+                        .headers()
+                        .get(USER_AGENT)
+                        .map(|x| x.to_str().unwrap_or("N/A").to_string());
                     let device = user_agent_parse_os(user_agent.clone());
                     let event = SecurityEventRegisterParam {
                         title: security::Model::USER_LOGIN.to_string(),
@@ -39,7 +49,7 @@ impl Endpoint {
                     let msg = res.msg.unwrap_or("".to_string());
                     HttpResponse::Ok().json(json!({ "code": res.code, "msg": msg }))
                 }
-            },
+            }
             Err(err) => HttpResponse::Ok().json(json!({ "code": 501, "msg": err.to_string() })),
         }
     }
@@ -48,8 +58,14 @@ impl Endpoint {
             return HttpResponse::Ok().json(json!({ "code": 401, "msg": "unauthorized" }));
         };
         let context = self.new_context();
-        let ip = req.connection_info().realip_remote_addr().map(|x|x.to_string());
-        let user_agent = req.headers().get(USER_AGENT).map(|x|x.to_str().unwrap_or("N/A").to_string());
+        let ip = req
+            .connection_info()
+            .realip_remote_addr()
+            .map(|x| x.to_string());
+        let user_agent = req
+            .headers()
+            .get(USER_AGENT)
+            .map(|x| x.to_str().unwrap_or("N/A").to_string());
         let device = user_agent_parse_os(user_agent.clone());
         let event = SecurityEventRegisterParam {
             title: security::Model::USER_LOGIN.to_string(),
@@ -68,15 +84,26 @@ impl Endpoint {
         self.cert.security_event_register(context, event).await.ok();
         HttpResponse::Ok().json(json!({ "code": 200 }))
     }
-    pub async fn users_register(&self, param: CertRegisterParam, web_session: WebSession,req: HttpRequest) -> HttpResponse {
+    pub async fn users_register(
+        &self,
+        param: CertRegisterParam,
+        web_session: WebSession,
+        req: HttpRequest,
+    ) -> HttpResponse {
         let context = self.new_context();
         let res = self.cert.user_auth_register(context, param).await;
         match res {
             Ok(res) => {
                 if let Some(data) = res.data {
                     web_session.0.set(WebSession::USER_SESSION, data.clone());
-                    let ip = req.connection_info().realip_remote_addr().map(|x|x.to_string());
-                    let user_agent = req.headers().get(USER_AGENT).map(|x|x.to_str().unwrap_or("N/A").to_string());
+                    let ip = req
+                        .connection_info()
+                        .realip_remote_addr()
+                        .map(|x| x.to_string());
+                    let user_agent = req
+                        .headers()
+                        .get(USER_AGENT)
+                        .map(|x| x.to_str().unwrap_or("N/A").to_string());
                     let device = user_agent_parse_os(user_agent.clone());
                     let event = SecurityEventRegisterParam {
                         title: security::Model::USER_LOGIN.to_string(),
@@ -97,7 +124,7 @@ impl Endpoint {
                     let msg = res.msg.unwrap_or("".to_string());
                     HttpResponse::Ok().json(json!({ "code": res.code, "msg": msg }))
                 }
-            },
+            }
             Err(err) => HttpResponse::Ok().json(json!({ "code": 501, "msg": err.to_string() })),
         }
     }

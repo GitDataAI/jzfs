@@ -1,7 +1,7 @@
-use authd::security;
-use authd::security::Model;
 use crate::schema::AppResult;
 use crate::service::AppCertService;
+use authd::security;
+use authd::security::Model;
 use sea_orm::*;
 use uuid::Uuid;
 
