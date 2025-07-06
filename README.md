@@ -58,7 +58,7 @@
 
 JZFS adapts principles of open-source software development and distribution to address the technical challenges of data management, data sharing, and digital provenance collection across the life cycle of digital objects.
 
-![](docs/jzfs-joint-management.png)
+<img src="./docs/jzfs-joint-management.png" width="400">
 
 Compared with code in software development, data tend not to be as precisely
 identified because data versioning is rarely or only coarsely practiced. Scientific computation
