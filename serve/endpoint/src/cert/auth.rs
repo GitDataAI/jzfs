@@ -15,7 +15,9 @@ impl Endpoint {
         web_session: WebSession,
         req: HttpRequest,
     ) -> HttpResponse {
+        #[cfg(feature = "distributed")]
         let context = self.new_context();
+        #[cfg(feature = "distributed")]
         let res = self.cert.user_auth_login(context, param).await;
         match res {
             Ok(res) => {
@@ -43,6 +45,7 @@ impl Endpoint {
                         user: data.username,
                         user_uid: data.uid,
                     };
+                    #[cfg(feature = "distributed")]
                     self.cert.security_event_register(context, event).await.ok();
                     HttpResponse::Ok().json(json!({ "code": res.code }))
                 } else {
@@ -57,6 +60,7 @@ impl Endpoint {
         let Ok(data) = web_session.0.get::<UsersSession>(WebSession::USER_SESSION) else {
             return HttpResponse::Ok().json(json!({ "code": 401, "msg": "unauthorized" }));
         };
+        #[cfg(feature = "distributed")]
         let context = self.new_context();
         let ip = req
             .connection_info()
@@ -81,6 +85,7 @@ impl Endpoint {
             user_uid: data.uid,
         };
         web_session.0.remove(WebSession::USER_SESSION);
+        #[cfg(feature = "distributed")]
         self.cert.security_event_register(context, event).await.ok();
         HttpResponse::Ok().json(json!({ "code": 200 }))
     }
@@ -91,6 +96,7 @@ impl Endpoint {
         req: HttpRequest,
     ) -> HttpResponse {
         let context = self.new_context();
+        #[cfg(feature = "distributed")]
         let res = self.cert.user_auth_register(context, param).await;
         match res {
             Ok(res) => {
@@ -118,6 +124,7 @@ impl Endpoint {
                         user: data.username,
                         user_uid: data.uid,
                     };
+                    #[cfg(feature = "distributed")]
                     self.cert.security_event_register(context, event).await.ok();
                     HttpResponse::Ok().json(json!({ "code": res.code }))
                 } else {

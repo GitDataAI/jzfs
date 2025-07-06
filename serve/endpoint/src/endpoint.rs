@@ -3,12 +3,18 @@
 use cert::rpc::interface::CertInterFaceClient;
 use cert::service::AppCertService;
 use workhorse::rpc::proto::WorkHorseInterFaceClient;
+use workhorse::service::AppWorkHorse;
 
 #[derive(Clone)]
-#[cfg(feature = "distributed")]
 pub struct Endpoint {
+    #[cfg(feature = "distributed")]
     pub cert: CertInterFaceClient,
+    #[cfg(feature = "local")]
+    pub cert: AppCertService,
+    #[cfg(feature = "distributed")]
     pub workhorse: WorkHorseInterFaceClient,
+    #[cfg(feature = "local")]
+    pub workhorse: AppWorkHorse,
 }
 
 impl Endpoint {

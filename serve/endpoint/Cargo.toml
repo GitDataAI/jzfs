@@ -34,5 +34,6 @@ tracing = { workspace = true }
 woothee = "0.13.0"
 
 [features]
+default = ["distributed"]
 distributed = []
 local = []

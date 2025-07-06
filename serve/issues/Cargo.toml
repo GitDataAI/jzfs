@@ -26,3 +26,9 @@ serde_json = { workspace = true }
 bytes = "1.10.1"
 anyhow = "1.0.98"
 cert = {workspace = true }
+
+
+[features]
+default = ["distributed"]
+distributed = []
+local = []

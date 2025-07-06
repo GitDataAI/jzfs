@@ -15,6 +15,7 @@ impl Endpoint {
         web_session
             .0
             .set(WebSession::USER_EMAIL_CAPTCHA, key.clone());
+        #[cfg(feature = "distributed")]
         let res = self
             .cert
             .email_captcha(self.new_context(), key, param)
@@ -29,6 +30,7 @@ impl Endpoint {
         param: CertEmailCaptchaVerify,
         web_session: WebSession,
     ) -> HttpResponse {
+        #[cfg(feature = "distributed")]
         let Ok(key) = web_session.0.get::<String>(WebSession::USER_EMAIL_CAPTCHA) else {
             return HttpResponse::Ok()
                 .json(json!({ "code": 501, "msg": "email captcha not found" }));
