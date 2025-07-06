@@ -27,7 +27,7 @@ members = [ "lib/rpc-session", "lib/session", "lib/web-session",
     "serve/workhorse",
     "web",
     "migration"
-, "lib/nacos", "lib/config", "deps/repository", "deps/authd"]
+, "lib/nacos", "lib/config", "deps/repository", "deps/authd", "deps/userd", "deps/orgd", "deps/issuesd"]
 
 resolver = "3"
 
@@ -49,6 +49,8 @@ rpc-session = { path = "lib/rpc-session"}
 config = { path = "lib/config"}
 authd = { path = "deps/authd"}
 repository = { path = "deps/repository"}
+userd = { path = "deps/userd"}
+orgd = { path = "deps/orgd"}
 
 tokio = "1"
 serde = "1"

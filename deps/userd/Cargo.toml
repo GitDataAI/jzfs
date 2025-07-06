@@ -1,0 +1,19 @@
+[package]
+name = "userd"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description.workspace = true
+keywords.workspace = true
+readme.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+publish.workspace = true
+
+[dependencies]
+sea-orm = { workspace = true, features = ["uuid","chrono","sqlx-all", "pgvector"] }
+serde = { workspace = true, features = ["derive"] }
+chrono = { workspace = true, features = ["clock"] }
+uuid = { workspace = true, features = ["v7","v4","serde"] }

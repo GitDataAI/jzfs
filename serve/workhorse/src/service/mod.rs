@@ -10,3 +10,5 @@ pub struct AppWorkHorse {
     pub mq: async_nats::client::Client,
     pub cert: CertInterFaceClient,
 }
+
+pub mod users;

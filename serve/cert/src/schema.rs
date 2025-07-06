@@ -1,3 +1,4 @@
+use anyhow::Error;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -6,6 +7,16 @@ pub struct AppResult<T> {
     pub code: i32,
     pub data: Option<T>,
     pub msg: Option<String>,
+}
+
+impl <T> From<anyhow::Error> for AppResult<T> {
+    fn from(value: Error) -> Self {
+        AppResult {
+            code: 500,
+            data: None,
+            msg: Some(value.to_string()),
+        }
+    }
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
