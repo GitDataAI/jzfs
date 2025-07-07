@@ -418,9 +418,13 @@ CREATE TABLE IF NOT EXISTS git_code (
         "#,
         )
         .await?;
-        db.execute_unprepared(
-            r#"
-        
+        db.execute_unprepared(r#"
+        CREATE TABLE IF NOT EXISTS issue_sub(
+             uuid UUID PRIMARY KEY,
+             user_uid UUID NOT NULL,
+             issue_uid UUID NOT NULL,
+             created_at TIMESTAMPTZ NOT NULL
+        );
         "#,
         )
         .await?;
