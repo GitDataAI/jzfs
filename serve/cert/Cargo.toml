@@ -6,7 +6,7 @@ edition.workspace = true
 
 [dependencies]
 session = { workspace = true, features = [] }
-sea-orm = { workspace = true, features = ["uuid","chrono","sqlx-all", "pgvector"] }
+sea-orm = { workspace = true, features = ["uuid","chrono","sqlx-all", "pgvector","runtime-tokio"] }
 serde = { workspace = true, features = ["derive"] }
 chrono = { workspace = true, features = ["clock"] }
 uuid = { workspace = true, features = ["v7","v4","serde"] }
@@ -18,3 +18,9 @@ serde_json = { workspace = true }
 bytes = "1.10.1"
 authd = { workspace = true }
 anyhow = "1.0.98"
+tokio = { workspace = true, features = ["full"] }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+deadpool-redis = { workspace = true }
+futures-util = "0.3.31"
+dotenv = { workspace = true }

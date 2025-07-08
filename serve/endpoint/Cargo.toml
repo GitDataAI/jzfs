@@ -17,6 +17,7 @@ workhorse = { workspace = true }
 cert = { workspace = true }
 authd = { workspace = true }
 
+actix-files = { workspace = true }
 session = { workspace = true, features = [] }
 sea-orm = { workspace = true, features = ["uuid","chrono","sqlx-all", "pgvector"] }
 serde = { workspace = true, features = ["derive"] }
@@ -31,7 +32,11 @@ tokio = { workspace = true, features = ["full"]}
 actix-web = { workspace = true, features = ["cookies"] }
 web-session = { workspace = true }
 tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
 woothee = "0.13.0"
+anyhow = "1.0.98"
+dotenv = { workspace = true }
+
 
 [features]
 default = ["distributed"]

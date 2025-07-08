@@ -72,7 +72,7 @@ impl CertInterFace for AppCertService {
         self.service_security_event_register(param).await
     }
 
-    async fn security_event_list(self, context: Context, users_uid: Uuid) -> AppResult<Vec<Model>> {
+    async fn security_event_list(self, _context: Context, users_uid: Uuid) -> AppResult<Vec<Model>> {
         self.service_security_event_list(users_uid).await
     }
 
@@ -90,5 +90,10 @@ impl CertInterFace for AppCertService {
         param: AccessKeySearch,
     ) -> AppResult<authd::users::Model> {
         self.service_access_key_search(param).await
+    }
+
+    async fn health_check(self, _: Context) -> chrono::NaiveDateTime {
+        chrono::Utc::now()
+            .naive_utc()
     }
 }

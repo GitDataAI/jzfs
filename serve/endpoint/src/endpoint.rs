@@ -22,3 +22,9 @@ impl Endpoint {
         tarpc::context::current()
     }
 }
+
+
+#[cfg(feature = "distributed")]
+pub mod distributed;
+#[cfg(feature = "distributed")]
+pub use distributed::run;

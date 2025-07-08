@@ -32,4 +32,6 @@ pub trait CertInterFace {
     async fn access_key_search(param: AccessKeySearch) -> AppResult<users::Model>; //  TODO
 
     // TODO Consider adding mobile phone number verification
+
+    async fn health_check() -> chrono::NaiveDateTime;
 }
