@@ -14,7 +14,10 @@ homepage = "https://github.com/GitDataAi/jzfs"
 documentation = "https://github.com/GitDataAi/jzfs"
 publish = false
 [workspace]
-members = [ "lib/rpc-session", "lib/session", "lib/web-session",
+members = [
+    "lib/rpc-session",
+    "lib/session",
+    "lib/web-session",
     "nfs/nfs_client",
     "nfs/nfs_serve",
     "serve/action",
@@ -26,8 +29,18 @@ members = [ "lib/rpc-session", "lib/session", "lib/web-session",
     "serve/pull_request",
     "serve/workhorse",
     "web",
-    "migration"
-, "lib/nacos", "lib/config", "deps/repository", "deps/authd", "deps/userd", "deps/orgd", "deps/issuesd"]
+    "migration",
+    "lib/nacos",
+    "lib/config",
+    "deps/repository",
+    "deps/authd",
+    "deps/userd",
+    "deps/orgd",
+    "deps/issuesd",
+    "prollytree/git-prollytree-cli",
+    "prollytree/git-prollytree-server",
+    "prollytree/prollytree"
+]
 
 resolver = "3"
 
@@ -53,6 +66,9 @@ repository = { path = "deps/repository"}
 userd = { path = "deps/userd"}
 orgd = { path = "deps/orgd"}
 web = { path = "web" }
+prollytree = { path = "prollytree/prollytree" }
+git-prollytree-cli = { path = "prollytree/git-prollytree-cli" }
+git-prollytree-server = { path = "prollytree/git-prollytree-server" }
 
 tokio = "1"
 serde = "1"
@@ -94,3 +110,5 @@ num-derive = "0.4.2"
 filetime = "0.2.25"
 byteorder = "1.5.0"
 nacos-sdk = "0.5.0"
+rust-i18n = "3.1.5"
+crossbeam = "0.8.4"

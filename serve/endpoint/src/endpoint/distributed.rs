@@ -46,6 +46,7 @@ pub async fn run() -> anyhow::Result<()> {
                     .build()
             )
             .app_data(Data::new(endpoint.clone()))
+            .configure(web::route)
             .configure(crate::routes::run)
     })
         .bind("0.0.0.0:8080")?

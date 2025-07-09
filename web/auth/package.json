@@ -12,7 +12,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "vite",
-    "build:web": "tsc -b && vite build",
+    "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   }

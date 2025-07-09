@@ -4,13 +4,27 @@
     height: 100vh;
     left: 0;
     top: 0;
+    background: #f5f5f5;
 }
 
 .auth-window {
     width: 460px;
     height: 660px;
-    border: 1px saddlebrown solid;
-    background: #555ab9;
+    border: 1px #f1f1f1 solid;
+    box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.1);
+    background: #ffffff;
+    border-radius: 20px;
+}
+.auth-ops {
+    padding: 20px 30px;
+    display: flex;
+    flex-direction: column;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    margin-top: 2rem;
 }
 
 @media screen and (min-width: 920px) {
@@ -18,7 +32,7 @@
         position: absolute;
         right: 230px;
         top: 50%;
-        transform: translate(-50%, -50%);
+        transform: translateY(-50%);
         z-index: 1000;
     }
 }
@@ -30,5 +44,18 @@
         height: 100vh;
         left: 0;
         top: 0;
+    }
+}
+
+.other-login {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px #cfcfcf solid;
+    height: 0;
+    p {
+        background: white;
+        padding: 0.5rem;
     }
 }

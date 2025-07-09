@@ -17,13 +17,9 @@ publish.workspace = true
 path = "rust/lib.rs"
 name = "web"
 
-[[bin]]
-path = "rust/build.rs"
-name = "web-build"
-
 
 [dependencies]
 actix-web = { workspace = true, features = ["cookies","compress-gzip"] }
-awc = { version = "3.7.0", features = ["rustls", "compress-zstd","compress-gzip"] }
+actix-web-static-files = { version = "4.0.1", features = ["change-detection"] }
+actix-files = { workspace = true, features = ["tokio-uring"] }
 tokio = { workspace = true, features = ["full"] }
-dotenv = { workspace = true }
