@@ -25,8 +25,10 @@ rand = { workspace = true, features = ["std_rng"] }
 serde_json = { workspace = true }
 bytes = "1.10.1"
 anyhow = "1.0.98"
-cert = {workspace = true }
-
+cert = { workspace = true }
+issuesd = { workspace = true }
+userd = { workspace = true }
+orgd = { workspace = true }
 
 [features]
 default = ["distributed"]

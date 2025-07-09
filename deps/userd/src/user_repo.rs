@@ -7,7 +7,7 @@ use uuid::Uuid;
 pub struct Model {
     #[sea_orm(primary_key)]
     pub uid: Uuid,
-    pub org_uid: Uuid,
+    pub user_uid: Uuid,
     pub repo_uid: Uuid,
     pub created_at: DateTime,
 }

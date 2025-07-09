@@ -12,11 +12,11 @@ pub struct Model {
     pub title: String,
     pub description: Option<String>,
     pub author_uid: Uuid,
-    pub assignee_uid: Option<Uuid>,
+    pub assignee_uid: Option<Vec<Uuid>>,
     pub state: String,
     pub priority_label_uid: Option<Uuid>,
-    pub created_at: DateTimeUtc,
-    pub updated_at: DateTimeUtc,
+    pub created_at: DateTime,
+    pub updated_at: DateTime,
     pub is_deleted: bool,
 }
 

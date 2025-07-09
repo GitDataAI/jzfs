@@ -48,6 +48,7 @@ session = { path = "lib/session"}
 rpc-session = { path = "lib/rpc-session"}
 config = { path = "lib/config"}
 authd = { path = "deps/authd"}
+issuesd = { path = "deps/issuesd"}
 repository = { path = "deps/repository"}
 userd = { path = "deps/userd"}
 orgd = { path = "deps/orgd"}
