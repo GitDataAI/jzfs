@@ -51,6 +51,7 @@ authd = { path = "deps/authd"}
 repository = { path = "deps/repository"}
 userd = { path = "deps/userd"}
 orgd = { path = "deps/orgd"}
+web = { path = "web" }
 
 tokio = "1"
 serde = "1"

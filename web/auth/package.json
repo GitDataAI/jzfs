@@ -1,0 +1,19 @@
+{
+  "name": "auth",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "author": {
+    "name": "GitDataAI",
+    "email": "info@gitdataai.com",
+    "url": "https://gitdataai.com"
+  },
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build:web": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  }
+}

@@ -17,7 +17,8 @@
     "antd": "^5.26.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-icons": "^5.5.0"
+    "react-icons": "^5.5.0",
+    "react-router-dom": "^7.6.3"
   },
   "resolutions": {
     "styled-components": "^5.3.5"
@@ -42,10 +43,10 @@
     "globals": "^16.0.0",
     "playwright": "^1.53.2",
     "storybook": "^9.0.15",
+    "taskbox": "file:taskbox",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.30.1",
     "vite": "^7.0.2",
-    "vitest": "^3.2.4",
-    "taskbox": "file:taskbox"
+    "vitest": "^3.2.4"
   }
 }

@@ -10,22 +10,15 @@ pub struct Model {
 
     pub title: String,
     pub description: Option<String>,
-    pub name: String,
     #[serde(skip)]
     pub token: String,
-    pub access: String,
     pub use_history: Vec<String>,
-
     pub resource_owner: String,
     pub resource_owner_uid: Uuid,
-
     pub expiration: String,
-
     pub fingerprint: String,
-
     // access 0 no 1 read 2 read and write
     pub repo_access: i32,
-
     pub email_access: i32,
     pub event_access: i32,
     pub follow_access: i32,

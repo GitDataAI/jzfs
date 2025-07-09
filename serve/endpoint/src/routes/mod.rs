@@ -1,15 +1,15 @@
 mod cert;
 
-use actix_files::NamedFile;
-use actix_web::{HttpRequest, HttpResponse, Responder};
+use crate::endpoint::Endpoint;
 use crate::routes::cert::{email_captcha, email_verify, users_login, users_logout, users_register};
-use actix_web::web::{ServiceConfig, post, scope, get, Data, resource, to};
+use actix_web::web::{get, post, scope, Data, ServiceConfig};
+use actix_web::{HttpResponse, Responder};
 use serde_json::{json, Value};
 use tarpc::context::Context;
-use crate::endpoint::Endpoint;
 
 pub fn run(cfg: &mut ServiceConfig) {
     cfg
+        .configure(web::route)
         .service(
         scope("/api")
             .route("/health", get().to(health_check))

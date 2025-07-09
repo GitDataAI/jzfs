@@ -19,6 +19,58 @@ impl<T> From<anyhow::Error> for AppResult<T> {
     }
 }
 
+pub fn result_ok() -> AppResult<()> {
+    AppResult {
+        code: 200,
+        data: None,
+        msg: None,
+    }
+}
+
+pub fn result_ok_with_data<T>(data: T) -> AppResult<T> {
+    AppResult {
+        code: 200,
+        data: Some(data),
+        msg: None,
+    }
+}
+pub fn result_ok_with_msg(msg: String) -> AppResult<()> {
+    AppResult {
+        code: 200,
+        data: None,
+        msg: Some(msg),
+    }
+}
+pub fn result_error(code: i32, msg: String) -> AppResult<()> {
+    AppResult {
+        code,
+        data: None,
+        msg: Some(msg),
+    }
+}
+pub fn result_error_with_msg(msg: String) -> AppResult<()> {
+    AppResult {
+        code: 500,
+        data: None,
+        msg: Some(msg),
+    }
+}
+pub fn result_error_with_msg_data<T>(msg: String) -> AppResult<T> {
+    AppResult {
+        code: 500,
+        data: None,
+        msg: Some(msg),
+    }
+}
+
+pub fn result_error_with_code(code: i32) -> AppResult<()> {
+    AppResult {
+        code,
+        data: None,
+        msg: None,
+    }
+}
+
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct CertAuthLoginParam {
     pub username: String,

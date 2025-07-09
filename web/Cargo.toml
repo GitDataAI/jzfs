@@ -20,3 +20,10 @@ name = "web"
 [[bin]]
 path = "rust/build.rs"
 name = "web-build"
+
+
+[dependencies]
+actix-web = { workspace = true, features = ["cookies","compress-gzip"] }
+awc = { version = "3.7.0", features = ["rustls", "compress-zstd","compress-gzip"] }
+tokio = { workspace = true, features = ["full"] }
+dotenv = { workspace = true }

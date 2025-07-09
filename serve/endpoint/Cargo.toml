@@ -16,6 +16,7 @@ publish.workspace = true
 workhorse = { workspace = true }
 cert = { workspace = true }
 authd = { workspace = true }
+web = { workspace = true }
 
 actix-files = { workspace = true }
 session = { workspace = true, features = [] }

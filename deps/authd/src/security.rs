@@ -24,6 +24,13 @@ pub struct Model {
     pub timestamp: chrono::NaiveDateTime,
 }
 
+pub struct SecurityOption {
+    pub ip: Option<String>,
+    pub user_agent: Option<String>,
+    pub device: Option<String>,
+    pub location: Option<String>,
+}
+
 impl Model {
     /// <h3>User Login</h3><br/>
     /// ```
