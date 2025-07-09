@@ -1,4 +1,4 @@
-use crate::schema::users::{UserBlackListItem, UserFollowCount, UserFollowItem, UsersFollowLink};
+use crate::schema::users::{UserBlackListItem, UserFollowItem};
 use crate::service::AppWorkHorse;
 use authd::users;
 use cert::schema::{result_error_with_msg, result_error_with_msg_data, result_ok, result_ok_with_data, AppResult};

@@ -2,8 +2,10 @@ use chrono::NaiveDateTime;
 use cert::rpc::interface::CertInterFaceClient;
 use sea_orm::DatabaseConnection;
 use tarpc::context::Context;
+use cert::schema::AppResult;
 use session::storage::RedisStorage;
 use crate::rpc::proto::WorkHorseInterFace;
+use crate::schema::users::UserCheckParam;
 
 #[derive(Clone)]
 pub struct AppWorkHorse {
@@ -24,5 +26,9 @@ impl WorkHorseInterFace for AppWorkHorse {
     async fn check_health(self, _: Context) -> NaiveDateTime {
         chrono::Utc::now()
             .naive_utc()
+    }
+
+    async fn user_check(self, _: Context, param: UserCheckParam) -> AppResult<i32> {
+        self.service_user_check(param).await
     }
 }

@@ -5,6 +5,7 @@ import {AuthLayout} from "./layout";
 import "./module.css"
 import {LoginPage} from "./P-Login";
 import {RegisterPage} from "./P-Register";
+import {ForgetPage} from "./P-Forget";
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -14,7 +15,7 @@ createRoot(document.getElementById('root')!).render(
               element: <AuthLayout/>,
               children: [
                   {
-                      path: '/',
+                      path: '',
                       element: <LoginPage/>
                   },
                   {
@@ -24,6 +25,10 @@ createRoot(document.getElementById('root')!).render(
                   {
                       path: 'register',
                       element: <RegisterPage/>
+                  },
+                  {
+                      path: 'forget',
+                      element: <ForgetPage/>
                   }
               ]
           }

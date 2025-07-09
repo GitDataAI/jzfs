@@ -96,7 +96,7 @@ impl AppWorkHorse {
         }
     }
     pub async fn service_user_access_token_list(&self, user_uid: Uuid) -> AppResult<Vec<UserAccessTokenItem>> {
-        let Ok(Some(user)) = authd::users::Entity::find_by_id(user_uid).one(&self.db).await else {
+        let Ok(Some(_user)) = authd::users::Entity::find_by_id(user_uid).one(&self.db).await else {
             return result_error_with_msg_data("User not found".to_string())
         };
         let Ok(access_tokens) = authd::access_key::Entity::find()
@@ -106,7 +106,7 @@ impl AppWorkHorse {
             return result_error_with_msg_data("Failed to get access tokens".to_string())
         };
         let mut access_token_items = Vec::new();
-        for access_token in access_tokens { 
+        for access_token in access_tokens {
             access_token_items.push(crate::schema::users::UserAccessTokenItem {
                 uid: access_token.uid,
                 title: access_token.title,

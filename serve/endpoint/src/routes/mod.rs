@@ -1,15 +1,15 @@
 mod cert;
-
+mod workhorse;
 use crate::endpoint::Endpoint;
 use crate::routes::cert::{email_captcha, email_verify, users_login, users_logout, users_register};
 use actix_web::web::{get, post, scope, Data, ServiceConfig};
 use actix_web::{HttpResponse, Responder};
 use serde_json::{json, Value};
 use tarpc::context::Context;
+use crate::routes::workhorse::users::user_check;
 
 pub fn run(cfg: &mut ServiceConfig) {
     cfg
-        .configure(web::route)
         .service(
         scope("/api")
             .route("/health", get().to(health_check))
@@ -20,6 +20,10 @@ pub fn run(cfg: &mut ServiceConfig) {
                     .route("/logout", post().to(users_logout))
                     .route("/email/captcha", post().to(email_captcha))
                     .route("/email/verify", post().to(email_verify)),
+            )
+            .service(
+                scope("/users")
+                    .route("/check", post().to(user_check))
             )
         ,
     );

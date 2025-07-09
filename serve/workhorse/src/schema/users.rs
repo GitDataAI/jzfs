@@ -101,3 +101,10 @@ pub struct UserAccessTokenDelete {
     pub user_uid: Uuid,
     pub access_token_uid: Uuid,
 }
+
+
+#[derive(Serialize, Clone, Debug, Deserialize)]
+pub struct UserCheckParam {
+    pub username: Option<String>,
+    pub email: Option<String>,
+}
