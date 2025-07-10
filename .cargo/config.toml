@@ -1,2 +1,7 @@
 [build]
 rustflags = ["--cfg", "tokio_unstable"]
+
+[alias]
+cert = "run --bin cert"
+workhorse = "run --bin workhorse"
+endpoint = "run --bin endpoint"
