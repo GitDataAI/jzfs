@@ -14,7 +14,7 @@ pub struct IssueFetchParam {
 
 #[derive(Serialize, Clone, Debug, Deserialize)]
 pub struct IssueUpdateParam {
-    pub issue_id: Uuid,
+    pub issue_id: i32,
     pub repo_uid: Uuid,
     pub author_uid: Uuid,
     pub new_title: Option<String>,
@@ -23,11 +23,9 @@ pub struct IssueUpdateParam {
 
 #[derive(Serialize, Clone, Debug, Deserialize)]
 pub struct IssueCreateParam {
-    pub repo_uid: Uuid,
     pub title: String,
     pub description: Option<String>,
     pub labels: Vec<Uuid>,
-    pub author_uid: Uuid,
     pub assignee_uid: Option<Vec<Uuid>>,
 }
 
@@ -41,17 +39,14 @@ pub struct IssueCommentFetchParam {
 #[derive(Serialize, Clone, Debug, Deserialize)]
 pub struct IssueCommentUpdateParam {
     pub issue_id: i32,
-    pub repo_uid: Uuid,
     pub comment_uid: Uuid,
     pub update_content: String,
     pub author_uid: Uuid,
+    pub repo_uid: Uuid,
 }
 
 #[derive(Serialize, Clone, Debug, Deserialize)]
 pub struct IssueCommentCreateParam {
-    pub issue_id: i32,
-    pub repo_uid: Uuid,
-    pub author_uid: Uuid,
     pub content: String,
     pub parent_comment_uid: Option<Uuid>
 }
@@ -75,6 +70,7 @@ pub struct IssueLabelCreateParam {
     pub repo_uid: Uuid,
     pub label_name: String,
     pub label_color: String,
+    pub label_uid : Uuid,
     pub user_uid: Uuid,
 }
 
@@ -95,14 +91,11 @@ pub struct IssueLabelUnlinkParam {
 #[derive(Serialize, Clone, Debug, Deserialize)]
 pub struct IssueLabelDeleteParam {
     pub label_id: Uuid,
-    pub repo_uid: Uuid,
-    pub user_uid: Uuid,
 }
 
 #[derive(Serialize, Clone, Debug, Deserialize)]
 pub struct IssueSubscribeParam {
     pub issue_id: i32,
-    pub repo_uid: Uuid,
     pub subscribe_uid: Uuid,
     pub is_subscribed: bool,
     pub user_uid: Uuid,
@@ -129,3 +122,13 @@ pub struct IssueHistoryFetchParam {
     pub issue_uid: Uuid,
     pub repo_uid: Uuid,
 }
+
+#[derive(Serialize, Clone, Debug, Deserialize)]
+pub struct LabelCreateParam {
+    pub repo_uid: Uuid,
+    pub label_name: String,
+    pub label_color: String,
+    pub description: Option<String>,
+}
+
+
