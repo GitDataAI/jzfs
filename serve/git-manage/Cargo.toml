@@ -13,3 +13,4 @@ documentation.workspace = true
 publish.workspace = true
 
 [dependencies]
+git2 = { workspace = true, features = [] }

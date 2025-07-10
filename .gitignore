@@ -103,5 +103,6 @@ rust-project.json
 charts/templates/configMap.yaml
 .idea
 ddl
+data
 
 **/node_modules

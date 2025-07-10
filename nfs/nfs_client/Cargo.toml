@@ -13,3 +13,12 @@ documentation.workspace = true
 publish.workspace = true
 
 [dependencies]
+tokio = { version = "1", features = ["full"] }
+
+nfs3_client = { version = "0.5.0", features = ["tokio"] }
+nfs3_types = "0.4.0"
+anyhow = "1.0.98"
+serde = { version = "1.0.219", features = ["derive"] }
+uuid = { version = "1.17.0", features = ["v4","serde","v7"] }
+dashmap = { version = "6", features = ["inline"] }
+log = { version = "0.4.27", features = [] }
