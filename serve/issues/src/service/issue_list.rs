@@ -11,7 +11,7 @@ impl AppIssueService {
             .filter(
                 Condition::all()
                     .add(issues::Column::RepoUid.eq(param.repo_uid))
-                    .add_option(param.state.map(|state| issues::Column::State.contains(state)))
+                    .add_option(param.state.map(|state| issues::Column::Status.contains(state)))
             )
             .order_by_desc(issues::Column::IssueId)
             .offset(param.limit * param.page)
