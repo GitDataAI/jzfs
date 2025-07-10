@@ -1,0 +1,21 @@
+version: '3.7'
+services:
+  redis:
+    image: dragonflydb/dragonflydb:latest
+    ports:
+      - "6379:6379"
+    ulimits:
+      memlock: -1
+  postgres:
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    env_file:
+      - docker_env
+
+  nats:
+    image: nats:latest
+    ports:
+      - "4222:4222"
+      - "6222:6222"
+      - "8222:8222"

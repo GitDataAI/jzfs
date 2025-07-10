@@ -1,0 +1,3 @@
+POSTGRES_USER=example
+POSTGRES_PASSWORD=example
+POSTGRES_DB=example
