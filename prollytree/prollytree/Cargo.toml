@@ -16,3 +16,5 @@ publish.workspace = true
 rust-i18n = { workspace = true, features = [] }
 serde = { workspace = true, features = ["derive"] }
 crossbeam = { workspace = true, features = [] }
+sha1 = { version = "0.10.6", features = ["oid"] }
+hex = "0.4.3"

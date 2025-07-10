@@ -2,6 +2,8 @@ use crate::chunk::Chunk;
 use crate::node::Node;
 use crate::region::{process_region, FileRegion};
 use crossbeam::{channel, scope};
+use sha1::digest::Update;
+use sha1::Digest;
 use std::fs::File;
 use std::io;
 use std::path::Path;
@@ -145,6 +147,15 @@ impl ProllyTree {
             }
         }
         None
+    }
+
+    pub fn root_hash(&self) -> String {
+        let mut sha1 = sha1::Sha1::default();
+        for chunk in &self.root.chunks {
+            Update::update(&mut sha1, chunk.hash.to_string().as_bytes());
+        }
+        let final_hash = sha1.finalize();
+        hex::encode(final_hash)
     }
 
 }
