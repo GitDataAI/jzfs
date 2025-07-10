@@ -17,6 +17,8 @@ cert = { workspace = true }
 session = { workspace = true }
 userd = { workspace = true }
 authd = { workspace = true }
+orgd = { workspace = true }
+repository = { workspace = true }
 
 sea-orm = { workspace = true, features = ["uuid","chrono","sqlx-all", "pgvector"] }
 serde = { workspace = true, features = ["derive"] }

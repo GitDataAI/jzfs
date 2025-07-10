@@ -16,6 +16,7 @@ pub struct AppWorkHorse {
 }
 
 pub mod users;
+pub mod repos;
 
 
 impl WorkHorseInterFace for AppWorkHorse {

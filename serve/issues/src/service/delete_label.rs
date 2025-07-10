@@ -17,14 +17,31 @@ impl AppIssueService {
                 return result_error_with_msg_data("Failed to access repo".to_string())
             }
         }
-        match label::Entity::delete_many()
+        match label::Entity::find()
             .filter(label::Column::RepoUid.eq(repo_uid))
             .filter(label::Column::LabelUid.eq(param.label_id))
-            .exec(&self.db)
+            .one(&self.db)
             .await
         {
-            Ok(_) => result_ok_with_data(()),
-            Err(e) => result_error_with_msg_data(e.to_string())
+            Ok(model) => {
+                if model.is_none() {
+                    return result_error_with_msg_data("Label not found".to_string());
+                } else if let Some(model) = model {
+                    if model.repo_uid != repo_uid {
+                        return result_error_with_msg_data("You are not allowed to delete this label".to_string());
+                    }else { 
+                        match model.into_active_model().delete(&self.db).await {
+                            Ok(_) => result_ok_with_data(()),
+                            Err(e) => result_error_with_msg_data(e.to_string())
+                        }
+                    }
+                } else { 
+                    return result_error_with_msg_data("Failed to delete label".to_string());
+                }
+            }
+            Err(e) => {
+                return result_error_with_msg_data(format!("Failed to delete label: {}", e));
+            }
         }
     }
 }

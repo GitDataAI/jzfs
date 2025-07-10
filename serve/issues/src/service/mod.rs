@@ -1,4 +1,3 @@
-use crate::rpc::interface::IssueInterFace;
 use cert::rpc::interface::CertInterFaceClient;
 use sea_orm::DatabaseConnection;
 use session::storage::RedisStorage;
@@ -16,6 +15,7 @@ pub struct AppIssueService {
 pub mod issue_list;
 pub mod issues_utils;
 pub mod get_issue;
+pub mod issues_available_assignee;
 pub mod create_issue;
 pub mod update_issue;
 pub mod create_label;
@@ -25,6 +25,6 @@ pub mod delete_label;
 
 pub mod publish_comment;
 pub mod update_comment;
-pub mod subscribe_issue;
+// pub mod subscribe_issue;
 pub mod update_issue_status;
 pub mod update_issue_assignee;

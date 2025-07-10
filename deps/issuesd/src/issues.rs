@@ -12,7 +12,7 @@ pub struct Model {
     pub title: String,
     pub description: Option<String>,
     pub author_uid: Uuid,
-    pub assignee_uid: Option<Vec<Uuid>>,
+    pub assignee_uid: Vec<Uuid>,
     pub status: String,
     pub priority_label_uid: Option<Uuid>,
     pub created_at: DateTime,

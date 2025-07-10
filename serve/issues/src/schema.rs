@@ -14,9 +14,7 @@ pub struct IssueFetchParam {
 
 #[derive(Serialize, Clone, Debug, Deserialize)]
 pub struct IssueUpdateParam {
-    pub issue_id: i32,
-    pub repo_uid: Uuid,
-    pub author_uid: Uuid,
+    
     pub new_title: Option<String>,
     pub new_description: Option<String>
 }
@@ -26,7 +24,7 @@ pub struct IssueCreateParam {
     pub title: String,
     pub description: Option<String>,
     pub labels: Vec<Uuid>,
-    pub assignee_uid: Option<Vec<Uuid>>,
+    pub assignee_uid: Vec<Uuid>,
 }
 
 #[derive(Serialize, Clone, Debug, Deserialize)]
@@ -40,7 +38,7 @@ pub struct IssueCommentFetchParam {
 pub struct IssueCommentUpdateParam {
     pub issue_id: i32,
     pub comment_uid: Uuid,
-    pub update_content: String,
+    pub update_content: Option<String>,
     pub author_uid: Uuid,
     pub repo_uid: Uuid,
 }
@@ -103,18 +101,12 @@ pub struct IssueSubscribeParam {
 
 #[derive(Serialize, Clone, Debug, Deserialize)]
 pub struct IssueStatusUpdateParam {
-    pub issue_id: i32,
-    pub repo_uid: Uuid,
     pub status: String,
-    pub user_uid: Uuid,
 }
 
 #[derive(Serialize, Clone, Debug, Deserialize)]
 pub struct IssueAssigneeUpdateParam {
-    pub issue_id: i32,
-    pub repo_uid: Uuid,
-    pub update_assignee_uid: Uuid,
-    pub user_uid: Uuid,
+    pub update_assignee_uid: Vec<Uuid>,
 }
 
 #[derive(Serialize, Clone, Debug, Deserialize)]

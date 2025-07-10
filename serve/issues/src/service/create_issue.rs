@@ -8,8 +8,6 @@ use issuesd::issues;
 
 impl AppIssueService {
     pub async fn service_create_issue(&self, param: IssueCreateParam,author_uid:Uuid, repo_uid:Uuid) -> AppResult<issues::Model> {
-        let db: &DatabaseConnection = &self.db;
-
         let active_model = issues::ActiveModel {
             uid : Set(Uuid::now_v7()),
             title : Set(param.title),
@@ -24,8 +22,7 @@ impl AppIssueService {
             priority_label_uid : Set(None),
             is_deleted : Set(false),
         };
-
-        match active_model.insert(db).await {
+        match active_model.insert(&self.db).await {
             Ok(model) => result_ok_with_data(model),
             Err(e) => result_error_with_msg_data(format!("Failed to create issue: {}", e)),
         }

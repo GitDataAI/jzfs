@@ -29,7 +29,7 @@ cert = { workspace = true }
 issuesd = { workspace = true }
 userd = { workspace = true }
 orgd = { workspace = true }
-
+authd = { workspace = true }
 
 [features]
 default = ["distributed"]

@@ -8,12 +8,12 @@ use crate::schema::IssueUpdateParam;
 use crate::service::AppIssueService;
 
 impl AppIssueService {
-    pub async fn service_update_issue(&self, param: IssueUpdateParam) -> AppResult<Model> {
+    pub async fn service_update_issue(&self, param: IssueUpdateParam,issue_id: i32, repo_uid: Uuid, author_uid: Uuid,) -> AppResult<Model> {
         let Ok(Some(model)) = issues::Entity::find()
-            .filter(issues::Column::IssueId.eq(param.issue_id))
-            .filter(issues::Column::RepoUid.eq(param.repo_uid))
+            .filter(issues::Column::IssueId.eq(issue_id))
+            .filter(issues::Column::RepoUid.eq(repo_uid))
             // TODO: check permission
-            .filter(issues::Column::AuthorUid.eq(param.author_uid))
+            .filter(issues::Column::AuthorUid.eq(author_uid))
             .one(&self.db)
             .await
         else { 

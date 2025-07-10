@@ -22,7 +22,7 @@ impl AppIssueService {
         let size = issues::Entity::find()
             .all(&self.db)
             .await.unwrap_or_else(|_| vec![]).len();
-        return AppResult {
+        AppResult {
             code: 200,
             data: Some(json!({
                 "size": size,

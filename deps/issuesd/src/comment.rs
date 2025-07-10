@@ -10,6 +10,7 @@ pub struct Model {
     pub author_uid: Uuid,
     pub parent_comment_uid: Option<Uuid>, //父评论的ID，用于支持嵌套，若为顶级评论，则此值为空
     pub created_at: DateTimeUtc,
+    pub updated_at: DateTimeUtc,
     pub is_deleted: bool,
 }
 

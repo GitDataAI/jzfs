@@ -18,6 +18,21 @@ impl AppIssueService {
                 return result_error_with_msg_data("Failed to access repo".to_string());
             }
         }
+        match label::Entity::find()
+            .filter(label::Column::RepoUid.eq(param.repo_uid))
+            .filter(label::Column::Name.eq(param.label_name.clone()))
+            .one(&self.db)
+            .await
+        {
+            Ok(model) => {
+                if model.is_some() {
+                    return result_error_with_msg_data("Label already exists".to_string());
+                }
+            }
+            Err(e) => {
+                return result_error_with_msg_data(format!("Failed to create issue label: {}", e));
+            }
+        }
         let active_model = label::ActiveModel {
             label_uid: Set(Uuid::now_v7()),
             repo_uid: Set(param.repo_uid),
@@ -26,7 +41,6 @@ impl AppIssueService {
             name: Set(param.label_name),
             description: Set(param.description),
         };
-       
         match active_model.insert(&self.db).await {
             Ok(model) => result_ok_with_data(model),
             Err(e) => result_error_with_msg_data(format!("Failed to create issue label: {}", e)),
