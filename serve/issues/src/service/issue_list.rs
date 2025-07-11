@@ -1,10 +1,9 @@
+use crate::schema::IssueFetchParam;
+use crate::service::AppIssueService;
+use cert::schema::AppResult;
+use issuesd::issues;
 use sea_orm::*;
 use serde_json::json;
-use issuesd::issues;
-use crate::service::AppIssueService;
-use issuesd::issues::Model;
-use crate::schema::{IssueFetchParam};
-use cert::schema::AppResult;
 impl AppIssueService {
     pub async fn service_get_issue_list(&self, param: IssueFetchParam) -> AppResult<serde_json::Value> {
         let result = issues::Entity::find()

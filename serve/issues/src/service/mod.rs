@@ -25,6 +25,8 @@ pub mod delete_label;
 
 pub mod publish_comment;
 pub mod update_comment;
-// pub mod subscribe_issue;
+pub mod subscribe_issue;
 pub mod update_issue_status;
 pub mod update_issue_assignee;
+pub mod unsubscribe_issue;
+pub mod get_issue_subscribers;

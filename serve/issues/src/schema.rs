@@ -1,4 +1,5 @@
 use anyhow::Error;
+use bytes::buf::Limit;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -76,7 +77,8 @@ pub struct IssueLabelCreateParam {
 pub struct IssueLabelLinkParam {
     pub issue_id: i32,
     pub label_uid: Uuid,
-    pub repo_uid: Uuid,
+    pub limit: u64,
+    pub page: u64
 }
 
 #[derive(Serialize, Clone, Debug, Deserialize)]
