@@ -93,7 +93,7 @@ JZFS is used to collect
 all experimental metadata about the complete timeline of longitudinal and multimodal animal experiments,
 including MRI, histology, electrophysiology, and behavior.
 
-![](./docs/jzfs-research-flow.png)
+![](./docs/research-flow.png)
 Project planning and experimental details are recorded in an in-house relational cloud-based database of GitData.AI.
 
 A key element for both the database and the data storage is the
