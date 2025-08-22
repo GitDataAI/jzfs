@@ -1,0 +1,14 @@
+[package]
+name = "config"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+sea-orm = { version = "1.1.14", features = ["sqlx-all", "pgvector","runtime-tokio","uuid","chrono"] }
+serde = { version = "1.0.219", features = ["derive"] }
+tracing = "0.1.41"
+bb8 = { version = "0.9.0", features = ["parking_lot"] }
+bb8-redis = { version = "0.24.0", features = [] }
+redis = { version = "0.32.5", features = ["uuid","acl","aio"] }
+tokio = { version = "1.47.1", features = ["full"] }
+toml = { version = "0.9.5", features = ["serde","parse","display"] }
