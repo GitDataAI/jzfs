@@ -1,0 +1,39 @@
+[package]
+name = "core"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+config = { workspace = true }
+database = { workspace = true }
+git = { workspace = true }
+session = { workspace = true }
+error = { workspace = true }
+
+tokio = { version = "1.47.1", features = ["full"] }
+tokio-stream = { version = "0.1.17", features = ["full"] }
+async-stream = { version = "0.3.6", features = [] }
+futures-util = { version = "0.3.31", features = ["default"] }
+serde = { version = "1.0.219", features = ["default"] }
+serde_json = { version = "1.0.142", features = ["alloc"] }
+sea-orm = { version = "1.1.14", features = ["sqlx-all", "pgvector","runtime-tokio","uuid","chrono"] }
+bb8 = { version = "0.9.0", features = ["parking_lot"] }
+bb8-redis = { version = "0.24.0", features = [] }
+redis = { version = "0.32.5", features = ["uuid","acl","aio"] }
+anyhow = "1.0.98"
+sha256 = { version = "1.6.0", features = ["tokio"] }
+lettre = {version = "0.11.10",features = [
+    "smtp-transport",
+    "serde",
+    "rustls-tls",
+    "rustls-native-certs",
+    "hostname",
+    "tokio1",
+    "tokio1-rustls-tls",
+    "tokio1-native-tls"
+]}
+log = "0.4.27"
+rand = "0.8.5"
+base64 = { version = "0.22.1", features = [] }
+chrono = "0.4.41"
+uuid = { version = "1.18.0", features = ["serde", "v4"] }
