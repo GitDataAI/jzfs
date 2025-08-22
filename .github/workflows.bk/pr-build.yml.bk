@@ -1,0 +1,81 @@
+# This workflow handles Pull Request validation and testing
+name: PR Build & Test
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [ opened, synchronize, reopened ]
+
+jobs:
+  pr-build-test:
+    runs-on: ubuntu-latest
+    name: PR Build & Test
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+      
+      # Setup Rust environment
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: clippy, rustfmt
+      
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            ./target
+            ./api
+            ./config
+            ./core
+            ./database
+            ./error
+            ./git
+            ./session
+            ./migration
+      
+      # Build Rust backend
+      - name: Build backend
+        run: cargo build --release
+      
+      # Run backend tests
+      - name: Run backend tests
+        run: cargo test --all
+      
+      # Setup Node.js environment for frontend
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      # Install frontend dependencies
+      - name: Install frontend dependencies
+        working-directory: ./web
+        run: npm install
+      
+      # Build frontend
+      - name: Build frontend
+        working-directory: ./web
+        run: npm run build
+      
+      # Run frontend tests
+      - name: Run frontend tests
+        working-directory: ./web
+        run: npm test --if-present
+      
+      # Lint frontend code
+      - name: Lint frontend code
+        working-directory: ./web
+        run: npm run lint
+      
+      # Lint Rust code
+      - name: Run Clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+      
+      # Check Rust formatting
+      - name: Check Rust formatting
+        run: cargo fmt --check

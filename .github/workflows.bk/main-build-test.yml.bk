@@ -1,0 +1,54 @@
+# This workflow handles Main branch build and test
+name: Main Build & Test
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  main-build-test:
+    runs-on: ubuntu-latest
+    name: Main Build & Test
+    steps:
+      - uses: actions/checkout@v4
+      
+      # Setup Rust environment
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: clippy, rustfmt
+      
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            ./target
+            ./api
+            ./config
+            ./core
+            ./database
+            ./error
+            ./git
+            ./session
+            ./migration
+      
+      # Build Rust backend
+      - name: Build backend
+        run: cargo build --release
+      
+      # Setup Node.js environment for frontend
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      # Install frontend dependencies
+      - name: Install frontend dependencies
+        working-directory: ./web
+        run: npm install
+      
+      # Build frontend
+      - name: Build frontend
+        working-directory: ./web
+        run: npm run build

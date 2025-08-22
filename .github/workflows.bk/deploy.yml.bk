@@ -1,0 +1,37 @@
+# This workflow handles Kubernetes deployment
+name: Deploy to Kubernetes
+
+on:
+  workflow_run:
+    workflows: ["Docker Build & Publish"]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: [self-hosted]
+    name: Deploy to Kubernetes
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+      
+      - name: Configure Kubernetes cluster access
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+      
+      - name: Create/update namespace if not exists
+        run: |
+          kubectl create namespace gitdataai --dry-run=client -o yaml | kubectl apply -f -
+      
+      - name: Deploy with Helm
+        run: |
+          helm upgrade --install gitdataai ./deploy/charts \
+            --namespace gitdataai \
+            --set image.repository=${{ secrets.DOCKER_USERNAME }}/gitdataai \
+            --set image.tag=latest \
