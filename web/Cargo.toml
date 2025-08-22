@@ -1,0 +1,20 @@
+[package]
+name = "ui"
+version = "0.1.0"
+edition = "2024"
+[lib]
+path = "embed/lib.rs"
+name = "web"
+
+[dependencies]
+server = { package = "core", path = "../core" }
+error = { workspace = true }
+config = { workspace = true }
+database = { workspace = true }
+git = { workspace = true }
+session = { workspace = true }
+actix-web = { version = "4.11.0", features = ["macros"] }
+rust-embed = { version = "8.7.2", features = ["actix-web","actix","mime-guess","tokio"] }
+mime_guess = "2.0.5"
+bytes = { version = "1.10.1", features = [] }
+regex = "1.5.5"
