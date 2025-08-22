@@ -1,0 +1,27 @@
+[package]
+name = "git"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+git2 = { version = "0.20.2", features = ["default"] }
+tokio = { version = "1.47.1", features = ["full"] }
+tokio-stream = { version = "0.1.17", features = ["full"] }
+async-stream = { version = "0.3.6", features = [] }
+futures-util = { version = "0.3.31", features = ["default"] }
+serde = { version = "1.0.219", features = ["default"] }
+serde_json = { version = "1.0.142", features = ["alloc"] }
+sea-orm = { version = "1.1.14", features = ["sqlx-all", "pgvector","runtime-tokio","uuid","chrono"] }
+database = { workspace = true }
+config = { workspace = true }
+error = { workspace = true }
+anyhow = "1.0.98"
+russh = { version = "0.52.1", features = ["flate2","legacy-ed25519-pkcs8-parser"] }
+actix-web = { version = "4.11.0", features = [] }
+tracing = "0.1.41"
+bytes = "1.10.1"
+hex = "0.4.3"
+futures = "0.3.31"
+bb8 = { version = "0.9.0", features = ["parking_lot"] }
+bb8-redis = { version = "0.24.0", features = [] }
+redis = { version = "0.32.5", features = ["uuid","acl","aio"] }
