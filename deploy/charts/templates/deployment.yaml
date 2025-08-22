@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gitdataai.fullname" . }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "gitdataai.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "gitdataai.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "gitdataai.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "gitdataai.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy | default "IfNotPresent" }}
+          command: ["./jzfs"]
+          args: ["run"]
+          ports:
+            - name: http
+              containerPort: 7070
+              protocol: TCP
+            - name: ssh
+              containerPort: 30322
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: config-volume
+              mountPath: /app/config.toml
+              subPath: config.toml
+            - name: data-volume
+              mountPath: /app/data
+            - name: timezone
+              mountPath: /etc/localtime
+              readOnly: true
+          env:
+            - name: RUST_LOG
+              value: {{ .Values.env.rustLog | default "info" }}
+            - name: DEV
+              value: {{ .Values.env.dev | default "false" | quote }}
+      volumes:
+        - name: config-volume
+          configMap:
+            name: {{ .Values.config }}
+        - name: data-volume
+          persistentVolumeClaim:
+            claimName: {{ include "gitdataai.fullname" . }}-data
+        - name: timezone
+          hostPath:
+            path: /usr/share/zoneinfo/Asia/Shanghai
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

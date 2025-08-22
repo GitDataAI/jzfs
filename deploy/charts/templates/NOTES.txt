@@ -1,0 +1,54 @@
+{{- /* vim: set filetype=mustache: */ -}}
+{{- if .Values.ingress.enabled }}
+1. Get the application URL by running these commands:
+{{- range .Values.ingress.hosts }}
+  https://{{ .host }}
+{{- end }}
+{{- else if contains "ClusterIP" .Values.service.type }}
+1. Get the application URL by running these commands:
+  export POD_NAME=$(kubectl get pods --namespace {{ .Values.namespace }} -l "app.kubernetes.io/name={{ include "gitdataai.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace {{ .Values.namespace }} port-forward $POD_NAME 8080:{{ .Values.service.port }}
+{{- else if contains "LoadBalancer" .Values.service.type }}
+1. Get the application URL by running these commands:
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+        You can watch the status of by running 'kubectl get --namespace {{ .Values.namespace }} svc -w {{ include "gitdataai.fullname" . }}-http'
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Values.namespace }} {{ include "gitdataai.fullname" . }}-http --template "{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}")
+  echo http://$SERVICE_IP:{{ .Values.service.port }}
+{{- else if contains "NodePort" .Values.service.type }}
+1. Get the application URL by running these commands:
+  export NODE_PORT=$(kubectl get --namespace {{ .Values.namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "gitdataai.fullname" . }}-http)
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Values.namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+{{- end }}
+
+2. SSH Access:
+   The application exposes an SSH service using NodePort type, which is directly accessible from outside the cluster.
+   
+   To get the SSH NodePort number and access the service:
+   export SSH_NODE_PORT=$(kubectl get --namespace {{ .Values.namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "gitdataai.fullname" . }}-ssh)
+   export NODE_IP=$(kubectl get nodes --namespace {{ .Values.namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+   echo "SSH NodePort: $SSH_NODE_PORT"
+   
+   Access the SSH service using:
+   ssh -p $SSH_NODE_PORT user@$NODE_IP
+   
+   Note: The default SSH NodePort is {{ .Values.service.sshNodePort }} but may be overridden by Kubernetes.
+
+3. Database Configuration:
+   The application is configured to connect to a PostgreSQL database.
+   The specific connection details are defined in the configMap.
+
+4. Redis Configuration:
+   The application uses Redis for caching and session management.
+   Connection details are defined in the configMap.
+
+5. Data Persistence:
+   Application default data is stored in the hostPath volume at /var/lib/docker/jzfs/data
+   if your want use other storage, your can mount in /app folder, and exchange config.toml
+6. Configuration Updates:
+   To update the application configuration, modify the configMap and restart the deployment:
+
+7. Scaling:
+   The application is configured with Horizontal Pod Autoscaler. To manually scale:
+   kubectl scale deployment -n {{ .Values.namespace }} {{ include "gitdataai.fullname" . }} --replicas=<desired-replicas>

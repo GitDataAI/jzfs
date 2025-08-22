@@ -1,0 +1,115 @@
+# Default values for gitdataai.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 3
+namespace: gitdataai
+config: jzfs-config
+
+# Override the chart name
+nameOverride: ""
+# Override the fullname
+fullnameOverride: ""
+
+# Image settings
+image:
+  repository: gitdatateam/gitdataai
+  tag: nightly
+  pullPolicy: IfNotPresent
+
+# Image pull secrets
+imagePullSecrets: []
+
+# Service settings
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 80
+  # SSH NodePort configuration
+  # You can override the default NodePort for SSH service
+  sshNodePort: 30322
+
+# Environment variables
+env:
+  rustLog: info
+  dev: "false"
+
+# Horizontal Pod Autoscaler
+hpa:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 10
+  cpuTarget: 80
+  memoryTarget: 80
+
+# Service Account
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use. If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# Pod Security Context
+podSecurityContext: {}
+  # fsGroup: 2000
+
+# Security Context
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+# Resources
+resources:
+   limits:
+     memory: 8Gi
+     cpu: "4"
+   requests:
+     memory: 2Gi
+     cpu: "1"
+
+# Node Selector
+nodeSelector: {}
+
+# Affinity
+affinity: {}
+
+# Tolerations
+tolerations: []
+
+# Pod Annotations
+podAnnotations: {}
+
+# Storage Configuration
+storage:
+  # Enable persistent storage
+  enabled: true
+  # Storage size
+  size: 50Gi
+  # Storage class name (empty string means use default storage class)
+  storageClass: ""
+
+# Ingress
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: haproxy
+    cert-manager.io/cluster-issuer: letsencrypt-dns01
+    haproxy.org/request-buffer-policy: "never"
+    haproxy.org/request-buffering: "disabled"
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+  hosts:
+    - host: www.gitdata.ai
+      paths: ["/"]
+    - host: gitdata.ai
+      paths: ["/"]
+  tls:
+    - secretName: gitdataai-tls
+      hosts:
+        - www.gitdata.ai
+        - gitdata.ai

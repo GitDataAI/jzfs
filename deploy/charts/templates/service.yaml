@@ -1,0 +1,37 @@
+# HTTP Service (ClusterIP)
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "gitdataai.fullname" . }}-http
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "gitdataai.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "gitdataai.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+
+---
+# SSH Service (NodePort)
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "gitdataai.fullname" . }}-ssh
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{ include "gitdataai.labels" . | nindent 4 }}
+spec:
+  type: NodePort
+  selector:
+    {{ include "gitdataai.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: ssh
+      port: 30322
+      targetPort: 30322
+      protocol: TCP
+      nodePort: {{ .Values.service.sshNodePort | default "30322" }}
